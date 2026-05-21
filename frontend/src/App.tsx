@@ -4,6 +4,7 @@ import {
   ConflictPolicy,
   FileEntry,
   Job,
+  SearchResult,
   cancelJob,
   createCopyJob,
   createFolder,
@@ -26,6 +27,7 @@ import {
   renamePath,
   RootEntry,
   Session,
+  searchFiles,
   TrashEntry,
   resumeJob,
   retryJob,
@@ -65,6 +67,15 @@ export function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [previewEntry, setPreviewEntry] = useState<FileEntry | null>(null);
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('volum_favorites') ?? '[]'); } catch { return []; }
+  });
+  const [recentPaths, setRecentPaths] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('volum_recent') ?? '[]'); } catch { return []; }
+  });
+  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canWrite = session?.role === 'admin';
 
@@ -106,6 +117,64 @@ export function App() {
   }, [currentPath, refreshKey, showHidden]);
 
   const refresh = () => setRefreshKey((value) => value + 1);
+
+  const persistFavorites = (items: string[]) => {
+    setFavorites(items);
+    localStorage.setItem('volum_favorites', JSON.stringify(items));
+  };
+
+  const addFavorite = (path: string) => {
+    if (!favorites.includes(path)) {
+      persistFavorites([...favorites, path]);
+    }
+  };
+
+  const removeFavorite = (path: string) => {
+    persistFavorites(favorites.filter((f) => f !== path));
+  };
+
+  const pushRecent = (path: string) => {
+    const next = [path, ...recentPaths.filter((p) => p !== path)].slice(0, 10);
+    setRecentPaths(next);
+    localStorage.setItem('volum_recent', JSON.stringify(next));
+  };
+
+  const handleGlobalSearch = (searchQuery: string) => {
+    if (searchQuery.trim().length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    searchFiles(searchQuery.trim(), 20)
+      .then((response) => setSearchResults(response.results ?? []))
+      .catch(() => setSearchResults([]));
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+        setSearchOpen(true);
+      }
+      if (e.key === 'Escape' && searchOpen) {
+        setSearchOpen(false);
+        setSearchResults(null);
+        setQuery('');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [searchOpen]);
+
+  const navigateTo = (path: string) => {
+    pushRecent(path);
+    setCurrentPath(path);
+    setSearchOpen(false);
+    setSearchResults(null);
+    setQuery('');
+  };
+
+  const isFavorited = favorites.includes(currentPath);
 
   const runAction = async (action: () => Promise<unknown>) => {
     try {
@@ -536,7 +605,7 @@ export function App() {
               <button
                 className={root.path === currentPath ? 'root-item active' : 'root-item'}
                 key={root.path}
-                onClick={() => setCurrentPath(root.path)}
+                onClick={() => navigateTo(root.path)}
                 type="button"
               >
                 <DeviceIcon name="drive-harddisk" size={18} />
@@ -553,6 +622,62 @@ export function App() {
             ))}
           </div>
         </section>
+
+        {favorites.length > 0 && (
+          <section className="nav-section">
+            <div className="section-heading">
+              <h2>Favorites</h2>
+            </div>
+            <div className="root-list">
+              {favorites.map((path) => (
+                <button
+                  className={path === currentPath ? 'root-item active' : 'root-item'}
+                  key={path}
+                  onClick={() => { setCurrentPath(path); }}
+                  type="button"
+                >
+                  <FolderIcon size={18} />
+                  <span className="fav-details" style={{ flex: 1 }}>
+                    <span>{path.split('/').pop() || path}</span>
+                    <small>{path}</small>
+                  </span>
+                  <button
+                    className="fav-remove"
+                    onClick={(e) => { e.stopPropagation(); removeFavorite(path); }}
+                    title="Remove from favorites"
+                    type="button"
+                  >
+                    <Icon name="edit-delete" size={12} />
+                  </button>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {recentPaths.length > 0 && (
+          <section className="nav-section">
+            <div className="section-heading">
+              <h2>Recent</h2>
+            </div>
+            <div className="root-list">
+              {recentPaths.map((path) => (
+                <button
+                  className={path === currentPath ? 'root-item active' : 'root-item'}
+                  key={path}
+                  onClick={() => { setCurrentPath(path); }}
+                  type="button"
+                >
+                  <FolderIcon size={18} />
+                  <span className="fav-details" style={{ flex: 1 }}>
+                    <span>{path.split('/').pop() || path}</span>
+                    <small>{path}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="nav-section trash-section">
           <div className="section-heading">
@@ -652,7 +777,7 @@ export function App() {
             <>
               <nav className="breadcrumbs" aria-label="Breadcrumb">
                 {breadcrumbs.map((crumb, index) => (
-                  <button key={crumb.path} onClick={() => setCurrentPath(crumb.path)} type="button">
+                  <button key={crumb.path} onClick={() => navigateTo(crumb.path)} type="button">
                     {index > 0 && <Icon name="go-next" size={16} />}
                     <span>{crumb.label}</span>
                   </button>
@@ -711,11 +836,52 @@ export function App() {
                 <label className="search">
                   <Icon name="edit-find" size={16} />
                   <input
-                    placeholder="Search this folder"
+                    ref={searchRef}
+                    placeholder="Search files (Ctrl+K)"
                     value={query}
-                    onChange={(event) => setQuery(event.target.value)}
+                    onFocus={() => setSearchOpen(true)}
+                    onChange={(event) => {
+                      setQuery(event.target.value);
+                      handleGlobalSearch(event.target.value);
+                      setSearchOpen(true);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        setSearchOpen(false);
+                        setSearchResults(null);
+                        setQuery('');
+                      }
+                    }}
                   />
+                  {query.length > 0 && (
+                    <button type="button" className="search-clear" onClick={() => { setQuery(''); setSearchResults(null); setSearchOpen(false); }}>
+                      <Icon name="window-close" size={14} />
+                    </button>
+                  )}
                 </label>
+                {searchOpen && searchResults && searchResults.length > 0 && (
+                  <div className="search-results-dropdown">
+                    {searchResults.map((result) => (
+                      <button
+                        key={result.path}
+                        type="button"
+                        className="search-result-item"
+                        onClick={() => {
+                          if (result.type === 'directory') {
+                            navigateTo(result.path);
+                          } else {
+                            const parentDir = result.path.substring(0, result.path.lastIndexOf('/') || 1);
+                            navigateTo(parentDir || '/');
+                          }
+                        }}
+                      >
+                        <FileIcon entry={{ ...result, hidden: false }} size={22} />
+                        <span className="search-result-name">{result.name}</span>
+                        <span className="search-result-path">{result.root}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <select
                   className="sort-select"
                   value={`${sortField}:${sortDirection}`}
@@ -750,6 +916,14 @@ export function App() {
                   type="button"
                 >
                   <Icon name="view-refresh" size={18} />
+                </button>
+                <button
+                  className={`icon-button${isFavorited ? ' active' : ''}`}
+                  onClick={() => isFavorited ? removeFavorite(currentPath) : addFavorite(currentPath)}
+                  title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                  type="button"
+                >
+                  <Icon name="bookmark-new" size={18} />
                 </button>
                 <button
                   className="icon-button"

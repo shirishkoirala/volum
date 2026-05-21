@@ -43,6 +43,16 @@ type TrashEntry struct {
 	RootPath     string    `json:"rootPath"`
 }
 
+type SearchResult struct {
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	Type        string `json:"type"`
+	Size        int64  `json:"size"`
+	ModifiedAt  string `json:"modifiedAt"`
+	Root        string `json:"root"`
+	LineMatch   string `json:"lineMatch,omitempty"`
+}
+
 var (
 	ErrInvalidName       = errors.New("name cannot be empty or contain path separators")
 	ErrDestinationExists = errors.New("destination already exists")
@@ -457,4 +467,77 @@ func diskUsage(path string) (int64, int64, error) {
 	total := stat.Blocks * blockSize
 	free := stat.Bavail * blockSize
 	return int64(min(total, uint64(^uint64(0)>>1))), int64(min(free, uint64(^uint64(0)>>1))), nil
+}
+
+func (s *Service) Search(query string, maxResults int) ([]SearchResult, error) {
+	if strings.TrimSpace(query) == "" {
+		return nil, errors.New("search query is required")
+	}
+	if maxResults <= 0 || maxResults > 200 {
+		maxResults = 50
+	}
+
+	lower := strings.ToLower(query)
+	results := make([]SearchResult, 0)
+	roots := s.guard.Roots()
+
+	for _, root := range roots {
+		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return nil
+			}
+			name := entry.Name()
+			if strings.HasPrefix(name, ".") || strings.HasPrefix(name, ".volum-trash") || strings.HasPrefix(filepath.Base(filepath.Dir(path)), ".volum-tmp") {
+				if entry.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if !entry.IsDir() && !isTextFile(name) {
+				return nil
+			}
+			if strings.Contains(strings.ToLower(name), lower) || (entry.IsDir() && strings.Contains(strings.ToLower(filepath.Base(path)), lower)) {
+				info, err := entry.Info()
+				if err != nil {
+					return nil
+				}
+				entryType := "file"
+				if entry.IsDir() {
+					entryType = "directory"
+				}
+				results = append(results, SearchResult{
+					Name:       name,
+					Path:       path,
+					Type:       entryType,
+					Size:       info.Size(),
+					ModifiedAt: info.ModTime().UTC().Format(time.RFC3339),
+					Root:       root,
+				})
+				if len(results) >= maxResults {
+					return errSearchComplete
+				}
+			}
+			return nil
+		})
+		if errors.Is(err, errSearchComplete) {
+			break
+		}
+	}
+	return results, nil
+}
+
+var errSearchComplete = errors.New("search complete")
+
+var textExtensions = map[string]bool{
+	".cfg": true, ".conf": true, ".csv": true, ".css": true, ".env": true,
+	".go": true, ".html": true, ".htm": true, ".ini": true, ".java": true,
+	".js": true, ".jsx": true, ".json": true, ".log": true, ".md": true,
+	".php": true, ".properties": true, ".py": true, ".rb": true, ".rst": true,
+	".sh": true, ".sql": true, ".svg": true, ".toml": true, ".ts": true,
+	".tsx": true, ".txt": true, ".xml": true, ".yaml": true, ".yml": true,
+}
+
+func isTextFile(name string) bool {
+	ext := strings.ToLower(filepath.Ext(name))
+	return textExtensions[ext]
 }

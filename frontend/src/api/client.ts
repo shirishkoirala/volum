@@ -38,6 +38,20 @@ export type TrashResponse = {
   entries: TrashEntry[] | null;
 };
 
+export type SearchResult = {
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  size: number;
+  modifiedAt: string;
+  root: string;
+  lineMatch?: string;
+};
+
+export type SearchResponse = {
+  results: SearchResult[] | null;
+};
+
 export type Job = {
   id: string;
   type: string;
@@ -263,4 +277,9 @@ export function isAudioExtension(name: string) {
 
 export function isTextExtension(name: string) {
   return /\.(cfg|conf|csv|css|env|go|html?|ini|java|jsx?|json|log|md|php|properties|py|rb|rst|sh|sql|svg|toml|tsx?|txt|xml|ya?ml)$/i.test(name);
+}
+
+export function searchFiles(query: string, limit = 50) {
+  const params = new URLSearchParams({ q: query, limit: String(limit) });
+  return request<SearchResponse>(`/api/files/search?${params.toString()}`);
 }

@@ -68,6 +68,7 @@ func (s *Server) routes() {
 			r.Get("/files", s.handleFiles)
 			r.Get("/files/download", s.handleDownload)
 			r.Get("/files/raw", s.handleRaw)
+			r.Get("/files/search", s.handleSearch)
 			r.Get("/trash", s.handleTrash)
 			r.Get("/jobs", s.handleJobs)
 			r.Get("/jobs/events", s.handleJobEvents)
@@ -291,6 +292,21 @@ func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(info.Name()))
 	http.ServeFile(w, r, path)
+}
+
+func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+	limitParam := r.URL.Query().Get("limit")
+	limit := 50
+	if v, err := strconv.Atoi(limitParam); err == nil && v > 0 && v <= 200 {
+		limit = v
+	}
+	results, err := s.files.Search(query, limit)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"results": results})
 }
 
 func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
