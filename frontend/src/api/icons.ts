@@ -9,24 +9,32 @@ function ext(name: string) {
 const iconUrl = (category: string, size: string, name: string) =>
   new URL(`../assets/${category}/${size}/${name}.svg`, import.meta.url).href;
 
-export function folderIconUrl() {
-  return iconUrl('places', '22', 'folder');
+export function folderIconUrl(size = '22') {
+  return iconUrl('places', size, 'folder');
 }
 
-export function fileTypeIconUrl(entry: FileEntry) {
-  if (entry.type === 'directory') return folderIconUrl();
-  return mimetypeIconUrl(entry.name);
+export function fileTypeIconUrl(entry: FileEntry, size = '22') {
+  if (entry.type === 'directory') return folderIconUrl(size);
+  return mimetypeIconUrl(entry.name, size);
 }
 
-function mimetypeIconUrl(filename: string): string {
+function mimetypeIconUrl(filename: string, size = '22'): string {
   const e = ext(filename);
   const m = MIMETYPE_MAP[e];
-  if (m) return iconUrl('mimetypes', '22', m);
-  return iconUrl('mimetypes', '22', 'unknown');
+  if (m) return iconUrl('mimetypes', size, m);
+  return iconUrl('mimetypes', size, 'unknown');
 }
 
 export function actionIconUrl(name: string) {
   return iconUrl('actions', '22', name);
+}
+
+export function deviceIconUrl(name: string, size = '64') {
+  return iconUrl('devices', size, name);
+}
+
+export function placeIconUrl(name: string, size = '32') {
+  return iconUrl('places', size, name);
 }
 
 const MIMETYPE_MAP: Record<string, string> = {

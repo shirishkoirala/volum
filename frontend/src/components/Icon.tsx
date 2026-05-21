@@ -1,5 +1,10 @@
 import type { FileEntry } from '../api/client';
-import { actionIconUrl, fileTypeIconUrl, folderIconUrl } from '../api/icons';
+import {
+  actionIconUrl,
+  deviceIconUrl,
+  fileTypeIconUrl,
+  folderIconUrl,
+} from '../api/icons';
 
 type IconProps = {
   name: string;
@@ -7,14 +12,10 @@ type IconProps = {
   className?: string;
 };
 
-const deviceIconUrl = (name: string) =>
-  new URL(`../assets/devices/22/${name}.svg`, import.meta.url).href;
-
 export function Icon({ name, size = 22, className }: IconProps) {
-  const src = actionIconUrl(name);
   return (
     <img
-      src={src}
+      src={actionIconUrl(name)}
       alt=""
       width={size}
       height={size}
@@ -24,11 +25,10 @@ export function Icon({ name, size = 22, className }: IconProps) {
   );
 }
 
-export function DeviceIcon({ name, size = 22, className }: { name: string; size?: number; className?: string }) {
-  const src = deviceIconUrl(name);
+export function DeviceIcon({ name, size = 64, className }: { name: string; size?: number; className?: string }) {
   return (
     <img
-      src={src}
+      src={deviceIconUrl(name, String(size))}
       alt=""
       width={size}
       height={size}
@@ -38,11 +38,10 @@ export function DeviceIcon({ name, size = 22, className }: { name: string; size?
   );
 }
 
-export function FileIcon({ entry, size = 22 }: { entry: FileEntry; size?: number }) {
-  const src = fileTypeIconUrl(entry);
+export function FileIcon({ entry, size = 64 }: { entry: FileEntry; size?: number }) {
   return (
     <img
-      src={src}
+      src={fileTypeIconUrl(entry, String(size))}
       alt=""
       width={size}
       height={size}
@@ -51,11 +50,10 @@ export function FileIcon({ entry, size = 22 }: { entry: FileEntry; size?: number
   );
 }
 
-export function FolderIcon({ size = 22 }: { size?: number }) {
-  const src = folderIconUrl();
+export function FolderIcon({ size = 64 }: { size?: number }) {
   return (
     <img
-      src={src}
+      src={folderIconUrl(String(size))}
       alt=""
       width={size}
       height={size}

@@ -42,7 +42,7 @@ export function App() {
   const [currentPath, setCurrentPath] = useState('');
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showHidden, setShowHidden] = useState(false);
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -605,6 +605,44 @@ export function App() {
         {selectedEntries.length > 0 && (
           <div className="selection-bar">
             <span>{selectedEntries.length} selected</span>
+            <div className="selection-actions">
+              {canPreview && (
+                <button type="button" onClick={handlePreview}>
+                  <Icon name="view-preview" size={16} />
+                  Preview
+                </button>
+              )}
+              {canDownload && (
+                <button type="button" onClick={handleDownload}>
+                  <Icon name="edit-download" size={16} />
+                  Download
+                </button>
+              )}
+              {canRename && canWrite && (
+                <button type="button" onClick={handleRename}>
+                  <Icon name="edit-rename" size={16} />
+                  Rename
+                </button>
+              )}
+              {canCopy && canWrite && (
+                <button type="button" onClick={handleCopy}>
+                  <Icon name="edit-copy" size={16} />
+                  Copy
+                </button>
+              )}
+              {canMove && canWrite && (
+                <button type="button" onClick={handleMove}>
+                  <Icon name="edit-cut" size={16} />
+                  Move
+                </button>
+              )}
+              {canDelete && canWrite && (
+                <button type="button" onClick={handleDelete} className="danger">
+                  <Icon name="edit-delete" size={16} />
+                  Delete
+                </button>
+              )}
+            </div>
             <button type="button" onClick={() => setSelectedPaths([])}>
               Clear
             </button>
@@ -645,15 +683,22 @@ export function App() {
                 type="button"
               >
                 {entry.type === 'directory' ? (
-                  <FolderIcon size={22} />
+                  <FolderIcon size={56} />
                 ) : (
-                  <FileIcon entry={entry} size={22} />
+                  <FileIcon entry={entry} size={56} />
                 )}
                 <span className="file-name">{entry.name}</span>
-                <span>{entry.type}</span>
-                <span>{formatBytes(entry.size)}</span>
-                <span>{new Date(entry.modifiedAt).toLocaleString()}</span>
-                <span>{entry.permissions}</span>
+                {viewMode === 'grid' && entry.type === 'file' && (
+                  <span className="file-meta">{formatBytes(entry.size)}</span>
+                )}
+                {viewMode === 'list' && (
+                  <>
+                    <span>{entry.type}</span>
+                    <span>{formatBytes(entry.size)}</span>
+                    <span>{new Date(entry.modifiedAt).toLocaleString()}</span>
+                    <span>{entry.permissions}</span>
+                  </>
+                )}
               </button>
             ))
           )}
