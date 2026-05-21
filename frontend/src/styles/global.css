@@ -353,7 +353,7 @@ button {
   padding: 14px;
 }
 
-.job-item div:first-child {
+.job-title-row {
   align-items: center;
   display: flex;
   justify-content: space-between;
@@ -382,6 +382,35 @@ button {
 .progress-fill {
   background: #0f766e;
   height: 100%;
+}
+
+.job-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 8px;
+}
+
+.job-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.job-actions button {
+  align-items: center;
+  background: white;
+  border: 1px solid #d9e0e5;
+  border-radius: 6px;
+  color: #33414c;
+  display: inline-flex;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+}
+
+.job-actions button:hover {
+  border-color: #9eb8b5;
 }
 
 .job-error {

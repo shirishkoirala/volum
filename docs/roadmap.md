@@ -39,18 +39,18 @@ Goal: implement the core Volum architecture.
 - Never overwrite destination silently `[done]`
 - Track total bytes and processed bytes `[done]`
 - Track current item `[done]`
-- Track speed and ETA
+- Track speed and ETA `[done]`
 - Show active, completed, failed, and cancelled jobs in the UI `[done]`
 
 ## Phase 4: Live Job Updates
 
 Goal: make progress visible without browser ownership of the job.
 
-- Add Server-Sent Events endpoint for job updates
-- Replace frontend polling with live updates
-- Add cancel action
-- Add retry action for failed jobs
-- Mark interrupted running jobs safely on startup
+- Add Server-Sent Events endpoint for job updates `[done]`
+- Replace frontend polling with live updates `[done]`
+- Add cancel action `[done]`
+- Add retry action for failed jobs `[done]`
+- Mark interrupted running jobs safely on startup `[done]`
 
 ## Phase 5: Safe Move and Delete
 
@@ -97,9 +97,7 @@ Goal: improve day-to-day UX after the safe foundations are working.
 
 ## Immediate Next Tasks
 
-1. Add speed and ETA calculation for running copy jobs.
-2. Add a Server-Sent Events endpoint for job updates.
-3. Replace frontend job polling with live updates.
-4. Add cancel action for running jobs.
-5. Add retry action for failed jobs.
-6. Mark interrupted running jobs safely on startup.
+1. Implement move as copy, verify, then delete source.
+2. Add audit log entries for destructive operations.
+3. Detect permission denied, missing source, missing destination, and name conflicts.
+4. Add conflict policies: ask, skip, overwrite, rename, cancel.

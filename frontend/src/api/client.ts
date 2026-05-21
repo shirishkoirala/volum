@@ -24,6 +24,8 @@ export type Job = {
   destinationPath?: string;
   totalBytes: number;
   processedBytes: number;
+  speedBytesPerSecond?: number;
+  etaSeconds?: number;
   totalItems: number;
   processedItems: number;
   currentItem?: string;
@@ -86,6 +88,18 @@ export function createCopyJob(sourcePath: string, destinationPath: string) {
       conflictPolicy: 'ask',
       verifyMode: 'size'
     })
+  });
+}
+
+export function cancelJob(id: string) {
+  return requestVoid(`/api/jobs/${id}/cancel`, {
+    method: 'POST'
+  });
+}
+
+export function retryJob(id: string) {
+  return requestVoid(`/api/jobs/${id}/retry`, {
+    method: 'POST'
   });
 }
 

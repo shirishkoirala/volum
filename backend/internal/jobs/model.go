@@ -34,6 +34,8 @@ type Job struct {
 	DestinationPath *string    `json:"destinationPath,omitempty"`
 	TotalBytes      int64      `json:"totalBytes"`
 	ProcessedBytes  int64      `json:"processedBytes"`
+	SpeedBytesSec   float64    `json:"speedBytesPerSecond,omitempty"`
+	ETASeconds      *int64     `json:"etaSeconds,omitempty"`
 	TotalItems      int64      `json:"totalItems"`
 	ProcessedItems  int64      `json:"processedItems"`
 	CurrentItem     *string    `json:"currentItem,omitempty"`

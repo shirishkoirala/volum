@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -58,9 +60,11 @@ func (s *Server) routes() {
 		r.Get("/files/download", s.handleDownload)
 
 		r.Get("/jobs", s.handleJobs)
+		r.Get("/jobs/events", s.handleJobEvents)
 		r.Post("/jobs/copy", s.handleCreateCopyJob)
 		r.Get("/jobs/{id}", s.handleJob)
 		r.Post("/jobs/{id}/cancel", s.handleCancelJob)
+		r.Post("/jobs/{id}/retry", s.handleRetryJob)
 	})
 
 	if _, err := os.Stat("web/index.html"); err == nil {
@@ -167,6 +171,52 @@ func (s *Server) handleJobs(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"jobs": jobs})
 }
 
+func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "streaming is not supported"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	send := func() bool {
+		jobs, err := s.jobs.List(r.Context())
+		if err != nil {
+			_, _ = fmt.Fprintf(w, "event: error\ndata: %q\n\n", err.Error())
+			flusher.Flush()
+			return false
+		}
+		payload, err := json.Marshal(map[string]any{"jobs": jobs})
+		if err != nil {
+			_, _ = fmt.Fprintf(w, "event: error\ndata: %q\n\n", err.Error())
+			flusher.Flush()
+			return false
+		}
+		_, _ = fmt.Fprintf(w, "event: jobs\ndata: %s\n\n", payload)
+		flusher.Flush()
+		return true
+	}
+
+	if !send() {
+		return
+	}
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case <-ticker.C:
+			if !send() {
+				return
+			}
+		}
+	}
+}
+
 func (s *Server) handleCreateCopyJob(w http.ResponseWriter, r *http.Request) {
 	var req jobs.CreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -206,6 +256,14 @@ func (s *Server) handleJob(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleCancelJob(w http.ResponseWriter, r *http.Request) {
 	if err := s.jobs.Cancel(r.Context(), chi.URLParam(r, "id")); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleRetryJob(w http.ResponseWriter, r *http.Request) {
+	if err := s.jobs.Retry(r.Context(), chi.URLParam(r, "id")); err != nil {
 		writeError(w, err)
 		return
 	}

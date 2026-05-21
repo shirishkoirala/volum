@@ -112,6 +112,28 @@ func (s *Store) Cancel(ctx context.Context, id string) error {
 	return nil
 }
 
+func (s *Store) Retry(ctx context.Context, id string) error {
+	now := time.Now().UTC()
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, processed_bytes = 0, processed_items = 0,
+			current_item = NULL, error_message = NULL,
+			updated_at = ?, started_at = NULL, completed_at = NULL
+		WHERE id = ? AND status IN (?, ?)
+	`, StatusQueued, now, id, StatusFailed, StatusCancelled)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return s.ClearItems(ctx, id)
+}
+
 func (s *Store) ClaimNextCopyJob(ctx context.Context) (Job, bool, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -287,6 +309,16 @@ func scanJob(row scanner) (Job, error) {
 	}
 	if completed.Valid {
 		job.CompletedAt = &completed.Time
+	}
+	if job.StartedAt != nil && job.ProcessedBytes > 0 {
+		elapsed := time.Since(*job.StartedAt).Seconds()
+		if elapsed > 0 {
+			job.SpeedBytesSec = float64(job.ProcessedBytes) / elapsed
+			if job.Status == StatusRunning && job.TotalBytes > job.ProcessedBytes && job.SpeedBytesSec > 0 {
+				remaining := int64(float64(job.TotalBytes-job.ProcessedBytes) / job.SpeedBytesSec)
+				job.ETASeconds = &remaining
+			}
+		}
 	}
 	return job, nil
 }

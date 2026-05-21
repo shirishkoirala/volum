@@ -11,6 +11,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  RotateCcw,
   Search,
   Settings2,
   Trash2
@@ -18,6 +19,7 @@ import {
 import {
   FileEntry,
   Job,
+  cancelJob,
   createCopyJob,
   createFolder,
   deletePath,
@@ -25,7 +27,8 @@ import {
   getFiles,
   getJobs,
   getRoots,
-  renamePath
+  renamePath,
+  retryJob
 } from './api/client';
 
 type ViewMode = 'list' | 'grid';
@@ -141,14 +144,17 @@ export function App() {
   };
 
   useEffect(() => {
-    const loadJobs = () => {
-      getJobs()
-        .then((response) => setJobs(response.jobs ?? []))
-        .catch(() => undefined);
-    };
-    loadJobs();
-    const timer = window.setInterval(loadJobs, 5000);
-    return () => window.clearInterval(timer);
+    getJobs()
+      .then((response) => setJobs(response.jobs ?? []))
+      .catch(() => undefined);
+
+    const events = new EventSource('/api/jobs/events');
+    events.addEventListener('jobs', (event) => {
+      const response = JSON.parse((event as MessageEvent).data) as { jobs: Job[] | null };
+      setJobs(response.jobs ?? []);
+    });
+    events.onerror = () => undefined;
+    return () => events.close();
   }, []);
 
   const filteredEntries = useMemo(() => {
@@ -198,6 +204,22 @@ export function App() {
       for (const entry of selectedEntries) {
         await createCopyJob(entry.path, `${targetFolder}/${entry.name}`);
       }
+    });
+  };
+
+  const handleCancelJob = (id: string) => {
+    void runAction(async () => {
+      await cancelJob(id);
+      const response = await getJobs();
+      setJobs(response.jobs ?? []);
+    });
+  };
+
+  const handleRetryJob = (id: string) => {
+    void runAction(async () => {
+      await retryJob(id);
+      const response = await getJobs();
+      setJobs(response.jobs ?? []);
     });
   };
 
@@ -480,7 +502,9 @@ export function App() {
           {jobs.length === 0 ? (
             <p className="muted">No jobs yet</p>
           ) : (
-            jobs.map((job) => <JobItem job={job} key={job.id} />)
+            jobs.map((job) => (
+              <JobItem job={job} key={job.id} onCancel={handleCancelJob} onRetry={handleRetryJob} />
+            ))
           )}
         </div>
       </aside>
@@ -488,20 +512,53 @@ export function App() {
   );
 }
 
-function JobItem({ job }: { job: Job }) {
+function JobItem({
+  job,
+  onCancel,
+  onRetry
+}: {
+  job: Job;
+  onCancel: (id: string) => void;
+  onRetry: (id: string) => void;
+}) {
   const progress = job.totalBytes > 0 ? Math.round((job.processedBytes / job.totalBytes) * 100) : 0;
+  const canCancel = job.status === 'queued' || job.status === 'running';
+  const canRetry = job.status === 'failed' || job.status === 'cancelled';
 
   return (
     <article className="job-item">
-      <div>
+      <div className="job-title-row">
         <strong>{job.type}</strong>
         <span>{job.status}</span>
       </div>
       <div className="progress-track">
         <div className="progress-fill" style={{ width: `${progress}%` }} />
       </div>
+      <div className="job-meta">
+        <span>
+          {formatBytes(job.processedBytes)} / {formatBytes(job.totalBytes)}
+        </span>
+        {job.speedBytesPerSecond ? <span>{formatBytes(job.speedBytesPerSecond)}/s</span> : null}
+        {job.etaSeconds !== undefined ? <span>{formatDuration(job.etaSeconds)} left</span> : null}
+      </div>
       <p>{job.currentItem ?? job.sourcePath ?? job.id}</p>
       {job.errorMessage && <p className="job-error">{job.errorMessage}</p>}
+      {(canCancel || canRetry) && (
+        <div className="job-actions">
+          {canCancel && (
+            <button type="button" onClick={() => onCancel(job.id)}>
+              <Trash2 size={15} />
+              Cancel
+            </button>
+          )}
+          {canRetry && (
+            <button type="button" onClick={() => onRetry(job.id)}>
+              <RotateCcw size={15} />
+              Retry
+            </button>
+          )}
+        </div>
+      )}
     </article>
   );
 }
@@ -513,4 +570,16 @@ function formatBytes(value: number) {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
   return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+function formatDuration(totalSeconds: number) {
+  if (totalSeconds <= 0) {
+    return 'less than 1s';
+  }
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.round(totalSeconds % 60);
+  if (minutes === 0) {
+    return `${seconds}s`;
+  }
+  return `${minutes}m ${seconds}s`;
 }
