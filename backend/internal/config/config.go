@@ -9,9 +9,12 @@ import (
 )
 
 type Config struct {
-	Roots []string
-	DB    string
-	Port  string
+	Roots            []string
+	DB               string
+	Port             string
+	AdminPassword    string
+	ReadonlyPassword string
+	SessionSecret    string
 }
 
 func Load() (Config, error) {
@@ -33,7 +36,14 @@ func Load() (Config, error) {
 		return Config{}, errors.New("VOLUM_PORT must be a number")
 	}
 
-	return Config{Roots: roots, DB: db, Port: port}, nil
+	return Config{
+		Roots:            roots,
+		DB:               db,
+		Port:             port,
+		AdminPassword:    os.Getenv("VOLUM_ADMIN_PASSWORD"),
+		ReadonlyPassword: os.Getenv("VOLUM_READONLY_PASSWORD"),
+		SessionSecret:    os.Getenv("VOLUM_SESSION_SECRET"),
+	}, nil
 }
 
 func parseRoots(value string) ([]string, error) {

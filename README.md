@@ -56,7 +56,12 @@ npm run dev
 VOLUM_ROOTS=/mnt/storage,/mnt/data1,/mnt/data2,/mnt/backup,/opt/docker
 VOLUM_DB=/data/volum.db
 VOLUM_PORT=8090
+VOLUM_ADMIN_PASSWORD=change-me
+VOLUM_READONLY_PASSWORD=view-only
+VOLUM_SESSION_SECRET=replace-with-a-long-random-string
 ```
+
+Authentication is disabled when both password variables are empty. Set `VOLUM_ADMIN_PASSWORD` to require login and allow write operations only for the admin role. Set `VOLUM_READONLY_PASSWORD` to allow a browse/download-only account. Use a long random `VOLUM_SESSION_SECRET` so sessions survive restarts.
 
 ## Deployment
 
@@ -65,3 +70,5 @@ docker compose -f docker-compose.homelab.yml up --build
 ```
 
 The homelab Compose file exposes Volum on port `8090` and stores the SQLite database under `/opt/docker/volum`.
+
+For homelab use, expose Volum only over a private network such as Tailscale or WireGuard. Avoid publishing it directly to the public internet.

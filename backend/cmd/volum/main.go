@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/volum-app/volum/backend/internal/api"
+	"github.com/volum-app/volum/backend/internal/auth"
 	"github.com/volum-app/volum/backend/internal/config"
 	"github.com/volum-app/volum/backend/internal/files"
 	"github.com/volum-app/volum/backend/internal/jobs"
@@ -46,6 +47,10 @@ func run(log *slog.Logger) error {
 
 	jobStore := jobs.NewStore(db)
 	backgroundWorker := worker.New(jobStore, guard, log)
+	authService, err := auth.New(cfg.AdminPassword, cfg.ReadonlyPassword, cfg.SessionSecret)
+	if err != nil {
+		return err
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -56,7 +61,7 @@ func run(log *slog.Logger) error {
 	go backgroundWorker.Start(ctx)
 
 	filesService := files.NewService(guard)
-	server := api.New(filesService, jobStore, guard)
+	server := api.New(filesService, jobStore, guard, authService)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,

@@ -44,6 +44,12 @@ export type UploadResponse = {
   jobs: Job[] | null;
 };
 
+export type Session = {
+  authEnabled: boolean;
+  authenticated: boolean;
+  role?: 'admin' | 'readonly' | '';
+};
+
 export type ConflictPolicy = 'ask' | 'skip' | 'overwrite' | 'rename' | 'cancel';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -74,6 +80,24 @@ async function requestVoid(url: string, options?: RequestInit): Promise<void> {
 
 export function getRoots() {
   return request<RootResponse>('/api/roots');
+}
+
+export function getSession() {
+  return request<Session>('/api/session');
+}
+
+export function login(role: 'admin' | 'readonly', password: string) {
+  return request<Session>('/api/login', {
+    method: 'POST',
+    body: JSON.stringify({ role, password })
+  });
+}
+
+export function logout() {
+  return request<Session>('/api/logout', {
+    method: 'POST',
+    body: JSON.stringify({})
+  });
 }
 
 export function getFiles(path: string, hidden: boolean) {

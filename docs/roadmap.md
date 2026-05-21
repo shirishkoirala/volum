@@ -76,12 +76,12 @@ Goal: support common browser-to-server workflows.
 
 Goal: make Volum safe enough for a homelab service.
 
-- Login and logout
-- Session or JWT authentication
-- Admin role
-- Readonly role
-- Protect write APIs
-- Document recommended Tailscale-only exposure
+- Login and logout `[done]`
+- Session or JWT authentication `[done]`
+- Admin role `[done]`
+- Readonly role `[done]`
+- Protect write APIs `[done]`
+- Document recommended Tailscale-only exposure `[done]`
 
 ## Phase 8: Preview and Polish
 
@@ -97,8 +97,7 @@ Goal: improve day-to-day UX after the safe foundations are working.
 
 ## Immediate Next Tasks
 
-1. Add login and logout.
-2. Add session or JWT authentication.
-3. Add admin and readonly roles.
-4. Protect write APIs.
-5. Document recommended Tailscale-only exposure.
+1. Add image preview.
+2. Add text and code preview.
+3. Add video and audio preview.
+4. Improve responsive layout and visual polish.

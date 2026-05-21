@@ -10,6 +10,10 @@ services:
       - VOLUM_ROOTS=/storage
       - VOLUM_DB=/data/volum.db
       - VOLUM_PORT=8090
+      # Set these to enable login in dev.
+      # - VOLUM_ADMIN_PASSWORD=admin
+      # - VOLUM_READONLY_PASSWORD=readonly
+      # - VOLUM_SESSION_SECRET=dev-secret
 
   frontend:
     image: node:22-alpine

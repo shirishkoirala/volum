@@ -1,4 +1,4 @@
-import { DragEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { DragEvent, FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronRight,
   Copy,
@@ -8,6 +8,7 @@ import {
   Grid2X2,
   HardDrive,
   List,
+  LogOut,
   MoveRight,
   Pencil,
   Plus,
@@ -31,7 +32,11 @@ import {
   getFiles,
   getJobs,
   getRoots,
+  getSession,
+  login,
+  logout,
   renamePath,
+  Session,
   retryJob,
   uploadFiles
 } from './api/client';
@@ -63,9 +68,22 @@ export function App() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [draggingUpload, setDraggingUpload] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canWrite = session?.role === 'admin';
 
   useEffect(() => {
+    getSession()
+      .then((value) => setSession(value))
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setSessionLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (sessionLoading || (session?.authEnabled && !session.authenticated)) {
+      return;
+    }
     getRoots()
       .then((response) => {
         const safeRoots = response.roots ?? [];
@@ -73,7 +91,7 @@ export function App() {
         setCurrentPath(safeRoots[0] ?? '');
       })
       .catch((err: Error) => setError(err.message));
-  }, []);
+  }, [session, sessionLoading]);
 
   useEffect(() => {
     if (!currentPath) {
@@ -152,6 +170,9 @@ export function App() {
   };
 
   const handleUploadFiles = (files: FileList | File[]) => {
+    if (!canWrite) {
+      return;
+    }
     const selectedFiles = Array.from(files);
     if (selectedFiles.length === 0 || !currentPath) {
       return;
@@ -163,7 +184,25 @@ export function App() {
     });
   };
 
+  const handleLoggedIn = (nextSession: Session) => {
+    setSession(nextSession);
+    refresh();
+  };
+
+  const handleLogout = () => {
+    void logout().then((nextSession) => {
+      setSession(nextSession);
+      setRoots([]);
+      setCurrentPath('');
+      setEntries([]);
+      setJobs([]);
+    });
+  };
+
   useEffect(() => {
+    if (sessionLoading || (session?.authEnabled && !session.authenticated)) {
+      return;
+    }
     getJobs()
       .then((response) => setJobs(response.jobs ?? []))
       .catch(() => undefined);
@@ -175,7 +214,7 @@ export function App() {
     });
     events.onerror = () => undefined;
     return () => events.close();
-  }, []);
+  }, [session, sessionLoading]);
 
   const filteredEntries = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -314,7 +353,7 @@ export function App() {
 
   const handleFileAreaDragOver = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
-    if (event.dataTransfer.types.includes('Files')) {
+    if (canWrite && event.dataTransfer.types.includes('Files')) {
       setDraggingUpload(true);
     }
   };
@@ -328,6 +367,9 @@ export function App() {
   const handleFileAreaDrop = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     setDraggingUpload(false);
+    if (!canWrite) {
+      return;
+    }
     handleUploadFiles(event.dataTransfer.files);
   };
 
@@ -352,6 +394,14 @@ export function App() {
     }));
   }, [currentPath]);
 
+  if (sessionLoading) {
+    return <div className="auth-shell">Loading...</div>;
+  }
+
+  if (session?.authEnabled && !session.authenticated) {
+    return <LoginScreen onLoggedIn={handleLoggedIn} />;
+  }
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -360,6 +410,7 @@ export function App() {
           <div>
             <strong>Volum</strong>
             <span>File manager</span>
+            {session?.authEnabled && <span>{session.role}</span>}
           </div>
         </div>
 
@@ -395,6 +446,7 @@ export function App() {
           <div className="toolbar">
             <button
               className="icon-button"
+              disabled={!canWrite}
               onClick={handleCreateFolder}
               title="Create folder"
               type="button"
@@ -403,6 +455,7 @@ export function App() {
             </button>
             <button
               className="icon-button"
+              disabled={!canWrite}
               onClick={() => fileInputRef.current?.click()}
               title="Upload files"
               type="button"
@@ -423,7 +476,7 @@ export function App() {
             />
             <button
               className="icon-button"
-              disabled={!canRename}
+              disabled={!canWrite || !canRename}
               onClick={handleRename}
               title="Rename selected item"
               type="button"
@@ -441,7 +494,7 @@ export function App() {
             </button>
             <button
               className="icon-button"
-              disabled={!canCopy}
+              disabled={!canWrite || !canCopy}
               onClick={handleCopy}
               title="Copy selected item"
               type="button"
@@ -450,7 +503,7 @@ export function App() {
             </button>
             <button
               className="icon-button"
-              disabled={!canMove}
+              disabled={!canWrite || !canMove}
               onClick={handleMove}
               title="Move selected item"
               type="button"
@@ -459,7 +512,7 @@ export function App() {
             </button>
             <button
               className="icon-button danger"
-              disabled={!canDelete}
+              disabled={!canWrite || !canDelete}
               onClick={handleDelete}
               title="Delete selected item"
               type="button"
@@ -517,6 +570,16 @@ export function App() {
             >
               {viewMode === 'list' ? <Grid2X2 size={18} /> : <List size={18} />}
             </button>
+            {session?.authEnabled && (
+              <button
+                className="icon-button"
+                onClick={handleLogout}
+                title="Log out"
+                type="button"
+              >
+                <LogOut size={18} />
+              </button>
+            )}
           </div>
         </header>
 
@@ -569,7 +632,7 @@ export function App() {
             style={{ left: contextMenu.x, top: contextMenu.y }}
             onClick={(event) => event.stopPropagation()}
           >
-            <button type="button" onClick={handleRename} disabled={!canRename}>
+            <button type="button" onClick={handleRename} disabled={!canWrite || !canRename}>
               <Pencil size={16} />
               Rename
             </button>
@@ -577,15 +640,15 @@ export function App() {
               <Download size={16} />
               Download
             </button>
-            <button type="button" onClick={handleCopy} disabled={!canCopy}>
+            <button type="button" onClick={handleCopy} disabled={!canWrite || !canCopy}>
               <Copy size={16} />
               Copy
             </button>
-            <button type="button" onClick={handleMove} disabled={!canMove}>
+            <button type="button" onClick={handleMove} disabled={!canWrite || !canMove}>
               <MoveRight size={16} />
               Move
             </button>
-            <button type="button" className="danger" onClick={handleDelete} disabled={!canDelete}>
+            <button type="button" className="danger" onClick={handleDelete} disabled={!canWrite || !canDelete}>
               <Trash2 size={16} />
               Delete
             </button>
@@ -608,6 +671,46 @@ export function App() {
           )}
         </div>
       </aside>
+    </main>
+  );
+}
+
+function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void }) {
+  const [role, setRole] = useState<'admin' | 'readonly'>('admin');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    setSubmitting(true);
+    login(role, password)
+      .then(onLoggedIn)
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setSubmitting(false));
+  };
+
+  return (
+    <main className="auth-shell">
+      <form className="login-panel" onSubmit={handleSubmit}>
+        <img className="brand-mark" src={appIcon} alt="" />
+        <h1>Volum</h1>
+        <select value={role} onChange={(event) => setRole(event.target.value as 'admin' | 'readonly')}>
+          <option value="admin">Admin</option>
+          <option value="readonly">Readonly</option>
+        </select>
+        <input
+          autoFocus
+          placeholder="Password"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
+        {error && <p className="login-error">{error}</p>}
+        <button disabled={submitting || password.length === 0} type="submit">
+          Log in
+        </button>
+      </form>
     </main>
   );
 }

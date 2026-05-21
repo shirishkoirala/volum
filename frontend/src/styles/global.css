@@ -50,6 +50,60 @@ button {
   padding: 24px;
 }
 
+.auth-shell {
+  align-items: center;
+  background: #f6f7f8;
+  color: #192026;
+  display: flex;
+  min-height: 100vh;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-panel {
+  background: white;
+  border: 1px solid #dde3e7;
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  max-width: 360px;
+  padding: 28px;
+  width: 100%;
+}
+
+.login-panel h1 {
+  font-size: 28px;
+  margin: 0;
+}
+
+.login-panel input,
+.login-panel select {
+  border: 1px solid #d9e0e5;
+  border-radius: 8px;
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.login-panel button {
+  background: #0f766e;
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  font-weight: 700;
+  min-height: 42px;
+}
+
+.login-panel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.login-error {
+  color: #9d1c1c;
+  font-size: 13px;
+  margin: 0;
+}
+
 .brand {
   align-items: center;
   display: flex;

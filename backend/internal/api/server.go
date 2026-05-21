@@ -17,6 +17,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/volum-app/volum/backend/internal/auth"
 	"github.com/volum-app/volum/backend/internal/files"
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/security"
@@ -27,14 +28,16 @@ type Server struct {
 	files  *files.Service
 	jobs   *jobs.Store
 	guard  *security.RootGuard
+	auth   *auth.Service
 }
 
-func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard) *Server {
+func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service) *Server {
 	s := &Server{
 		router: chi.NewRouter(),
 		files:  filesService,
 		jobs:   jobStore,
 		guard:  guard,
+		auth:   authService,
 	}
 	s.routes()
 	return s
@@ -55,21 +58,32 @@ func (s *Server) routes() {
 	})
 
 	s.router.Route("/api", func(r chi.Router) {
-		r.Get("/roots", s.handleRoots)
-		r.Get("/files", s.handleFiles)
-		r.Post("/files/folder", s.handleCreateFolder)
-		r.Patch("/files/rename", s.handleRename)
-		r.Delete("/files", s.handleDelete)
-		r.Get("/files/download", s.handleDownload)
-		r.Post("/files/upload", s.handleUpload)
+		r.Get("/session", s.handleSession)
+		r.Post("/login", s.handleLogin)
+		r.Post("/logout", s.handleLogout)
 
-		r.Get("/jobs", s.handleJobs)
-		r.Get("/jobs/events", s.handleJobEvents)
-		r.Post("/jobs/copy", s.handleCreateCopyJob)
-		r.Post("/jobs/move", s.handleCreateMoveJob)
-		r.Get("/jobs/{id}", s.handleJob)
-		r.Post("/jobs/{id}/cancel", s.handleCancelJob)
-		r.Post("/jobs/{id}/retry", s.handleRetryJob)
+		r.Group(func(r chi.Router) {
+			r.Use(s.requireUser)
+			r.Get("/roots", s.handleRoots)
+			r.Get("/files", s.handleFiles)
+			r.Get("/files/download", s.handleDownload)
+			r.Get("/jobs", s.handleJobs)
+			r.Get("/jobs/events", s.handleJobEvents)
+			r.Get("/jobs/{id}", s.handleJob)
+		})
+
+		r.Group(func(r chi.Router) {
+			r.Use(s.requireUser)
+			r.Use(s.requireAdmin)
+			r.Post("/files/folder", s.handleCreateFolder)
+			r.Patch("/files/rename", s.handleRename)
+			r.Delete("/files", s.handleDelete)
+			r.Post("/files/upload", s.handleUpload)
+			r.Post("/jobs/copy", s.handleCreateCopyJob)
+			r.Post("/jobs/move", s.handleCreateMoveJob)
+			r.Post("/jobs/{id}/cancel", s.handleCancelJob)
+			r.Post("/jobs/{id}/retry", s.handleRetryJob)
+		})
 	})
 
 	if _, err := os.Stat("web/index.html"); err == nil {
@@ -91,6 +105,62 @@ func (s *Server) routes() {
 
 func (s *Server) handleRoots(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"roots": s.files.Roots()})
+}
+
+func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
+	user, ok := s.auth.UserFromRequest(r)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"authEnabled":   s.auth.Enabled(),
+		"authenticated": ok,
+		"role":          user.Role,
+	})
+}
+
+func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Role     auth.Role `json:"role"`
+		Password string    `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+	token, user, ok := s.auth.Login(req.Role, req.Password)
+	if !ok {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
+		return
+	}
+	if s.auth.Enabled() {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "volum_session",
+			Value:    token,
+			Path:     "/",
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   60 * 60 * 24 * 7,
+		})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"authEnabled":   s.auth.Enabled(),
+		"authenticated": true,
+		"role":          user.Role,
+	})
+}
+
+func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "volum_session",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+	writeJSON(w, http.StatusOK, map[string]any{
+		"authEnabled":   s.auth.Enabled(),
+		"authenticated": !s.auth.Enabled(),
+		"role":          "",
+	})
 }
 
 func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
@@ -553,6 +623,28 @@ func writeError(w http.ResponseWriter, err error) {
 	default:
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
+}
+
+func (s *Server) requireUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := s.auth.UserFromRequest(r)
+		if !ok {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "authentication required"})
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(s.auth.WithUser(r.Context(), user)))
+	})
+}
+
+func (s *Server) requireAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := auth.UserFromContext(r.Context())
+		if !ok || user.Role != auth.RoleAdmin {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "admin role required"})
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func validUploadName(name string) bool {
