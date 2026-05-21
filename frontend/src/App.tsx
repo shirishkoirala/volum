@@ -3,6 +3,7 @@ import {
   ChevronRight,
   Copy,
   Download,
+  Eye,
   File,
   Folder,
   Grid2X2,
@@ -33,6 +34,10 @@ import {
   getJobs,
   getRoots,
   getSession,
+  isAudioExtension,
+  isImageExtension,
+  isTextExtension,
+  isVideoExtension,
   login,
   logout,
   renamePath,
@@ -41,6 +46,7 @@ import {
   uploadFiles
 } from './api/client';
 import appIcon from './assets/icon-light.png';
+import { PreviewModal } from './components/PreviewModal';
 
 type ViewMode = 'list' | 'grid';
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
@@ -70,6 +76,7 @@ export function App() {
   const [draggingUpload, setDraggingUpload] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
+  const [previewEntry, setPreviewEntry] = useState<FileEntry | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canWrite = session?.role === 'admin';
 
@@ -169,6 +176,19 @@ export function App() {
     window.location.href = downloadUrl(entry.path);
   };
 
+  const handlePreview = () => {
+    const entry = selectedEntries[0];
+    if (selectedEntries.length !== 1 || !entry || entry.type !== 'file') {
+      return;
+    }
+    const ext = entry.name.toLowerCase();
+    if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext)) {
+      setPreviewEntry(entry);
+    } else {
+      window.open(downloadUrl(entry.path), '_blank');
+    }
+  };
+
   const handleUploadFiles = (files: FileList | File[]) => {
     if (!canWrite) {
       return;
@@ -250,6 +270,7 @@ export function App() {
   const canDelete = selectedEntries.length > 0;
   const canCopy = selectedEntries.length > 0;
   const canMove = selectedEntries.length > 0;
+  const canPreview = selectedEntries.length === 1 && selectedEntries[0].type === 'file';
 
   const handleCopy = () => {
     if (!canCopy) {
@@ -346,8 +367,12 @@ export function App() {
       setSelectedPaths([]);
       setContextMenu(null);
     }
-    if (event.key === 'Enter' && selectedEntries.length === 1 && selectedEntries[0].type === 'directory') {
-      setCurrentPath(selectedEntries[0].path);
+    if (event.key === 'Enter' && selectedEntries.length === 1) {
+      if (selectedEntries[0].type === 'directory') {
+        setCurrentPath(selectedEntries[0].path);
+      } else {
+        handlePreview();
+      }
     }
   };
 
@@ -402,7 +427,7 @@ export function App() {
     return <LoginScreen onLoggedIn={handleLoggedIn} />;
   }
 
-  return (
+  const shell = (
     <main className="app-shell">
       <aside className="sidebar">
         <div className="brand">
@@ -491,6 +516,15 @@ export function App() {
               type="button"
             >
               <Download size={18} />
+            </button>
+            <button
+              className="icon-button"
+              disabled={!canPreview}
+              onClick={handlePreview}
+              title="Preview selected file"
+              type="button"
+            >
+              <Eye size={18} />
             </button>
             <button
               className="icon-button"
@@ -612,7 +646,18 @@ export function App() {
                 key={entry.path}
                 onClick={(event) => handleSelectEntry(entry, event)}
                 onContextMenu={(event) => handleContextMenu(entry, event)}
-                onDoubleClick={() => entry.type === 'directory' && setCurrentPath(entry.path)}
+                onDoubleClick={() => {
+                  if (entry.type === 'directory') {
+                    setCurrentPath(entry.path);
+                    return;
+                  }
+                  const ext = entry.name.toLowerCase();
+                  if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext)) {
+                    setPreviewEntry(entry);
+                  } else {
+                    window.open(downloadUrl(entry.path), '_blank');
+                  }
+                }}
                 type="button"
               >
                 {entry.type === 'directory' ? <Folder size={22} /> : <File size={22} />}
@@ -639,6 +684,10 @@ export function App() {
             <button type="button" onClick={handleDownload} disabled={!canDownload}>
               <Download size={16} />
               Download
+            </button>
+            <button type="button" onClick={handlePreview} disabled={!canPreview}>
+              <Eye size={16} />
+              Preview
             </button>
             <button type="button" onClick={handleCopy} disabled={!canWrite || !canCopy}>
               <Copy size={16} />
@@ -673,6 +722,17 @@ export function App() {
       </aside>
     </main>
   );
+
+  if (previewEntry) {
+    return (
+      <>
+        {shell}
+        <PreviewModal entry={previewEntry} onClose={() => setPreviewEntry(null)} />
+      </>
+    );
+  }
+
+  return shell;
 }
 
 function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void }) {

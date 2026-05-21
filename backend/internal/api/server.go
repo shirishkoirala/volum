@@ -67,6 +67,7 @@ func (s *Server) routes() {
 			r.Get("/roots", s.handleRoots)
 			r.Get("/files", s.handleFiles)
 			r.Get("/files/download", s.handleDownload)
+			r.Get("/files/raw", s.handleRaw)
 			r.Get("/jobs", s.handleJobs)
 			r.Get("/jobs/events", s.handleJobEvents)
 			r.Get("/jobs/{id}", s.handleJob)
@@ -243,6 +244,17 @@ func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(info.Name()))
+	http.ServeFile(w, r, path)
+}
+
+func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
+	path, info, err := s.files.DownloadPath(r.URL.Query().Get("path"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "inline; filename="+strconv.Quote(info.Name()))
 	http.ServeFile(w, r, path)
 }
 
