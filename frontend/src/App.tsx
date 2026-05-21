@@ -400,18 +400,23 @@ export function App() {
     if (!canCopy) {
       return;
     }
-    const destinationFolder = window.prompt('Destination folder path', currentPath);
-    if (destinationFolder === null || destinationFolder.trim() === '') {
+    const input = window.prompt('Destination folder path (use | for multiple destinations)', currentPath);
+    if (input === null || input.trim() === '') {
       return;
     }
     const conflictPolicy = promptConflictPolicy('ask');
     if (!conflictPolicy) {
       return;
     }
-    const targetFolder = destinationFolder.trim().replace(/\/+$/, '');
+    const destinations = input.split('|').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
+    if (destinations.length === 0) {
+      return;
+    }
     void runAction(async () => {
       for (const entry of selectedEntries) {
-        await createCopyJob(entry.path, `${targetFolder}/${entry.name}`, conflictPolicy);
+        for (const dest of destinations) {
+          await createCopyJob(entry.path, `${dest}/${entry.name}`, conflictPolicy);
+        }
       }
     });
   };
@@ -420,18 +425,23 @@ export function App() {
     if (!canMove) {
       return;
     }
-    const destinationFolder = window.prompt('Destination folder path', currentPath);
-    if (destinationFolder === null || destinationFolder.trim() === '') {
+    const input = window.prompt('Destination folder path (use | for multiple destinations)', currentPath);
+    if (input === null || input.trim() === '') {
       return;
     }
     const conflictPolicy = promptConflictPolicy('ask');
     if (!conflictPolicy) {
       return;
     }
-    const targetFolder = destinationFolder.trim().replace(/\/+$/, '');
+    const destinations = input.split('|').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
+    if (destinations.length === 0) {
+      return;
+    }
     void runAction(async () => {
       for (const entry of selectedEntries) {
-        await createMoveJob(entry.path, `${targetFolder}/${entry.name}`, conflictPolicy);
+        for (const dest of destinations) {
+          await createMoveJob(entry.path, `${dest}/${entry.name}`, conflictPolicy);
+        }
       }
     });
   };
