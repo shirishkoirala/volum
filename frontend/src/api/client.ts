@@ -40,6 +40,8 @@ export type JobsResponse = {
   jobs: Job[] | null;
 };
 
+export type ConflictPolicy = 'ask' | 'skip' | 'overwrite' | 'rename' | 'cancel';
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -79,13 +81,25 @@ export function getJobs() {
   return request<JobsResponse>('/api/jobs');
 }
 
-export function createCopyJob(sourcePath: string, destinationPath: string) {
+export function createCopyJob(sourcePath: string, destinationPath: string, conflictPolicy: ConflictPolicy = 'ask') {
   return request<Job>('/api/jobs/copy', {
     method: 'POST',
     body: JSON.stringify({
       sourcePath,
       destinationPath,
-      conflictPolicy: 'ask',
+      conflictPolicy,
+      verifyMode: 'size'
+    })
+  });
+}
+
+export function createMoveJob(sourcePath: string, destinationPath: string, conflictPolicy: ConflictPolicy = 'ask') {
+  return request<Job>('/api/jobs/move', {
+    method: 'POST',
+    body: JSON.stringify({
+      sourcePath,
+      destinationPath,
+      conflictPolicy,
       verifyMode: 'size'
     })
   });
@@ -117,10 +131,10 @@ export function renamePath(path: string, newName: string) {
   });
 }
 
-export function deletePath(path: string) {
+export function deletePath(path: string, confirmName: string) {
   return requestVoid('/api/files', {
     method: 'DELETE',
-    body: JSON.stringify({ path })
+    body: JSON.stringify({ path, confirmName })
   });
 }
 

@@ -153,6 +153,9 @@ func (s *Service) Delete(path string) error {
 	if s.isRoot(resolved) {
 		return ErrRootOperation
 	}
+	if _, err := os.Stat(resolved); err != nil {
+		return err
+	}
 	return os.RemoveAll(resolved)
 }
 

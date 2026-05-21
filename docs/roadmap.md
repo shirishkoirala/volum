@@ -56,11 +56,11 @@ Goal: make progress visible without browser ownership of the job.
 
 Goal: support destructive operations without unsafe shortcuts.
 
-- Implement move as copy, verify, then delete source
-- Delete only after explicit confirmation
-- Add audit log entries for destructive operations
-- Detect permission denied, missing source, missing destination, and name conflicts
-- Add conflict policies: ask, skip, overwrite, rename, cancel
+- Implement move as copy, verify, then delete source `[done]`
+- Delete only after explicit confirmation `[done]`
+- Add audit log entries for destructive operations `[done]`
+- Detect permission denied, missing source, missing destination, and name conflicts `[done]`
+- Add conflict policies: ask, skip, overwrite, rename, cancel `[done]`
 
 ## Phase 6: Uploads
 
@@ -97,7 +97,7 @@ Goal: improve day-to-day UX after the safe foundations are working.
 
 ## Immediate Next Tasks
 
-1. Implement move as copy, verify, then delete source.
-2. Add audit log entries for destructive operations.
-3. Detect permission denied, missing source, missing destination, and name conflicts.
-4. Add conflict policies: ask, skip, overwrite, rename, cancel.
+1. Upload files to the current folder.
+2. Add drag and drop upload.
+3. Handle large uploads as persistent jobs.
+4. Prevent path traversal in upload targets.

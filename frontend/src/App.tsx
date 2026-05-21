@@ -8,6 +8,7 @@ import {
   Grid2X2,
   HardDrive,
   List,
+  MoveRight,
   Pencil,
   Plus,
   RefreshCw,
@@ -17,11 +18,13 @@ import {
   Trash2
 } from 'lucide-react';
 import {
+  ConflictPolicy,
   FileEntry,
   Job,
   cancelJob,
   createCopyJob,
   createFolder,
+  createMoveJob,
   deletePath,
   downloadUrl,
   getFiles,
@@ -130,7 +133,7 @@ export function App() {
     }
     void runAction(async () => {
       for (const entry of selectedEntries) {
-        await deletePath(entry.path);
+        await deletePath(entry.path, entry.name);
       }
     });
   };
@@ -190,6 +193,7 @@ export function App() {
   const canDownload = selectedEntries.length === 1 && selectedEntries[0].type === 'file';
   const canDelete = selectedEntries.length > 0;
   const canCopy = selectedEntries.length > 0;
+  const canMove = selectedEntries.length > 0;
 
   const handleCopy = () => {
     if (!canCopy) {
@@ -199,10 +203,34 @@ export function App() {
     if (destinationFolder === null || destinationFolder.trim() === '') {
       return;
     }
+    const conflictPolicy = promptConflictPolicy('ask');
+    if (!conflictPolicy) {
+      return;
+    }
     const targetFolder = destinationFolder.trim().replace(/\/+$/, '');
     void runAction(async () => {
       for (const entry of selectedEntries) {
-        await createCopyJob(entry.path, `${targetFolder}/${entry.name}`);
+        await createCopyJob(entry.path, `${targetFolder}/${entry.name}`, conflictPolicy);
+      }
+    });
+  };
+
+  const handleMove = () => {
+    if (!canMove) {
+      return;
+    }
+    const destinationFolder = window.prompt('Destination folder path', currentPath);
+    if (destinationFolder === null || destinationFolder.trim() === '') {
+      return;
+    }
+    const conflictPolicy = promptConflictPolicy('ask');
+    if (!conflictPolicy) {
+      return;
+    }
+    const targetFolder = destinationFolder.trim().replace(/\/+$/, '');
+    void runAction(async () => {
+      for (const entry of selectedEntries) {
+        await createMoveJob(entry.path, `${targetFolder}/${entry.name}`, conflictPolicy);
       }
     });
   };
@@ -365,6 +393,15 @@ export function App() {
               <Copy size={18} />
             </button>
             <button
+              className="icon-button"
+              disabled={!canMove}
+              onClick={handleMove}
+              title="Move selected item"
+              type="button"
+            >
+              <MoveRight size={18} />
+            </button>
+            <button
               className="icon-button danger"
               disabled={!canDelete}
               onClick={handleDelete}
@@ -485,6 +522,10 @@ export function App() {
               <Copy size={16} />
               Copy
             </button>
+            <button type="button" onClick={handleMove} disabled={!canMove}>
+              <MoveRight size={16} />
+              Move
+            </button>
             <button type="button" className="danger" onClick={handleDelete} disabled={!canDelete}>
               <Trash2 size={16} />
               Delete
@@ -582,4 +623,23 @@ function formatDuration(totalSeconds: number) {
     return `${seconds}s`;
   }
   return `${minutes}m ${seconds}s`;
+}
+
+function promptConflictPolicy(defaultPolicy: ConflictPolicy): ConflictPolicy | null {
+  const value = window.prompt('Conflict policy: ask, skip, overwrite, rename, cancel', defaultPolicy);
+  if (value === null) {
+    return null;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === 'ask' ||
+    normalized === 'skip' ||
+    normalized === 'overwrite' ||
+    normalized === 'rename' ||
+    normalized === 'cancel'
+  ) {
+    return normalized;
+  }
+  window.alert('Conflict policy must be ask, skip, overwrite, rename, or cancel.');
+  return null;
 }

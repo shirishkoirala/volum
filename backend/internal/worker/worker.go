@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/volum-app/volum/backend/internal/jobs"
@@ -45,19 +46,19 @@ func (w *Worker) Start(ctx context.Context) {
 }
 
 func (w *Worker) runOnce(ctx context.Context) {
-	job, ok, err := w.store.ClaimNextCopyJob(ctx)
+	job, ok, err := w.store.ClaimNextTransferJob(ctx)
 	if err != nil {
-		w.log.Error("claim copy job failed", "error", err)
+		w.log.Error("claim transfer job failed", "error", err)
 		return
 	}
 	if !ok {
 		return
 	}
 
-	if err := w.processCopy(ctx, job); err != nil {
-		w.log.Error("copy job failed", "job_id", job.ID, "error", err)
+	if err := w.processTransfer(ctx, job); err != nil {
+		w.log.Error("transfer job failed", "job_id", job.ID, "error", err)
 		if failErr := w.store.FailJob(ctx, job.ID, err); failErr != nil {
-			w.log.Error("mark copy job failed", "job_id", job.ID, "error", failErr)
+			w.log.Error("mark transfer job failed", "job_id", job.ID, "error", failErr)
 		}
 	}
 }
@@ -70,9 +71,12 @@ type copyItem struct {
 	Size        int64
 }
 
-func (w *Worker) processCopy(ctx context.Context, job jobs.Job) error {
+func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 	if job.SourcePath == nil || job.DestinationPath == nil {
-		return errors.New("copy job requires source and destination paths")
+		return errors.New("transfer job requires source and destination paths")
+	}
+	if job.Type == jobs.TypeMove && job.ConflictPolicy == "skip" {
+		return errors.New("skip conflict policy is not supported for move jobs")
 	}
 
 	source, err := w.guard.Resolve(*job.SourcePath)
@@ -83,10 +87,21 @@ func (w *Worker) processCopy(ctx context.Context, job jobs.Job) error {
 	if err != nil {
 		return err
 	}
-	if _, err := os.Stat(destination); err == nil {
-		return fmt.Errorf("destination already exists: %s", destination)
-	} else if !errors.Is(err, os.ErrNotExist) {
+	if job.Type == jobs.TypeMove && w.isRoot(source) {
+		return errors.New("operation is not allowed on a configured root")
+	}
+	if containsPath(source, destination) {
+		return errors.New("destination cannot be inside the source path")
+	}
+	if policy := job.ConflictPolicy; policy == "cancel" {
+		return errors.New("transfer cancelled by conflict policy")
+	} else if resolvedDestination, err := w.resolveConflictDestination(ctx, destination, policy); err != nil {
+		if errors.Is(err, errSkipDestination) {
+			return w.store.CompleteJob(ctx, job.ID)
+		}
 		return err
+	} else {
+		destination = resolvedDestination
 	}
 
 	items, err := w.planCopy(source, destination)
@@ -95,6 +110,9 @@ func (w *Worker) processCopy(ctx context.Context, job jobs.Job) error {
 	}
 	if len(items) == 0 {
 		if err := os.MkdirAll(destination, 0o755); err != nil {
+			return err
+		}
+		if err := w.finishMove(ctx, job, source); err != nil {
 			return err
 		}
 		return w.store.CompleteJob(ctx, job.ID)
@@ -136,7 +154,7 @@ func (w *Worker) processCopy(ctx context.Context, job jobs.Job) error {
 			return nil
 		}
 
-		copied, err := w.copyOne(ctx, job.ID, item, processedBytes, processedItems)
+		copied, err := w.copyOne(ctx, job, item, processedBytes, processedItems)
 		if err != nil {
 			message := err.Error()
 			_ = w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusFailed, copied, &message)
@@ -162,6 +180,9 @@ func (w *Worker) processCopy(ctx context.Context, job jobs.Job) error {
 		}
 	}
 
+	if err := w.finishMove(ctx, job, source); err != nil {
+		return err
+	}
 	return w.store.CompleteJob(ctx, job.ID)
 }
 
@@ -212,14 +233,20 @@ func newCopyItem(source, destination string, size int64) copyItem {
 	}
 }
 
-func (w *Worker) copyOne(ctx context.Context, jobID string, item copyItem, baseBytes, processedItems int64) (int64, error) {
+func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseBytes, processedItems int64) (int64, error) {
 	if err := w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusRunning, 0, nil); err != nil {
 		return 0, err
 	}
-	if _, err := os.Stat(item.Destination); err == nil {
-		return 0, fmt.Errorf("destination already exists: %s", item.Destination)
-	} else if !errors.Is(err, os.ErrNotExist) {
+	if policy := job.ConflictPolicy; policy == "cancel" {
+		return 0, errors.New("transfer cancelled by conflict policy")
+	} else if destination, err := w.resolveConflictDestination(ctx, item.Destination, policy); err != nil {
+		if errors.Is(err, errSkipDestination) {
+			return 0, nil
+		}
 		return 0, err
+	} else {
+		item.Destination = destination
+		item.Temp = filepath.Join(filepath.Dir(item.Destination), ".volum-tmp", filepath.Base(item.Destination)+".partial")
 	}
 
 	if err := os.MkdirAll(filepath.Dir(item.Temp), 0o755); err != nil {
@@ -244,7 +271,7 @@ func (w *Worker) copyOne(ctx context.Context, jobID string, item copyItem, baseB
 			temp.Close()
 			return copied, ctx.Err()
 		}
-		cancelled, err := w.store.IsCancelled(ctx, jobID)
+		cancelled, err := w.store.IsCancelled(ctx, job.ID)
 		if err != nil {
 			temp.Close()
 			return copied, err
@@ -270,7 +297,7 @@ func (w *Worker) copyOne(ctx context.Context, jobID string, item copyItem, baseB
 				temp.Close()
 				return copied, err
 			}
-			if err := w.store.UpdateJobProgress(ctx, jobID, baseBytes+copied, processedItems, item.Source); err != nil {
+			if err := w.store.UpdateJobProgress(ctx, job.ID, baseBytes+copied, processedItems, item.Source); err != nil {
 				temp.Close()
 				return copied, err
 			}
@@ -308,4 +335,82 @@ func (w *Worker) copyOne(ctx context.Context, jobID string, item copyItem, baseB
 	}
 	_ = os.Remove(filepath.Dir(item.Temp))
 	return copied, nil
+}
+
+var errSkipDestination = errors.New("destination skipped by conflict policy")
+
+func (w *Worker) resolveConflictDestination(ctx context.Context, destination, policy string) (string, error) {
+	if policy == "" {
+		policy = "ask"
+	}
+	if _, err := os.Stat(destination); err == nil {
+		switch policy {
+		case "skip":
+			return "", errSkipDestination
+		case "overwrite":
+			if err := w.store.CreateAuditLog(ctx, "overwrite", destination, "removed existing destination for transfer job"); err != nil {
+				return "", err
+			}
+			return destination, os.RemoveAll(destination)
+		case "rename":
+			return nextAvailablePath(destination)
+		}
+		return "", fmt.Errorf("destination already exists: %s", destination)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return "", err
+	}
+	return destination, nil
+}
+
+func nextAvailablePath(path string) (string, error) {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return path, nil
+	} else if err != nil {
+		return "", err
+	}
+	ext := filepath.Ext(path)
+	base := path[:len(path)-len(ext)]
+	for i := 1; i <= 1000; i++ {
+		candidate := fmt.Sprintf("%s (%d)%s", base, i, ext)
+		if _, err := os.Stat(candidate); errors.Is(err, os.ErrNotExist) {
+			return candidate, nil
+		} else if err != nil {
+			return "", err
+		}
+	}
+	return "", fmt.Errorf("could not find available name for %s", path)
+}
+
+func (w *Worker) finishMove(ctx context.Context, job jobs.Job, source string) error {
+	if job.Type != jobs.TypeMove {
+		return nil
+	}
+	if err := os.RemoveAll(source); err != nil {
+		return err
+	}
+	return w.store.CreateAuditLog(ctx, "move", source, fmt.Sprintf("moved to %s", deref(job.DestinationPath)))
+}
+
+func (w *Worker) isRoot(path string) bool {
+	for _, root := range w.guard.Roots() {
+		if path == root {
+			return true
+		}
+	}
+	return false
+}
+
+func containsPath(parent, child string) bool {
+	rel, err := filepath.Rel(parent, child)
+	if err != nil {
+		return false
+	}
+	return rel == "." || (rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)))
+}
+
+func deref(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }

@@ -70,3 +70,12 @@ type CreateRequest struct {
 	ConflictPolicy  string `json:"conflictPolicy"`
 	VerifyMode      string `json:"verifyMode"`
 }
+
+type AuditLog struct {
+	ID        string    `json:"id"`
+	UserID    *string   `json:"userId,omitempty"`
+	Action    string    `json:"action"`
+	Path      *string   `json:"path,omitempty"`
+	Details   *string   `json:"details,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
+}

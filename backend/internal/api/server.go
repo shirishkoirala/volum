@@ -62,6 +62,7 @@ func (s *Server) routes() {
 		r.Get("/jobs", s.handleJobs)
 		r.Get("/jobs/events", s.handleJobEvents)
 		r.Post("/jobs/copy", s.handleCreateCopyJob)
+		r.Post("/jobs/move", s.handleCreateMoveJob)
 		r.Get("/jobs/{id}", s.handleJob)
 		r.Post("/jobs/{id}/cancel", s.handleCancelJob)
 		r.Post("/jobs/{id}/retry", s.handleRetryJob)
@@ -137,14 +138,23 @@ func (s *Server) handleRename(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Path string `json:"path"`
+		Path        string `json:"path"`
+		ConfirmName string `json:"confirmName"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
 		return
 	}
+	if req.ConfirmName == "" || filepath.Base(req.Path) != req.ConfirmName {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "delete confirmation did not match selected item"})
+		return
+	}
 
 	if err := s.files.Delete(req.Path); err != nil {
+		writeError(w, err)
+		return
+	}
+	if err := s.jobs.CreateAuditLog(r.Context(), "delete", req.Path, "deleted after explicit confirmation"); err != nil {
 		writeError(w, err)
 		return
 	}
@@ -218,12 +228,20 @@ func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCreateCopyJob(w http.ResponseWriter, r *http.Request) {
+	s.handleCreateTransferJob(w, r, jobs.TypeCopy)
+}
+
+func (s *Server) handleCreateMoveJob(w http.ResponseWriter, r *http.Request) {
+	s.handleCreateTransferJob(w, r, jobs.TypeMove)
+}
+
+func (s *Server) handleCreateTransferJob(w http.ResponseWriter, r *http.Request, jobType jobs.Type) {
 	var req jobs.CreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
 		return
 	}
-	req.Type = jobs.TypeCopy
+	req.Type = jobType
 	source, err := s.guard.Resolve(req.SourcePath)
 	if err != nil {
 		writeError(w, err)
@@ -236,11 +254,23 @@ func (s *Server) handleCreateCopyJob(w http.ResponseWriter, r *http.Request) {
 	}
 	req.SourcePath = source
 	req.DestinationPath = destination
+	if jobType == jobs.TypeMove {
+		if _, err := os.Stat(source); err != nil {
+			writeError(w, err)
+			return
+		}
+	}
 
 	job, err := s.jobs.Create(r.Context(), req)
 	if err != nil {
 		writeError(w, err)
 		return
+	}
+	if jobType == jobs.TypeMove {
+		if err := s.jobs.CreateAuditLog(r.Context(), "move_queued", source, "queued move to "+destination); err != nil {
+			writeError(w, err)
+			return
+		}
 	}
 	writeJSON(w, http.StatusCreated, job)
 }
@@ -283,10 +313,13 @@ func writeError(w http.ResponseWriter, err error) {
 		errors.Is(err, security.ErrOutsideRoots),
 		errors.Is(err, files.ErrInvalidName),
 		errors.Is(err, files.ErrRootOperation),
-		errors.Is(err, files.ErrDirectoryDownload):
+		errors.Is(err, files.ErrDirectoryDownload),
+		errors.Is(err, jobs.ErrInvalidConflictPolicy):
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 	case errors.Is(err, files.ErrDestinationExists):
 		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+	case errors.Is(err, os.ErrPermission):
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "permission denied"})
 	case errors.Is(err, os.ErrNotExist):
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
 	case errors.Is(err, sql.ErrNoRows):

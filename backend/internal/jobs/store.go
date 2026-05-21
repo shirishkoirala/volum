@@ -13,6 +13,8 @@ type Store struct {
 	db *sql.DB
 }
 
+var ErrInvalidConflictPolicy = errors.New("conflict policy must be ask, skip, overwrite, rename, or cancel")
+
 func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
@@ -23,6 +25,9 @@ func (s *Store) Create(ctx context.Context, req CreateRequest) (Job, error) {
 	}
 	if req.ConflictPolicy == "" {
 		req.ConflictPolicy = "ask"
+	}
+	if !validConflictPolicy(req.ConflictPolicy) {
+		return Job{}, ErrInvalidConflictPolicy
 	}
 	if req.VerifyMode == "" {
 		req.VerifyMode = "size"
@@ -52,6 +57,22 @@ func (s *Store) Create(ctx context.Context, req CreateRequest) (Job, error) {
 	}
 
 	return job, nil
+}
+
+func (s *Store) CreateAuditLog(ctx context.Context, action, path, details string) error {
+	now := time.Now().UTC()
+	log := AuditLog{
+		ID:        uuid.NewString(),
+		Action:    action,
+		Path:      optional(path),
+		Details:   optional(details),
+		CreatedAt: now,
+	}
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO audit_logs (id, action, path, details, created_at)
+		VALUES (?, ?, ?, ?, ?)
+	`, log.ID, log.Action, log.Path, log.Details, log.CreatedAt)
+	return err
 }
 
 func (s *Store) List(ctx context.Context) ([]Job, error) {
@@ -134,7 +155,7 @@ func (s *Store) Retry(ctx context.Context, id string) error {
 	return s.ClearItems(ctx, id)
 }
 
-func (s *Store) ClaimNextCopyJob(ctx context.Context) (Job, bool, error) {
+func (s *Store) ClaimNextTransferJob(ctx context.Context) (Job, bool, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return Job{}, false, err
@@ -147,10 +168,10 @@ func (s *Store) ClaimNextCopyJob(ctx context.Context) (Job, bool, error) {
 			current_item, error_message, conflict_policy, verify_mode,
 			created_at, updated_at, started_at, completed_at
 		FROM jobs
-		WHERE status = ? AND type = ?
+		WHERE status = ? AND type IN (?, ?)
 		ORDER BY created_at ASC
 		LIMIT 1
-	`, StatusQueued, TypeCopy)
+	`, StatusQueued, TypeCopy, TypeMove)
 
 	job, err := scanJob(row)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -335,4 +356,13 @@ func nullString(value sql.NullString) *string {
 		return nil
 	}
 	return &value.String
+}
+
+func validConflictPolicy(policy string) bool {
+	switch policy {
+	case "ask", "skip", "overwrite", "rename", "cancel":
+		return true
+	default:
+		return false
+	}
 }
