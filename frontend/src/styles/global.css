@@ -58,14 +58,9 @@ button {
 }
 
 .brand-mark {
-  align-items: center;
-  background: #0f766e;
   border-radius: 8px;
-  color: white;
-  display: flex;
-  font-weight: 800;
   height: 42px;
-  justify-content: center;
+  object-fit: cover;
   width: 42px;
 }
 

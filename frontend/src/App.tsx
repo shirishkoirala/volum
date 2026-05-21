@@ -33,6 +33,7 @@ import {
   renamePath,
   retryJob
 } from './api/client';
+import appIcon from './assets/icon-light.png';
 
 type ViewMode = 'list' | 'grid';
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
@@ -320,7 +321,7 @@ export function App() {
     <main className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">V</div>
+          <img className="brand-mark" src={appIcon} alt="" />
           <div>
             <strong>Volum</strong>
             <span>File manager</span>
