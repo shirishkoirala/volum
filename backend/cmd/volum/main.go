@@ -45,7 +45,7 @@ func run(log *slog.Logger) error {
 	defer db.Close()
 
 	jobStore := jobs.NewStore(db)
-	backgroundWorker := worker.New(jobStore, log)
+	backgroundWorker := worker.New(jobStore, guard, log)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

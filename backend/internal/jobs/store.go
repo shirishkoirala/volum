@@ -112,6 +112,146 @@ func (s *Store) Cancel(ctx context.Context, id string) error {
 	return nil
 }
 
+func (s *Store) ClaimNextCopyJob(ctx context.Context) (Job, bool, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Job{}, false, err
+	}
+	defer tx.Rollback()
+
+	row := tx.QueryRowContext(ctx, `
+		SELECT id, type, status, source_path, destination_path,
+			total_bytes, processed_bytes, total_items, processed_items,
+			current_item, error_message, conflict_policy, verify_mode,
+			created_at, updated_at, started_at, completed_at
+		FROM jobs
+		WHERE status = ? AND type = ?
+		ORDER BY created_at ASC
+		LIMIT 1
+	`, StatusQueued, TypeCopy)
+
+	job, err := scanJob(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Job{}, false, nil
+	}
+	if err != nil {
+		return Job{}, false, err
+	}
+
+	now := time.Now().UTC()
+	result, err := tx.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, started_at = ?, updated_at = ?, error_message = NULL
+		WHERE id = ? AND status = ?
+	`, StatusRunning, now, now, job.ID, StatusQueued)
+	if err != nil {
+		return Job{}, false, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return Job{}, false, err
+	}
+	if affected == 0 {
+		return Job{}, false, nil
+	}
+	if err := tx.Commit(); err != nil {
+		return Job{}, false, err
+	}
+
+	job.Status = StatusRunning
+	job.StartedAt = &now
+	job.UpdatedAt = now
+	return job, true, nil
+}
+
+func (s *Store) SetJobTotals(ctx context.Context, jobID string, totalBytes, totalItems int64) error {
+	now := time.Now().UTC()
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET total_bytes = ?, total_items = ?, updated_at = ?
+		WHERE id = ?
+	`, totalBytes, totalItems, now, jobID)
+	return err
+}
+
+func (s *Store) UpdateJobProgress(ctx context.Context, jobID string, processedBytes, processedItems int64, currentItem string) error {
+	now := time.Now().UTC()
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET processed_bytes = ?, processed_items = ?, current_item = ?, updated_at = ?
+		WHERE id = ?
+	`, processedBytes, processedItems, currentItem, now, jobID)
+	return err
+}
+
+func (s *Store) CompleteJob(ctx context.Context, jobID string) error {
+	now := time.Now().UTC()
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, current_item = NULL, error_message = NULL, updated_at = ?, completed_at = ?
+		WHERE id = ?
+	`, StatusCompleted, now, now, jobID)
+	return err
+}
+
+func (s *Store) FailJob(ctx context.Context, jobID string, cause error) error {
+	now := time.Now().UTC()
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, error_message = ?, updated_at = ?, completed_at = ?
+		WHERE id = ?
+	`, StatusFailed, cause.Error(), now, now, jobID)
+	return err
+}
+
+func (s *Store) IsCancelled(ctx context.Context, jobID string) (bool, error) {
+	var status Status
+	err := s.db.QueryRowContext(ctx, `SELECT status FROM jobs WHERE id = ?`, jobID).Scan(&status)
+	if err != nil {
+		return false, err
+	}
+	return status == StatusCancelled, nil
+}
+
+func (s *Store) ClearItems(ctx context.Context, jobID string) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM job_items WHERE job_id = ?`, jobID)
+	return err
+}
+
+func (s *Store) CreateItem(ctx context.Context, item Item) (Item, error) {
+	if item.ID == "" {
+		item.ID = uuid.NewString()
+	}
+	if item.Status == "" {
+		item.Status = StatusQueued
+	}
+	now := time.Now().UTC()
+	item.CreatedAt = now
+	item.UpdatedAt = now
+
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO job_items (
+			id, job_id, source_path, destination_path, temp_path, size_bytes,
+			processed_bytes, status, error_message, checksum, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, item.ID, item.JobID, item.SourcePath, item.DestinationPath, item.TempPath, item.SizeBytes,
+		item.ProcessedBytes, item.Status, item.ErrorMessage, item.Checksum, item.CreatedAt, item.UpdatedAt)
+	if err != nil {
+		return Item{}, err
+	}
+	return item, nil
+}
+
+func (s *Store) UpdateItemStatus(ctx context.Context, itemID string, status Status, processedBytes int64, errMessage *string) error {
+	now := time.Now().UTC()
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE job_items
+		SET status = ?, processed_bytes = ?, error_message = ?, updated_at = ?
+		WHERE id = ?
+	`, status, processedBytes, errMessage, now, itemID)
+	return err
+}
+
 func (s *Store) MarkInterruptedRunningJobs(ctx context.Context) error {
 	now := time.Now().UTC()
 	_, err := s.db.ExecContext(ctx, `

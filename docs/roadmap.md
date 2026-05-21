@@ -19,26 +19,28 @@ Goal: make Volum useful for basic local browsing on Docker for Mac and Ubuntu.
 
 Goal: make the UI behave like a real file manager.
 
-- Single-select and multi-select
-- Keyboard selection basics
-- Context menu
-- Toolbar actions for selected items
-- Sort by name, size, type, and modified date
-- Hidden file toggle polish
-- Refresh current folder
+- Single-select and multi-select `[done]`
+- Keyboard selection basics `[done]`
+- Context menu `[done]`
+- Toolbar actions for selected items `[done]`
+- Sort by name, size, type, and modified date `[done]`
+- Hidden file toggle polish `[done]`
+- Refresh current folder `[done]`
 
 ## Phase 3: Persistent Copy Jobs
 
 Goal: implement the core Volum architecture.
 
-- Create copy job API
-- Persist job and job item records in SQLite
-- Background worker processes queued jobs
-- Copy to `.volum-tmp/*.partial`
-- Verify copied size before final rename
-- Never overwrite destination silently
-- Track total bytes, processed bytes, current item, speed, and ETA
-- Show active, completed, failed, and cancelled jobs in the UI
+- Create copy job API `[done]`
+- Persist job and job item records in SQLite `[done]`
+- Background worker processes queued jobs `[done]`
+- Copy to `.volum-tmp/*.partial` `[done]`
+- Verify copied size before final rename `[done]`
+- Never overwrite destination silently `[done]`
+- Track total bytes and processed bytes `[done]`
+- Track current item `[done]`
+- Track speed and ETA
+- Show active, completed, failed, and cancelled jobs in the UI `[done]`
 
 ## Phase 4: Live Job Updates
 
@@ -95,8 +97,9 @@ Goal: improve day-to-day UX after the safe foundations are working.
 
 ## Immediate Next Tasks
 
-1. Add backend APIs for create folder, rename, delete, and download.
-2. Add frontend dialogs and buttons for those actions.
-3. Add confirmation for delete.
-4. Add selection state and a basic context menu.
-5. Implement copy job processing after the basic file actions are stable.
+1. Add speed and ETA calculation for running copy jobs.
+2. Add a Server-Sent Events endpoint for job updates.
+3. Replace frontend job polling with live updates.
+4. Add cancel action for running jobs.
+5. Add retry action for failed jobs.
+6. Mark interrupted running jobs safely on startup.

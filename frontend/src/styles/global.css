@@ -18,7 +18,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -176,6 +177,16 @@ button {
   width: 100%;
 }
 
+.sort-select {
+  background: white;
+  border: 1px solid #d9e0e5;
+  border-radius: 8px;
+  color: #33414c;
+  height: 40px;
+  max-width: 170px;
+  padding: 0 10px;
+}
+
 .icon-button {
   align-items: center;
   background: white;
@@ -206,6 +217,28 @@ button {
   padding: 12px 14px;
 }
 
+.selection-bar {
+  align-items: center;
+  background: #e7f5f2;
+  border: 1px solid #b8dcd6;
+  border-radius: 8px;
+  color: #0f5f59;
+  display: flex;
+  font-size: 14px;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  min-height: 40px;
+  padding: 0 12px;
+}
+
+.selection-bar button {
+  background: transparent;
+  border: 0;
+  color: #0f5f59;
+  font-weight: 700;
+}
+
 .file-list,
 .file-grid {
   min-height: 0;
@@ -216,6 +249,13 @@ button {
   border: 1px solid #dfe5e9;
   border-radius: 8px;
   overflow: hidden;
+  outline: 0;
+}
+
+.file-list:focus-visible,
+.file-grid:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 3px;
 }
 
 .file-row {
@@ -259,6 +299,7 @@ button {
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  outline: 0;
 }
 
 .file-grid .file-row {
@@ -345,6 +386,44 @@ button {
 
 .job-error {
   color: #9d1c1c !important;
+}
+
+.context-menu {
+  background: white;
+  border: 1px solid #d9e0e5;
+  border-radius: 8px;
+  box-shadow: 0 18px 40px rgb(26 34 42 / 18%);
+  display: grid;
+  min-width: 168px;
+  padding: 6px;
+  position: fixed;
+  z-index: 20;
+}
+
+.context-menu button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: #33414c;
+  display: flex;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 10px;
+  text-align: left;
+}
+
+.context-menu button:hover:not(:disabled) {
+  background: #f0f5f3;
+}
+
+.context-menu button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.context-menu button.danger:not(:disabled) {
+  color: #a32929;
 }
 
 @media (max-width: 1100px) {

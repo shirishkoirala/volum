@@ -77,6 +77,18 @@ export function getJobs() {
   return request<JobsResponse>('/api/jobs');
 }
 
+export function createCopyJob(sourcePath: string, destinationPath: string) {
+  return request<Job>('/api/jobs/copy', {
+    method: 'POST',
+    body: JSON.stringify({
+      sourcePath,
+      destinationPath,
+      conflictPolicy: 'ask',
+      verifyMode: 'size'
+    })
+  });
+}
+
 export function createFolder(path: string, name: string) {
   return request<FileEntry>('/api/files/folder', {
     method: 'POST',
