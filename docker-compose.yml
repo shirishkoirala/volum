@@ -1,0 +1,14 @@
+services:
+  volum:
+    build: .
+    container_name: volum
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./storage:/storage
+      - ./data:/data
+    environment:
+      - VOLUM_ROOTS=/storage
+      - VOLUM_DB=/data/volum.db
+      - VOLUM_PORT=8090
+    restart: unless-stopped

@@ -1,0 +1,67 @@
+# Volum
+
+Volum is a self-hosted web file manager for Ubuntu and Docker home servers. It is designed around a reliable backend job engine so long-running filesystem operations can continue after the browser closes.
+
+## Current Scope
+
+This repository starts the MVP foundation:
+
+- Go API server
+- Configurable storage roots via `VOLUM_ROOTS`
+- Server-side path validation
+- SQLite schema for persistent jobs
+- File listing API
+- Job API skeleton with persistent state
+- React + TypeScript frontend shell
+- Docker and Compose deployment files
+
+## Development
+
+Mac Docker:
+
+```sh
+mkdir -p storage data
+docker compose up --build
+```
+
+Open `http://localhost:8090`. The default Compose file exposes only the local `./storage` folder inside Volum, with SQLite stored in `./data/volum.db`.
+
+Mac Docker development with Vite frontend:
+
+```sh
+mkdir -p storage data
+docker compose -f docker-compose.dev.yml up --build
+```
+
+Open `http://localhost:5174` for the frontend dev server. The API runs at `http://localhost:8090`, and the frontend container proxies `/api` and `/healthz` to the API container.
+
+Backend:
+
+```sh
+cd backend
+go run ./cmd/volum
+```
+
+Frontend:
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+## Environment
+
+```txt
+VOLUM_ROOTS=/mnt/storage,/mnt/data1,/mnt/data2,/mnt/backup,/opt/docker
+VOLUM_DB=/data/volum.db
+VOLUM_PORT=8090
+```
+
+## Deployment
+
+```sh
+docker compose -f docker-compose.homelab.yml up --build
+```
+
+The homelab Compose file exposes Volum on port `8090` and stores the SQLite database under `/opt/docker/volum`.

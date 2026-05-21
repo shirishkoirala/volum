@@ -1,0 +1,19 @@
+.DS_Store
+
+# Backend
+backend/volum.db
+backend/web
+data/*
+!data/.gitkeep
+
+# Local mounted storage
+storage/*
+!storage/.gitkeep
+
+# Frontend
+frontend/dist
+frontend/node_modules
+frontend/.vite
+
+# Logs
+*.log
