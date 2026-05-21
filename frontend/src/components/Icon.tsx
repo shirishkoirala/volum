@@ -1,6 +1,7 @@
 import type { FileEntry } from '../api/client';
 import {
   ChevronRight,
+  CheckSquare,
   Copy,
   Download,
   Eye,
@@ -11,6 +12,7 @@ import {
   HardDrive,
   ListTree,
   LogOut,
+  ListX,
   Pause,
   Pencil,
   Play,
@@ -42,6 +44,8 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'edit-rename': Pencil,
   'folder-new': FolderPlus,
   'go-next': ChevronRight,
+  'selection-invert': ListX,
+  'selection-select-all': CheckSquare,
   'media-playback-pause': Pause,
   'media-playback-start': Play,
   'process-stop': Square,

@@ -254,6 +254,21 @@ export function App() {
   const canCopy = selectedEntries.length > 0;
   const canMove = selectedEntries.length > 0;
   const canPreview = selectedEntries.length === 1 && selectedEntries[0].type === 'file';
+  const canSelect = filteredEntries.length > 0;
+
+  const handleSelectAll = () => {
+    const nextPaths = filteredEntries.map((entry) => entry.path);
+    setSelectedPaths(nextPaths);
+    setLastSelectedPath(nextPaths.length > 0 ? nextPaths[nextPaths.length - 1] : null);
+  };
+
+  const handleInvertSelection = () => {
+    const nextPaths = filteredEntries
+      .filter((entry) => !selectedPaths.includes(entry.path))
+      .map((entry) => entry.path);
+    setSelectedPaths(nextPaths);
+    setLastSelectedPath(nextPaths.length > 0 ? nextPaths[nextPaths.length - 1] : null);
+  };
 
   const handleCopy = () => {
     if (!canCopy) {
@@ -372,9 +387,20 @@ export function App() {
   };
 
   const handleFileAreaKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
+      event.preventDefault();
+      handleSelectAll();
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'i') {
+      event.preventDefault();
+      handleInvertSelection();
+      return;
+    }
     if (event.key === 'Escape') {
       setSelectedPaths([]);
       setContextMenu(null);
+      setLastSelectedPath(null);
     }
     if (event.key === 'Enter' && selectedEntries.length === 1) {
       if (selectedEntries[0].type === 'directory') {
@@ -498,6 +524,14 @@ export function App() {
             <div className="selection-bar">
               <span>{selectedEntries.length} selected</span>
               <div className="selection-actions">
+                <button type="button" onClick={handleSelectAll} disabled={!canSelect}>
+                  <Icon name="selection-select-all" size={16} />
+                  Select all
+                </button>
+                <button type="button" onClick={handleInvertSelection} disabled={!canSelect}>
+                  <Icon name="selection-invert" size={16} />
+                  Invert
+                </button>
                 {canPreview && (
                   <button type="button" onClick={handlePreview}>
                     <Icon name="view-preview" size={16} />
@@ -581,6 +615,24 @@ export function App() {
                     }
                   }}
                 />
+                <button
+                  className="icon-button"
+                  disabled={!canSelect}
+                  onClick={handleSelectAll}
+                  title="Select all"
+                  type="button"
+                >
+                  <Icon name="selection-select-all" size={18} />
+                </button>
+                <button
+                  className="icon-button"
+                  disabled={!canSelect}
+                  onClick={handleInvertSelection}
+                  title="Invert selection"
+                  type="button"
+                >
+                  <Icon name="selection-invert" size={18} />
+                </button>
                 <label className="search">
                   <Icon name="edit-find" size={16} />
                   <input
