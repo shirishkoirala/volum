@@ -486,12 +486,37 @@ func (s *Store) UpdateItemStatus(ctx context.Context, itemID string, status Stat
 
 func (s *Store) MarkInterruptedRunningJobs(ctx context.Context) error {
 	now := time.Now().UTC()
-	_, err := s.db.ExecContext(ctx, `
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, current_item = NULL, error_message = ?, updated_at = ?, started_at = NULL
+		WHERE status = ? AND type IN (?, ?)
+	`, StatusQueued, "server restarted; job will resume from validated partial files", now, StatusRunning, TypeCopy, TypeMove); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE job_items
+		SET status = ?, updated_at = ?
+		WHERE status = ? AND job_id IN (
+			SELECT id FROM jobs
+			WHERE status = ? AND type IN (?, ?)
+		)
+	`, StatusQueued, now, StatusRunning, StatusQueued, TypeCopy, TypeMove); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, error_message = ?, updated_at = ?, completed_at = ?
-		WHERE status = ?
-	`, StatusFailed, "server stopped before job completed; resume validation is not implemented yet", now, now, StatusRunning)
-	return err
+		WHERE status = ? AND type NOT IN (?, ?)
+	`, StatusFailed, "server stopped before job completed; resume validation is not implemented yet", now, now, StatusRunning, TypeCopy, TypeMove); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 type scanner interface {

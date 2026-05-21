@@ -93,6 +93,8 @@ type copyItem struct {
 	Destination string
 	Temp        string
 	Size        int64
+	Processed   int64
+	Persisted   bool
 }
 
 func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
@@ -117,58 +119,17 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 	if containsPath(source, destination) {
 		return errors.New("destination cannot be inside the source path")
 	}
-	if policy := job.ConflictPolicy; policy == "cancel" {
-		return errors.New("transfer cancelled by conflict policy")
-	} else if resolvedDestination, err := w.resolveConflictDestination(ctx, destination, policy); err != nil {
-		if errors.Is(err, errSkipDestination) {
-			return w.store.CompleteJob(ctx, job.ID)
-		}
-		return err
-	} else {
-		destination = resolvedDestination
-	}
-
-	items, err := w.planCopy(source, destination)
+	items, processedBytes, processedItems, err := w.transferItems(ctx, job, source, destination)
 	if err != nil {
 		return err
 	}
 	if len(items) == 0 {
-		if err := os.MkdirAll(destination, 0o755); err != nil {
-			return err
-		}
 		if err := w.finishMove(ctx, job, source); err != nil {
 			return err
 		}
 		return w.store.CompleteJob(ctx, job.ID)
 	}
 
-	if err := w.store.ClearItems(ctx, job.ID); err != nil {
-		return err
-	}
-
-	var totalBytes int64
-	for index, item := range items {
-		totalBytes += item.Size
-		temp := item.Temp
-		stored, err := w.store.CreateItem(ctx, jobs.Item{
-			JobID:           job.ID,
-			SourcePath:      item.Source,
-			DestinationPath: item.Destination,
-			TempPath:        &temp,
-			SizeBytes:       item.Size,
-			Status:          jobs.StatusQueued,
-		})
-		if err != nil {
-			return err
-		}
-		items[index].ID = stored.ID
-	}
-	if err := w.store.SetJobTotals(ctx, job.ID, totalBytes, int64(len(items))); err != nil {
-		return err
-	}
-
-	var processedBytes int64
-	var processedItems int64
 	for _, item := range items {
 		cancelled, err := w.store.IsCancelled(ctx, job.ID)
 		if err != nil {
@@ -211,6 +172,124 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 		return err
 	}
 	return w.store.CompleteJob(ctx, job.ID)
+}
+
+func (w *Worker) transferItems(ctx context.Context, job jobs.Job, source, destination string) ([]copyItem, int64, int64, error) {
+	storedItems, err := w.store.ListItems(ctx, job.ID)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	if len(storedItems) > 0 {
+		return w.resumeTransferItems(ctx, job.ID, storedItems)
+	}
+
+	if policy := job.ConflictPolicy; policy == "cancel" {
+		return nil, 0, 0, errors.New("transfer cancelled by conflict policy")
+	} else if resolvedDestination, err := w.resolveConflictDestination(ctx, destination, policy); err != nil {
+		if errors.Is(err, errSkipDestination) {
+			if err := w.store.CompleteJob(ctx, job.ID); err != nil {
+				return nil, 0, 0, err
+			}
+			return nil, 0, 0, nil
+		}
+		return nil, 0, 0, err
+	} else {
+		destination = resolvedDestination
+	}
+
+	items, err := w.planCopy(source, destination)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	if len(items) == 0 {
+		if err := os.MkdirAll(destination, 0o755); err != nil {
+			return nil, 0, 0, err
+		}
+		return nil, 0, 0, nil
+	}
+
+	if err := w.store.ClearItems(ctx, job.ID); err != nil {
+		return nil, 0, 0, err
+	}
+
+	var totalBytes int64
+	for index, item := range items {
+		totalBytes += item.Size
+		temp := item.Temp
+		stored, err := w.store.CreateItem(ctx, jobs.Item{
+			JobID:           job.ID,
+			SourcePath:      item.Source,
+			DestinationPath: item.Destination,
+			TempPath:        &temp,
+			SizeBytes:       item.Size,
+			Status:          jobs.StatusQueued,
+		})
+		if err != nil {
+			return nil, 0, 0, err
+		}
+		items[index].ID = stored.ID
+	}
+	if err := w.store.SetJobTotals(ctx, job.ID, totalBytes, int64(len(items))); err != nil {
+		return nil, 0, 0, err
+	}
+	return items, 0, 0, nil
+}
+
+func (w *Worker) resumeTransferItems(ctx context.Context, jobID string, storedItems []jobs.Item) ([]copyItem, int64, int64, error) {
+	items := make([]copyItem, 0, len(storedItems))
+	var totalBytes int64
+	var processedBytes int64
+	var processedItems int64
+
+	for _, stored := range storedItems {
+		totalBytes += stored.SizeBytes
+		if stored.Status == jobs.StatusCompleted {
+			info, err := os.Stat(stored.DestinationPath)
+			if err != nil {
+				return nil, 0, 0, fmt.Errorf("completed destination missing for resume: %s", stored.DestinationPath)
+			}
+			if info.Size() != stored.SizeBytes {
+				return nil, 0, 0, fmt.Errorf("completed destination size mismatch for resume: %s", stored.DestinationPath)
+			}
+			processedBytes += stored.SizeBytes
+			processedItems++
+			continue
+		}
+
+		item := copyItem{
+			ID:          stored.ID,
+			Source:      stored.SourcePath,
+			Destination: stored.DestinationPath,
+			Size:        stored.SizeBytes,
+			Persisted:   true,
+		}
+		if stored.TempPath != nil {
+			item.Temp = *stored.TempPath
+		} else {
+			item.Temp = filepath.Join(filepath.Dir(stored.DestinationPath), ".volum-tmp", filepath.Base(stored.DestinationPath)+".partial")
+		}
+		partialSize, err := partialFileSize(item.Temp, item.Size)
+		if err != nil {
+			return nil, 0, 0, err
+		}
+		item.Processed = partialSize
+		if err := w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusQueued, item.Processed, nil); err != nil {
+			return nil, 0, 0, err
+		}
+		items = append(items, item)
+	}
+
+	if err := w.store.SetJobTotals(ctx, jobID, totalBytes, int64(len(storedItems))); err != nil {
+		return nil, 0, 0, err
+	}
+	currentItem := ""
+	if len(items) > 0 {
+		currentItem = items[0].Source
+	}
+	if err := w.store.UpdateJobProgress(ctx, jobID, processedBytes, processedItems, currentItem); err != nil {
+		return nil, 0, 0, err
+	}
+	return items, processedBytes, processedItems, nil
 }
 
 func (w *Worker) planCopy(source, destination string) ([]copyItem, error) {
@@ -261,19 +340,32 @@ func newCopyItem(source, destination string, size int64) copyItem {
 }
 
 func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseBytes, processedItems int64) (int64, error) {
-	if err := w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusRunning, 0, nil); err != nil {
+	if err := w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusRunning, item.Processed, nil); err != nil {
 		return 0, err
 	}
 	if policy := job.ConflictPolicy; policy == "cancel" {
 		return 0, errors.New("transfer cancelled by conflict policy")
-	} else if destination, err := w.resolveConflictDestination(ctx, item.Destination, policy); err != nil {
-		if errors.Is(err, errSkipDestination) {
-			return 0, nil
+	} else if !item.Persisted {
+		destination, err := w.resolveConflictDestination(ctx, item.Destination, policy)
+		if err != nil {
+			if errors.Is(err, errSkipDestination) {
+				return 0, nil
+			}
+			return 0, err
 		}
-		return 0, err
-	} else {
 		item.Destination = destination
 		item.Temp = filepath.Join(filepath.Dir(item.Destination), ".volum-tmp", filepath.Base(item.Destination)+".partial")
+	} else if item.Processed > 0 {
+		partialSize, err := partialFileSize(item.Temp, item.Size)
+		if err != nil {
+			return 0, err
+		}
+		if partialSize != item.Processed {
+			item.Processed = partialSize
+			if err := w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusRunning, item.Processed, nil); err != nil {
+				return 0, err
+			}
+		}
 	}
 
 	if err := os.MkdirAll(filepath.Dir(item.Temp), 0o755); err != nil {
@@ -285,14 +377,29 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 		return 0, err
 	}
 	defer source.Close()
+	if item.Processed > 0 {
+		if _, err := source.Seek(item.Processed, io.SeekStart); err != nil {
+			return 0, err
+		}
+	}
 
-	temp, err := os.OpenFile(item.Temp, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+	flags := os.O_CREATE | os.O_WRONLY
+	if item.Processed == 0 {
+		flags |= os.O_TRUNC
+	}
+	temp, err := os.OpenFile(item.Temp, flags, 0o644)
 	if err != nil {
 		return 0, err
 	}
+	if item.Processed > 0 {
+		if _, err := temp.Seek(item.Processed, io.SeekStart); err != nil {
+			temp.Close()
+			return 0, err
+		}
+	}
 
 	buffer := make([]byte, 1024*1024)
-	var copied int64
+	copied := item.Processed
 	for {
 		if ctx.Err() != nil {
 			temp.Close()
@@ -372,6 +479,23 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 	}
 	_ = os.Remove(filepath.Dir(item.Temp))
 	return copied, nil
+}
+
+func partialFileSize(path string, expectedSize int64) (int64, error) {
+	info, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	if info.IsDir() {
+		return 0, fmt.Errorf("partial path is a directory: %s", path)
+	}
+	if info.Size() > expectedSize {
+		return 0, fmt.Errorf("partial file is larger than source: %s", path)
+	}
+	return info.Size(), nil
 }
 
 var errSkipDestination = errors.New("destination skipped by conflict policy")
