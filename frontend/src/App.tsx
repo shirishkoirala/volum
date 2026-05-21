@@ -1,4 +1,4 @@
-import { KeyboardEvent, MouseEvent, useEffect, useMemo, useState } from 'react';
+import { DragEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronRight,
   Copy,
@@ -15,7 +15,8 @@ import {
   RotateCcw,
   Search,
   Settings2,
-  Trash2
+  Trash2,
+  UploadCloud
 } from 'lucide-react';
 import {
   ConflictPolicy,
@@ -31,7 +32,8 @@ import {
   getJobs,
   getRoots,
   renamePath,
-  retryJob
+  retryJob,
+  uploadFiles
 } from './api/client';
 import appIcon from './assets/icon-light.png';
 
@@ -60,6 +62,8 @@ export function App() {
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
+  const [draggingUpload, setDraggingUpload] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     getRoots()
@@ -145,6 +149,18 @@ export function App() {
       return;
     }
     window.location.href = downloadUrl(entry.path);
+  };
+
+  const handleUploadFiles = (files: FileList | File[]) => {
+    const selectedFiles = Array.from(files);
+    if (selectedFiles.length === 0 || !currentPath) {
+      return;
+    }
+    void runAction(async () => {
+      await uploadFiles(currentPath, selectedFiles);
+      const response = await getJobs();
+      setJobs(response.jobs ?? []);
+    });
   };
 
   useEffect(() => {
@@ -296,6 +312,25 @@ export function App() {
     }
   };
 
+  const handleFileAreaDragOver = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    if (event.dataTransfer.types.includes('Files')) {
+      setDraggingUpload(true);
+    }
+  };
+
+  const handleFileAreaDragLeave = (event: DragEvent<HTMLElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setDraggingUpload(false);
+    }
+  };
+
+  const handleFileAreaDrop = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    setDraggingUpload(false);
+    handleUploadFiles(event.dataTransfer.files);
+  };
+
   useEffect(() => {
     const closeContextMenu = () => setContextMenu(null);
     window.addEventListener('click', closeContextMenu);
@@ -366,6 +401,26 @@ export function App() {
             >
               <Plus size={18} />
             </button>
+            <button
+              className="icon-button"
+              onClick={() => fileInputRef.current?.click()}
+              title="Upload files"
+              type="button"
+            >
+              <UploadCloud size={18} />
+            </button>
+            <input
+              ref={fileInputRef}
+              className="hidden-file-input"
+              multiple
+              type="file"
+              onChange={(event) => {
+                if (event.currentTarget.files) {
+                  handleUploadFiles(event.currentTarget.files);
+                  event.currentTarget.value = '';
+                }
+              }}
+            />
             <button
               className="icon-button"
               disabled={!canRename}
@@ -476,7 +531,10 @@ export function App() {
         )}
 
         <section
-          className={viewMode === 'grid' ? 'file-grid' : 'file-list'}
+          className={`${viewMode === 'grid' ? 'file-grid' : 'file-list'}${draggingUpload ? ' drag-over' : ''}`}
+          onDragLeave={handleFileAreaDragLeave}
+          onDragOver={handleFileAreaDragOver}
+          onDrop={handleFileAreaDrop}
           onKeyDown={handleFileAreaKeyDown}
           tabIndex={0}
         >
@@ -566,6 +624,8 @@ function JobItem({
   const progress = job.totalBytes > 0 ? Math.round((job.processedBytes / job.totalBytes) * 100) : 0;
   const canCancel = job.status === 'queued' || job.status === 'running';
   const canRetry = job.status === 'failed' || job.status === 'cancelled';
+  const showLiveStats = job.status === 'running';
+  const hasKnownTotal = job.totalBytes > 0;
 
   return (
     <article className="job-item">
@@ -578,10 +638,12 @@ function JobItem({
       </div>
       <div className="job-meta">
         <span>
-          {formatBytes(job.processedBytes)} / {formatBytes(job.totalBytes)}
+          {hasKnownTotal
+            ? `${formatBytes(job.processedBytes)} / ${formatBytes(job.totalBytes)}`
+            : `${formatBytes(job.processedBytes)} uploaded`}
         </span>
-        {job.speedBytesPerSecond ? <span>{formatBytes(job.speedBytesPerSecond)}/s</span> : null}
-        {job.etaSeconds !== undefined ? <span>{formatDuration(job.etaSeconds)} left</span> : null}
+        {showLiveStats && job.speedBytesPerSecond ? <span>{formatBytes(job.speedBytesPerSecond)}/s</span> : null}
+        {showLiveStats && job.etaSeconds !== undefined ? <span>{formatDuration(job.etaSeconds)} left</span> : null}
       </div>
       <p>{job.currentItem ?? job.sourcePath ?? job.id}</p>
       {job.errorMessage && <p className="job-error">{job.errorMessage}</p>}

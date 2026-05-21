@@ -66,11 +66,11 @@ Goal: support destructive operations without unsafe shortcuts.
 
 Goal: support common browser-to-server workflows.
 
-- Upload files to current folder
-- Drag and drop upload
-- Large upload handling
-- Upload progress as persistent jobs
-- Prevent path traversal in upload targets
+- Upload files to current folder `[done]`
+- Drag and drop upload `[done]`
+- Large upload handling `[done]`
+- Upload progress as persistent jobs `[done]`
+- Prevent path traversal in upload targets `[done]`
 
 ## Phase 7: Auth and Roles
 
@@ -97,7 +97,8 @@ Goal: improve day-to-day UX after the safe foundations are working.
 
 ## Immediate Next Tasks
 
-1. Upload files to the current folder.
-2. Add drag and drop upload.
-3. Handle large uploads as persistent jobs.
-4. Prevent path traversal in upload targets.
+1. Add login and logout.
+2. Add session or JWT authentication.
+3. Add admin and readonly roles.
+4. Protect write APIs.
+5. Document recommended Tailscale-only exposure.

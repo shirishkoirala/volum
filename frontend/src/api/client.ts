@@ -40,6 +40,10 @@ export type JobsResponse = {
   jobs: Job[] | null;
 };
 
+export type UploadResponse = {
+  jobs: Job[] | null;
+};
+
 export type ConflictPolicy = 'ask' | 'skip' | 'overwrite' | 'rename' | 'cancel';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -103,6 +107,29 @@ export function createMoveJob(sourcePath: string, destinationPath: string, confl
       verifyMode: 'size'
     })
   });
+}
+
+export async function uploadFiles(path: string, files: File[]) {
+  const formData = new FormData();
+  formData.append(
+    'manifest',
+    JSON.stringify(files.map((file) => ({ name: file.name, size: file.size })))
+  );
+  for (const file of files) {
+    formData.append('files', file, file.name);
+  }
+  const params = new URLSearchParams({ path });
+  const response = await fetch(`/api/files/upload?${params.toString()}`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(body.error ?? response.statusText);
+  }
+
+  return response.json() as Promise<UploadResponse>;
 }
 
 export function cancelJob(id: string) {

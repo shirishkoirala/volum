@@ -153,6 +153,10 @@ button {
   gap: 8px;
 }
 
+.hidden-file-input {
+  display: none;
+}
+
 .search {
   align-items: center;
   background: white;
@@ -251,6 +255,12 @@ button {
 .file-grid:focus-visible {
   outline: 2px solid #0f766e;
   outline-offset: 3px;
+}
+
+.file-list.drag-over,
+.file-grid.drag-over {
+  border-color: #0f766e;
+  box-shadow: inset 0 0 0 2px #0f766e;
 }
 
 .file-row {

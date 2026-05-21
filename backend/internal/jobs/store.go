@@ -207,6 +207,26 @@ func (s *Store) ClaimNextTransferJob(ctx context.Context) (Job, bool, error) {
 	return job, true, nil
 }
 
+func (s *Store) StartJob(ctx context.Context, jobID string) error {
+	now := time.Now().UTC()
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, started_at = ?, updated_at = ?, error_message = NULL
+		WHERE id = ? AND status = ?
+	`, StatusRunning, now, now, jobID, StatusQueued)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 func (s *Store) SetJobTotals(ctx context.Context, jobID string, totalBytes, totalItems int64) error {
 	now := time.Now().UTC()
 	_, err := s.db.ExecContext(ctx, `
