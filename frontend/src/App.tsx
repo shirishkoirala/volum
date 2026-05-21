@@ -48,6 +48,11 @@ type ContextMenuState = {
 } | null;
 
 export function App() {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const stored = localStorage.getItem('volum_theme');
+    if (stored === 'dark' || stored === 'light') return stored;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
   const [roots, setRoots] = useState<RootEntry[]>([]);
   const [currentPath, setCurrentPath] = useState('');
   const [entries, setEntries] = useState<FileEntry[]>([]);
@@ -78,6 +83,8 @@ export function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [batchRenameOpen, setBatchRenameOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const shortcutsRef = useRef<HTMLDivElement>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canWrite = session?.role === 'admin';
 
@@ -153,6 +160,11 @@ export function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: globalThis.KeyboardEvent) => {
+      if (e.key === '?' && !(e.target instanceof HTMLInputElement)) {
+        e.preventDefault();
+        setShortcutsOpen((prev) => !prev);
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         searchRef.current?.focus();
@@ -163,10 +175,13 @@ export function App() {
         setSearchResults(null);
         setQuery('');
       }
+      if (e.key === 'Escape' && shortcutsOpen) {
+        setShortcutsOpen(false);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [searchOpen]);
+  }, [searchOpen, shortcutsOpen]);
 
   const navigateTo = (path: string) => {
     pushRecent(path);
@@ -609,6 +624,11 @@ export function App() {
   }, [currentPath]);
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('volum_theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
     if (Notification.permission === 'default') {
       void Notification.requestPermission();
     }
@@ -979,6 +999,18 @@ export function App() {
                     <Icon name="view-list-tree" size={18} />
                   )}
                 </button>
+                <button
+                  className="icon-button"
+                  onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                  title={theme === 'light' ? 'Dark mode' : 'Light mode'}
+                  type="button"
+                >
+                  {theme === 'light' ? (
+                    <Icon name="weather-clear-night" size={18} />
+                  ) : (
+                    <Icon name="weather-clear" size={18} />
+                  )}
+                </button>
                 {session?.authEnabled && (
                   <button
                     className="icon-button"
@@ -1006,7 +1038,19 @@ export function App() {
           tabIndex={0}
         >
           {loading ? (
-            <div className="empty-state">Loading folder...</div>
+            viewMode === 'grid' ? (
+              <div className="skeleton-grid">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="skeleton-card">
+                    <div className="skeleton-icon" />
+                    <div className="skeleton-line" />
+                    <div className="skeleton-line short" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">Loading folder...</div>
+            )
           ) : filteredEntries.length === 0 ? (
             <div className="empty-state">No files found in {currentPath}</div>
           ) : (
@@ -1141,6 +1185,30 @@ export function App() {
           onClose={() => setBatchRenameOpen(false)}
           onDone={() => { refresh(); }}
         />
+      </>
+    );
+  }
+
+  if (shortcutsOpen) {
+    return (
+      <>
+        {shell}
+        <div className="shortcuts-overlay" ref={shortcutsRef} onClick={(e) => { if (e.target === shortcutsRef.current) setShortcutsOpen(false); }}>
+          <div className="shortcuts-panel">
+            <h3>Keyboard Shortcuts</h3>
+            <div className="shortcut-row"><span>Navigate into folder / Open file</span><span className="shortcut-key">Enter</span></div>
+            <div className="shortcut-row"><span>Deselect all</span><span className="shortcut-key">Esc</span></div>
+            <div className="shortcut-row"><span>Select all</span><span className="shortcut-key">⌘A</span></div>
+            <div className="shortcut-row"><span>Invert selection</span><span className="shortcut-key">⌘I</span></div>
+            <div className="shortcut-row"><span>Global search</span><span className="shortcut-key">⌘K</span></div>
+            <div className="shortcut-row"><span>Toggle shortcuts</span><span className="shortcut-key">?</span></div>
+            <div className="shortcut-row"><span>Shift-range select</span><span className="shortcut-key">⇧+click</span></div>
+            <div className="shortcut-row"><span>Multi-select toggle</span><span className="shortcut-key">⌘+click</span></div>
+            <hr />
+            <div className="shortcut-row"><span>Close preview / Clear search</span><span className="shortcut-key">Esc</span></div>
+            <div className="shortcut-row"><span>Context menu</span><span className="shortcut-key">Right click</span></div>
+          </div>
+        </div>
       </>
     );
   }

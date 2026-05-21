@@ -25,6 +25,7 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
   const showVideo = isVideoExtension(entry.name);
   const showAudio = isAudioExtension(entry.name);
   const showText = isTextExtension(entry.name);
+  const showPDF = /\.pdf$/i.test(entry.name);
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
@@ -117,7 +118,10 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
           {showText && textError !== null && (
             <div className="preview-error">{textError}</div>
           )}
-          {!showImage && !showVideo && !showAudio && !showText && (
+          {showPDF && (
+            <iframe className="preview-iframe" src={fileUrl} title={entry.name} />
+          )}
+          {!showImage && !showVideo && !showAudio && !showText && !showPDF && (
             <div className="preview-unsupported">
               <p>No preview available for this file type.</p>
               <a href={downloadUrl(entry.path)}>Download instead</a>
