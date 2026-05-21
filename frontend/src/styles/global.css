@@ -440,6 +440,139 @@ button {
   flex-shrink: 0;
 }
 
+.rename-modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-menu);
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  max-width: 640px;
+  width: 90vw;
+}
+
+.rename-modal-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.rename-modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.rename-pattern {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-xl);
+  border-bottom: 1px solid var(--color-border-row);
+}
+
+.rename-pattern select {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  height: 38px;
+  padding: 0 10px;
+}
+
+.rename-fields {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.rename-fields input,
+.rename-fields select {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  height: 34px;
+  padding: 0 10px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.rename-preview-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: var(--space-sm) var(--space-xl);
+}
+
+.rename-preview-item {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.rename-preview-item.changed {
+  color: var(--color-text);
+}
+
+.rename-old {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rename-new {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rename-error {
+  color: var(--color-danger-text);
+  font-size: 13px;
+  margin: 0;
+  padding: 0 var(--space-xl);
+}
+
+.rename-actions {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  padding: var(--space-lg) var(--space-xl);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.rename-cancel {
+  background: transparent;
+  border: 0;
+  color: var(--color-text-secondary);
+  min-height: 36px;
+  padding: 0 var(--space-lg);
+  border-radius: var(--radius-md);
+}
+
+.rename-apply {
+  background: var(--color-brand);
+  border: 0;
+  border-radius: var(--radius-md);
+  color: white;
+  font-weight: 600;
+  min-height: 36px;
+  padding: 0 var(--space-xl);
+  transition: opacity var(--transition-fast);
+}
+
+.rename-apply:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
 .workspace {
   display: flex;
   flex-direction: column;

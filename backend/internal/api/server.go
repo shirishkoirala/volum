@@ -80,6 +80,7 @@ func (s *Server) routes() {
 			r.Use(s.requireAdmin)
 			r.Post("/files/folder", s.handleCreateFolder)
 			r.Patch("/files/rename", s.handleRename)
+			r.Post("/files/batch-rename", s.handleBatchRename)
 			r.Delete("/files", s.handleDelete)
 			r.Post("/trash/{id}/restore", s.handleRestoreTrash)
 			r.Delete("/trash/{id}", s.handleDeleteTrash)
@@ -219,6 +220,38 @@ func (s *Server) handleRename(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, entry)
+}
+
+type batchRenameItem struct {
+	Path    string `json:"path"`
+	NewName string `json:"newName"`
+}
+
+func (s *Server) handleBatchRename(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Items []batchRenameItem `json:"items"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+	if len(req.Items) == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no items provided"})
+		return
+	}
+
+	errs := make([]map[string]string, 0)
+	for _, item := range req.Items {
+		if _, err := s.files.Rename(item.Path, item.NewName); err != nil {
+			errs = append(errs, map[string]string{"path": item.Path, "error": err.Error()})
+		}
+	}
+
+	if len(errs) > 0 {
+		writeJSON(w, http.StatusOK, map[string]any{"errors": errs, "complete": len(req.Items) - len(errs)})
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {

@@ -283,3 +283,10 @@ export function searchFiles(query: string, limit = 50) {
   const params = new URLSearchParams({ q: query, limit: String(limit) });
   return request<SearchResponse>(`/api/files/search?${params.toString()}`);
 }
+
+export async function batchRename(items: { path: string; newName: string }[]) {
+  return request<{ errors?: { path: string; error: string }[]; complete?: number }>('/api/files/batch-rename', {
+    method: 'POST',
+    body: JSON.stringify({ items })
+  });
+}

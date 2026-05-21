@@ -36,6 +36,7 @@ import {
 } from './api/client';
 import appIcon from './assets/icon-light.png';
 import { PreviewModal } from './components/PreviewModal';
+import { BatchRenameModal } from './components/BatchRenameModal';
 
 type ViewMode = 'list' | 'grid';
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
@@ -75,6 +76,7 @@ export function App() {
   });
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [batchRenameOpen, setBatchRenameOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canWrite = session?.role === 'admin';
@@ -268,6 +270,10 @@ export function App() {
     }
   };
 
+  const handleBatchRename = () => {
+    setBatchRenameOpen(true);
+  };
+
   const handleUploadFiles = (files: FileList | File[]) => {
     if (!canWrite) {
       return;
@@ -319,7 +325,21 @@ export function App() {
     const events = new EventSource('/api/jobs/events');
     events.addEventListener('jobs', (event) => {
       const response = JSON.parse((event as MessageEvent).data) as { jobs: Job[] | null };
-      setJobs(response.jobs ?? []);
+      const nextJobs = response.jobs ?? [];
+
+      // browser notifications for completed/failed jobs
+      for (const job of nextJobs) {
+        const prev = jobs.find((j) => j.id === job.id);
+        if (!prev && Notification.permission === 'granted') {
+          if (job.status === 'completed') {
+            new Notification('Job completed', { body: `[${job.type}] ${job.sourcePath ?? job.id}` });
+          } else if (job.status === 'failed') {
+            new Notification('Job failed', { body: `[${job.type}] ${job.errorMessage ?? job.id}` });
+          }
+        }
+      }
+
+      setJobs(nextJobs);
     });
     events.onerror = () => undefined;
     return () => events.close();
@@ -578,6 +598,12 @@ export function App() {
     }));
   }, [currentPath]);
 
+  useEffect(() => {
+    if (Notification.permission === 'default') {
+      void Notification.requestPermission();
+    }
+  }, []);
+
   if (sessionLoading) {
     return <div className="auth-shell">Loading...</div>;
   }
@@ -750,6 +776,12 @@ export function App() {
                     Rename
                   </button>
                 )}
+                {canWrite && selectedEntries.length > 1 && (
+                  <button type="button" onClick={handleBatchRename}>
+                    <Icon name="edit-rename" size={16} />
+                    Batch rename
+                  </button>
+                )}
                 {canCopy && canWrite && (
                   <button type="button" onClick={handleCopy}>
                     <Icon name="edit-copy" size={16} />
@@ -875,7 +907,7 @@ export function App() {
                           }
                         }}
                       >
-                        <FileIcon entry={{ ...result, hidden: false }} size={22} />
+                        <FileIcon entry={{ ...result, hidden: false, permissions: '' }} size={22} />
                         <span className="search-result-name">{result.name}</span>
                         <span className="search-result-path">{result.root}</span>
                       </button>
@@ -1026,6 +1058,12 @@ export function App() {
               <Icon name="edit-rename" size={16} />
               Rename
             </button>
+            {canWrite && selectedEntries.length > 1 && (
+              <button type="button" onClick={handleBatchRename}>
+              <Icon name="edit-rename" size={16} />
+              Batch rename
+            </button>
+            )}
             <button type="button" onClick={handleDownload} disabled={!canDownload}>
               <Icon name="edit-download" size={16} />
               Download
@@ -1080,6 +1118,19 @@ export function App() {
       <>
         {shell}
         <PreviewModal entry={previewEntry} onClose={() => setPreviewEntry(null)} />
+      </>
+    );
+  }
+
+  if (batchRenameOpen) {
+    return (
+      <>
+        {shell}
+        <BatchRenameModal
+          entries={selectedEntries}
+          onClose={() => setBatchRenameOpen(false)}
+          onDone={() => { refresh(); }}
+        />
       </>
     );
   }
