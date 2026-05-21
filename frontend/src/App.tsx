@@ -21,6 +21,7 @@ import {
   login,
   logout,
   renamePath,
+  RootEntry,
   Session,
   retryJob,
   uploadFiles
@@ -38,7 +39,7 @@ type ContextMenuState = {
 } | null;
 
 export function App() {
-  const [roots, setRoots] = useState<string[]>([]);
+  const [roots, setRoots] = useState<RootEntry[]>([]);
   const [currentPath, setCurrentPath] = useState('');
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -75,7 +76,7 @@ export function App() {
       .then((response) => {
         const safeRoots = response.roots ?? [];
         setRoots(safeRoots);
-        setCurrentPath(safeRoots[0] ?? '');
+        setCurrentPath(safeRoots[0]?.path ?? '');
       })
       .catch((err: Error) => setError(err.message));
   }, [session, sessionLoading]);
@@ -424,13 +425,21 @@ export function App() {
           <div className="root-list">
             {roots.map((root) => (
               <button
-                className={root === currentPath ? 'root-item active' : 'root-item'}
-                key={root}
-                onClick={() => setCurrentPath(root)}
+                className={root.path === currentPath ? 'root-item active' : 'root-item'}
+                key={root.path}
+                onClick={() => setCurrentPath(root.path)}
                 type="button"
               >
                 <DeviceIcon name="drive-harddisk" size={18} />
-                <span>{root}</span>
+                <span className="root-details">
+                  <span>{root.path}</span>
+                  <small>{formatRootUsage(root)}</small>
+                  {root.totalBytes > 0 && (
+                    <span className="root-meter" aria-hidden="true">
+                      <span style={{ width: `${Math.min((root.usedBytes / root.totalBytes) * 100, 100)}%` }} />
+                    </span>
+                  )}
+                </span>
               </button>
             ))}
           </div>
@@ -662,45 +671,51 @@ export function App() {
           ) : filteredEntries.length === 0 ? (
             <div className="empty-state">No files found in {currentPath}</div>
           ) : (
-            filteredEntries.map((entry) => (
-              <button
-                className={selectedPaths.includes(entry.path) ? 'file-row selected' : 'file-row'}
-                key={entry.path}
-                onClick={(event) => handleSelectEntry(entry, event)}
-                onContextMenu={(event) => handleContextMenu(entry, event)}
-                onDoubleClick={() => {
-                  if (entry.type === 'directory') {
-                    setCurrentPath(entry.path);
-                    return;
-                  }
-                  const ext = entry.name.toLowerCase();
-                  if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext)) {
-                    setPreviewEntry(entry);
-                  } else {
-                    window.open(downloadUrl(entry.path), '_blank');
-                  }
-                }}
-                type="button"
-              >
-                {entry.type === 'directory' ? (
-                  <FolderIcon size={56} />
-                ) : (
-                  <FileIcon entry={entry} size={56} />
-                )}
-                <span className="file-name">{entry.name}</span>
-                {viewMode === 'grid' && entry.type === 'file' && (
-                  <span className="file-meta">{formatBytes(entry.size)}</span>
-                )}
-                {viewMode === 'list' && (
-                  <>
-                    <span>{entry.type}</span>
-                    <span>{formatBytes(entry.size)}</span>
-                    <span>{new Date(entry.modifiedAt).toLocaleString()}</span>
-                    <span>{entry.permissions}</span>
-                  </>
-                )}
-              </button>
-            ))
+            filteredEntries.map((entry) => {
+              const fileIconSize = viewMode === 'grid' ? 84 : 28;
+              return (
+                <button
+                  className={selectedPaths.includes(entry.path) ? 'file-row selected' : 'file-row'}
+                  key={entry.path}
+                  onClick={(event) => handleSelectEntry(entry, event)}
+                  onContextMenu={(event) => handleContextMenu(entry, event)}
+                  onDoubleClick={() => {
+                    if (entry.type === 'directory') {
+                      setCurrentPath(entry.path);
+                      return;
+                    }
+                    const ext = entry.name.toLowerCase();
+                    if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext)) {
+                      setPreviewEntry(entry);
+                    } else {
+                      window.open(downloadUrl(entry.path), '_blank');
+                    }
+                  }}
+                  type="button"
+                >
+                  {entry.type === 'directory' ? (
+                    <FolderIcon size={fileIconSize} />
+                  ) : (
+                    <FileIcon entry={entry} size={fileIconSize} />
+                  )}
+                  <span className="file-name">{entry.name}</span>
+                  {viewMode === 'grid' && (
+                    <span className="file-meta">
+                      {formatBytes(entry.size)}
+                      <span>{formatGridDate(entry.modifiedAt)}</span>
+                    </span>
+                  )}
+                  {viewMode === 'list' && (
+                    <>
+                      <span>{entry.type}</span>
+                      <span>{formatBytes(entry.size)}</span>
+                      <span>{new Date(entry.modifiedAt).toLocaleString()}</span>
+                      <span>{entry.permissions}</span>
+                    </>
+                  )}
+                </button>
+              );
+            })
           )}
         </section>
 
@@ -870,6 +885,26 @@ function formatBytes(value: number) {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
   return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+}
+
+function formatRootUsage(root: RootEntry) {
+  if (root.totalBytes <= 0) {
+    return 'Usage unavailable';
+  }
+  return `${formatBytes(root.usedBytes)} used of ${formatBytes(root.totalBytes)} | ${formatBytes(root.freeBytes)} free`;
+}
+
+function formatGridDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return new Intl.DateTimeFormat(undefined, {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
 }
 
 function formatDuration(totalSeconds: number) {

@@ -111,7 +111,7 @@ func (s *Server) routes() {
 }
 
 func (s *Server) handleRoots(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"roots": s.files.Roots()})
+	writeJSON(w, http.StatusOK, map[string]any{"roots": s.files.RootUsage()})
 }
 
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {

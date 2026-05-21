@@ -1,4 +1,22 @@
 import type { FileEntry } from '../api/client';
+import applicationJsonIcon from '../assets/mimetypes/64/application-json.svg?url';
+import applicationOctetStreamIcon from '../assets/mimetypes/64/application-octet-stream.svg?url';
+import applicationPdfIcon from '../assets/mimetypes/64/application-pdf.svg?url';
+import applicationAppleDiskImageIcon from '../assets/mimetypes/64/application-x-apple-diskimage.svg?url';
+import applicationZipIcon from '../assets/mimetypes/64/application-zip.svg?url';
+import audioGenericIcon from '../assets/mimetypes/64/audio-x-generic.svg?url';
+import imageGenericIcon from '../assets/mimetypes/64/image-x-generic.svg?url';
+import textCssIcon from '../assets/mimetypes/64/text-css.svg?url';
+import textGenericIcon from '../assets/mimetypes/64/text-x-generic.svg?url';
+import textHtmlIcon from '../assets/mimetypes/64/text-html.svg?url';
+import textMarkdownIcon from '../assets/mimetypes/64/text-x-markdown.svg?url';
+import textScriptIcon from '../assets/mimetypes/64/text-x-script.svg?url';
+import unknownIcon from '../assets/mimetypes/64/unknown.svg?url';
+import videoGenericIcon from '../assets/mimetypes/64/video-x-generic.svg?url';
+import officeDocumentIcon from '../assets/mimetypes/64/x-office-document.svg?url';
+import officePresentationIcon from '../assets/mimetypes/64/x-office-presentation.svg?url';
+import officeSpreadsheetIcon from '../assets/mimetypes/64/x-office-spreadsheet.svg?url';
+import folderIcon from '../assets/places/64/folder.svg?url';
 
 function ext(name: string) {
   const dot = name.lastIndexOf('.');
@@ -6,11 +24,30 @@ function ext(name: string) {
   return name.slice(dot + 1).toLowerCase();
 }
 
-const iconUrl = (category: string, size: string, name: string) =>
-  new URL(`../assets/${category}/${size}/${name}.svg`, import.meta.url).href;
+const MIME_ICONS: Record<string, string> = {
+  'application-json': applicationJsonIcon,
+  'application-octet-stream': applicationOctetStreamIcon,
+  'application-pdf': applicationPdfIcon,
+  'application-x-apple-diskimage': applicationAppleDiskImageIcon,
+  'application-x-raw-disk-image': applicationAppleDiskImageIcon,
+  'application-zip': applicationZipIcon,
+  'audio-x-generic': audioGenericIcon,
+  'image-x-generic': imageGenericIcon,
+  'text-css': textCssIcon,
+  'text-html': textHtmlIcon,
+  'text-plain': textGenericIcon,
+  'text-x-generic': textGenericIcon,
+  'text-x-markdown': textMarkdownIcon,
+  'text-x-script': textScriptIcon,
+  unknown: unknownIcon,
+  'video-x-generic': videoGenericIcon,
+  'x-office-document': officeDocumentIcon,
+  'x-office-presentation': officePresentationIcon,
+  'x-office-spreadsheet': officeSpreadsheetIcon,
+};
 
 export function folderIconUrl(size = '22') {
-  return iconUrl('places', size, 'folder');
+  return folderIcon;
 }
 
 export function fileTypeIconUrl(entry: FileEntry, size = '22') {
@@ -21,20 +58,25 @@ export function fileTypeIconUrl(entry: FileEntry, size = '22') {
 function mimetypeIconUrl(filename: string, size = '22'): string {
   const e = ext(filename);
   const m = MIMETYPE_MAP[e];
-  if (m) return iconUrl('mimetypes', size, m);
-  return iconUrl('mimetypes', size, 'unknown');
+  if (m) return MIME_ICONS[m] ?? genericMimetypeIcon(m);
+  return unknownIcon;
 }
 
-export function actionIconUrl(name: string) {
-  return iconUrl('actions', '22', name);
-}
-
-export function deviceIconUrl(name: string, size = '64') {
-  return iconUrl('devices', size, name);
-}
-
-export function placeIconUrl(name: string, size = '32') {
-  return iconUrl('places', size, name);
+function genericMimetypeIcon(mimetype: string) {
+  if (mimetype.startsWith('image-')) return imageGenericIcon;
+  if (mimetype.startsWith('audio-')) return audioGenericIcon;
+  if (mimetype.startsWith('video-')) return videoGenericIcon;
+  if (mimetype.startsWith('text-')) return textGenericIcon;
+  if (mimetype.includes('spreadsheet') || mimetype.includes('excel')) return officeSpreadsheetIcon;
+  if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) return officePresentationIcon;
+  if (mimetype.includes('document') || mimetype.includes('word')) return officeDocumentIcon;
+  if (mimetype.includes('zip') || mimetype.includes('compressed') || mimetype.includes('tar') || mimetype.includes('gzip')) {
+    return applicationZipIcon;
+  }
+  if (mimetype.includes('executable') || mimetype.includes('sharedlib') || mimetype.includes('octet-stream')) {
+    return applicationOctetStreamIcon;
+  }
+  return unknownIcon;
 }
 
 const MIMETYPE_MAP: Record<string, string> = {

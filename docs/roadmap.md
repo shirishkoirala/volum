@@ -96,9 +96,9 @@ Goal: finish the job system with pause/resume, recovery, and archive/extract.
 
 Goal: match the capabilities of a desktop file manager.
 
-- File type icons (image, video, code, archive, pdf, etc.)
-- Folder sizes (calculate total size of directory contents)
-- Disk usage info per root (free/total space)
+- File type icons (image, video, code, archive, pdf, etc.) `[done]`
+- Folder sizes (calculate total size of directory contents) `[done]`
+- Disk usage info per root (free/total space) `[done]`
 - Select all / invert selection
 - Cut path to clipboard for paste navigation
 - Recycle bin (`.volum-trash/` per root, restore before permanent delete)
@@ -146,8 +146,8 @@ Goal: refine the experience for daily homelab use.
 
 ## Immediate Next Tasks
 
-1. Add file type icons (image, video, code, archive, etc.) — `Phase 10`
-2. Add folder size calculation — `Phase 10`
-3. Add disk usage display in sidebar — `Phase 10`
-4. Add pause/resume to jobs — `Phase 9`
-5. Add resume interrupted copy jobs — `Phase 9`
+1. Add pause/resume to jobs — `Phase 9`
+2. Add resume interrupted copy jobs — `Phase 9`
+3. Add select all / invert selection — `Phase 10`
+4. Add recycle bin restore flow — `Phase 10`
+5. Add directory download as zip — `Phase 10`

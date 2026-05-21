@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/volum-app/volum/backend/internal/security"
@@ -19,6 +20,13 @@ type Entry struct {
 	ModifiedAt  time.Time `json:"modifiedAt"`
 	Permissions string    `json:"permissions"`
 	Hidden      bool      `json:"hidden"`
+}
+
+type Root struct {
+	Path       string `json:"path"`
+	TotalBytes int64  `json:"totalBytes"`
+	FreeBytes  int64  `json:"freeBytes"`
+	UsedBytes  int64  `json:"usedBytes"`
 }
 
 var (
@@ -38,6 +46,21 @@ func NewService(guard *security.RootGuard) *Service {
 
 func (s *Service) Roots() []string {
 	return s.guard.Roots()
+}
+
+func (s *Service) RootUsage() []Root {
+	roots := s.guard.Roots()
+	usage := make([]Root, 0, len(roots))
+	for _, root := range roots {
+		item := Root{Path: root}
+		if total, free, err := diskUsage(root); err == nil {
+			item.TotalBytes = total
+			item.FreeBytes = free
+			item.UsedBytes = max(total-free, 0)
+		}
+		usage = append(usage, item)
+	}
+	return usage
 }
 
 func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
@@ -73,7 +96,7 @@ func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
 			Name:        name,
 			Path:        filepath.Join(resolved, name),
 			Type:        entryType,
-			Size:        info.Size(),
+			Size:        entrySize(filepath.Join(resolved, name), info),
 			ModifiedAt:  info.ModTime(),
 			Permissions: info.Mode().Perm().String(),
 			Hidden:      hidden,
@@ -209,9 +232,43 @@ func entryFromPath(path string) (Entry, error) {
 		Name:        filepath.Base(path),
 		Path:        path,
 		Type:        entryType,
-		Size:        info.Size(),
+		Size:        entrySize(path, info),
 		ModifiedAt:  info.ModTime(),
 		Permissions: info.Mode().Perm().String(),
 		Hidden:      strings.HasPrefix(filepath.Base(path), "."),
 	}, nil
+}
+
+func entrySize(path string, info os.FileInfo) int64 {
+	if !info.IsDir() {
+		return info.Size()
+	}
+
+	var total int64
+	_ = filepath.WalkDir(path, func(current string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		itemInfo, err := entry.Info()
+		if err != nil {
+			return nil
+		}
+		total += itemInfo.Size()
+		return nil
+	})
+	return total
+}
+
+func diskUsage(path string) (int64, int64, error) {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(path, &stat); err != nil {
+		return 0, 0, err
+	}
+	blockSize := uint64(stat.Bsize)
+	total := stat.Blocks * blockSize
+	free := stat.Bavail * blockSize
+	return int64(min(total, uint64(^uint64(0)>>1))), int64(min(free, uint64(^uint64(0)>>1))), nil
 }

@@ -1,5 +1,12 @@
+export type RootEntry = {
+  path: string;
+  totalBytes: number;
+  freeBytes: number;
+  usedBytes: number;
+};
+
 export type RootResponse = {
-  roots: string[] | null;
+  roots: RootEntry[] | null;
 };
 
 export type FileEntry = {
