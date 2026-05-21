@@ -323,10 +323,20 @@ export function App() {
     }
 
     if (event.metaKey || event.ctrlKey) {
-      setSelectedPaths((paths) =>
-        paths.includes(entry.path) ? paths.filter((path) => path !== entry.path) : [...paths, entry.path]
-      );
-      setLastSelectedPath(entry.path);
+      if (selectedPaths.includes(entry.path)) {
+        const nextPaths = selectedPaths.filter((path) => path !== entry.path);
+        setSelectedPaths(nextPaths);
+        setLastSelectedPath(nextPaths.length > 0 ? nextPaths[nextPaths.length - 1] : null);
+      } else {
+        setSelectedPaths([...selectedPaths, entry.path]);
+        setLastSelectedPath(entry.path);
+      }
+      return;
+    }
+
+    if (selectedPaths.includes(entry.path)) {
+      setSelectedPaths((paths) => paths.filter((path) => path !== entry.path));
+      setLastSelectedPath(null);
       return;
     }
 
@@ -355,6 +365,24 @@ export function App() {
         handlePreview();
       }
     }
+  };
+
+  const handleFileAreaClick = (event: MouseEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    setSelectedPaths([]);
+    setLastSelectedPath(null);
+    setContextMenu(null);
+  };
+
+  const handleWorkspaceClick = (event: MouseEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    setSelectedPaths([]);
+    setLastSelectedPath(null);
+    setContextMenu(null);
   };
 
   const handleFileAreaDragOver = (event: DragEvent<HTMLElement>) => {
@@ -446,223 +474,173 @@ export function App() {
         </section>
       </aside>
 
-      <section className="workspace">
+      <section className="workspace" onClick={handleWorkspaceClick}>
         <header className="topbar">
-          <nav className="breadcrumbs" aria-label="Breadcrumb">
-            {breadcrumbs.map((crumb, index) => (
-              <button key={crumb.path} onClick={() => setCurrentPath(crumb.path)} type="button">
-                {index > 0 && <Icon name="go-next" size={16} />}
-                <span>{crumb.label}</span>
+          {selectedEntries.length > 0 ? (
+            <div className="selection-bar">
+              <span>{selectedEntries.length} selected</span>
+              <div className="selection-actions">
+                {canPreview && (
+                  <button type="button" onClick={handlePreview}>
+                    <Icon name="view-preview" size={16} />
+                    Preview
+                  </button>
+                )}
+                {canDownload && (
+                  <button type="button" onClick={handleDownload}>
+                    <Icon name="edit-download" size={16} />
+                    Download
+                  </button>
+                )}
+                {canRename && canWrite && (
+                  <button type="button" onClick={handleRename}>
+                    <Icon name="edit-rename" size={16} />
+                    Rename
+                  </button>
+                )}
+                {canCopy && canWrite && (
+                  <button type="button" onClick={handleCopy}>
+                    <Icon name="edit-copy" size={16} />
+                    Copy
+                  </button>
+                )}
+                {canMove && canWrite && (
+                  <button type="button" onClick={handleMove}>
+                    <Icon name="edit-cut" size={16} />
+                    Move
+                  </button>
+                )}
+                {canDelete && canWrite && (
+                  <button type="button" onClick={handleDelete} className="danger">
+                    <Icon name="edit-delete" size={16} />
+                    Delete
+                  </button>
+                )}
+              </div>
+              <button type="button" onClick={() => setSelectedPaths([])}>
+                Clear
               </button>
-            ))}
-          </nav>
+            </div>
+          ) : (
+            <>
+              <nav className="breadcrumbs" aria-label="Breadcrumb">
+                {breadcrumbs.map((crumb, index) => (
+                  <button key={crumb.path} onClick={() => setCurrentPath(crumb.path)} type="button">
+                    {index > 0 && <Icon name="go-next" size={16} />}
+                    <span>{crumb.label}</span>
+                  </button>
+                ))}
+              </nav>
 
-          <div className="toolbar">
-            <button
-              className="icon-button"
-              disabled={!canWrite}
-              onClick={handleCreateFolder}
-              title="Create folder"
-              type="button"
-            >
-              <Icon name="folder-new" size={18} />
-            </button>
-            <button
-              className="icon-button"
-              disabled={!canWrite}
-              onClick={() => fileInputRef.current?.click()}
-              title="Upload files"
-              type="button"
-            >
-              <Icon name="document-import" size={18} />
-            </button>
-            <input
-              ref={fileInputRef}
-              className="hidden-file-input"
-              multiple
-              type="file"
-              onChange={(event) => {
-                if (event.currentTarget.files) {
-                  handleUploadFiles(event.currentTarget.files);
-                  event.currentTarget.value = '';
-                }
-              }}
-            />
-            <button
-              className="icon-button"
-              disabled={!canWrite || !canRename}
-              onClick={handleRename}
-              title="Rename selected item"
-              type="button"
-            >
-              <Icon name="edit-rename" size={18} />
-            </button>
-            <button
-              className="icon-button"
-              disabled={!canDownload}
-              onClick={handleDownload}
-              title="Download selected file"
-              type="button"
-            >
-              <Icon name="edit-download" size={18} />
-            </button>
-            <button
-              className="icon-button"
-              disabled={!canPreview}
-              onClick={handlePreview}
-              title="Preview selected file"
-              type="button"
-            >
-              <Icon name="view-preview" size={18} />
-            </button>
-            <button
-              className="icon-button"
-              disabled={!canWrite || !canCopy}
-              onClick={handleCopy}
-              title="Copy selected item"
-              type="button"
-            >
-              <Icon name="edit-copy" size={18} />
-            </button>
-            <button
-              className="icon-button"
-              disabled={!canWrite || !canMove}
-              onClick={handleMove}
-              title="Move selected item"
-              type="button"
-            >
-              <Icon name="edit-cut" size={18} />
-            </button>
-            <button
-              className="icon-button danger"
-              disabled={!canWrite || !canDelete}
-              onClick={handleDelete}
-              title="Delete selected item"
-              type="button"
-            >
-              <Icon name="edit-delete" size={18} />
-            </button>
-            <label className="search">
-              <Icon name="edit-find" size={16} />
-              <input
-                placeholder="Search this folder"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-            </label>
-            <select
-              className="sort-select"
-              value={`${sortField}:${sortDirection}`}
-              onChange={(event) => {
-                const [field, direction] = event.target.value.split(':') as [SortField, SortDirection];
-                setSortField(field);
-                setSortDirection(direction);
-              }}
-              title="Sort files"
-            >
-              <option value="name:asc">Name A-Z</option>
-              <option value="name:desc">Name Z-A</option>
-              <option value="size:asc">Size small first</option>
-              <option value="size:desc">Size large first</option>
-              <option value="type:asc">Type A-Z</option>
-              <option value="type:desc">Type Z-A</option>
-              <option value="modifiedAt:desc">Newest first</option>
-              <option value="modifiedAt:asc">Oldest first</option>
-            </select>
-            <button
-              className="icon-button"
-              onClick={() => setShowHidden((value) => !value)}
-              title="Toggle hidden files"
-              type="button"
-            >
-              <Icon name="view-hidden" size={18} />
-            </button>
-            <button
-              className="icon-button"
-              onClick={refresh}
-              title="Refresh"
-              type="button"
-            >
-              <Icon name="view-refresh" size={18} />
-            </button>
-            <button
-              className="icon-button"
-              onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-              title="Change view"
-              type="button"
-            >
-              {viewMode === 'list' ? (
-                <Icon name="view-grid" size={18} />
-              ) : (
-                <Icon name="view-list-tree" size={18} />
-              )}
-            </button>
-            {session?.authEnabled && (
-              <button
-                className="icon-button"
-                onClick={handleLogout}
-                title="Log out"
-                type="button"
-              >
-                <Icon name="system-log-out" size={18} />
-              </button>
-            )}
-          </div>
+              <div className="toolbar">
+                <button
+                  className="icon-button"
+                  disabled={!canWrite}
+                  onClick={handleCreateFolder}
+                  title="Create folder"
+                  type="button"
+                >
+                  <Icon name="folder-new" size={18} />
+                </button>
+                <button
+                  className="icon-button"
+                  disabled={!canWrite}
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Upload files"
+                  type="button"
+                >
+                  <Icon name="document-import" size={18} />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  className="hidden-file-input"
+                  multiple
+                  type="file"
+                  onChange={(event) => {
+                    if (event.currentTarget.files) {
+                      handleUploadFiles(event.currentTarget.files);
+                      event.currentTarget.value = '';
+                    }
+                  }}
+                />
+                <label className="search">
+                  <Icon name="edit-find" size={16} />
+                  <input
+                    placeholder="Search this folder"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                  />
+                </label>
+                <select
+                  className="sort-select"
+                  value={`${sortField}:${sortDirection}`}
+                  onChange={(event) => {
+                    const [field, direction] = event.target.value.split(':') as [SortField, SortDirection];
+                    setSortField(field);
+                    setSortDirection(direction);
+                  }}
+                  title="Sort files"
+                >
+                  <option value="name:asc">Name A-Z</option>
+                  <option value="name:desc">Name Z-A</option>
+                  <option value="size:asc">Size small first</option>
+                  <option value="size:desc">Size large first</option>
+                  <option value="type:asc">Type A-Z</option>
+                  <option value="type:desc">Type Z-A</option>
+                  <option value="modifiedAt:desc">Newest first</option>
+                  <option value="modifiedAt:asc">Oldest first</option>
+                </select>
+                <button
+                  className="icon-button"
+                  onClick={() => setShowHidden((value) => !value)}
+                  title="Toggle hidden files"
+                  type="button"
+                >
+                  <Icon name="view-hidden" size={18} />
+                </button>
+                <button
+                  className="icon-button"
+                  onClick={refresh}
+                  title="Refresh"
+                  type="button"
+                >
+                  <Icon name="view-refresh" size={18} />
+                </button>
+                <button
+                  className="icon-button"
+                  onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+                  title="Change view"
+                  type="button"
+                >
+                  {viewMode === 'list' ? (
+                    <Icon name="view-grid" size={18} />
+                  ) : (
+                    <Icon name="view-list-tree" size={18} />
+                  )}
+                </button>
+                {session?.authEnabled && (
+                  <button
+                    className="icon-button"
+                    onClick={handleLogout}
+                    title="Log out"
+                    type="button"
+                  >
+                    <Icon name="system-log-out" size={18} />
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </header>
 
         {error && <div className="error-banner">{error}</div>}
-        {selectedEntries.length > 0 && (
-          <div className="selection-bar">
-            <span>{selectedEntries.length} selected</span>
-            <div className="selection-actions">
-              {canPreview && (
-                <button type="button" onClick={handlePreview}>
-                  <Icon name="view-preview" size={16} />
-                  Preview
-                </button>
-              )}
-              {canDownload && (
-                <button type="button" onClick={handleDownload}>
-                  <Icon name="edit-download" size={16} />
-                  Download
-                </button>
-              )}
-              {canRename && canWrite && (
-                <button type="button" onClick={handleRename}>
-                  <Icon name="edit-rename" size={16} />
-                  Rename
-                </button>
-              )}
-              {canCopy && canWrite && (
-                <button type="button" onClick={handleCopy}>
-                  <Icon name="edit-copy" size={16} />
-                  Copy
-                </button>
-              )}
-              {canMove && canWrite && (
-                <button type="button" onClick={handleMove}>
-                  <Icon name="edit-cut" size={16} />
-                  Move
-                </button>
-              )}
-              {canDelete && canWrite && (
-                <button type="button" onClick={handleDelete} className="danger">
-                  <Icon name="edit-delete" size={16} />
-                  Delete
-                </button>
-              )}
-            </div>
-            <button type="button" onClick={() => setSelectedPaths([])}>
-              Clear
-            </button>
-          </div>
-        )}
 
         <section
           className={`${viewMode === 'grid' ? 'file-grid' : 'file-list'}${draggingUpload ? ' drag-over' : ''}`}
           onDragLeave={handleFileAreaDragLeave}
           onDragOver={handleFileAreaDragOver}
           onDrop={handleFileAreaDrop}
+          onClick={handleFileAreaClick}
           onKeyDown={handleFileAreaKeyDown}
           tabIndex={0}
         >
