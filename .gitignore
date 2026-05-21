@@ -1,5 +1,8 @@
 .DS_Store
 
+# Environment
+.env
+
 # Backend
 backend/volum.db
 backend/web
