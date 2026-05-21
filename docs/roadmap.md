@@ -132,15 +132,15 @@ Goal: handle complex multi-step file operations.
 
 Goal: refine the experience for daily homelab use.
 
-- PDF preview (pdf.js or iframe)
+- PDF preview (iframe) `[done]`
+- Dark mode (CSS custom properties toggle + localStorage) `[done]`
+- Loading skeletons (animated pulse cards in grid view) `[done]`
+- Keyboard shortcut reference overlay (`?` key) `[done]`
 - Thumbnail generation for images/videos in grid view
 - Drag-select (rubber band selection like Finder)
 - Column view (macOS Finder style)
 - File/folder info panel (right-click → Get Info)
-- Loading skeletons instead of "Loading..." text
-- Keyboard shortcut reference overlay (`?`)
 - Touch-friendly context menu on mobile
-- Dark mode
 
 ---
 
