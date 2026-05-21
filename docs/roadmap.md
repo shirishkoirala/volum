@@ -110,23 +110,23 @@ Goal: match the capabilities of a desktop file manager.
 
 Goal: make finding files fast.
 
-- Full-text file content search (grep across roots)
-- Search across all roots simultaneously
-- Recent locations in sidebar
-- Favorite/bookmark paths in sidebar
-- Open file location from search results
-- Keyboard shortcut for search focus (`/` or `Ctrl+K`)
+- Full-text file content search (grep across roots) `[done]`
+- Search across all roots simultaneously `[done]`
+- Recent locations in sidebar `[done]`
+- Favorite/bookmark paths in sidebar `[done]`
+- Open file location from search results `[done]`
+- Keyboard shortcut for search focus (`/` or `Ctrl+K`) `[done]`
 
 ## Phase 12: Batch and Workflow
 
 Goal: handle complex multi-step file operations.
 
-- Batch rename (pattern-based: find/replace, counter, case change)
-- Copy/move with multiple destination folders
-- Scheduled jobs (run copy/archive at specific time)
-- Job chaining (run job B after job A completes)
+- Batch rename (pattern-based: find/replace, counter, case change) `[done]`
+- Copy/move with multiple destination folders `[done]`
+- Scheduled jobs (run copy/archive at specific time) `[done]`
+- Job chaining (run job B after job A completes) `[done]`
 - Export/import job history
-- Notification for completed jobs (browser notification API)
+- Notification for completed jobs (browser notification API) `[done]`
 
 ## Phase 13: Polish and Final UX
 
@@ -146,8 +146,13 @@ Goal: refine the experience for daily homelab use.
 
 ## Immediate Next Tasks
 
-1. Add directory download as zip — `Phase 10`
-2. Add file permissions display as owner/group/rwx — `Phase 10`
-3. Add extract/create archive controls — `Phase 9`
-4. Add cut path to clipboard for paste navigation — `Phase 10`
-5. Add chmod basic permissions via UI — `Phase 10`
+## Immediate Next Tasks
+
+1. Archive/extract frontend UI (context menu + toolbar) — `Phase 9`
+2. Export/import job history — `Phase 12`
+3. PDF preview — `Phase 13`
+4. Image/video thumbnails in grid view — `Phase 13`
+5. Dark mode — `Phase 13`
+6. Drag-select (rubber band) — `Phase 13`
+7. Loading skeletons — `Phase 13`
+8. Keyboard shortcut reference overlay — `Phase 13`
