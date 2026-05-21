@@ -276,6 +276,175 @@ func (s *Store) IsCancelled(ctx context.Context, jobID string) (bool, error) {
 	return status == StatusCancelled, nil
 }
 
+func (s *Store) IsPaused(ctx context.Context, jobID string) (bool, error) {
+	var status Status
+	err := s.db.QueryRowContext(ctx, `SELECT status FROM jobs WHERE id = ?`, jobID).Scan(&status)
+	if err != nil {
+		return false, err
+	}
+	return status == StatusPaused, nil
+}
+
+func (s *Store) PauseJob(ctx context.Context, id string) error {
+	now := time.Now().UTC()
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, updated_at = ?
+		WHERE id = ? AND status = ?
+	`, StatusPaused, now, id, StatusRunning)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (s *Store) ResumeJob(ctx context.Context, id string) error {
+	now := time.Now().UTC()
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, updated_at = ?, error_message = NULL
+		WHERE id = ? AND status = ?
+	`, StatusQueued, now, id, StatusPaused)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (s *Store) ClearCompleted(ctx context.Context) (int64, error) {
+	result, err := s.db.ExecContext(ctx, `
+		DELETE FROM job_items WHERE job_id IN (SELECT id FROM jobs WHERE status IN (?, ?))
+	`, StatusCompleted, StatusCancelled)
+	if err != nil {
+		return 0, err
+	}
+	itemsRemoved, _ := result.RowsAffected()
+	result, err = s.db.ExecContext(ctx, `
+		DELETE FROM jobs WHERE status IN (?, ?)
+	`, StatusCompleted, StatusCancelled)
+	if err != nil {
+		return 0, err
+	}
+	jobsRemoved, _ := result.RowsAffected()
+	return jobsRemoved + itemsRemoved, nil
+}
+
+func (s *Store) ClearFailed(ctx context.Context) (int64, error) {
+	result, err := s.db.ExecContext(ctx, `
+		DELETE FROM job_items WHERE job_id IN (SELECT id FROM jobs WHERE status = ?)
+	`, StatusFailed)
+	if err != nil {
+		return 0, err
+	}
+	itemsRemoved, _ := result.RowsAffected()
+	result, err = s.db.ExecContext(ctx, `
+		DELETE FROM jobs WHERE status = ?
+	`, StatusFailed)
+	if err != nil {
+		return 0, err
+	}
+	jobsRemoved, _ := result.RowsAffected()
+	return jobsRemoved + itemsRemoved, nil
+}
+
+func (s *Store) ListItems(ctx context.Context, jobID string) ([]Item, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT id, job_id, source_path, destination_path, temp_path, size_bytes,
+			processed_bytes, status, error_message, checksum, created_at, updated_at
+		FROM job_items
+		WHERE job_id = ?
+		ORDER BY created_at ASC
+	`, jobID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]Item, 0)
+	for rows.Next() {
+		var item Item
+		var temp, errMsg, checksum sql.NullString
+		if err := rows.Scan(
+			&item.ID, &item.JobID, &item.SourcePath, &item.DestinationPath, &temp,
+			&item.SizeBytes, &item.ProcessedBytes, &item.Status, &errMsg, &checksum,
+			&item.CreatedAt, &item.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		item.TempPath = nullString(temp)
+		item.ErrorMessage = nullString(errMsg)
+		item.Checksum = nullString(checksum)
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+func (s *Store) ClaimNextArchiveJob(ctx context.Context) (Job, bool, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Job{}, false, err
+	}
+	defer tx.Rollback()
+
+	row := tx.QueryRowContext(ctx, `
+		SELECT id, type, status, source_path, destination_path,
+			total_bytes, processed_bytes, total_items, processed_items,
+			current_item, error_message, conflict_policy, verify_mode,
+			created_at, updated_at, started_at, completed_at
+		FROM jobs
+		WHERE status = ? AND type IN (?, ?)
+		ORDER BY created_at ASC
+		LIMIT 1
+	`, StatusQueued, TypeExtract, TypeArchive)
+
+	job, err := scanJob(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Job{}, false, nil
+	}
+	if err != nil {
+		return Job{}, false, err
+	}
+
+	now := time.Now().UTC()
+	result, err := tx.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, started_at = ?, updated_at = ?, error_message = NULL
+		WHERE id = ? AND status = ?
+	`, StatusRunning, now, now, job.ID, StatusQueued)
+	if err != nil {
+		return Job{}, false, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return Job{}, false, err
+	}
+	if affected == 0 {
+		return Job{}, false, nil
+	}
+	if err := tx.Commit(); err != nil {
+		return Job{}, false, err
+	}
+
+	job.Status = StatusRunning
+	job.StartedAt = &now
+	job.UpdatedAt = now
+	return job, true, nil
+}
+
 func (s *Store) ClearItems(ctx context.Context, jobID string) error {
 	_, err := s.db.ExecContext(ctx, `DELETE FROM job_items WHERE job_id = ?`, jobID)
 	return err

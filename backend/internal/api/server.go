@@ -82,8 +82,14 @@ func (s *Server) routes() {
 			r.Post("/files/upload", s.handleUpload)
 			r.Post("/jobs/copy", s.handleCreateCopyJob)
 			r.Post("/jobs/move", s.handleCreateMoveJob)
+			r.Post("/jobs/archive", s.handleCreateArchiveJob)
+			r.Post("/jobs/extract", s.handleCreateExtractJob)
 			r.Post("/jobs/{id}/cancel", s.handleCancelJob)
 			r.Post("/jobs/{id}/retry", s.handleRetryJob)
+			r.Post("/jobs/{id}/pause", s.handlePauseJob)
+			r.Post("/jobs/{id}/resume", s.handleResumeJob)
+			r.Delete("/jobs/clear-completed", s.handleClearCompleted)
+			r.Delete("/jobs/clear-failed", s.handleClearFailed)
 		})
 	})
 
@@ -543,6 +549,50 @@ func (s *Server) handleCreateMoveJob(w http.ResponseWriter, r *http.Request) {
 	s.handleCreateTransferJob(w, r, jobs.TypeMove)
 }
 
+func (s *Server) handleCreateArchiveJob(w http.ResponseWriter, r *http.Request) {
+	s.handleCreateTransferJob(w, r, jobs.TypeArchive)
+}
+
+func (s *Server) handleCreateExtractJob(w http.ResponseWriter, r *http.Request) {
+	var req jobs.CreateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+	req.Type = jobs.TypeExtract
+	req.ConflictPolicy = "rename"
+
+	source, err := s.guard.Resolve(req.SourcePath)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	info, err := os.Stat(source)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	if !info.Mode().IsRegular() {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "extract source must be a zip file"})
+		return
+	}
+	req.SourcePath = source
+
+	destination, err := s.guard.Resolve(req.DestinationPath)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	req.DestinationPath = destination
+
+	job, err := s.jobs.Create(r.Context(), req)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, job)
+}
+
 func (s *Server) handleCreateTransferJob(w http.ResponseWriter, r *http.Request, jobType jobs.Type) {
 	var req jobs.CreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -606,6 +656,40 @@ func (s *Server) handleRetryJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handlePauseJob(w http.ResponseWriter, r *http.Request) {
+	if err := s.jobs.PauseJob(r.Context(), chi.URLParam(r, "id")); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleResumeJob(w http.ResponseWriter, r *http.Request) {
+	if err := s.jobs.ResumeJob(r.Context(), chi.URLParam(r, "id")); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleClearCompleted(w http.ResponseWriter, r *http.Request) {
+	removed, err := s.jobs.ClearCompleted(r.Context())
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]int64{"removed": removed})
+}
+
+func (s *Server) handleClearFailed(w http.ResponseWriter, r *http.Request) {
+	removed, err := s.jobs.ClearFailed(r.Context())
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]int64{"removed": removed})
 }
 
 func writeJSON(w http.ResponseWriter, status int, value any) {

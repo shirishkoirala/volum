@@ -51,14 +51,38 @@ func (w *Worker) runOnce(ctx context.Context) {
 		w.log.Error("claim transfer job failed", "error", err)
 		return
 	}
+	if ok {
+		if err := w.processTransfer(ctx, job); err != nil {
+			w.log.Error("transfer job failed", "job_id", job.ID, "error", err)
+			if failErr := w.store.FailJob(ctx, job.ID, err); failErr != nil {
+				w.log.Error("mark transfer job failed", "job_id", job.ID, "error", failErr)
+			}
+		}
+		return
+	}
+
+	job, ok, err = w.store.ClaimNextArchiveJob(ctx)
+	if err != nil {
+		w.log.Error("claim archive job failed", "error", err)
+		return
+	}
 	if !ok {
 		return
 	}
 
-	if err := w.processTransfer(ctx, job); err != nil {
-		w.log.Error("transfer job failed", "job_id", job.ID, "error", err)
-		if failErr := w.store.FailJob(ctx, job.ID, err); failErr != nil {
-			w.log.Error("mark transfer job failed", "job_id", job.ID, "error", failErr)
+	var processErr error
+	switch job.Type {
+	case jobs.TypeArchive:
+		if _, processErr = w.processArchive(ctx, job); processErr != nil {
+		} // processArchive handles job state internally
+	case jobs.TypeExtract:
+		if _, processErr = w.processExtract(ctx, job); processErr != nil {
+		}
+	}
+	if processErr != nil {
+		w.log.Error("archive/extract job failed", "job_id", job.ID, "error", processErr)
+		if failErr := w.store.FailJob(ctx, job.ID, processErr); failErr != nil {
+			w.log.Error("mark job failed", "job_id", job.ID, "error", failErr)
 		}
 	}
 }
@@ -156,6 +180,9 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 
 		copied, err := w.copyOne(ctx, job, item, processedBytes, processedItems)
 		if err != nil {
+			if errors.Is(err, errJobPaused) {
+				return nil
+			}
 			message := err.Error()
 			_ = w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusFailed, copied, &message)
 			return err
@@ -280,6 +307,16 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 			temp.Close()
 			return copied, nil
 		}
+		paused, err := w.store.IsPaused(ctx, job.ID)
+		if err != nil {
+			temp.Close()
+			return copied, err
+		}
+		if paused {
+			temp.Close()
+			_ = w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusPaused, copied, nil)
+			return copied, errJobPaused
+		}
 
 		n, readErr := source.Read(buffer)
 		if n > 0 {
@@ -338,6 +375,7 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 }
 
 var errSkipDestination = errors.New("destination skipped by conflict policy")
+var errJobPaused = errors.New("job paused")
 
 func (w *Worker) resolveConflictDestination(ctx context.Context, destination, policy string) (string, error) {
 	if policy == "" {
@@ -413,4 +451,77 @@ func deref(value *string) string {
 		return ""
 	}
 	return *value
+}
+
+func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, error) {
+	if job.SourcePath == nil || job.DestinationPath == nil {
+		return "", errors.New("archive job requires source and destination paths")
+	}
+	source, err := w.guard.Resolve(*job.SourcePath)
+	if err != nil {
+		return "", err
+	}
+	dest, err := w.guard.Resolve(*job.DestinationPath)
+	if err != nil {
+		return "", err
+	}
+	archivePath := dest
+	if _, err := os.Stat(dest); err == nil {
+		archivePath, _ = nextAvailablePath(dest)
+	}
+	if err := os.MkdirAll(filepath.Dir(archivePath), 0o755); err != nil {
+		return "", err
+	}
+
+	archiveFile, err := os.Create(archivePath)
+	if err != nil {
+		return "", err
+	}
+	defer archiveFile.Close()
+
+	if err := writeZip(w.store, ctx, archiveFile, job.ID, source); err != nil {
+		return "", err
+	}
+
+	info, err := archiveFile.Stat()
+	if err != nil {
+		return "", err
+	}
+	if err := w.store.UpdateJobProgress(ctx, job.ID, info.Size(), 1, *job.SourcePath); err != nil {
+		return "", err
+	}
+	if err := w.store.CreateAuditLog(ctx, "archive", archivePath, "created archive from "+*job.SourcePath); err != nil {
+		return "", err
+	}
+	if err := w.store.CompleteJob(ctx, job.ID); err != nil {
+		return "", err
+	}
+	return archivePath, nil
+}
+
+func (w *Worker) processExtract(ctx context.Context, job jobs.Job) (string, error) {
+	if job.SourcePath == nil || job.DestinationPath == nil {
+		return "", errors.New("extract job requires source and destination paths")
+	}
+	source, err := w.guard.Resolve(*job.SourcePath)
+	if err != nil {
+		return "", err
+	}
+	dest, err := w.guard.Resolve(*job.DestinationPath)
+	if err != nil {
+		return "", err
+	}
+	if err := os.MkdirAll(dest, 0o755); err != nil {
+		return "", err
+	}
+	if err := extractZip(w.store, ctx, dest, job.ID, source); err != nil {
+		return "", err
+	}
+	if err := w.store.CreateAuditLog(ctx, "extract", dest, "extracted from "+*job.SourcePath); err != nil {
+		return "", err
+	}
+	if err := w.store.CompleteJob(ctx, job.ID); err != nil {
+		return "", err
+	}
+	return dest, nil
 }
