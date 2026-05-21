@@ -83,7 +83,7 @@ Volum is built in small, verifiable phases. Priority order: **data safety → re
 
 Goal: finish the job system with pause/resume, recovery, and archive/extract.
 
-- Pause and resume running jobs
+- Pause and resume running jobs `[done]`
 - Resume interrupted copy jobs on restart (compare partial file sizes)
 - Extract archives (zip, tar, tar.gz)
 - Create archives (zip, tar.gz from selected items)
@@ -146,8 +146,8 @@ Goal: refine the experience for daily homelab use.
 
 ## Immediate Next Tasks
 
-1. Add pause/resume to jobs — `Phase 9`
-2. Add resume interrupted copy jobs — `Phase 9`
-3. Add select all / invert selection — `Phase 10`
-4. Add recycle bin restore flow — `Phase 10`
-5. Add directory download as zip — `Phase 10`
+1. Add resume interrupted copy jobs — `Phase 9`
+2. Add select all / invert selection — `Phase 10`
+3. Add recycle bin restore flow — `Phase 10`
+4. Add directory download as zip — `Phase 10`
+5. Add file permissions display as owner/group/rwx — `Phase 10`

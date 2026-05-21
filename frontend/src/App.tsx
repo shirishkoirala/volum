@@ -20,9 +20,11 @@ import {
   isVideoExtension,
   login,
   logout,
+  pauseJob,
   renamePath,
   RootEntry,
   Session,
+  resumeJob,
   retryJob,
   uploadFiles
 } from './api/client';
@@ -304,6 +306,22 @@ export function App() {
   const handleRetryJob = (id: string) => {
     void runAction(async () => {
       await retryJob(id);
+      const response = await getJobs();
+      setJobs(response.jobs ?? []);
+    });
+  };
+
+  const handlePauseJob = (id: string) => {
+    void runAction(async () => {
+      await pauseJob(id);
+      const response = await getJobs();
+      setJobs(response.jobs ?? []);
+    });
+  };
+
+  const handleResumeJob = (id: string) => {
+    void runAction(async () => {
+      await resumeJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
     });
@@ -741,7 +759,14 @@ export function App() {
             <p className="muted">No jobs yet</p>
           ) : (
             jobs.map((job) => (
-              <JobItem job={job} key={job.id} onCancel={handleCancelJob} onRetry={handleRetryJob} />
+              <JobItem
+                job={job}
+                key={job.id}
+                onCancel={handleCancelJob}
+                onPause={handlePauseJob}
+                onResume={handleResumeJob}
+                onRetry={handleRetryJob}
+              />
             ))
           )}
         </div>
@@ -804,14 +829,20 @@ function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void })
 function JobItem({
   job,
   onCancel,
+  onPause,
+  onResume,
   onRetry
 }: {
   job: Job;
   onCancel: (id: string) => void;
+  onPause: (id: string) => void;
+  onResume: (id: string) => void;
   onRetry: (id: string) => void;
 }) {
   const progress = job.totalBytes > 0 ? Math.round((job.processedBytes / job.totalBytes) * 100) : 0;
-  const canCancel = job.status === 'queued' || job.status === 'running';
+  const canCancel = job.status === 'queued' || job.status === 'running' || job.status === 'paused';
+  const canPause = job.status === 'running';
+  const canResume = job.status === 'paused';
   const canRetry = job.status === 'failed' || job.status === 'cancelled';
   const showLiveStats = job.status === 'running';
   const hasKnownTotal = job.totalBytes > 0;
@@ -836,10 +867,22 @@ function JobItem({
       </div>
       <p>{job.currentItem ?? job.sourcePath ?? job.id}</p>
       {job.errorMessage && <p className="job-error">{job.errorMessage}</p>}
-      {(canCancel || canRetry) && (
+      {(canPause || canResume || canCancel || canRetry) && (
         <div className="job-actions">
+          {canPause && (
+            <button type="button" onClick={() => onPause(job.id)}>
+              <Icon name="media-playback-pause" size={15} />
+              Pause
+            </button>
+          )}
+          {canResume && (
+            <button type="button" onClick={() => onResume(job.id)}>
+              <Icon name="media-playback-start" size={15} />
+              Resume
+            </button>
+          )}
           {canCancel && (
-              <button type="button" onClick={() => onCancel(job.id)}>
+            <button type="button" onClick={() => onCancel(job.id)}>
               <Icon name="process-stop" size={15} />
               Cancel
             </button>

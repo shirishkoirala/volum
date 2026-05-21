@@ -175,6 +175,18 @@ export function retryJob(id: string) {
   });
 }
 
+export function pauseJob(id: string) {
+  return requestVoid(`/api/jobs/${id}/pause`, {
+    method: 'POST'
+  });
+}
+
+export function resumeJob(id: string) {
+  return requestVoid(`/api/jobs/${id}/resume`, {
+    method: 'POST'
+  });
+}
+
 export function createFolder(path: string, name: string) {
   return request<FileEntry>('/api/files/folder', {
     method: 'POST',
