@@ -1,25 +1,5 @@
 import { DragEvent, FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ChevronRight,
-  Copy,
-  Download,
-  Eye,
-  File,
-  Folder,
-  Grid2X2,
-  HardDrive,
-  List,
-  LogOut,
-  MoveRight,
-  Pencil,
-  Plus,
-  RefreshCw,
-  RotateCcw,
-  Search,
-  Settings2,
-  Trash2,
-  UploadCloud
-} from 'lucide-react';
+import { Icon, FileIcon, FolderIcon, DeviceIcon } from './components/Icon';
 import {
   ConflictPolicy,
   FileEntry,
@@ -449,7 +429,7 @@ export function App() {
                 onClick={() => setCurrentPath(root)}
                 type="button"
               >
-                <HardDrive size={18} />
+                <DeviceIcon name="drive-harddisk" size={18} />
                 <span>{root}</span>
               </button>
             ))}
@@ -462,7 +442,7 @@ export function App() {
           <nav className="breadcrumbs" aria-label="Breadcrumb">
             {breadcrumbs.map((crumb, index) => (
               <button key={crumb.path} onClick={() => setCurrentPath(crumb.path)} type="button">
-                {index > 0 && <ChevronRight size={16} />}
+                {index > 0 && <Icon name="go-next" size={16} />}
                 <span>{crumb.label}</span>
               </button>
             ))}
@@ -476,7 +456,7 @@ export function App() {
               title="Create folder"
               type="button"
             >
-              <Plus size={18} />
+              <Icon name="folder-new" size={18} />
             </button>
             <button
               className="icon-button"
@@ -485,7 +465,7 @@ export function App() {
               title="Upload files"
               type="button"
             >
-              <UploadCloud size={18} />
+              <Icon name="document-import" size={18} />
             </button>
             <input
               ref={fileInputRef}
@@ -506,7 +486,7 @@ export function App() {
               title="Rename selected item"
               type="button"
             >
-              <Pencil size={18} />
+              <Icon name="edit-rename" size={18} />
             </button>
             <button
               className="icon-button"
@@ -515,7 +495,7 @@ export function App() {
               title="Download selected file"
               type="button"
             >
-              <Download size={18} />
+              <Icon name="edit-download" size={18} />
             </button>
             <button
               className="icon-button"
@@ -524,7 +504,7 @@ export function App() {
               title="Preview selected file"
               type="button"
             >
-              <Eye size={18} />
+              <Icon name="view-preview" size={18} />
             </button>
             <button
               className="icon-button"
@@ -533,7 +513,7 @@ export function App() {
               title="Copy selected item"
               type="button"
             >
-              <Copy size={18} />
+              <Icon name="edit-copy" size={18} />
             </button>
             <button
               className="icon-button"
@@ -542,7 +522,7 @@ export function App() {
               title="Move selected item"
               type="button"
             >
-              <MoveRight size={18} />
+              <Icon name="edit-cut" size={18} />
             </button>
             <button
               className="icon-button danger"
@@ -551,10 +531,10 @@ export function App() {
               title="Delete selected item"
               type="button"
             >
-              <Trash2 size={18} />
+              <Icon name="edit-delete" size={18} />
             </button>
             <label className="search">
-              <Search size={16} />
+              <Icon name="edit-find" size={16} />
               <input
                 placeholder="Search this folder"
                 value={query}
@@ -586,7 +566,7 @@ export function App() {
               title="Toggle hidden files"
               type="button"
             >
-              <Settings2 size={18} />
+              <Icon name="view-hidden" size={18} />
             </button>
             <button
               className="icon-button"
@@ -594,7 +574,7 @@ export function App() {
               title="Refresh"
               type="button"
             >
-              <RefreshCw size={18} />
+              <Icon name="view-refresh" size={18} />
             </button>
             <button
               className="icon-button"
@@ -602,7 +582,11 @@ export function App() {
               title="Change view"
               type="button"
             >
-              {viewMode === 'list' ? <Grid2X2 size={18} /> : <List size={18} />}
+              {viewMode === 'list' ? (
+                <Icon name="view-grid" size={18} />
+              ) : (
+                <Icon name="view-list-tree" size={18} />
+              )}
             </button>
             {session?.authEnabled && (
               <button
@@ -611,7 +595,7 @@ export function App() {
                 title="Log out"
                 type="button"
               >
-                <LogOut size={18} />
+                <Icon name="system-log-out" size={18} />
               </button>
             )}
           </div>
@@ -660,7 +644,11 @@ export function App() {
                 }}
                 type="button"
               >
-                {entry.type === 'directory' ? <Folder size={22} /> : <File size={22} />}
+                {entry.type === 'directory' ? (
+                  <FolderIcon size={22} />
+                ) : (
+                  <FileIcon entry={entry} size={22} />
+                )}
                 <span className="file-name">{entry.name}</span>
                 <span>{entry.type}</span>
                 <span>{formatBytes(entry.size)}</span>
@@ -678,27 +666,27 @@ export function App() {
             onClick={(event) => event.stopPropagation()}
           >
             <button type="button" onClick={handleRename} disabled={!canWrite || !canRename}>
-              <Pencil size={16} />
+              <Icon name="edit-rename" size={16} />
               Rename
             </button>
             <button type="button" onClick={handleDownload} disabled={!canDownload}>
-              <Download size={16} />
+              <Icon name="edit-download" size={16} />
               Download
             </button>
             <button type="button" onClick={handlePreview} disabled={!canPreview}>
-              <Eye size={16} />
+              <Icon name="view-preview" size={16} />
               Preview
             </button>
             <button type="button" onClick={handleCopy} disabled={!canWrite || !canCopy}>
-              <Copy size={16} />
+              <Icon name="edit-copy" size={16} />
               Copy
             </button>
             <button type="button" onClick={handleMove} disabled={!canWrite || !canMove}>
-              <MoveRight size={16} />
+              <Icon name="edit-cut" size={16} />
               Move
             </button>
             <button type="button" className="danger" onClick={handleDelete} disabled={!canWrite || !canDelete}>
-              <Trash2 size={16} />
+              <Icon name="edit-delete" size={16} />
               Delete
             </button>
           </div>
@@ -813,14 +801,14 @@ function JobItem({
       {(canCancel || canRetry) && (
         <div className="job-actions">
           {canCancel && (
-            <button type="button" onClick={() => onCancel(job.id)}>
-              <Trash2 size={15} />
+              <button type="button" onClick={() => onCancel(job.id)}>
+              <Icon name="process-stop" size={15} />
               Cancel
             </button>
           )}
           {canRetry && (
             <button type="button" onClick={() => onRetry(job.id)}>
-              <RotateCcw size={15} />
+              <Icon name="view-refresh" size={15} />
               Retry
             </button>
           )}

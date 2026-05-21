@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { X, Download, ExternalLink } from 'lucide-react';
 import {
   downloadUrl,
   isAudioExtension,
@@ -9,6 +8,7 @@ import {
   rawUrl,
   type FileEntry
 } from '../api/client';
+import { Icon } from './Icon';
 
 type PreviewModalProps = {
   entry: FileEntry;
@@ -69,7 +69,7 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
               title="Download"
               type="button"
             >
-              <Download size={18} />
+              <Icon name="edit-download" size={18} />
             </button>
             <button
               className="icon-button"
@@ -77,7 +77,7 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
               title="Open raw"
               type="button"
             >
-              <ExternalLink size={18} />
+              <Icon name="document-open" size={18} />
             </button>
             <button
               className="icon-button"
@@ -85,7 +85,7 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
               title="Close"
               type="button"
             >
-              <X size={18} />
+              <Icon name="window-close" size={18} />
             </button>
           </div>
         </div>
