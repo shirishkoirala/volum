@@ -1,103 +1,153 @@
 # Volum Roadmap
 
-Volum should be built in small, verifiable phases. The priority order is data safety, reliability, progress visibility, simple UX, performance, then extra features.
+Volum is built in small, verifiable phases. Priority order: **data safety → reliability → progress visibility → simple UX → performance → extra features**.
 
-## Phase 1: Usable File Browser
+---
 
-Goal: make Volum useful for basic local browsing on Docker for Mac and Ubuntu.
+## Phase 1: Usable File Browser `[done]`
 
-- Browse configured roots `[done]`
-- Show empty folder states clearly `[done]`
-- Create folder `[done]`
-- Rename file or folder `[done]`
-- Delete with confirmation `[done]`
-- Download files `[done]`
-- Improve file icons and metadata display
-- Add basic error messages for permission and path failures
+- Browse configured roots
+- Empty folder states
+- Create folder
+- Rename file/folder
+- Delete with confirmation
+- Download files
+- Error messages for permission/path failures
+- File metadata (size, modified date, permissions)
 
-## Phase 2: File Selection and Actions
+## Phase 2: File Selection and Actions `[done]`
 
-Goal: make the UI behave like a real file manager.
+- Single-select and multi-select (Ctrl/Cmd, Shift-range)
+- Keyboard shortcuts (Escape, Enter)
+- Context menu
+- Toolbar actions for selected items
+- Sort by name, size, type, modified date
+- Hidden file toggle
+- Refresh current folder
 
-- Single-select and multi-select `[done]`
-- Keyboard selection basics `[done]`
-- Context menu `[done]`
-- Toolbar actions for selected items `[done]`
-- Sort by name, size, type, and modified date `[done]`
-- Hidden file toggle polish `[done]`
-- Refresh current folder `[done]`
+## Phase 3: Persistent Copy Jobs `[done]`
 
-## Phase 3: Persistent Copy Jobs
+- Copy job API
+- Persistent job/item records in SQLite
+- Background worker
+- Copy to `.volum-tmp/*.partial`
+- Size verification before final rename
+- Never overwrite silently
+- Track total/processed bytes, current item, speed, ETA
+- Jobs panel (active, completed, failed, cancelled)
 
-Goal: implement the core Volum architecture.
+## Phase 4: Live Job Updates `[done]`
 
-- Create copy job API `[done]`
-- Persist job and job item records in SQLite `[done]`
-- Background worker processes queued jobs `[done]`
-- Copy to `.volum-tmp/*.partial` `[done]`
-- Verify copied size before final rename `[done]`
-- Never overwrite destination silently `[done]`
-- Track total bytes and processed bytes `[done]`
-- Track current item `[done]`
-- Track speed and ETA `[done]`
-- Show active, completed, failed, and cancelled jobs in the UI `[done]`
+- Server-Sent Events for job state
+- Cancel job
+- Retry failed job
+- Mark interrupted running jobs on startup
 
-## Phase 4: Live Job Updates
+## Phase 5: Safe Move and Delete `[done]`
 
-Goal: make progress visible without browser ownership of the job.
+- Move = copy + verify + delete source
+- Delete requires explicit confirmation
+- Audit log entries
+- Detect permission denied, missing source/dest, name conflicts
+- Conflict policies: ask, skip, overwrite, rename, cancel
 
-- Add Server-Sent Events endpoint for job updates `[done]`
-- Replace frontend polling with live updates `[done]`
-- Add cancel action `[done]`
-- Add retry action for failed jobs `[done]`
-- Mark interrupted running jobs safely on startup `[done]`
+## Phase 6: Uploads `[done]`
 
-## Phase 5: Safe Move and Delete
+- Upload files to current folder
+- Drag and drop
+- Upload manifest for size verification
+- Upload progress as persistent jobs
+- Path traversal protection
 
-Goal: support destructive operations without unsafe shortcuts.
+## Phase 7: Auth and Roles `[done]`
 
-- Implement move as copy, verify, then delete source `[done]`
-- Delete only after explicit confirmation `[done]`
-- Add audit log entries for destructive operations `[done]`
-- Detect permission denied, missing source, missing destination, and name conflicts `[done]`
-- Add conflict policies: ask, skip, overwrite, rename, cancel `[done]`
+- Login/logout with HMAC-signed session cookies
+- Admin role (full write access)
+- Readonly role (browse, preview, download)
+- Protect write APIs by role
+- Tailscale/WireGuard exposure guidance
 
-## Phase 6: Uploads
+## Phase 8: Preview and Polish `[done]`
 
-Goal: support common browser-to-server workflows.
+- Image preview (png, jpg, gif, svg, webp, etc.)
+- Video/audio preview with HTML5 controls
+- Text/code preview with dark theme
+- CSS design tokens (colors, spacing, radii, transitions)
+- Responsive layout (desktop, tablet, mobile)
+- Hover/active/focus states
+- Double-click/Enter for file preview
 
-- Upload files to current folder `[done]`
-- Drag and drop upload `[done]`
-- Large upload handling `[done]`
-- Upload progress as persistent jobs `[done]`
-- Prevent path traversal in upload targets `[done]`
+---
 
-## Phase 7: Auth and Roles
+## Phase 9: Job Engine Completion
 
-Goal: make Volum safe enough for a homelab service.
+Goal: finish the job system with pause/resume, recovery, and archive/extract.
 
-- Login and logout `[done]`
-- Session or JWT authentication `[done]`
-- Admin role `[done]`
-- Readonly role `[done]`
-- Protect write APIs `[done]`
-- Document recommended Tailscale-only exposure `[done]`
+- Pause and resume running jobs
+- Resume interrupted copy jobs on restart (compare partial file sizes)
+- Extract archives (zip, tar, tar.gz)
+- Create archives (zip, tar.gz from selected items)
+- Checksum verification (md5, sha256) as a job type
+- Per-item retry for failed items within a job
+- Clear completed/failed jobs from history
+- Job drawer: filter by status, collapse completed
 
-## Phase 8: Preview and Polish
+## Phase 10: Advanced File Manager
 
-Goal: improve day-to-day UX after the safe foundations are working.
+Goal: match the capabilities of a desktop file manager.
 
-- Image preview
-- Text and code preview
-- Video and audio preview
-- PDF preview if practical
-- Better responsive layout
-- More refined visual design
-- Favorites and recent locations
+- File type icons (image, video, code, archive, pdf, etc.)
+- Folder sizes (calculate total size of directory contents)
+- Disk usage info per root (free/total space)
+- Select all / invert selection
+- Cut path to clipboard for paste navigation
+- Recycle bin (`.volum-trash/` per root, restore before permanent delete)
+- Directory download (archive folder on-the-fly as zip)
+- File permissions display as `rwxr-xr-x` with owner/group
+- Chmod basic permissions via UI
+
+## Phase 11: Search and Navigation
+
+Goal: make finding files fast.
+
+- Full-text file content search (grep across roots)
+- Search across all roots simultaneously
+- Recent locations in sidebar
+- Favorite/bookmark paths in sidebar
+- Open file location from search results
+- Keyboard shortcut for search focus (`/` or `Ctrl+K`)
+
+## Phase 12: Batch and Workflow
+
+Goal: handle complex multi-step file operations.
+
+- Batch rename (pattern-based: find/replace, counter, case change)
+- Copy/move with multiple destination folders
+- Scheduled jobs (run copy/archive at specific time)
+- Job chaining (run job B after job A completes)
+- Export/import job history
+- Notification for completed jobs (browser notification API)
+
+## Phase 13: Polish and Final UX
+
+Goal: refine the experience for daily homelab use.
+
+- PDF preview (pdf.js or iframe)
+- Thumbnail generation for images/videos in grid view
+- Drag-select (rubber band selection like Finder)
+- Column view (macOS Finder style)
+- File/folder info panel (right-click → Get Info)
+- Loading skeletons instead of "Loading..." text
+- Keyboard shortcut reference overlay (`?`)
+- Touch-friendly context menu on mobile
+- Dark mode
+
+---
 
 ## Immediate Next Tasks
 
-1. Add image preview.
-2. Add text and code preview.
-3. Add video and audio preview.
-4. Improve responsive layout and visual polish.
+1. Add file type icons (image, video, code, archive, etc.) — `Phase 10`
+2. Add folder size calculation — `Phase 10`
+3. Add disk usage display in sidebar — `Phase 10`
+4. Add pause/resume to jobs — `Phase 9`
+5. Add resume interrupted copy jobs — `Phase 9`
