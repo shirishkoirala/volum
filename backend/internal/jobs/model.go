@@ -42,6 +42,8 @@ type Job struct {
 	ErrorMessage    *string    `json:"errorMessage,omitempty"`
 	ConflictPolicy  string     `json:"conflictPolicy"`
 	VerifyMode      string     `json:"verifyMode"`
+	ScheduledAt     *time.Time `json:"scheduledAt,omitempty"`
+	NextJobID       *string    `json:"nextJobId,omitempty"`
 	CreatedAt       time.Time  `json:"createdAt"`
 	UpdatedAt       time.Time  `json:"updatedAt"`
 	StartedAt       *time.Time `json:"startedAt,omitempty"`
@@ -64,11 +66,13 @@ type Item struct {
 }
 
 type CreateRequest struct {
-	Type            Type   `json:"type"`
-	SourcePath      string `json:"sourcePath"`
-	DestinationPath string `json:"destinationPath"`
-	ConflictPolicy  string `json:"conflictPolicy"`
-	VerifyMode      string `json:"verifyMode"`
+	Type            Type       `json:"type"`
+	SourcePath      string     `json:"sourcePath"`
+	DestinationPath string     `json:"destinationPath"`
+	ConflictPolicy  string     `json:"conflictPolicy"`
+	VerifyMode      string     `json:"verifyMode"`
+	ScheduledAt     *time.Time `json:"scheduledAt,omitempty"`
+	NextJobID       *string    `json:"nextJobId,omitempty"`
 }
 
 type AuditLog struct {

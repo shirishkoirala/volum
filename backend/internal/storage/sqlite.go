@@ -36,6 +36,8 @@ func migrate(db *sql.DB) error {
 	if _, err := db.Exec(initialSchema); err != nil {
 		return fmt.Errorf("apply initial schema: %w", err)
 	}
+	_, _ = db.Exec(`ALTER TABLE jobs ADD COLUMN scheduled_at DATETIME`)
+	_, _ = db.Exec(`ALTER TABLE jobs ADD COLUMN next_job_id TEXT`)
 	return nil
 }
 
@@ -54,6 +56,8 @@ CREATE TABLE IF NOT EXISTS jobs (
     error_message TEXT,
     conflict_policy TEXT DEFAULT 'ask',
     verify_mode TEXT DEFAULT 'size',
+    scheduled_at DATETIME,
+    next_job_id TEXT,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     started_at DATETIME,
