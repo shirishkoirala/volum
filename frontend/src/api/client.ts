@@ -52,6 +52,18 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function requestVoid(url: string, options?: RequestInit): Promise<void> {
+  const response = await fetch(url, {
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    ...options
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(body.error ?? response.statusText);
+  }
+}
+
 export function getRoots() {
   return request<RootResponse>('/api/roots');
 }
@@ -63,4 +75,30 @@ export function getFiles(path: string, hidden: boolean) {
 
 export function getJobs() {
   return request<JobsResponse>('/api/jobs');
+}
+
+export function createFolder(path: string, name: string) {
+  return request<FileEntry>('/api/files/folder', {
+    method: 'POST',
+    body: JSON.stringify({ path, name })
+  });
+}
+
+export function renamePath(path: string, newName: string) {
+  return request<FileEntry>('/api/files/rename', {
+    method: 'PATCH',
+    body: JSON.stringify({ path, newName })
+  });
+}
+
+export function deletePath(path: string) {
+  return requestVoid('/api/files', {
+    method: 'DELETE',
+    body: JSON.stringify({ path })
+  });
+}
+
+export function downloadUrl(path: string) {
+  const params = new URLSearchParams({ path });
+  return `/api/files/download?${params.toString()}`;
 }

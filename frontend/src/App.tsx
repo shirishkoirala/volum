@@ -1,16 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ChevronRight,
+  Download,
   File,
   Folder,
   Grid2X2,
   HardDrive,
   List,
+  Pencil,
+  Plus,
   RefreshCw,
   Search,
-  Settings2
+  Settings2,
+  Trash2
 } from 'lucide-react';
-import { FileEntry, Job, getFiles, getJobs, getRoots } from './api/client';
+import {
+  FileEntry,
+  Job,
+  createFolder,
+  deletePath,
+  downloadUrl,
+  getFiles,
+  getJobs,
+  getRoots,
+  renamePath
+} from './api/client';
 
 type ViewMode = 'list' | 'grid';
 
@@ -25,6 +39,7 @@ export function App() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedEntry, setSelectedEntry] = useState<FileEntry | null>(null);
 
   useEffect(() => {
     getRoots()
@@ -41,6 +56,7 @@ export function App() {
       return;
     }
     setLoading(true);
+    setSelectedEntry(null);
     getFiles(currentPath, showHidden)
       .then((response) => {
         setEntries(response.entries ?? []);
@@ -49,6 +65,55 @@ export function App() {
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, [currentPath, refreshKey, showHidden]);
+
+  const refresh = () => setRefreshKey((value) => value + 1);
+
+  const runAction = async (action: () => Promise<unknown>) => {
+    try {
+      await action();
+      setError(null);
+      refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Action failed');
+    }
+  };
+
+  const handleCreateFolder = () => {
+    const name = window.prompt('Folder name');
+    if (name === null) {
+      return;
+    }
+    void runAction(() => createFolder(currentPath, name.trim()));
+  };
+
+  const handleRename = () => {
+    if (!selectedEntry) {
+      return;
+    }
+    const newName = window.prompt('New name', selectedEntry.name);
+    if (newName === null || newName.trim() === selectedEntry.name) {
+      return;
+    }
+    void runAction(() => renamePath(selectedEntry.path, newName.trim()));
+  };
+
+  const handleDelete = () => {
+    if (!selectedEntry) {
+      return;
+    }
+    const confirmed = window.confirm(`Delete "${selectedEntry.name}"? This cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+    void runAction(() => deletePath(selectedEntry.path));
+  };
+
+  const handleDownload = () => {
+    if (!selectedEntry || selectedEntry.type !== 'file') {
+      return;
+    }
+    window.location.href = downloadUrl(selectedEntry.path);
+  };
 
   useEffect(() => {
     const loadJobs = () => {
@@ -121,6 +186,41 @@ export function App() {
           </nav>
 
           <div className="toolbar">
+            <button
+              className="icon-button"
+              onClick={handleCreateFolder}
+              title="Create folder"
+              type="button"
+            >
+              <Plus size={18} />
+            </button>
+            <button
+              className="icon-button"
+              disabled={!selectedEntry}
+              onClick={handleRename}
+              title="Rename selected item"
+              type="button"
+            >
+              <Pencil size={18} />
+            </button>
+            <button
+              className="icon-button"
+              disabled={!selectedEntry || selectedEntry.type !== 'file'}
+              onClick={handleDownload}
+              title="Download selected file"
+              type="button"
+            >
+              <Download size={18} />
+            </button>
+            <button
+              className="icon-button danger"
+              disabled={!selectedEntry}
+              onClick={handleDelete}
+              title="Delete selected item"
+              type="button"
+            >
+              <Trash2 size={18} />
+            </button>
             <label className="search">
               <Search size={16} />
               <input
@@ -139,7 +239,7 @@ export function App() {
             </button>
             <button
               className="icon-button"
-              onClick={() => setRefreshKey((value) => value + 1)}
+              onClick={refresh}
               title="Refresh"
               type="button"
             >
@@ -166,8 +266,9 @@ export function App() {
           ) : (
             filteredEntries.map((entry) => (
               <button
-                className="file-row"
+                className={selectedEntry?.path === entry.path ? 'file-row selected' : 'file-row'}
                 key={entry.path}
+                onClick={() => setSelectedEntry(entry)}
                 onDoubleClick={() => entry.type === 'directory' && setCurrentPath(entry.path)}
                 type="button"
               >

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -51,6 +52,10 @@ func (s *Server) routes() {
 	s.router.Route("/api", func(r chi.Router) {
 		r.Get("/roots", s.handleRoots)
 		r.Get("/files", s.handleFiles)
+		r.Post("/files/folder", s.handleCreateFolder)
+		r.Patch("/files/rename", s.handleRename)
+		r.Delete("/files", s.handleDelete)
+		r.Get("/files/download", s.handleDownload)
 
 		r.Get("/jobs", s.handleJobs)
 		r.Post("/jobs/copy", s.handleCreateCopyJob)
@@ -88,6 +93,69 @@ func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"entries": entries})
+}
+
+func (s *Server) handleCreateFolder(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Path string `json:"path"`
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+
+	entry, err := s.files.CreateFolder(req.Path, req.Name)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, entry)
+}
+
+func (s *Server) handleRename(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Path    string `json:"path"`
+		NewName string `json:"newName"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+
+	entry, err := s.files.Rename(req.Path, req.NewName)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, entry)
+}
+
+func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Path string `json:"path"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+
+	if err := s.files.Delete(req.Path); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
+	path, info, err := s.files.DownloadPath(r.URL.Query().Get("path"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(info.Name()))
+	http.ServeFile(w, r, path)
 }
 
 func (s *Server) handleJobs(w http.ResponseWriter, r *http.Request) {
@@ -154,8 +222,15 @@ func writeError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, security.ErrEmptyPath),
 		errors.Is(err, security.ErrPathTraversal),
-		errors.Is(err, security.ErrOutsideRoots):
+		errors.Is(err, security.ErrOutsideRoots),
+		errors.Is(err, files.ErrInvalidName),
+		errors.Is(err, files.ErrRootOperation),
+		errors.Is(err, files.ErrDirectoryDownload):
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+	case errors.Is(err, files.ErrDestinationExists):
+		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+	case errors.Is(err, os.ErrNotExist):
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
 	case errors.Is(err, sql.ErrNoRows):
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not found"})
 	default:

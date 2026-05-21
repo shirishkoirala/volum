@@ -188,6 +188,15 @@ button {
   width: 40px;
 }
 
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.icon-button.danger:not(:disabled) {
+  color: #a32929;
+}
+
 .error-banner {
   background: #fff1f1;
   border: 1px solid #f4b9b9;
@@ -226,6 +235,12 @@ button {
 
 .file-row:hover {
   background: #f7faf9;
+}
+
+.file-row.selected {
+  background: #e7f5f2;
+  outline: 2px solid #0f766e;
+  outline-offset: -2px;
 }
 
 .file-row svg {
