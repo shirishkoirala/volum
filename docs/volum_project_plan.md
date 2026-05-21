@@ -238,15 +238,7 @@ Never delete the source before destination verification succeeds.
 
 ### Delete Safety Rules
 
-For MVP, destructive delete should require confirmation.
-
-Optional later feature:
-
-```txt
-soft delete / recycle bin
-```
-
-Example trash path:
+Destructive delete should require confirmation. Normal delete should move items into a per-root recycle bin first, with permanent removal only from trash.
 
 ```txt
 .volum-trash/

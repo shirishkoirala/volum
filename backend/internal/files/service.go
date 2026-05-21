@@ -1,7 +1,9 @@
 package files
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -9,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/volum-app/volum/backend/internal/security"
 )
 
@@ -29,11 +32,23 @@ type Root struct {
 	UsedBytes  int64  `json:"usedBytes"`
 }
 
+type TrashEntry struct {
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	OriginalPath string    `json:"originalPath"`
+	TrashPath    string    `json:"trashPath"`
+	Type         string    `json:"type"`
+	Size         int64     `json:"size"`
+	DeletedAt    time.Time `json:"deletedAt"`
+	RootPath     string    `json:"rootPath"`
+}
+
 var (
 	ErrInvalidName       = errors.New("name cannot be empty or contain path separators")
 	ErrDestinationExists = errors.New("destination already exists")
 	ErrRootOperation     = errors.New("operation is not allowed on a configured root")
 	ErrDirectoryDownload = errors.New("directories cannot be downloaded yet")
+	ErrTrashOperation    = errors.New("items in trash must be restored or permanently deleted")
 )
 
 type Service struct {
@@ -169,17 +184,133 @@ func (s *Service) Rename(path, newName string) (Entry, error) {
 }
 
 func (s *Service) Delete(path string) error {
+	_, err := s.Trash(path)
+	return err
+}
+
+func (s *Service) Trash(path string) (TrashEntry, error) {
 	resolved, err := s.guard.Resolve(path)
+	if err != nil {
+		return TrashEntry{}, err
+	}
+	if s.isRoot(resolved) {
+		return TrashEntry{}, ErrRootOperation
+	}
+	info, err := os.Stat(resolved)
+	if err != nil {
+		return TrashEntry{}, err
+	}
+
+	root, ok := s.rootFor(resolved)
+	if !ok {
+		return TrashEntry{}, security.ErrOutsideRoots
+	}
+	trashRoot := filepath.Join(root, ".volum-trash")
+	if isPathInside(trashRoot, resolved) {
+		return TrashEntry{}, ErrTrashOperation
+	}
+
+	id := uuid.NewString()
+	trashFiles := filepath.Join(trashRoot, "files")
+	trashMeta := filepath.Join(trashRoot, "meta")
+	if err := os.MkdirAll(trashFiles, 0o755); err != nil {
+		return TrashEntry{}, err
+	}
+	if err := os.MkdirAll(trashMeta, 0o755); err != nil {
+		return TrashEntry{}, err
+	}
+
+	trashPath := filepath.Join(trashFiles, id+"-"+filepath.Base(resolved))
+	entryType := "file"
+	if info.IsDir() {
+		entryType = "directory"
+	}
+	entry := TrashEntry{
+		ID:           id,
+		Name:         filepath.Base(resolved),
+		OriginalPath: resolved,
+		TrashPath:    trashPath,
+		Type:         entryType,
+		Size:         entrySize(resolved, info),
+		DeletedAt:    time.Now().UTC(),
+		RootPath:     root,
+	}
+
+	if err := os.Rename(resolved, trashPath); err != nil {
+		return TrashEntry{}, err
+	}
+	if err := writeTrashEntry(filepath.Join(trashMeta, id+".json"), entry); err != nil {
+		_ = os.Rename(trashPath, resolved)
+		return TrashEntry{}, err
+	}
+	return entry, nil
+}
+
+func (s *Service) ListTrash() ([]TrashEntry, error) {
+	entries := []TrashEntry{}
+	for _, root := range s.guard.Roots() {
+		metaDir := filepath.Join(root, ".volum-trash", "meta")
+		items, err := os.ReadDir(metaDir)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range items {
+			if item.IsDir() || filepath.Ext(item.Name()) != ".json" {
+				continue
+			}
+			entry, err := readTrashEntry(filepath.Join(metaDir, item.Name()))
+			if err != nil {
+				continue
+			}
+			if _, err := os.Stat(entry.TrashPath); err != nil {
+				continue
+			}
+			entries = append(entries, entry)
+		}
+	}
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].DeletedAt.After(entries[j].DeletedAt)
+	})
+	return entries, nil
+}
+
+func (s *Service) RestoreTrash(id string) (Entry, error) {
+	entry, metaPath, err := s.trashEntryByID(id)
+	if err != nil {
+		return Entry{}, err
+	}
+	if _, ok := s.rootFor(entry.OriginalPath); !ok {
+		return Entry{}, security.ErrOutsideRoots
+	}
+	if _, err := os.Stat(entry.OriginalPath); err == nil {
+		return Entry{}, ErrDestinationExists
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return Entry{}, err
+	}
+	if err := os.MkdirAll(filepath.Dir(entry.OriginalPath), 0o755); err != nil {
+		return Entry{}, err
+	}
+	if err := os.Rename(entry.TrashPath, entry.OriginalPath); err != nil {
+		return Entry{}, err
+	}
+	if err := os.Remove(metaPath); err != nil {
+		return Entry{}, err
+	}
+	return entryFromPath(entry.OriginalPath)
+}
+
+func (s *Service) DeleteTrash(id string) error {
+	entry, metaPath, err := s.trashEntryByID(id)
 	if err != nil {
 		return err
 	}
-	if s.isRoot(resolved) {
-		return ErrRootOperation
-	}
-	if _, err := os.Stat(resolved); err != nil {
+	if err := os.RemoveAll(entry.TrashPath); err != nil {
 		return err
 	}
-	return os.RemoveAll(resolved)
+	return os.Remove(metaPath)
 }
 
 func (s *Service) DownloadPath(path string) (string, os.FileInfo, error) {
@@ -212,9 +343,64 @@ func (s *Service) isRoot(path string) bool {
 	return false
 }
 
+func (s *Service) rootFor(path string) (string, bool) {
+	for _, root := range s.guard.Roots() {
+		if isPathInside(root, path) {
+			return root, true
+		}
+	}
+	return "", false
+}
+
+func (s *Service) trashEntryByID(id string) (TrashEntry, string, error) {
+	if !validBaseName(id) {
+		return TrashEntry{}, "", ErrInvalidName
+	}
+	for _, root := range s.guard.Roots() {
+		metaPath := filepath.Join(root, ".volum-trash", "meta", id+".json")
+		entry, err := readTrashEntry(metaPath)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return TrashEntry{}, "", err
+		}
+		return entry, metaPath, nil
+	}
+	return TrashEntry{}, "", os.ErrNotExist
+}
+
 func validBaseName(name string) bool {
 	name = strings.TrimSpace(name)
 	return name != "" && name == filepath.Base(name) && name != "." && name != ".."
+}
+
+func isPathInside(root, path string) bool {
+	rel, err := filepath.Rel(root, path)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+func readTrashEntry(path string) (TrashEntry, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return TrashEntry{}, err
+	}
+	var entry TrashEntry
+	if err := json.Unmarshal(data, &entry); err != nil {
+		return TrashEntry{}, err
+	}
+	if entry.ID == "" || entry.OriginalPath == "" || entry.TrashPath == "" {
+		return TrashEntry{}, fmt.Errorf("invalid trash metadata %s", path)
+	}
+	return entry, nil
+}
+
+func writeTrashEntry(path string, entry TrashEntry) error {
+	data, err := json.MarshalIndent(entry, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, data, 0o644)
 }
 
 func entryFromPath(path string) (Entry, error) {

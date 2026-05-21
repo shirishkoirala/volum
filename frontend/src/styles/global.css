@@ -196,6 +196,27 @@ button {
   color: var(--color-text-muted);
 }
 
+.section-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}
+
+.section-heading h2 {
+  margin: 0;
+}
+
+.section-heading span {
+  background: var(--color-badge);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  min-width: 24px;
+  padding: 2px 7px;
+  text-align: center;
+}
+
 .root-list {
   display: grid;
   gap: var(--space-sm);
@@ -257,6 +278,81 @@ button {
   background: var(--color-surface);
   border-color: var(--color-brand);
   box-shadow: var(--shadow-card-hover);
+}
+
+.trash-section {
+  min-height: 0;
+}
+
+.trash-list {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.trash-item {
+  align-items: center;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--space-sm);
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: var(--space-sm);
+}
+
+.trash-item strong,
+.trash-item span,
+.trash-item small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trash-item strong {
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.trash-item span,
+.trash-item small {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.trash-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.trash-actions button {
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+  width: 30px;
+}
+
+.trash-actions button:hover {
+  border-color: var(--color-text-muted);
+}
+
+.trash-actions button.danger {
+  color: var(--color-danger);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.muted.compact {
+  font-size: 12px;
+  margin: 0;
 }
 
 .workspace {

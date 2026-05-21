@@ -68,6 +68,7 @@ func (s *Server) routes() {
 			r.Get("/files", s.handleFiles)
 			r.Get("/files/download", s.handleDownload)
 			r.Get("/files/raw", s.handleRaw)
+			r.Get("/trash", s.handleTrash)
 			r.Get("/jobs", s.handleJobs)
 			r.Get("/jobs/events", s.handleJobEvents)
 			r.Get("/jobs/{id}", s.handleJob)
@@ -79,6 +80,8 @@ func (s *Server) routes() {
 			r.Post("/files/folder", s.handleCreateFolder)
 			r.Patch("/files/rename", s.handleRename)
 			r.Delete("/files", s.handleDelete)
+			r.Post("/trash/{id}/restore", s.handleRestoreTrash)
+			r.Delete("/trash/{id}", s.handleDeleteTrash)
 			r.Post("/files/upload", s.handleUpload)
 			r.Post("/jobs/copy", s.handleCreateCopyJob)
 			r.Post("/jobs/move", s.handleCreateMoveJob)
@@ -231,11 +234,48 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.files.Delete(req.Path); err != nil {
+	entry, err := s.files.Trash(req.Path)
+	if err != nil {
 		writeError(w, err)
 		return
 	}
-	if err := s.jobs.CreateAuditLog(r.Context(), "delete", req.Path, "deleted after explicit confirmation"); err != nil {
+	if err := s.jobs.CreateAuditLog(r.Context(), "trash", req.Path, "moved to trash "+entry.ID); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleTrash(w http.ResponseWriter, r *http.Request) {
+	entries, err := s.files.ListTrash()
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"entries": entries})
+}
+
+func (s *Server) handleRestoreTrash(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	entry, err := s.files.RestoreTrash(id)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	if err := s.jobs.CreateAuditLog(r.Context(), "restore", entry.Path, "restored from trash"); err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, entry)
+}
+
+func (s *Server) handleDeleteTrash(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := s.files.DeleteTrash(id); err != nil {
+		writeError(w, err)
+		return
+	}
+	if err := s.jobs.CreateAuditLog(r.Context(), "delete", id, "permanently deleted trash item"); err != nil {
 		writeError(w, err)
 		return
 	}
@@ -706,6 +746,7 @@ func writeError(w http.ResponseWriter, err error) {
 		errors.Is(err, files.ErrInvalidName),
 		errors.Is(err, files.ErrRootOperation),
 		errors.Is(err, files.ErrDirectoryDownload),
+		errors.Is(err, files.ErrTrashOperation),
 		errors.Is(err, jobs.ErrInvalidConflictPolicy):
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 	case errors.Is(err, files.ErrDestinationExists):

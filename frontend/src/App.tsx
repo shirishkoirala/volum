@@ -8,12 +8,14 @@ import {
   createCopyJob,
   createFolder,
   createMoveJob,
+  deleteTrash,
   deletePath,
   downloadUrl,
   getFiles,
   getJobs,
   getRoots,
   getSession,
+  getTrash,
   isAudioExtension,
   isImageExtension,
   isTextExtension,
@@ -24,8 +26,10 @@ import {
   renamePath,
   RootEntry,
   Session,
+  TrashEntry,
   resumeJob,
   retryJob,
+  restoreTrash,
   uploadFiles
 } from './api/client';
 import appIcon from './assets/icon-light.png';
@@ -44,6 +48,7 @@ export function App() {
   const [roots, setRoots] = useState<RootEntry[]>([]);
   const [currentPath, setCurrentPath] = useState('');
   const [entries, setEntries] = useState<FileEntry[]>([]);
+  const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showHidden, setShowHidden] = useState(false);
@@ -140,7 +145,7 @@ export function App() {
       selectedEntries.length === 1
         ? `"${selectedEntries[0].name}"`
         : `${selectedEntries.length} selected items`;
-    const confirmed = window.confirm(`Delete ${label}? This cannot be undone.`);
+    const confirmed = window.confirm(`Move ${label} to trash? You can restore it from the Trash panel.`);
     if (!confirmed) {
       return;
     }
@@ -148,6 +153,28 @@ export function App() {
       for (const entry of selectedEntries) {
         await deletePath(entry.path, entry.name);
       }
+      const response = await getTrash();
+      setTrashEntries(response.entries ?? []);
+    });
+  };
+
+  const handleRestoreTrash = (entry: TrashEntry) => {
+    void runAction(async () => {
+      await restoreTrash(entry.id);
+      const response = await getTrash();
+      setTrashEntries(response.entries ?? []);
+    });
+  };
+
+  const handleDeleteTrash = (entry: TrashEntry) => {
+    const confirmed = window.confirm(`Permanently delete "${entry.name}"? This cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+    void runAction(async () => {
+      await deleteTrash(entry.id);
+      const response = await getTrash();
+      setTrashEntries(response.entries ?? []);
     });
   };
 
@@ -198,9 +225,19 @@ export function App() {
       setRoots([]);
       setCurrentPath('');
       setEntries([]);
+      setTrashEntries([]);
       setJobs([]);
     });
   };
+
+  useEffect(() => {
+    if (sessionLoading || (session?.authEnabled && !session.authenticated)) {
+      return;
+    }
+    getTrash()
+      .then((response) => setTrashEntries(response.entries ?? []))
+      .catch(() => undefined);
+  }, [session, sessionLoading, refreshKey]);
 
   useEffect(() => {
     if (sessionLoading || (session?.authEnabled && !session.authenticated)) {
@@ -515,6 +552,44 @@ export function App() {
               </button>
             ))}
           </div>
+        </section>
+
+        <section className="nav-section trash-section">
+          <div className="section-heading">
+            <h2>Trash</h2>
+            <span>{trashEntries.length}</span>
+          </div>
+          {trashEntries.length === 0 ? (
+            <p className="muted compact">Trash is empty</p>
+          ) : (
+            <div className="trash-list">
+              {trashEntries.slice(0, 6).map((entry) => (
+                <div className="trash-item" key={entry.id}>
+                  <div>
+                    <strong>{entry.name}</strong>
+                    <span>{formatTrashPath(entry.originalPath)}</span>
+                    <small>{formatBytes(entry.size)} · {new Date(entry.deletedAt).toLocaleDateString()}</small>
+                  </div>
+                  {canWrite && (
+                    <div className="trash-actions">
+                      <button type="button" title="Restore" onClick={() => handleRestoreTrash(entry)}>
+                        <Icon name="edit-restore" size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        className="danger"
+                        title="Delete permanently"
+                        onClick={() => handleDeleteTrash(entry)}
+                      >
+                        <Icon name="edit-delete" size={15} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {trashEntries.length > 6 && <p className="muted compact">+{trashEntries.length - 6} more</p>}
+            </div>
+          )}
         </section>
       </aside>
 
@@ -978,6 +1053,14 @@ function formatGridDate(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date);
+}
+
+function formatTrashPath(path: string) {
+  const parts = path.split('/').filter(Boolean);
+  if (parts.length <= 2) {
+    return path;
+  }
+  return `.../${parts.slice(-2).join('/')}`;
 }
 
 function formatDuration(totalSeconds: number) {

@@ -38,3 +38,79 @@ func TestListReportsRecursiveDirectorySize(t *testing.T) {
 		t.Fatalf("expected recursive directory size 8, got %d", entries[0].Size)
 	}
 }
+
+func TestTrashAndRestore(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "note.txt")
+	if err := os.WriteFile(path, []byte("hello"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	guard, err := security.NewRootGuard([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := NewService(guard)
+
+	trashEntry, err := service.Trash(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatalf("expected original path to be moved, got %v", err)
+	}
+	if _, err := os.Stat(trashEntry.TrashPath); err != nil {
+		t.Fatalf("expected trashed file to exist: %v", err)
+	}
+
+	entries, err := service.ListTrash()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].ID != trashEntry.ID {
+		t.Fatalf("expected trashed entry %q, got %#v", trashEntry.ID, entries)
+	}
+
+	restored, err := service.RestoreTrash(trashEntry.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if restored.Path != path {
+		t.Fatalf("expected restored path %q, got %q", path, restored.Path)
+	}
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("expected restored file to exist: %v", err)
+	}
+}
+
+func TestDeleteTrashPermanentlyRemovesEntry(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "old.txt")
+	if err := os.WriteFile(path, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	guard, err := security.NewRootGuard([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := NewService(guard)
+
+	trashEntry, err := service.Trash(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := service.DeleteTrash(trashEntry.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(trashEntry.TrashPath); !os.IsNotExist(err) {
+		t.Fatalf("expected trash path to be removed, got %v", err)
+	}
+	entries, err := service.ListTrash()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 0 {
+		t.Fatalf("expected empty trash, got %#v", entries)
+	}
+}

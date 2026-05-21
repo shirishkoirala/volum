@@ -17,6 +17,7 @@ import {
   Pencil,
   Play,
   RefreshCw,
+  RotateCcw,
   Scissors,
   Search,
   Square,
@@ -55,6 +56,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'view-list-tree': ListTree,
   'view-preview': Eye,
   'view-refresh': RefreshCw,
+  'edit-restore': RotateCcw,
   'window-close': X,
 };
 

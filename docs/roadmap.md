@@ -101,7 +101,7 @@ Goal: match the capabilities of a desktop file manager.
 - Disk usage info per root (free/total space) `[done]`
 - Select all / invert selection `[done]`
 - Cut path to clipboard for paste navigation
-- Recycle bin (`.volum-trash/` per root, restore before permanent delete)
+- Recycle bin (`.volum-trash/` per root, restore before permanent delete) `[done]`
 - Directory download (archive folder on-the-fly as zip)
 - File permissions display as `rwxr-xr-x` with owner/group
 - Chmod basic permissions via UI
@@ -146,8 +146,8 @@ Goal: refine the experience for daily homelab use.
 
 ## Immediate Next Tasks
 
-1. Add recycle bin restore flow — `Phase 10`
-2. Add directory download as zip — `Phase 10`
-3. Add file permissions display as owner/group/rwx — `Phase 10`
-4. Add extract/create archive controls — `Phase 9`
-5. Add cut path to clipboard for paste navigation — `Phase 10`
+1. Add directory download as zip — `Phase 10`
+2. Add file permissions display as owner/group/rwx — `Phase 10`
+3. Add extract/create archive controls — `Phase 9`
+4. Add cut path to clipboard for paste navigation — `Phase 10`
+5. Add chmod basic permissions via UI — `Phase 10`

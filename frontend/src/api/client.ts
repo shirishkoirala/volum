@@ -23,6 +23,21 @@ export type FileResponse = {
   entries: FileEntry[] | null;
 };
 
+export type TrashEntry = {
+  id: string;
+  name: string;
+  originalPath: string;
+  trashPath: string;
+  type: 'file' | 'directory';
+  size: number;
+  deletedAt: string;
+  rootPath: string;
+};
+
+export type TrashResponse = {
+  entries: TrashEntry[] | null;
+};
+
 export type Job = {
   id: string;
   type: string;
@@ -110,6 +125,10 @@ export function logout() {
 export function getFiles(path: string, hidden: boolean) {
   const params = new URLSearchParams({ path, hidden: String(hidden) });
   return request<FileResponse>(`/api/files?${params.toString()}`);
+}
+
+export function getTrash() {
+  return request<TrashResponse>('/api/trash');
 }
 
 export function getJobs() {
@@ -205,6 +224,18 @@ export function deletePath(path: string, confirmName: string) {
   return requestVoid('/api/files', {
     method: 'DELETE',
     body: JSON.stringify({ path, confirmName })
+  });
+}
+
+export function restoreTrash(id: string) {
+  return request<FileEntry>(`/api/trash/${encodeURIComponent(id)}/restore`, {
+    method: 'POST'
+  });
+}
+
+export function deleteTrash(id: string) {
+  return requestVoid(`/api/trash/${encodeURIComponent(id)}`, {
+    method: 'DELETE'
   });
 }
 
