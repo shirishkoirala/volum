@@ -85,19 +85,19 @@ Volum is built in small, verifiable phases. Priority order: **data safety → re
 
 ---
 
-## Phase 9: Job Engine Completion
+## Phase 9: Job Engine Completion `[done]`
 
 Goal: finish the job system with pause/resume, recovery, and archive/extract.
 
 - Pause and resume running jobs `[done]`
 - Resume interrupted copy jobs on restart (compare partial file sizes) `[done]`
 - Archive/extract frontend UI for zip jobs `[done]`
-- Extract archives (zip, tar, tar.gz)
-- Create archives (zip, tar.gz from selected items)
-- Checksum verification (md5, sha256) as a job type
-- Per-item retry for failed items within a job
-- Clear completed/failed jobs from history
-- Job drawer: filter by status, collapse completed
+- Extract archives (zip, tar, tar.gz) `[done]`
+- Create archives (zip, tar.gz from selected items) `[done]`
+- Checksum verification (md5, sha256) as a job type `[done]`
+- Per-item retry for failed items within a job `[done]`
+- Clear completed/failed jobs from history `[done]`
+- Job drawer: filter by status, collapse completed `[done]`
 
 ## Phase 10: Advanced File Manager
 
@@ -109,7 +109,7 @@ Goal: match the capabilities of a desktop file manager.
 - Select all / invert selection `[done]`
 - Copy/cut selected files to clipboard for paste actions `[done]`
 - Recycle bin (`.volum-trash/` per root, restore before permanent delete) `[done]`
-- Directory download (archive folder on-the-fly as zip)
+- Directory download (archive folder on-the-fly as zip) `[done]`
 - File permissions display as `rwxr-xr-x` with owner/group
 - Chmod basic permissions via UI
 
@@ -153,9 +153,4 @@ Goal: refine the experience for daily homelab use.
 
 ## Immediate Next Tasks
 
-1. Add tar/tar.gz archive and extract support — `Phase 9`
-2. Export/import job history — `Phase 12`
-3. Image/video thumbnails in grid view — `Phase 13`
-4. Drag-select (rubber band) — `Phase 13`
-5. Column view — `Phase 13`
-6. File/folder info panel — `Phase 13`
+1. New tasks coming from issue tracker

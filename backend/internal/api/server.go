@@ -1,6 +1,7 @@
 package api
 
 import (
+	"archive/zip"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -21,6 +22,7 @@ import (
 	"github.com/volum-app/volum/backend/internal/files"
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/security"
+	"github.com/volum-app/volum/backend/internal/worker"
 )
 
 type Server struct {
@@ -89,8 +91,10 @@ func (s *Server) routes() {
 			r.Post("/jobs/move", s.handleCreateMoveJob)
 			r.Post("/jobs/archive", s.handleCreateArchiveJob)
 			r.Post("/jobs/extract", s.handleCreateExtractJob)
+			r.Post("/jobs/checksum", s.handleCreateChecksumJob)
 			r.Post("/jobs/{id}/cancel", s.handleCancelJob)
 			r.Post("/jobs/{id}/retry", s.handleRetryJob)
+			r.Post("/jobs/{id}/items/{itemId}/retry", s.handleRetryItem)
 			r.Post("/jobs/{id}/pause", s.handlePauseJob)
 			r.Post("/jobs/{id}/resume", s.handleResumeJob)
 			r.Delete("/jobs/clear-completed", s.handleClearCompleted)
@@ -323,8 +327,58 @@ func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(info.Name()))
-	http.ServeFile(w, r, path)
+	if !info.IsDir() {
+		w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(info.Name()))
+		http.ServeFile(w, r, path)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(info.Name()+".zip"))
+	zw := zip.NewWriter(w)
+	defer zw.Close()
+
+	err = filepath.WalkDir(path, func(filePath string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		rel, err := filepath.Rel(path, filePath)
+		if err != nil {
+			return err
+		}
+		if rel == "." {
+			return nil
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		header, err := zip.FileInfoHeader(info)
+		if err != nil {
+			return err
+		}
+		header.Name = filepath.ToSlash(rel)
+		header.Method = zip.Deflate
+		if entry.IsDir() {
+			header.Name += "/"
+			_, err := zw.CreateHeader(header)
+			return err
+		}
+		w, err := zw.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+		f, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		_, err = io.Copy(w, f)
+		return err
+	})
+	if err != nil {
+		writeError(w, err)
+	}
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
@@ -662,7 +716,12 @@ func (s *Server) handleCreateExtractJob(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if !info.Mode().IsRegular() {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "extract source must be a zip file"})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "extract source must be a regular file"})
+		return
+	}
+	format := worker.ArchiveFormat(req.SourcePath)
+	if format == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unsupported archive format, supported: .zip, .tar, .tar.gz, .tgz"})
 		return
 	}
 	req.SourcePath = source
@@ -675,6 +734,45 @@ func (s *Server) handleCreateExtractJob(w http.ResponseWriter, r *http.Request) 
 	req.DestinationPath = destination
 
 	job, err := s.jobs.Create(r.Context(), req)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, job)
+}
+
+func (s *Server) handleCreateChecksumJob(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SourcePath string `json:"sourcePath"`
+		VerifyMode string `json:"verifyMode"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+	if req.SourcePath == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sourcePath is required"})
+		return
+	}
+	if req.VerifyMode == "" {
+		req.VerifyMode = "sha256"
+	}
+	if req.VerifyMode != "md5" && req.VerifyMode != "sha256" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "verifyMode must be md5 or sha256"})
+		return
+	}
+
+	source, err := s.guard.Resolve(req.SourcePath)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	job, err := s.jobs.Create(r.Context(), jobs.CreateRequest{
+		Type:       jobs.TypeChecksum,
+		SourcePath: source,
+		VerifyMode: req.VerifyMode,
+	})
 	if err != nil {
 		writeError(w, err)
 		return
@@ -741,6 +839,14 @@ func (s *Server) handleCancelJob(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleRetryJob(w http.ResponseWriter, r *http.Request) {
 	if err := s.jobs.Retry(r.Context(), chi.URLParam(r, "id")); err != nil {
+		writeError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleRetryItem(w http.ResponseWriter, r *http.Request) {
+	if err := s.jobs.RetryItem(r.Context(), chi.URLParam(r, "id"), chi.URLParam(r, "itemId")); err != nil {
 		writeError(w, err)
 		return
 	}

@@ -478,9 +478,100 @@ func (s *Store) ClaimNextArchiveJob(ctx context.Context) (Job, bool, error) {
 	return job, true, nil
 }
 
+func (s *Store) ClaimNextChecksumJob(ctx context.Context) (Job, bool, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Job{}, false, err
+	}
+	defer tx.Rollback()
+
+	row := tx.QueryRowContext(ctx, `
+		SELECT id, type, status, source_path, destination_path,
+			total_bytes, processed_bytes, total_items, processed_items,
+			current_item, error_message, conflict_policy, verify_mode,
+			scheduled_at, next_job_id,
+			created_at, updated_at, started_at, completed_at
+		FROM jobs
+		WHERE status = ? AND type = ?
+			AND (scheduled_at IS NULL OR scheduled_at <= ?)
+		ORDER BY created_at ASC
+		LIMIT 1
+	`, StatusQueued, TypeChecksum, time.Now().UTC())
+
+	job, err := scanJob(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Job{}, false, nil
+	}
+	if err != nil {
+		return Job{}, false, err
+	}
+
+	now := time.Now().UTC()
+	result, err := tx.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, started_at = ?, updated_at = ?, error_message = NULL
+		WHERE id = ? AND status = ?
+	`, StatusRunning, now, now, job.ID, StatusQueued)
+	if err != nil {
+		return Job{}, false, err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return Job{}, false, err
+	}
+	if affected == 0 {
+		return Job{}, false, nil
+	}
+	if err := tx.Commit(); err != nil {
+		return Job{}, false, err
+	}
+
+	job.Status = StatusRunning
+	job.StartedAt = &now
+	job.UpdatedAt = now
+	return job, true, nil
+}
+
 func (s *Store) ClearItems(ctx context.Context, jobID string) error {
 	_, err := s.db.ExecContext(ctx, `DELETE FROM job_items WHERE job_id = ?`, jobID)
 	return err
+}
+
+func (s *Store) RetryItem(ctx context.Context, jobID, itemID string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var currentStatus Status
+	if err := tx.QueryRowContext(ctx, `SELECT status FROM job_items WHERE id = ? AND job_id = ?`, itemID, jobID).Scan(&currentStatus); err != nil {
+		return err
+	}
+	if currentStatus != StatusFailed && currentStatus != StatusCancelled {
+		return errors.New("item must be failed or cancelled to retry")
+	}
+
+	now := time.Now().UTC()
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE job_items
+		SET status = ?, processed_bytes = 0, error_message = NULL, updated_at = ?
+		WHERE id = ? AND job_id = ?
+	`, StatusQueued, now, itemID, jobID); err != nil {
+		return err
+	}
+
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, processed_bytes = 0, processed_items = 0,
+			current_item = NULL, error_message = NULL,
+			updated_at = ?, started_at = NULL, completed_at = NULL
+		WHERE id = ? AND status IN (?, ?)
+	`, StatusQueued, now, jobID, StatusFailed, StatusCancelled); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (s *Store) CreateItem(ctx context.Context, item Item) (Item, error) {

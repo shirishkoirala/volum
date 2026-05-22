@@ -85,6 +85,24 @@ func (w *Worker) runOnce(ctx context.Context) {
 			w.log.Error("mark job failed", "job_id", job.ID, "error", failErr)
 		}
 	}
+	if processErr != nil {
+		return
+	}
+
+	job, ok, err = w.store.ClaimNextChecksumJob(ctx)
+	if err != nil {
+		w.log.Error("claim checksum job failed", "error", err)
+		return
+	}
+	if !ok {
+		return
+	}
+	if err := w.processChecksum(ctx, job); err != nil {
+		w.log.Error("checksum job failed", "job_id", job.ID, "error", err)
+		if failErr := w.store.FailJob(ctx, job.ID, err); failErr != nil {
+			w.log.Error("mark checksum job failed", "job_id", job.ID, "error", failErr)
+		}
+	}
 }
 
 type copyItem struct {
@@ -603,8 +621,24 @@ func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, erro
 	}
 	defer archiveFile.Close()
 
-	if err := writeZip(w.store, ctx, archiveFile, job.ID, source); err != nil {
-		return "", err
+	format := ArchiveFormat(archivePath)
+	switch format {
+	case "zip":
+		if err := writeZip(w.store, ctx, archiveFile, job.ID, source); err != nil {
+			return "", err
+		}
+	case "tar":
+		if err := writeTar(w.store, ctx, archiveFile, job.ID, source); err != nil {
+			return "", err
+		}
+	case "tar.gz":
+		if err := writeTarGzip(w.store, ctx, archiveFile, job.ID, source); err != nil {
+			return "", err
+		}
+	default:
+		archiveFile.Close()
+		os.Remove(archivePath)
+		return "", fmt.Errorf("unsupported archive format: %s (supported: .zip, .tar, .tar.gz, .tgz)", format)
 	}
 
 	info, err := archiveFile.Stat()
@@ -638,8 +672,22 @@ func (w *Worker) processExtract(ctx context.Context, job jobs.Job) (string, erro
 	if err := os.MkdirAll(dest, 0o755); err != nil {
 		return "", err
 	}
-	if err := extractZip(w.store, ctx, dest, job.ID, source); err != nil {
-		return "", err
+	format := ArchiveFormat(source)
+	switch format {
+	case "zip":
+		if err := extractZip(w.store, ctx, dest, job.ID, source); err != nil {
+			return "", err
+		}
+	case "tar":
+		if err := extractTar(w.store, ctx, dest, job.ID, source); err != nil {
+			return "", err
+		}
+	case "tar.gz":
+		if err := extractTarGzip(w.store, ctx, dest, job.ID, source); err != nil {
+			return "", err
+		}
+	default:
+		return "", fmt.Errorf("unsupported archive format: %s (supported: .zip, .tar, .tar.gz, .tgz)", format)
 	}
 	if err := w.store.CreateAuditLog(ctx, "extract", dest, "extracted from "+*job.SourcePath); err != nil {
 		return "", err

@@ -197,6 +197,13 @@ export function createExtractJob(sourcePath: string, destinationPath: string) {
   });
 }
 
+export function createChecksumJob(sourcePath: string, verifyMode: 'md5' | 'sha256' = 'sha256') {
+  return request<Job>('/api/jobs/checksum', {
+    method: 'POST',
+    body: JSON.stringify({ sourcePath, verifyMode })
+  });
+}
+
 export async function uploadFiles(path: string, files: File[]) {
   const formData = new FormData();
   formData.append(
@@ -232,6 +239,12 @@ export function retryJob(id: string) {
   });
 }
 
+export function retryJobItem(jobId: string, itemId: string) {
+  return requestVoid(`/api/jobs/${jobId}/items/${itemId}/retry`, {
+    method: 'POST'
+  });
+}
+
 export function pauseJob(id: string) {
   return requestVoid(`/api/jobs/${id}/pause`, {
     method: 'POST'
@@ -241,6 +254,18 @@ export function pauseJob(id: string) {
 export function resumeJob(id: string) {
   return requestVoid(`/api/jobs/${id}/resume`, {
     method: 'POST'
+  });
+}
+
+export function clearCompletedJobs() {
+  return request<{ removed: number }>('/api/jobs/clear-completed', {
+    method: 'DELETE'
+  });
+}
+
+export function clearFailedJobs() {
+  return request<{ removed: number }>('/api/jobs/clear-failed', {
+    method: 'DELETE'
   });
 }
 

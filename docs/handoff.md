@@ -4,23 +4,31 @@ This document captures the current Volum state so another coding agent can conti
 
 ## Current State
 
-Volum is an early MVP scaffold for a self-hosted Docker file manager. The current app can:
+Volum is a self-hosted Docker file manager with a Go backend API, React/Vite frontend, and SQLite-backed job system.
 
-- Run through Docker on macOS.
-- Serve a Go backend API.
-- Serve a React/Vite frontend in a separate dev container.
-- Browse configured roots.
-- List files in the mounted storage folder.
-- Persist job schema in SQLite.
-- Return an empty jobs array safely.
-
-The reliable filesystem job engine is not implemented yet. Current jobs support is persistence/API scaffolding only.
+### Core capabilities:
+- Browse configured roots, list files, preview images/video/audio/text
+- Create folders, rename, move-to-trash with restore, delete permanently
+- Upload files with drag-and-drop and size verification
+- Download files or directories (streamed as zip on-the-fly)
+- Copy/move files via background jobs with conflict policies (ask, skip, overwrite, rename, cancel)
+- Archive/extract zip, tar, tar.gz — both creation and extraction
+- Checksum verification (md5, sha256) as a background job
+- Server-Sent Events for live job progress updates
+- Browser notifications for completed/failed jobs
+- Job drawer with status filter tabs and collapse completed
+- Clear completed/failed jobs from history
+- Per-item retry for failed/cancelled items within a job
+- Auth with HMAC-signed session cookies (admin/readonly roles)
+- Search across all roots with content grep
+- Batch rename (pattern-based)
+- Recycle bin (`.volum-trash/` per root)
+- Keyboard shortcuts, context menus, dark mode
 
 ## Repository Notes
 
-- Initial commit exists: `9175207 Initial Volum scaffold`
+- Initial commit: `9175207 Initial Volum scaffold`
 - Current branch: `master`
-- `docs/roadmap.md` is currently uncommitted unless a later agent commits it.
 - Runtime/generated files are intentionally ignored:
   - `data/volum.db`
   - `frontend/dist/`
@@ -32,15 +40,21 @@ The reliable filesystem job engine is not implemented yet. Current jobs support 
 - `backend/cmd/volum/main.go`: backend entrypoint and graceful shutdown
 - `backend/internal/api/server.go`: HTTP routes and JSON responses
 - `backend/internal/security/paths.go`: configured-root path validation
-- `backend/internal/files/service.go`: file listing
-- `backend/internal/jobs/store.go`: SQLite job store
+- `backend/internal/files/service.go`: file listing, trash, search
+- `backend/internal/jobs/store.go`: SQLite job store with items, audit logs
+- `backend/internal/jobs/model.go`: type/status constants and structs
+- `backend/internal/worker/worker.go`: background job orchestrator
+- `backend/internal/worker/zip.go`: zip archive/extract implementation
+- `backend/internal/worker/tar.go`: tar/tar.gz archive/extract implementation
+- `backend/internal/worker/checksum.go`: md5/sha256 checksum implementation
 - `backend/internal/storage/sqlite.go`: SQLite open and schema migration
-- `frontend/src/App.tsx`: main UI shell
+- `frontend/src/App.tsx`: main UI shell with all views and dialogs
 - `frontend/src/api/client.ts`: frontend API client types and requests
-- `docker-compose.yml`: single-container macOS production-style run
+- `frontend/src/styles/global.css`: design tokens and component styles
+- `docker-compose.yml`: single-container production-style run
 - `docker-compose.dev.yml`: Dockerized backend plus Vite frontend
 - `docker-compose.homelab.yml`: Ubuntu/homelab mount layout
-- `docs/roadmap.md`: ordered implementation plan
+- `docs/roadmap.md`: ordered implementation plan with completion status
 
 ## Docker Commands
 
@@ -51,11 +65,7 @@ mkdir -p storage data
 docker compose up --build
 ```
 
-Open:
-
-```txt
-http://localhost:8090
-```
+Open: `http://localhost:8090`
 
 Dockerized development run:
 
@@ -64,34 +74,7 @@ mkdir -p storage data
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-Open:
-
-```txt
-http://localhost:5174
-```
-
-The API remains available at:
-
-```txt
-http://localhost:8090
-```
-
-## Verified Endpoints
-
-These worked during the last verification:
-
-```txt
-GET http://localhost:8090/healthz
-GET http://localhost:5174/api/roots
-GET http://localhost:5174/api/files?path=/storage&hidden=false
-GET http://localhost:5174/api/jobs
-```
-
-Expected empty jobs response:
-
-```json
-{"jobs":[]}
-```
+Open: `http://localhost:5174` — API at `http://localhost:8090`
 
 ## Current Mount Model
 
@@ -108,45 +91,37 @@ For homelab deployment, use `docker-compose.homelab.yml`.
 
 ## Known Implementation Details
 
-- The backend currently validates access through `RootGuard.Resolve`.
-- Root traversal is rejected before filesystem access.
-- File list responses sort directories first, then names.
-- Empty jobs now return an empty slice instead of `null`.
-- The frontend also defensively converts nullable arrays to empty arrays.
-- The frontend dev container maps host port `5174` to Vite port `5173` because `5173` was already in use on the Mac.
+- All filesystem operations validated through `RootGuard.Resolve` — root traversal is rejected before filesystem access
+- File list responses sort directories first, then names
+- Copy/move uses copy-to-temp, verify-size, rename pattern for safety
+- Move = copy + verify + delete source (never direct rename across mounts)
+- Archive/extract detects format from file extension (.zip, .tar, .tar.gz, .tgz)
+- Checksum jobs support md5 and sha256, configurable via verifyMode
+- Per-item retry resets the individual item and re-queues the parent job
+- Directory download streams a zip archive on-the-fly (no temp file)
+- SSE pushes full job list every 1 second; frontend diffs via refs to avoid stale closure bugs
+- Frontend dev container maps host port `5174` because `5173` was already in use
+- Conflict policies: ask, skip, overwrite, rename, cancel
 
 ## Known Gaps
 
-- No create folder API yet.
-- No rename API yet.
-- No delete API yet.
-- No download API yet.
-- No upload API yet.
-- No real copy/move/delete worker yet.
-- No job item expansion or progress calculations yet.
-- No Server-Sent Events or WebSocket updates yet.
-- No auth or roles yet.
-- No automated backend tests yet.
-- No frontend component tests yet.
+- No automated backend tests (beyond the transfer resume test)
+- No frontend component tests
+- No image/video thumbnails in grid view
+- No drag-select (rubber band) for multi-select
+- No column view (macOS Finder style)
+- No file/folder info panel (right-click → Get Info)
+- No PDF preview (image-based fallback only)
+- No export/import job history
 
-## Recommended Next Step
+## Immediate Next Tasks (from roadmap)
 
-Implement Phase 1 file actions:
-
-1. Add backend APIs:
-   - `POST /api/files/folder`
-   - `PATCH /api/files/rename`
-   - `DELETE /api/files`
-   - `GET /api/files/download`
-2. Validate every path through `RootGuard`.
-3. Require explicit confirmation for delete from the frontend.
-4. Add frontend action buttons/dialogs.
-5. Rebuild with:
-
-```sh
-npm run build
-docker compose -f docker-compose.dev.yml up --build -d
-```
+1. Image/video thumbnails in grid view — `Phase 13`
+2. Drag-select (rubber band selection) — `Phase 13`
+3. Column view (macOS Finder style) — `Phase 13`
+4. File/folder info panel — `Phase 13`
+5. Export/import job history — `Phase 12`
+6. Automated backend tests — `Phase 9+`
 
 ## Safety Rules For Next Agent
 
@@ -155,3 +130,5 @@ docker compose -f docker-compose.dev.yml up --build -d
 - Do not implement move as direct rename across arbitrary mounts; move must become copy, verify, delete.
 - Do not commit runtime files from `data/`, `storage/`, `frontend/dist/`, or `frontend/node_modules/`.
 - Prefer Docker verification because Go is not installed locally in this environment.
+- When adding new job types, register in `model.go` constants and add `ClaimNext*Job` in `store.go`.
+- SSE backend pushes every 1s; frontend uses refs (not stale state closures) for diffing.

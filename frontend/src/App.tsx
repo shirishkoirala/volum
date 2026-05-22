@@ -7,6 +7,7 @@ import {
   SearchResult,
   cancelJob,
   createArchiveJob,
+  createChecksumJob,
   createCopyJob,
   createExtractJob,
   createFolder,
@@ -33,8 +34,11 @@ import {
   TrashEntry,
   resumeJob,
   retryJob,
+  retryJobItem,
   restoreTrash,
-  uploadFiles
+  uploadFiles,
+  clearCompletedJobs,
+  clearFailedJobs
 } from './api/client';
 import appIcon from './assets/icon-light.png';
 import { PreviewModal } from './components/PreviewModal';
@@ -99,6 +103,8 @@ export function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const knownJobIds = useRef(new Set<string>());
   const jobStatuses = useRef(new Map<string, string>());
+  const [jobFilter, setJobFilter] = useState<string>('all');
+  const [completedCollapsed, setCompletedCollapsed] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showHidden, setShowHidden] = useState(false);
   const [query, setQuery] = useState('');
@@ -378,7 +384,7 @@ export function App() {
 
   const handleDownload = () => {
     const entry = selectedEntries[0];
-    if (selectedEntries.length !== 1 || !entry || entry.type !== 'file') {
+    if (selectedEntries.length !== 1 || !entry) {
       return;
     }
     window.location.href = downloadUrl(entry.path);
@@ -511,13 +517,14 @@ export function App() {
   );
 
   const canRename = selectedEntries.length === 1;
-  const canDownload = selectedEntries.length === 1 && selectedEntries[0].type === 'file';
+  const canDownload = selectedEntries.length === 1;
   const canDelete = selectedEntries.length > 0;
   const canCopy = selectedEntries.length > 0;
   const canMove = selectedEntries.length > 0;
   const canPreview = selectedEntries.length === 1 && selectedEntries[0].type === 'file';
   const canArchive = selectedEntries.length === 1;
-  const canExtract = selectedEntries.length === 1 && selectedEntries[0].type === 'file' && isZipArchive(selectedEntries[0].name);
+  const canExtract = selectedEntries.length === 1 && selectedEntries[0].type === 'file' && isArchiveFile(selectedEntries[0].name);
+  const canChecksum = selectedEntries.length === 1;
   const canSelect = filteredEntries.length > 0;
   const canPaste = canWrite && !!fileClipboard && fileClipboard.entries.length > 0;
 
@@ -597,7 +604,7 @@ export function App() {
 
   const handleExtractArchive = () => {
     const entry = selectedEntries[0];
-    if (!entry || selectedEntries.length !== 1 || entry.type !== 'file' || !isZipArchive(entry.name)) {
+    if (!entry || selectedEntries.length !== 1 || entry.type !== 'file' || !isArchiveFile(entry.name)) {
       return;
     }
     const defaultPath = joinPath(currentPath, archiveBaseName(entry.name));
@@ -613,6 +620,25 @@ export function App() {
       applyFolderSuggestion: (path) => normalizeFolderPath(path),
       onSubmit: (value) => {
         void runAction(() => createExtractJob(entry.path, value.trim()), 'Extract job started');
+      }
+    });
+  };
+
+  const handleCreateChecksum = () => {
+    const entry = selectedEntries[0];
+    if (!entry || selectedEntries.length !== 1) {
+      return;
+    }
+    setContextMenu(null);
+    setTextInputDialog({
+      title: 'Generate Checksum',
+      label: 'Verify mode',
+      initialValue: 'sha256',
+      placeholder: 'sha256',
+      confirmLabel: 'Generate',
+      onSubmit: (value) => {
+        const mode = value.trim().toLowerCase() === 'md5' ? 'md5' : 'sha256';
+        void runAction(() => createChecksumJob(entry.path, mode), `Checksum (${mode}) job started`);
       }
     });
   };
@@ -671,6 +697,14 @@ export function App() {
     }, 'Job retried');
   };
 
+  const handleRetryItem = (jobId: string, itemId: string) => {
+    void runAction(async () => {
+      await retryJobItem(jobId, itemId);
+      const response = await getJobs();
+      setJobs(response.jobs ?? []);
+    }, 'Item queued for retry');
+  };
+
   const handlePauseJob = (id: string) => {
     void runAction(async () => {
       await pauseJob(id);
@@ -685,6 +719,24 @@ export function App() {
       const response = await getJobs();
       setJobs(response.jobs ?? []);
     }, 'Job resumed');
+  };
+
+  const handleClearCompleted = () => {
+    void runAction(async () => {
+      const result = await clearCompletedJobs();
+      const response = await getJobs();
+      setJobs(response.jobs ?? []);
+      return result;
+    }, 'Completed jobs cleared');
+  };
+
+  const handleClearFailed = () => {
+    void runAction(async () => {
+      const result = await clearFailedJobs();
+      const response = await getJobs();
+      setJobs(response.jobs ?? []);
+      return result;
+    }, 'Failed jobs cleared');
   };
 
   const handleSelectEntry = (entry: FileEntry, event: MouseEvent<HTMLElement>) => {
@@ -1071,6 +1123,12 @@ export function App() {
                     Extract
                   </button>
                 )}
+                {canChecksum && (
+                  <button type="button" onClick={handleCreateChecksum}>
+                    <Icon name="view-refresh" size={16} />
+                    Checksum
+                  </button>
+                )}
                 {canWrite && (
                   <button type="button" onClick={handlePaste} disabled={!canPaste}>
                     <Icon name="edit-paste" size={16} />
@@ -1422,6 +1480,10 @@ export function App() {
               <Icon name="archive-extract" size={16} />
               Extract
             </button>
+            <button type="button" onClick={handleCreateChecksum} disabled={!canChecksum}>
+              <Icon name="view-refresh" size={16} />
+              Checksum
+            </button>
             <button type="button" onClick={handlePaste} disabled={!canPaste}>
               <Icon name="edit-paste" size={16} />
               Paste
@@ -1439,20 +1501,35 @@ export function App() {
           <h2>Jobs</h2>
           <span>{jobs.length}</span>
         </div>
+        <div className="job-filter-tabs">
+          {(['all', 'active', 'completed', 'failed'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              className={`job-filter-tab${jobFilter === tab ? ' active' : ''}`}
+              onClick={() => setJobFilter(tab)}
+            >
+              {tab === 'all' ? 'All' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
         <div className="job-list">
           {jobs.length === 0 ? (
             <p className="muted">No jobs yet</p>
           ) : (
-            jobs.map((job) => (
-              <JobItem
-                job={job}
-                key={job.id}
-                onCancel={handleCancelJob}
-                onPause={handlePauseJob}
-                onResume={handleResumeJob}
-                onRetry={handleRetryJob}
-              />
-            ))
+            <>
+              {renderJobGroup(jobs, jobFilter, completedCollapsed, setCompletedCollapsed, handleCancelJob, handlePauseJob, handleResumeJob, handleRetryJob)}
+              {jobs.some((j) => j.status === 'completed' || j.status === 'cancelled') && (
+                <button type="button" className="job-clear-btn" onClick={handleClearCompleted}>
+                  Clear completed
+                </button>
+              )}
+              {jobs.some((j) => j.status === 'failed') && (
+                <button type="button" className="job-clear-btn" onClick={handleClearFailed}>
+                  Clear failed
+                </button>
+              )}
+            </>
           )}
         </div>
       </aside>
@@ -1907,6 +1984,53 @@ function JobItem({
   );
 }
 
+function isActiveStatus(status: string) {
+  return status === 'queued' || status === 'running' || status === 'paused';
+}
+
+function renderJobGroup(
+  jobs: Job[],
+  jobFilter: string,
+  completedCollapsed: boolean,
+  setCompletedCollapsed: (v: boolean) => void,
+  onCancel: (id: string) => void,
+  onPause: (id: string) => void,
+  onResume: (id: string) => void,
+  onRetry: (id: string) => void,
+) {
+  const terminal = ['completed', 'failed', 'cancelled'];
+  const filtered = jobFilter === 'all'
+    ? jobs
+    : jobFilter === 'active'
+      ? jobs.filter((j) => isActiveStatus(j.status))
+      : jobs.filter((j) => j.status === jobFilter);
+
+  const active = filtered.filter((j) => isActiveStatus(j.status));
+  const terminalJobs = filtered.filter((j) => terminal.includes(j.status));
+
+  return (
+    <>
+      {active.map((job) => (
+        <JobItem key={job.id} job={job} onCancel={onCancel} onPause={onPause} onResume={onResume} onRetry={onRetry} />
+      ))}
+      {terminalJobs.length > 0 && (
+        <>
+          <button
+            type="button"
+            className="job-collapse-toggle"
+            onClick={() => setCompletedCollapsed(!completedCollapsed)}
+          >
+            {completedCollapsed ? `Show ${terminalJobs.length} completed` : 'Hide completed'}
+          </button>
+          {!completedCollapsed && terminalJobs.map((job) => (
+            <JobItem key={job.id} job={job} onCancel={onCancel} onPause={onPause} onResume={onResume} onRetry={onRetry} />
+          ))}
+        </>
+      )}
+    </>
+  );
+}
+
 function formatBytes(value: number) {
   if (value === 0) {
     return '0 B';
@@ -1956,12 +2080,16 @@ function formatDuration(totalSeconds: number) {
   return `${minutes}m ${seconds}s`;
 }
 
-function isZipArchive(name: string) {
-  return /\.zip$/i.test(name);
+function isArchiveFile(name: string) {
+  return /\.(zip|tar|tar\.gz|tgz)$/i.test(name);
 }
 
 function archiveBaseName(name: string) {
-  return name.replace(/\.zip$/i, '') || 'archive';
+  return name
+    .replace(/\.tar\.gz$/i, '')
+    .replace(/\.tgz$/i, '')
+    .replace(/\.tar$/i, '')
+    .replace(/\.zip$/i, '') || 'archive';
 }
 
 function archiveFileName(name: string) {

@@ -1106,6 +1106,51 @@ button {
   color: var(--color-danger-text) !important;
 }
 
+.job-filter-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--space-md);
+}
+
+.job-filter-tab {
+  background: transparent;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 4px 10px;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.job-filter-tab:hover {
+  border-color: var(--color-text-muted);
+  color: var(--color-text-secondary);
+}
+
+.job-filter-tab.active {
+  background: var(--color-brand-bg);
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+.job-collapse-toggle,
+.job-clear-btn {
+  background: transparent;
+  border: 0;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: var(--space-sm) 0;
+  text-align: left;
+  transition: color var(--transition-fast);
+}
+
+.job-collapse-toggle:hover,
+.job-clear-btn:hover {
+  color: var(--color-text-secondary);
+}
+
 .context-menu {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
