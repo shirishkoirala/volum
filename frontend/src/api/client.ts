@@ -173,6 +173,30 @@ export function createMoveJob(sourcePath: string, destinationPath: string, confl
   });
 }
 
+export function createArchiveJob(sourcePath: string, destinationPath: string, conflictPolicy: ConflictPolicy = 'rename') {
+  return request<Job>('/api/jobs/archive', {
+    method: 'POST',
+    body: JSON.stringify({
+      sourcePath,
+      destinationPath,
+      conflictPolicy,
+      verifyMode: 'size'
+    })
+  });
+}
+
+export function createExtractJob(sourcePath: string, destinationPath: string) {
+  return request<Job>('/api/jobs/extract', {
+    method: 'POST',
+    body: JSON.stringify({
+      sourcePath,
+      destinationPath,
+      conflictPolicy: 'rename',
+      verifyMode: 'size'
+    })
+  });
+}
+
 export async function uploadFiles(path: string, files: File[]) {
   const formData = new FormData();
   formData.append(

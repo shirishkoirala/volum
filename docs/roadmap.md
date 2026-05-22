@@ -90,6 +90,7 @@ Goal: finish the job system with pause/resume, recovery, and archive/extract.
 
 - Pause and resume running jobs `[done]`
 - Resume interrupted copy jobs on restart (compare partial file sizes) `[done]`
+- Archive/extract frontend UI for zip jobs `[done]`
 - Extract archives (zip, tar, tar.gz)
 - Create archives (zip, tar.gz from selected items)
 - Checksum verification (md5, sha256) as a job type
@@ -151,7 +152,7 @@ Goal: refine the experience for daily homelab use.
 
 ## Immediate Next Tasks
 
-1. Archive/extract frontend UI (context menu + toolbar) — `Phase 9`
+1. Add tar/tar.gz archive and extract support — `Phase 9`
 2. Export/import job history — `Phase 12`
 3. Image/video thumbnails in grid view — `Phase 13`
 4. Drag-select (rubber band) — `Phase 13`

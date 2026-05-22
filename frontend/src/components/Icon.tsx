@@ -1,5 +1,6 @@
 import type { FileEntry } from '../api/client';
 import {
+  Archive,
   ChevronRight,
   CheckSquare,
   Clipboard,
@@ -36,6 +37,8 @@ type IconProps = {
 };
 
 const ACTION_ICONS: Record<string, LucideIcon> = {
+  'archive-create': Archive,
+  'archive-extract': Archive,
   'document-import': Upload,
   'document-open': FileInput,
   'edit-copy': Copy,

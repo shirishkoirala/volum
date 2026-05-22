@@ -6,7 +6,9 @@ import {
   Job,
   SearchResult,
   cancelJob,
+  createArchiveJob,
   createCopyJob,
+  createExtractJob,
   createFolder,
   createMoveJob,
   deleteTrash,
@@ -495,6 +497,8 @@ export function App() {
   const canCopy = selectedEntries.length > 0;
   const canMove = selectedEntries.length > 0;
   const canPreview = selectedEntries.length === 1 && selectedEntries[0].type === 'file';
+  const canArchive = selectedEntries.length === 1;
+  const canExtract = selectedEntries.length === 1 && selectedEntries[0].type === 'file' && isZipArchive(selectedEntries[0].name);
   const canSelect = filteredEntries.length > 0;
   const canPaste = canWrite && !!fileClipboard && fileClipboard.entries.length > 0;
 
@@ -546,6 +550,44 @@ export function App() {
       mode: 'move',
       entries: [...selectedEntries],
       initialDestination: currentPath
+    });
+  };
+
+  const handleCreateArchive = () => {
+    const entry = selectedEntries[0];
+    if (!entry || selectedEntries.length !== 1) {
+      return;
+    }
+    const defaultPath = `${currentPath.replace(/\/+$/, '')}/${archiveFileName(entry.name)}`;
+    setContextMenu(null);
+    setTextInputDialog({
+      title: 'Create Archive',
+      label: 'Archive path',
+      initialValue: defaultPath,
+      placeholder: defaultPath,
+      confirmLabel: 'Create Archive',
+      onSubmit: (value) => {
+        void runAction(() => createArchiveJob(entry.path, value.trim(), 'rename'), 'Archive job started');
+      }
+    });
+  };
+
+  const handleExtractArchive = () => {
+    const entry = selectedEntries[0];
+    if (!entry || selectedEntries.length !== 1 || entry.type !== 'file' || !isZipArchive(entry.name)) {
+      return;
+    }
+    const defaultPath = `${currentPath.replace(/\/+$/, '')}/${archiveBaseName(entry.name)}`;
+    setContextMenu(null);
+    setTextInputDialog({
+      title: 'Extract Archive',
+      label: 'Destination folder path',
+      initialValue: defaultPath,
+      placeholder: defaultPath,
+      confirmLabel: 'Extract',
+      onSubmit: (value) => {
+        void runAction(() => createExtractJob(entry.path, value.trim()), 'Extract job started');
+      }
     });
   };
 
@@ -991,6 +1033,18 @@ export function App() {
                     Move
                   </button>
                 )}
+                {canArchive && canWrite && (
+                  <button type="button" onClick={handleCreateArchive}>
+                    <Icon name="archive-create" size={16} />
+                    Archive
+                  </button>
+                )}
+                {canExtract && canWrite && (
+                  <button type="button" onClick={handleExtractArchive}>
+                    <Icon name="archive-extract" size={16} />
+                    Extract
+                  </button>
+                )}
                 {canWrite && (
                   <button type="button" onClick={handlePaste} disabled={!canPaste}>
                     <Icon name="edit-paste" size={16} />
@@ -1333,6 +1387,14 @@ export function App() {
             <button type="button" onClick={handleMove} disabled={!canWrite || !canMove}>
               <Icon name="edit-cut" size={16} />
               Move
+            </button>
+            <button type="button" onClick={handleCreateArchive} disabled={!canWrite || !canArchive}>
+              <Icon name="archive-create" size={16} />
+              Archive
+            </button>
+            <button type="button" onClick={handleExtractArchive} disabled={!canWrite || !canExtract}>
+              <Icon name="archive-extract" size={16} />
+              Extract
             </button>
             <button type="button" onClick={handlePaste} disabled={!canPaste}>
               <Icon name="edit-paste" size={16} />
@@ -1820,4 +1882,16 @@ function formatDuration(totalSeconds: number) {
     return `${seconds}s`;
   }
   return `${minutes}m ${seconds}s`;
+}
+
+function isZipArchive(name: string) {
+  return /\.zip$/i.test(name);
+}
+
+function archiveBaseName(name: string) {
+  return name.replace(/\.zip$/i, '') || 'archive';
+}
+
+function archiveFileName(name: string) {
+  return `${archiveBaseName(name)}.zip`;
 }
