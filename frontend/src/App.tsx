@@ -95,6 +95,7 @@ export function App() {
   const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const knownJobIds = useRef(new Set<string>());
+  const jobStatuses = useRef(new Map<string, string>());
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showHidden, setShowHidden] = useState(false);
   const [query, setQuery] = useState('');
@@ -436,6 +437,7 @@ export function App() {
       .then((response) => {
         const initialJobs = response.jobs ?? [];
         knownJobIds.current = new Set(initialJobs.map((j) => j.id));
+        jobStatuses.current = new Map(initialJobs.map((j) => [j.id, j.status]));
         setJobs(initialJobs);
       })
       .catch(() => undefined);
@@ -446,6 +448,10 @@ export function App() {
       const nextJobs = response.jobs ?? [];
 
       for (const job of nextJobs) {
+        const previousStatus = jobStatuses.current.get(job.id);
+        if (job.status === 'completed' && previousStatus !== 'completed' && refreshesFiles(job)) {
+          refresh();
+        }
         if (!knownJobIds.current.has(job.id) && Notification.permission === 'granted') {
           if (job.status === 'completed') {
             new Notification('Job completed', { body: `[${job.type}] ${job.sourcePath ?? job.id}` });
@@ -456,6 +462,7 @@ export function App() {
       }
 
       knownJobIds.current = new Set(nextJobs.map((j) => j.id));
+      jobStatuses.current = new Map(nextJobs.map((j) => [j.id, j.status]));
       setJobs(nextJobs);
     });
     events.onerror = () => undefined;
@@ -1894,4 +1901,8 @@ function archiveBaseName(name: string) {
 
 function archiveFileName(name: string) {
   return `${archiveBaseName(name)}.zip`;
+}
+
+function refreshesFiles(job: Job) {
+  return job.type === 'copy' || job.type === 'move' || job.type === 'upload' || job.type === 'archive' || job.type === 'extract';
 }
