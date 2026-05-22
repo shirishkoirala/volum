@@ -1474,7 +1474,12 @@ export function App() {
                           if (entry.type === 'directory') {
                             setCurrentPath(entry.path);
                           } else {
-                            setPreviewEntry(entry);
+                            const ext = entry.name.toLowerCase();
+                            if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext) || ext.endsWith('.pdf')) {
+                              setPreviewEntry(entry);
+                            } else {
+                              window.open(downloadUrl(entry.path), '_blank');
+                            }
                           }
                         }}
                       >
@@ -1534,7 +1539,7 @@ export function App() {
                       return;
                     }
                     const ext = entry.name.toLowerCase();
-                    if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext)) {
+                    if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext) || ext.endsWith('.pdf')) {
                       setPreviewEntry(entry);
                     } else {
                       window.open(downloadUrl(entry.path), '_blank');
