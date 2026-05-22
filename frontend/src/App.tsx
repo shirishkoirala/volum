@@ -50,6 +50,26 @@ type RenameState = {
   path: string;
   value: string;
 } | null;
+type ConfirmDialogState = {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  danger?: boolean;
+  onConfirm: () => void;
+} | null;
+type TextInputDialogState = {
+  title: string;
+  label: string;
+  initialValue?: string;
+  placeholder?: string;
+  confirmLabel: string;
+  onSubmit: (value: string) => void;
+} | null;
+type TransferDialogState = {
+  mode: 'copy' | 'move';
+  entries: FileEntry[];
+  initialDestination: string;
+} | null;
 
 export function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -88,6 +108,9 @@ export function App() {
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [batchRenameOpen, setBatchRenameOpen] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
+  const [textInputDialog, setTextInputDialog] = useState<TextInputDialogState>(null);
+  const [transferDialog, setTransferDialog] = useState<TransferDialogState>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const shortcutsRef = useRef<HTMLDivElement>(null);
@@ -220,11 +243,16 @@ export function App() {
   };
 
   const handleCreateFolder = () => {
-    const name = window.prompt('Folder name');
-    if (name === null) {
-      return;
-    }
-    void runAction(() => createFolder(currentPath, name.trim()));
+    setContextMenu(null);
+    setTextInputDialog({
+      title: 'New Folder',
+      label: 'Folder name',
+      placeholder: 'Folder name',
+      confirmLabel: 'Create',
+      onSubmit: (value) => {
+        void runAction(() => createFolder(currentPath, value.trim()));
+      }
+    });
   };
 
   const handleRename = () => {
@@ -259,20 +287,25 @@ export function App() {
     if (selectedEntries.length === 0) {
       return;
     }
+    const entriesToDelete = [...selectedEntries];
     const label =
-      selectedEntries.length === 1
-        ? `"${selectedEntries[0].name}"`
-        : `${selectedEntries.length} selected items`;
-    const confirmed = window.confirm(`Move ${label} to trash? You can restore it from the Trash panel.`);
-    if (!confirmed) {
-      return;
-    }
-    void runAction(async () => {
-      for (const entry of selectedEntries) {
-        await deletePath(entry.path, entry.name);
+      entriesToDelete.length === 1
+        ? `"${entriesToDelete[0].name}"`
+        : `${entriesToDelete.length} selected items`;
+    setConfirmDialog({
+      title: 'Move to Trash',
+      message: `Move ${label} to trash? You can restore it from the Trash panel.`,
+      confirmLabel: 'Move to Trash',
+      danger: true,
+      onConfirm: () => {
+        void runAction(async () => {
+          for (const entry of entriesToDelete) {
+            await deletePath(entry.path, entry.name);
+          }
+          const response = await getTrash();
+          setTrashEntries(response.entries ?? []);
+        });
       }
-      const response = await getTrash();
-      setTrashEntries(response.entries ?? []);
     });
   };
 
@@ -285,14 +318,19 @@ export function App() {
   };
 
   const handleDeleteTrash = (entry: TrashEntry) => {
-    const confirmed = window.confirm(`Permanently delete "${entry.name}"? This cannot be undone.`);
-    if (!confirmed) {
-      return;
-    }
-    void runAction(async () => {
-      await deleteTrash(entry.id);
-      const response = await getTrash();
-      setTrashEntries(response.entries ?? []);
+    setContextMenu(null);
+    setConfirmDialog({
+      title: 'Delete Permanently',
+      message: `Permanently delete "${entry.name}"? This cannot be undone.`,
+      confirmLabel: 'Delete Permanently',
+      danger: true,
+      onConfirm: () => {
+        void runAction(async () => {
+          await deleteTrash(entry.id);
+          const response = await getTrash();
+          setTrashEntries(response.entries ?? []);
+        });
+      }
     });
   };
 
@@ -450,24 +488,11 @@ export function App() {
     if (!canCopy) {
       return;
     }
-    const input = window.prompt('Destination folder path (use | for multiple destinations)', currentPath);
-    if (input === null || input.trim() === '') {
-      return;
-    }
-    const conflictPolicy = promptConflictPolicy('ask');
-    if (!conflictPolicy) {
-      return;
-    }
-    const destinations = input.split('|').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
-    if (destinations.length === 0) {
-      return;
-    }
-    void runAction(async () => {
-      for (const entry of selectedEntries) {
-        for (const dest of destinations) {
-          await createCopyJob(entry.path, `${dest}/${entry.name}`, conflictPolicy);
-        }
-      }
+    setContextMenu(null);
+    setTransferDialog({
+      mode: 'copy',
+      entries: [...selectedEntries],
+      initialDestination: currentPath
     });
   };
 
@@ -475,22 +500,32 @@ export function App() {
     if (!canMove) {
       return;
     }
-    const input = window.prompt('Destination folder path (use | for multiple destinations)', currentPath);
-    if (input === null || input.trim() === '') {
+    setContextMenu(null);
+    setTransferDialog({
+      mode: 'move',
+      entries: [...selectedEntries],
+      initialDestination: currentPath
+    });
+  };
+
+  const handleTransferSubmit = (dialog: TransferDialogState, destinationValue: string, conflictPolicy: ConflictPolicy) => {
+    if (!dialog) {
       return;
     }
-    const conflictPolicy = promptConflictPolicy('ask');
-    if (!conflictPolicy) {
-      return;
-    }
-    const destinations = input.split('|').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
+    const destinations = destinationValue.split('|').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
     if (destinations.length === 0) {
       return;
     }
+    setTransferDialog(null);
     void runAction(async () => {
-      for (const entry of selectedEntries) {
+      for (const entry of dialog.entries) {
         for (const dest of destinations) {
-          await createMoveJob(entry.path, `${dest}/${entry.name}`, conflictPolicy);
+          const targetPath = `${dest}/${entry.name}`;
+          if (dialog.mode === 'copy') {
+            await createCopyJob(entry.path, targetPath, conflictPolicy);
+          } else {
+            await createMoveJob(entry.path, targetPath, conflictPolicy);
+          }
         }
       }
     });
@@ -1265,6 +1300,37 @@ export function App() {
     );
   }
 
+  if (confirmDialog) {
+    return (
+      <>
+        {shell}
+        <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} />
+      </>
+    );
+  }
+
+  if (textInputDialog) {
+    return (
+      <>
+        {shell}
+        <TextInputDialog dialog={textInputDialog} onClose={() => setTextInputDialog(null)} />
+      </>
+    );
+  }
+
+  if (transferDialog) {
+    return (
+      <>
+        {shell}
+        <TransferDialog
+          dialog={transferDialog}
+          onClose={() => setTransferDialog(null)}
+          onSubmit={handleTransferSubmit}
+        />
+      </>
+    );
+  }
+
   if (shortcutsOpen) {
     return (
       <>
@@ -1330,6 +1396,183 @@ function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void })
       </form>
     </main>
   );
+}
+
+function ConfirmDialog({ dialog, onClose }: { dialog: NonNullable<ConfirmDialogState>; onClose: () => void }) {
+  useDialogEscape(onClose);
+
+  const handleConfirm = () => {
+    onClose();
+    dialog.onConfirm();
+  };
+
+  return (
+    <div className="dialog-overlay" onClick={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="app-dialog app-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
+        <div className="app-dialog-header">
+          <h3 id="confirm-dialog-title">{dialog.title}</h3>
+          <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
+            <Icon name="window-close" size={18} />
+          </button>
+        </div>
+        <p className="dialog-message">{dialog.message}</p>
+        <div className="dialog-actions">
+          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
+          <button
+            type="button"
+            className={`dialog-button ${dialog.danger ? 'danger' : 'primary'}`}
+            onClick={handleConfirm}
+          >
+            {dialog.confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextInputDialogState>; onClose: () => void }) {
+  const [value, setValue] = useState(dialog.initialValue ?? '');
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useDialogEscape(onClose);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    const trimmed = value.trim();
+    if (!trimmed) {
+      setError(`${dialog.label} is required.`);
+      return;
+    }
+    dialog.onSubmit(trimmed);
+    onClose();
+  };
+
+  return (
+    <div className="dialog-overlay" onClick={(event) => event.target === event.currentTarget && onClose()}>
+      <form className="app-dialog app-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title" onSubmit={handleSubmit}>
+        <div className="app-dialog-header">
+          <h3 id="text-dialog-title">{dialog.title}</h3>
+          <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
+            <Icon name="window-close" size={18} />
+          </button>
+        </div>
+        <label className="dialog-field">
+          <span>{dialog.label}</span>
+          <input
+            ref={inputRef}
+            value={value}
+            placeholder={dialog.placeholder}
+            onChange={(event) => {
+              setValue(event.target.value);
+              setError(null);
+            }}
+          />
+        </label>
+        {error && <p className="dialog-error">{error}</p>}
+        <div className="dialog-actions">
+          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
+          <button type="submit" className="dialog-button primary">{dialog.confirmLabel}</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function TransferDialog({
+  dialog,
+  onClose,
+  onSubmit
+}: {
+  dialog: NonNullable<TransferDialogState>;
+  onClose: () => void;
+  onSubmit: (dialog: TransferDialogState, destinationValue: string, conflictPolicy: ConflictPolicy) => void;
+}) {
+  const [destination, setDestination] = useState(dialog.initialDestination);
+  const [conflictPolicy, setConflictPolicy] = useState<ConflictPolicy>('ask');
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const title = dialog.mode === 'copy' ? 'Copy Items' : 'Move Items';
+  const actionLabel = dialog.mode === 'copy' ? 'Copy' : 'Move';
+  const itemLabel = dialog.entries.length === 1 ? dialog.entries[0].name : `${dialog.entries.length} selected items`;
+
+  useDialogEscape(onClose);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+    inputRef.current?.select();
+  }, []);
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
+    if (destination.split('|').map((s) => s.trim()).filter(Boolean).length === 0) {
+      setError('Destination folder path is required.');
+      return;
+    }
+    onSubmit(dialog, destination, conflictPolicy);
+  };
+
+  return (
+    <div className="dialog-overlay" onClick={(event) => event.target === event.currentTarget && onClose()}>
+      <form className="app-dialog" role="dialog" aria-modal="true" aria-labelledby="transfer-dialog-title" onSubmit={handleSubmit}>
+        <div className="app-dialog-header">
+          <div>
+            <h3 id="transfer-dialog-title">{title}</h3>
+            <p>{itemLabel}</p>
+          </div>
+          <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
+            <Icon name="window-close" size={18} />
+          </button>
+        </div>
+        <label className="dialog-field">
+          <span>Destination folder path</span>
+          <input
+            ref={inputRef}
+            value={destination}
+            onChange={(event) => {
+              setDestination(event.target.value);
+              setError(null);
+            }}
+            placeholder="/path/to/folder"
+          />
+        </label>
+        <p className="dialog-help">Use | to send items to multiple destinations.</p>
+        <label className="dialog-field">
+          <span>If a file already exists</span>
+          <select value={conflictPolicy} onChange={(event) => setConflictPolicy(event.target.value as ConflictPolicy)}>
+            <option value="ask">Ask when needed</option>
+            <option value="skip">Skip existing files</option>
+            <option value="overwrite">Overwrite existing files</option>
+            <option value="rename">Rename new files</option>
+            <option value="cancel">Cancel the job</option>
+          </select>
+        </label>
+        {error && <p className="dialog-error">{error}</p>}
+        <div className="dialog-actions">
+          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
+          <button type="submit" className="dialog-button primary">{actionLabel}</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function useDialogEscape(onClose: () => void) {
+  useEffect(() => {
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 }
 
 function JobItem({
@@ -1452,23 +1695,4 @@ function formatDuration(totalSeconds: number) {
     return `${seconds}s`;
   }
   return `${minutes}m ${seconds}s`;
-}
-
-function promptConflictPolicy(defaultPolicy: ConflictPolicy): ConflictPolicy | null {
-  const value = window.prompt('Conflict policy: ask, skip, overwrite, rename, cancel', defaultPolicy);
-  if (value === null) {
-    return null;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (
-    normalized === 'ask' ||
-    normalized === 'skip' ||
-    normalized === 'overwrite' ||
-    normalized === 'rename' ||
-    normalized === 'cancel'
-  ) {
-    return normalized;
-  }
-  window.alert('Conflict policy must be ask, skip, overwrite, rename, or cancel.');
-  return null;
 }

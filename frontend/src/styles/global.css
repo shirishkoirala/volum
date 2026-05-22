@@ -1098,6 +1098,133 @@ button {
   z-index: 100;
 }
 
+.dialog-overlay {
+  align-items: center;
+  background: var(--color-overlay);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: var(--space-3xl);
+  position: fixed;
+  z-index: 110;
+}
+
+.app-dialog {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-menu);
+  display: grid;
+  gap: var(--space-lg);
+  max-width: 520px;
+  padding: var(--space-xl);
+  width: min(92vw, 520px);
+}
+
+.app-dialog-sm {
+  max-width: 420px;
+  width: min(92vw, 420px);
+}
+
+.app-dialog-header {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--space-md);
+  justify-content: space-between;
+}
+
+.app-dialog-header h3 {
+  font-size: 17px;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.app-dialog-header p {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+.dialog-message {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.dialog-field {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.dialog-field span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dialog-field input,
+.dialog-field select {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  min-height: 42px;
+  outline: none;
+  padding: 0 12px;
+}
+
+.dialog-field input:focus,
+.dialog-field select:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 2px var(--color-brand-bg);
+}
+
+.dialog-help,
+.dialog-error {
+  font-size: 12px;
+  margin: -8px 0 0;
+}
+
+.dialog-help {
+  color: var(--color-text-muted);
+}
+
+.dialog-error {
+  color: var(--color-danger-text);
+}
+
+.dialog-actions {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+.dialog-button {
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  min-height: 38px;
+  padding: 0 var(--space-lg);
+}
+
+.dialog-button.secondary {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.dialog-button.primary {
+  background: var(--color-brand);
+  color: #ffffff;
+}
+
+.dialog-button.danger {
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
 .preview-panel {
   background: var(--color-surface);
   border-radius: var(--radius-xl);
