@@ -27,6 +27,7 @@ import {
   login,
   logout,
   pauseJob,
+  rawUrl,
   renamePath,
   RootEntry,
   Session,
@@ -38,13 +39,15 @@ import {
   restoreTrash,
   uploadFiles,
   clearCompletedJobs,
-  clearFailedJobs
+  clearFailedJobs,
+  chmodPath
 } from './api/client';
 import appIcon from './assets/icon-light.png';
 import { PreviewModal } from './components/PreviewModal';
 import { BatchRenameModal } from './components/BatchRenameModal';
+import { InfoPanel } from './components/InfoPanel';
 
-type ViewMode = 'list' | 'grid';
+type ViewMode = 'list' | 'grid' | 'columns';
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
 type SortDirection = 'asc' | 'desc';
 type ContextMenuState = {
@@ -103,6 +106,8 @@ export function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const knownJobIds = useRef(new Set<string>());
   const jobStatuses = useRef(new Map<string, string>());
+  const rubberBand = useRef<{ startX: number; startY: number; endX: number; endY: number; active: boolean }>({ startX: 0, startY: 0, endX: 0, endY: 0, active: false });
+  const [rubberBandStyle, setRubberBandStyle] = useState<React.CSSProperties | null>(null);
   const [jobFilter, setJobFilter] = useState<string>('all');
   const [completedCollapsed, setCompletedCollapsed] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -130,6 +135,7 @@ export function App() {
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [batchRenameOpen, setBatchRenameOpen] = useState(false);
+  const [infoEntry, setInfoEntry] = useState<FileEntry | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
   const [textInputDialog, setTextInputDialog] = useState<TextInputDialogState>(null);
   const [transferDialog, setTransferDialog] = useState<TransferDialogState>(null);
@@ -140,6 +146,9 @@ export function App() {
   const shortcutsRef = useRef<HTMLDivElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileGridRef = useRef<HTMLDivElement>(null);
+  const longPressEntry = useRef<{ entry: FileEntry; x: number; y: number } | null>(null);
+
   const canWrite = session?.role === 'admin';
 
   useEffect(() => {
@@ -401,6 +410,15 @@ export function App() {
     } else {
       window.open(downloadUrl(entry.path), '_blank');
     }
+  };
+
+  const handleShowInfo = () => {
+    const entry = selectedEntries[0];
+    if (selectedEntries.length !== 1 || !entry) {
+      return;
+    }
+    setContextMenu(null);
+    setInfoEntry(entry);
   };
 
   const handleBatchRename = () => {
@@ -856,6 +874,73 @@ export function App() {
     setContextMenu(null);
   };
 
+  const handleFileAreaMouseDown = (event: MouseEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget || event.button !== 0 || event.shiftKey || event.metaKey || event.ctrlKey) {
+      return;
+    }
+    const rect = event.currentTarget.getBoundingClientRect();
+    rubberBand.current = {
+      startX: event.clientX - rect.left,
+      startY: event.clientY - rect.top,
+      endX: event.clientX - rect.left,
+      endY: event.clientY - rect.top,
+      active: true,
+    };
+    setRubberBandStyle({
+      left: rubberBand.current.startX,
+      top: rubberBand.current.startY,
+      width: 0,
+      height: 0,
+    });
+    setSelectedPaths([]);
+    setLastSelectedPath(null);
+
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
+      if (!rubberBand.current.active) return;
+      const rect2 = event.currentTarget.getBoundingClientRect();
+      const endX = e.clientX - rect2.left;
+      const endY = e.clientY - rect2.top;
+      rubberBand.current.endX = endX;
+      rubberBand.current.endY = endY;
+
+      const left = Math.min(rubberBand.current.startX, endX);
+      const top = Math.min(rubberBand.current.startY, endY);
+      const width = Math.abs(endX - rubberBand.current.startX);
+      const height = Math.abs(endY - rubberBand.current.startY);
+      setRubberBandStyle({ left, top, width, height });
+
+      const gridRects = fileGridRef.current?.querySelectorAll('.file-row');
+      if (!gridRects) return;
+      const bandRect = { left, top, right: left + width, bottom: top + height };
+      const selected: string[] = [];
+      gridRects.forEach((el) => {
+        const elRect = el.getBoundingClientRect();
+        const elBandRect = { left: elRect.left - rect2.left, top: elRect.top - rect2.top, right: elRect.right - rect2.left, bottom: elRect.bottom - rect2.top };
+        if (elBandRect.left < bandRect.right && elBandRect.right > bandRect.left &&
+            elBandRect.top < bandRect.bottom && elBandRect.bottom > bandRect.top) {
+          const idx = Number((el as HTMLElement).dataset.index);
+          if (idx >= 0 && idx < filteredEntries.length) {
+            selected.push(filteredEntries[idx].path);
+          }
+        }
+      });
+      setSelectedPaths(selected);
+      if (selected.length > 0) {
+        setLastSelectedPath(selected[selected.length - 1]);
+      }
+    };
+
+    const handleMouseUp = () => {
+      rubberBand.current.active = false;
+      setRubberBandStyle(null);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
+
   const handleWorkspaceClick = (event: MouseEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) {
       return;
@@ -1300,7 +1385,7 @@ export function App() {
                 </button>
                 <button
                   className="icon-button"
-                  onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+                  onClick={() => setViewMode(viewMode === 'list' ? 'grid' : viewMode === 'grid' ? 'columns' : 'list')}
                   title="Change view"
                   type="button"
                 >
@@ -1340,16 +1425,20 @@ export function App() {
         {error && <div className="error-banner">{error}</div>}
 
         <section
-          className={`${viewMode === 'grid' ? 'file-grid' : 'file-list'}${draggingUpload ? ' drag-over' : ''}`}
+          className={`${viewMode === 'grid' ? 'file-grid' : viewMode === 'columns' ? 'file-columns' : 'file-list'}${draggingUpload ? ' drag-over' : ''}`}
+          ref={fileGridRef}
           onDragLeave={handleFileAreaDragLeave}
           onDragOver={handleFileAreaDragOver}
           onDrop={handleFileAreaDrop}
           onClick={handleFileAreaClick}
+          onMouseDown={handleFileAreaMouseDown}
           onKeyDown={handleFileAreaKeyDown}
           tabIndex={0}
         >
           {loading ? (
-            viewMode === 'grid' ? (
+            viewMode === 'columns' ? (
+              <div className="empty-state">Loading...</div>
+            ) : viewMode === 'grid' ? (
               <div className="skeleton-grid">
                 {Array.from({ length: 12 }).map((_, i) => (
                   <div key={i} className="skeleton-card">
@@ -1363,16 +1452,79 @@ export function App() {
               <div className="empty-state">Loading folder...</div>
             )
           ) : filteredEntries.length === 0 ? (
-            <div className="empty-state">No files found in {currentPath}</div>
+            viewMode === 'columns' ? (
+              <div className="empty-state">No files found in {currentPath}</div>
+            ) : (
+              <div className="empty-state">No files found in {currentPath}</div>
+            )
+          ) : viewMode === 'columns' ? (
+            <div className="column-browser">
+              {buildColumnPath(currentPath).map((col, colIdx) => (
+                <div key={col} className="column-pane">
+                  {col === currentPath ? (
+                    filteredEntries.map((entry, index) => (
+                      <div
+                        className={`column-item${selectedPaths.includes(entry.path) ? ' selected' : ''}`}
+                        key={entry.path}
+                        data-index={index}
+                        onClick={(event) => handleSelectEntry(entry, event)}
+                        onContextMenu={(event) => handleContextMenu(entry, event)}
+                        onDoubleClick={() => {
+                          if (renaming) return;
+                          if (entry.type === 'directory') {
+                            setCurrentPath(entry.path);
+                          } else {
+                            setPreviewEntry(entry);
+                          }
+                        }}
+                      >
+                        {entry.type === 'directory' ? <FolderIcon size={18} /> : <FileIcon entry={entry} size={18} />}
+                        <span className="column-item-name">{entry.name}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div
+                      className="column-item"
+                      onClick={() => setCurrentPath(col)}
+                    >
+                      <FolderIcon size={18} />
+                      <span className="column-item-name">{col === '/' ? '/' : col.split('/').pop() || col}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           ) : (
-            filteredEntries.map((entry) => {
+            filteredEntries.map((entry, index) => {
               const fileIconSize = viewMode === 'grid' ? 84 : 28;
               return (
                 <div
                   className={selectedPaths.includes(entry.path) ? 'file-row selected' : 'file-row'}
                   key={entry.path}
+                  data-index={index}
                   onClick={(event) => handleSelectEntry(entry, event)}
                   onContextMenu={(event) => handleContextMenu(entry, event)}
+                  onTouchStart={(event) => {
+                    const touch = event.touches[0];
+                    longPressEntry.current = { entry, x: touch.clientX, y: touch.clientY };
+                    const timer = window.setTimeout(() => {
+                      const lp = longPressEntry.current;
+                      if (lp) {
+                        setContextMenu({ x: lp.x, y: lp.y, entry: lp.entry });
+                        longPressEntry.current = null;
+                      }
+                    }, 500);
+                    (document as any).__longPressTimer = timer;
+                  }}
+                  onTouchMove={() => {
+                    longPressEntry.current = null;
+                    const timer = (document as any).__longPressTimer;
+                    if (timer) { window.clearTimeout(timer); delete (document as any).__longPressTimer; }
+                  }}
+                  onTouchEnd={() => {
+                    const timer = (document as any).__longPressTimer;
+                    if (timer) { window.clearTimeout(timer); delete (document as any).__longPressTimer; }
+                  }}
                   onDoubleClick={() => {
                     if (renaming) {
                       return;
@@ -1392,6 +1544,13 @@ export function App() {
                 >
                   {entry.type === 'directory' ? (
                     <FolderIcon size={fileIconSize} />
+                  ) : isImageExtension(entry.name.toLowerCase()) ? (
+                    <img
+                      className="file-thumb"
+                      src={rawUrl(entry.path)}
+                      alt={entry.name}
+                      loading="lazy"
+                    />
                   ) : (
                     <FileIcon entry={entry} size={fileIconSize} />
                   )}
@@ -1438,6 +1597,7 @@ export function App() {
               );
             })
           )}
+          {rubberBandStyle && <div className="rubber-band" style={rubberBandStyle} />}
         </section>
 
         {contextMenu && (
@@ -1463,6 +1623,10 @@ export function App() {
             <button type="button" onClick={handlePreview} disabled={!canPreview}>
               <Icon name="view-preview" size={16} />
               Preview
+            </button>
+            <button type="button" onClick={handleShowInfo} disabled={!canPreview}>
+              <Icon name="dialog-information" size={16} />
+              Info
             </button>
             <button type="button" onClick={handleCopy} disabled={!canWrite || !canCopy}>
               <Icon name="edit-copy" size={16} />
@@ -1543,6 +1707,15 @@ export function App() {
       <>
         {shell}
         <PreviewModal entry={previewEntry} onClose={() => setPreviewEntry(null)} />
+      </>
+    );
+  }
+
+  if (infoEntry) {
+    return (
+      <>
+        {shell}
+        <InfoPanel entry={infoEntry} onClose={() => setInfoEntry(null)} onRefresh={refresh} />
       </>
     );
   }
@@ -2126,5 +2299,18 @@ function folderSuggestionLabel(path: string) {
   if (path === '/') {
     return '/';
   }
-  return path.split('/').filter(Boolean).pop() ?? path;
+  const parts = path.split('/').filter(Boolean);
+  return parts.length > 0 ? parts[parts.length - 1] : path;
+}
+
+function buildColumnPath(currentPath: string, roots: string[] = ['/']): string[] {
+  if (!currentPath || currentPath === '/') {
+    return ['/'];
+  }
+  const parts = currentPath.split('/').filter(Boolean);
+  const cols: string[] = [];
+  for (let i = 0; i <= parts.length; i++) {
+    cols.push('/' + parts.slice(0, i).join('/'));
+  }
+  return cols;
 }

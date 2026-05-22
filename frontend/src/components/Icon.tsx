@@ -12,6 +12,7 @@ import {
   FolderPlus,
   Grid3X3,
   HardDrive,
+  Info,
   ListTree,
   LogOut,
   ListX,
@@ -39,6 +40,7 @@ type IconProps = {
 const ACTION_ICONS: Record<string, LucideIcon> = {
   'archive-create': Archive,
   'archive-extract': Archive,
+  'dialog-information': Info,
   'document-import': Upload,
   'document-open': FileInput,
   'edit-copy': Copy,

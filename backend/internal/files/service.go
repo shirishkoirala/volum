@@ -198,6 +198,49 @@ func (s *Service) Delete(path string) error {
 	return err
 }
 
+func (s *Service) Chmod(path, mode string) (Entry, error) {
+	resolved, err := s.guard.Resolve(path)
+	if err != nil {
+		return Entry{}, err
+	}
+	if s.isRoot(resolved) {
+		return Entry{}, ErrRootOperation
+	}
+
+	parsed, err := parseMode(mode)
+	if err != nil {
+		return Entry{}, err
+	}
+	if err := os.Chmod(resolved, parsed); err != nil {
+		return Entry{}, err
+	}
+	return entryFromPath(resolved)
+}
+
+func parseMode(mode string) (os.FileMode, error) {
+	if len(mode) == 9 {
+		var modeBits os.FileMode
+		for _, ch := range mode {
+			modeBits <<= 1
+			if ch != '-' {
+				modeBits |= 1
+			}
+		}
+		return modeBits, nil
+	}
+	if len(mode) == 3 || len(mode) == 4 {
+		var modeBits os.FileMode
+		for _, ch := range mode {
+			if ch < '0' || ch > '7' {
+				return 0, fmt.Errorf("invalid octal mode: %s", mode)
+			}
+			modeBits = modeBits<<3 | os.FileMode(ch-'0')
+		}
+		return modeBits, nil
+	}
+	return 0, fmt.Errorf("mode must be a 9-character permission string (e.g. rwxr-xr-x) or 3-4 digit octal")
+}
+
 func (s *Service) Trash(path string) (TrashEntry, error) {
 	resolved, err := s.guard.Resolve(path)
 	if err != nil {
@@ -324,6 +367,23 @@ func (s *Service) DeleteTrash(id string) error {
 }
 
 func (s *Service) DownloadPath(path string) (string, os.FileInfo, error) {
+	resolved, err := s.guard.Resolve(path)
+	if err != nil {
+		return "", nil, err
+	}
+
+	info, err := os.Stat(resolved)
+	if err != nil {
+		return "", nil, err
+	}
+	if info.IsDir() {
+		return "", nil, ErrDirectoryDownload
+	}
+
+	return resolved, info, nil
+}
+
+func (s *Service) ThumbnailPath(path string) (string, os.FileInfo, error) {
 	resolved, err := s.guard.Resolve(path)
 	if err != nil {
 		return "", nil, err

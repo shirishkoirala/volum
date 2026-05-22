@@ -283,6 +283,13 @@ export function renamePath(path: string, newName: string) {
   });
 }
 
+export function chmodPath(path: string, mode: string) {
+  return request<FileEntry>('/api/files/permissions', {
+    method: 'PATCH',
+    body: JSON.stringify({ path, mode })
+  });
+}
+
 export function deletePath(path: string, confirmName: string) {
   return requestVoid('/api/files', {
     method: 'DELETE',

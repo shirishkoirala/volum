@@ -87,6 +87,7 @@ func (s *Server) routes() {
 			r.Post("/trash/{id}/restore", s.handleRestoreTrash)
 			r.Delete("/trash/{id}", s.handleDeleteTrash)
 			r.Post("/files/upload", s.handleUpload)
+			r.Patch("/files/permissions", s.handleChmod)
 			r.Post("/jobs/copy", s.handleCreateCopyJob)
 			r.Post("/jobs/move", s.handleCreateMoveJob)
 			r.Post("/jobs/archive", s.handleCreateArchiveJob)
@@ -627,6 +628,27 @@ func (s *Server) uploadPart(ctx context.Context, targetDir string, part *multipa
 		return jobs.Job{}, err
 	}
 	return s.jobs.Get(ctx, job.ID)
+}
+
+func (s *Server) handleChmod(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Path string `json:"path"`
+		Mode string `json:"mode"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+	if req.Path == "" || req.Mode == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "path and mode are required"})
+		return
+	}
+	entry, err := s.files.Chmod(req.Path, req.Mode)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, entry)
 }
 
 func (s *Server) handleJobs(w http.ResponseWriter, r *http.Request) {

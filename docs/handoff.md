@@ -24,6 +24,11 @@ Volum is a self-hosted Docker file manager with a Go backend API, React/Vite fro
 - Batch rename (pattern-based)
 - Recycle bin (`.volum-trash/` per root)
 - Keyboard shortcuts, context menus, dark mode
+- Column view (macOS Finder style)
+- File info panel with chmod permissions (rwx bit toggle)
+- Image thumbnails in grid view
+- Rubber band drag-select for multi-select
+- Touch-friendly long-press context menu on mobile
 
 ## Repository Notes
 
@@ -50,6 +55,8 @@ Volum is a self-hosted Docker file manager with a Go backend API, React/Vite fro
 - `backend/internal/storage/sqlite.go`: SQLite open and schema migration
 - `frontend/src/App.tsx`: main UI shell with all views and dialogs
 - `frontend/src/api/client.ts`: frontend API client types and requests
+- `frontend/src/components/BatchRenameModal.tsx`: batch rename UI
+- `frontend/src/components/InfoPanel.tsx`: file info panel with permissions editor
 - `frontend/src/styles/global.css`: design tokens and component styles
 - `docker-compose.yml`: single-container production-style run
 - `docker-compose.dev.yml`: Dockerized backend plus Vite frontend
@@ -105,23 +112,15 @@ For homelab deployment, use `docker-compose.homelab.yml`.
 
 ## Known Gaps
 
+- Export/import job history — `Phase 12`
 - No automated backend tests (beyond the transfer resume test)
 - No frontend component tests
-- No image/video thumbnails in grid view
-- No drag-select (rubber band) for multi-select
-- No column view (macOS Finder style)
-- No file/folder info panel (right-click → Get Info)
-- No PDF preview (image-based fallback only)
-- No export/import job history
 
 ## Immediate Next Tasks (from roadmap)
 
-1. Image/video thumbnails in grid view — `Phase 13`
-2. Drag-select (rubber band selection) — `Phase 13`
-3. Column view (macOS Finder style) — `Phase 13`
-4. File/folder info panel — `Phase 13`
-5. Export/import job history — `Phase 12`
-6. Automated backend tests — `Phase 9+`
+1. Export/import job history — `Phase 12`
+2. Automated backend tests
+3. Frontend component tests
 
 ## Safety Rules For Next Agent
 
