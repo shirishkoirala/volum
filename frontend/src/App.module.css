@@ -393,31 +393,6 @@
   min-height: 46px;
 }
 
-.breadcrumbs {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-  min-width: 0;
-}
-
-.breadcrumbs button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
-  display: inline-flex;
-  font-size: 13px;
-  gap: 2px;
-  padding: 5px 6px;
-  transition: background var(--transition-fast);
-}
-
-.breadcrumbs button:hover {
-  background: var(--color-border-row);
-}
-
 .toolbar {
   align-items: center;
   display: flex;
@@ -474,18 +449,6 @@
   font-size: 13px;
   max-width: 150px;
   padding: 0 10px;
-}
-
-.topbarLeft {
-  align-items: center;
-  display: flex;
-  gap: var(--space-md);
-}
-
-.breadcrumbCurrent {
-  color: var(--color-text);
-  font-size: 13px;
-  font-weight: 600;
 }
 
 .trashGrid {

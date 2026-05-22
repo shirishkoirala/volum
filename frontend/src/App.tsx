@@ -46,6 +46,7 @@ import appIcon from './assets/icon-light.png';
 import { PreviewModal } from './components/PreviewModal';
 import { BatchRenameModal } from './components/BatchRenameModal';
 import { InfoPanel } from './components/InfoPanel';
+import { BreadcrumbBar } from './components/BreadcrumbBar';
 import { Overlay } from './components/shared';
 import { ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport } from './components/Dialogs';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState, Toast } from './components/Dialogs';
@@ -171,6 +172,15 @@ export function App() {
   }, [renaming]);
 
   const refresh = () => setRefreshKey((value) => value + 1);
+
+  const handleBreadcrumbBack = () => {
+    const parts = currentPath.split('/').filter(Boolean);
+    if (parts.length <= 1) {
+      setCurrentPath('');
+    } else {
+      setCurrentPath('/' + parts.slice(0, -1).join('/'));
+    }
+  };
 
   const persistFavorites = (items: string[]) => {
     setFavorites(items);
@@ -1091,8 +1101,8 @@ export function App() {
         </aside>
 
         <section className={styles.workspace} onClick={handleWorkspaceClick}>
-        <header className={styles.topbar}>
-          {selectedEntries.length > 0 ? (
+        {selectedEntries.length > 0 ? (
+            <header className={styles.topbar}>
             <div className={styles.selectionBar}>
               <span>{selectedEntries.length} selected</span>
               <div className={styles.selectionActions}>
@@ -1171,7 +1181,7 @@ export function App() {
                   </button>
                 )}
                 {canDelete && canWrite && (
-                  <button type="button" onClick={handleDelete} className={styles.danger}>
+                  <button type="button" onClick={handleDelete} className="danger">
                     <Icon name="edit-delete" size={16} />
                     Delete
                   </button>
@@ -1181,17 +1191,9 @@ export function App() {
                 Clear
               </button>
             </div>
+            </header>
           ) : (
-            <>
-              <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
-                {breadcrumbs.map((crumb, index) => (
-                  <button key={crumb.path} onClick={() => navigateTo(crumb.path)} type="button">
-                    {index > 0 && <Icon name="go-next" size={16} />}
-                    <span>{crumb.label}</span>
-                  </button>
-                ))}
-              </nav>
-
+            <BreadcrumbBar crumbs={breadcrumbs} onBack={handleBreadcrumbBack} onNavigate={navigateTo}>
               <div className={styles.toolbar}>
                 <button
                   className="icon-button"
@@ -1367,40 +1369,24 @@ export function App() {
                     <Icon name="system-log-out" size={18} />
                   </button>
                 )}
-              </div>
-            </>
-          )}
-        </header>
+                </div>
+              </BreadcrumbBar>
+            )}
 
-        {error && <div className={styles.errorBanner}>{error}</div>}
+          {error && <div className={styles.errorBanner}>{error}</div>}
 
-        {showingTrash ? (
-          <>
-            <header className={styles.topbar}>
-              <div className={styles.topbarLeft}>
-                <button
-                  className="icon-button"
-                  onClick={() => setShowingTrash(false)}
-                  title="Back to desktop"
-                  type="button"
-                >
-                  <span className="icon-rotate-180"><Icon name="go-next" size={18} /></span>
-                </button>
-                <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
-                  <button type="button" onClick={() => setShowingTrash(false)}>
-                    <span>Desktop</span>
-                  </button>
-                  <Icon name="go-next" size={16} />
-                  <span className={styles.breadcrumbCurrent}>Trash</span>
-                </nav>
-              </div>
-              <div className={styles.toolbar}>
+          {showingTrash ? (
+            <>
+              <BreadcrumbBar
+                crumbs={[{ label: 'Desktop' }, { label: 'Trash' }]}
+                onBack={() => setShowingTrash(false)}
+                onNavigate={() => {}}
+              >
                 <button className="icon-button" onClick={() => { getTrash().then(r => setTrashEntries(r.entries ?? [])); }} title="Refresh" type="button">
                   <Icon name="view-refresh" size={18} />
                 </button>
-              </div>
-            </header>
-            <div className={styles.trashGrid}>
+              </BreadcrumbBar>
+              <div className={styles.trashGrid}>
               {trashEntries.length === 0 ? (
                 <div className={styles.emptyState}>Trash is empty</div>
               ) : (
