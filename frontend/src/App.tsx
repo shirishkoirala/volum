@@ -630,10 +630,16 @@ export function App() {
       handleInvertSelection();
       return;
     }
+    if (event.key === 'F2' && canWrite && canRename) {
+      event.preventDefault();
+      handleRename();
+      return;
+    }
     if (event.key === 'Escape') {
       setSelectedPaths([]);
       setContextMenu(null);
       setLastSelectedPath(null);
+      return;
     }
     if (event.key === 'Enter' && selectedEntries.length === 1) {
       if (selectedEntries[0].type === 'directory') {
@@ -1344,6 +1350,7 @@ export function App() {
             <div className="shortcut-row"><span>Invert selection</span><span className="shortcut-key">⌘I</span></div>
             <div className="shortcut-row"><span>Global search</span><span className="shortcut-key">⌘K</span></div>
             <div className="shortcut-row"><span>Toggle shortcuts</span><span className="shortcut-key">?</span></div>
+            <div className="shortcut-row"><span>Rename selected item</span><span className="shortcut-key">F2</span></div>
             <div className="shortcut-row"><span>Shift-range select</span><span className="shortcut-key">⇧+click</span></div>
             <div className="shortcut-row"><span>Multi-select toggle</span><span className="shortcut-key">⌘+click</span></div>
             <hr />
