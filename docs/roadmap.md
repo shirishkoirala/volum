@@ -126,9 +126,12 @@ These are useful, but should not interrupt the phases above unless they become r
 - [x] Docs refresh: `README.md`, `docs/security.md`, and `docs/handoff.md` updated to reflect actual product state.
 - [x] Frontend tests expanded: dialog component tests (`ConfirmDialog`, `TextInputDialog`, `ToastViewport`, `FolderSuggestions`) and `FolderPicker` tests added.
 - [x] Reusable `FolderPicker` component built and wired into `TransferDialog` for copy/move destination browsing.
+- [x] CSS Modules migration: 7 scoped modules, global.css reduced from 2173 to 96 lines.
+- [x] Trash view overhaul: own page with grid/list views, selection, context menu, BreadcrumbBar, file/folder icons.
+- [x] Conflict preview dialog: scans destination, shows fate of each file (new/skip/overwrite/rename/cancel) before proceeding.
 
 ## Next Three Tasks
 
-1. Add conflict preview before large copy/move/extract operations so users know what will skip, overwrite, or rename.
-2. Improve drag-and-drop inside the app: drag selected files into folders to move/copy with a modifier-aware confirmation.
-3. Add breadcrumb overflow handling and quick root switching for deep paths.
+1. Improve drag-and-drop inside the app: drag selected files into folders to move/copy with a modifier-aware confirmation.
+2. Add breadcrumb overflow handling and quick root switching for deep paths.
+3. Add saved view preferences per folder: view mode, sort field, sort direction, hidden files.

@@ -1,8 +1,9 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from './Icon';
 import { Overlay } from './shared';
 import type { FileEntry } from '../api/client';
 import type { ConflictPolicy } from '../api/client';
+import { getFiles } from '../api/client';
 import styles from './Dialogs.module.css';
 
 export type ConfirmDialogState = {
@@ -317,6 +318,10 @@ export function TransferDialog({
   const [conflictPolicy, setConflictPolicy] = useState<ConflictPolicy>('ask');
   const [error, setError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [previewItems, setPreviewItems] = useState<{ name: string; fate: string }[] | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const title = dialog.mode === 'copy' ? 'Copy Items' : 'Move Items';
   const actionLabel = dialog.mode === 'copy' ? 'Copy' : 'Move';
@@ -337,6 +342,113 @@ export function TransferDialog({
     }
     onSubmit(dialog, destination, conflictPolicy);
   };
+
+  const handlePreview = async () => {
+    const dests = destination.split('|').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
+    if (dests.length === 0) {
+      setError('Destination folder path is required.');
+      return;
+    }
+    setPreviewLoading(true);
+    setPreviewError(null);
+    setError(null);
+    try {
+      const existingNames = new Set<string>();
+      for (const dest of dests) {
+        const response = await getFiles(dest, false);
+        (response.entries ?? []).forEach((e) => existingNames.add(e.name));
+      }
+      const items = dialog.entries.map((entry) => {
+        const conflict = existingNames.has(entry.name);
+        let fate: string;
+        if (!conflict) {
+          fate = 'New file';
+        } else if (conflictPolicy === 'skip') {
+          fate = 'Skipped (file exists)';
+        } else if (conflictPolicy === 'overwrite') {
+          fate = 'Overwritten (file exists)';
+        } else if (conflictPolicy === 'rename') {
+          fate = 'Renamed (file exists)';
+        } else if (conflictPolicy === 'cancel') {
+          fate = 'Cancel job (file exists)';
+        } else {
+          fate = 'Ask when needed';
+        }
+        return { name: entry.name, fate };
+      });
+      setPreviewItems(items);
+      setPreviewMode(true);
+    } catch (err) {
+      setPreviewError(err instanceof Error ? err.message : 'Failed to preview destination');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const previewSummary = useMemo(() => {
+    if (!previewItems) return null;
+    const total = previewItems.length;
+    const newFiles = previewItems.filter((i) => i.fate === 'New file').length;
+    const skipped = previewItems.filter((i) => i.fate.startsWith('Skipped')).length;
+    const overwritten = previewItems.filter((i) => i.fate.startsWith('Overwritten')).length;
+    const renamed = previewItems.filter((i) => i.fate.startsWith('Renamed')).length;
+    const cancelled = previewItems.filter((i) => i.fate.startsWith('Cancel')).length;
+    return { total, newFiles, skipped, overwritten, renamed, cancelled };
+  }, [previewItems]);
+
+  if (previewMode && previewItems && previewSummary) {
+    return (
+      <Overlay zIndex={110} onClose={onClose}>
+        <div className={`${styles.appDialog} ${styles.appDialogWide}`} role="dialog" aria-modal="true">
+          <div className="panel-header">
+            <div>
+              <h3>Preview {title}</h3>
+              <p>{itemLabel} → {destination}</p>
+            </div>
+            <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
+              <Icon name="window-close" size={18} />
+            </button>
+          </div>
+          <div className={styles.previewSummary}>
+            {previewSummary.newFiles > 0 && <span className={styles.previewStat}><strong>{previewSummary.newFiles}</strong> new</span>}
+            {previewSummary.skipped > 0 && <span className={styles.previewStat}><strong>{previewSummary.skipped}</strong> skipped</span>}
+            {previewSummary.overwritten > 0 && <span className={`${styles.previewStat} ${styles.previewStatWarn}`}><strong>{previewSummary.overwritten}</strong> overwritten</span>}
+            {previewSummary.renamed > 0 && <span className={`${styles.previewStat} ${styles.previewStatWarn}`}><strong>{previewSummary.renamed}</strong> renamed</span>}
+            {previewSummary.cancelled > 0 && <span className={`${styles.previewStat} ${styles.previewStatDanger}`}><strong>{previewSummary.cancelled}</strong> cancelled</span>}
+            <span className={styles.previewStatMuted}>· {previewSummary.total} total</span>
+          </div>
+          <div className={styles.previewItemList}>
+            {previewItems.map((item) => {
+              let fateClass = styles.fateNew;
+              let fateIcon = '✦';
+              if (item.fate.startsWith('Skip')) { fateClass = styles.fateSkip; fateIcon = '−'; }
+              else if (item.fate.startsWith('Over')) { fateClass = styles.fateOverwrite; fateIcon = '✦'; }
+              else if (item.fate.startsWith('Ren')) { fateClass = styles.fateRename; fateIcon = '↻'; }
+              else if (item.fate.startsWith('Can')) { fateClass = styles.fateCancel; fateIcon = '✕'; }
+              else if (item.fate.startsWith('Ask')) { fateClass = styles.fateAsk; fateIcon = '?'; }
+              return (
+                <div key={item.name} className={styles.previewItem}>
+                  <span className={`${styles.fateBadge} ${fateClass}`}>{fateIcon}</span>
+                  <span className={styles.previewItemName}>{item.name}</span>
+                  <span className={styles.previewItemFate}>{item.fate}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className={styles.dialogActions}>
+            <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={() => setPreviewMode(false)}>Go back</button>
+            <button
+              type="button"
+              className={`${styles.dialogButton} ${styles.primary}`}
+              onClick={() => onSubmit(dialog, destination, conflictPolicy)}
+            >
+              Proceed with {actionLabel.toLowerCase()}
+            </button>
+          </div>
+        </div>
+      </Overlay>
+    );
+  }
 
   return (
     <Overlay zIndex={110} onClose={onClose}>
@@ -400,8 +512,12 @@ export function TransferDialog({
           </select>
         </label>
         {error && <p className={styles.dialogError}>{error}</p>}
+        {previewError && <p className={styles.dialogError}>{previewError}</p>}
         <div className={styles.dialogActions}>
           <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
+          <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} disabled={previewLoading} onClick={handlePreview}>
+            {previewLoading ? 'Scanning...' : 'Preview'}
+          </button>
           <button type="submit" className={`${styles.dialogButton} ${styles.primary}`}>{actionLabel}</button>
         </div>
       </form>
