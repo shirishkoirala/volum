@@ -5,6 +5,7 @@ import {
   ListTree, LogOut, ListX, Moon, Pause, Pencil, Play, RefreshCw, RotateCcw,
   Scissors, Search, Square, Sun, Trash2, Upload, X, type LucideIcon,
 } from 'lucide-react';
+import { IconImg } from './shared';
 import { fileTypeIconUrl, folderIconUrl, driveIconUrl, trashIconUrl } from '../api/icons';
 
 type IconProps = { name: string; size?: number; className?: string };
@@ -44,32 +45,24 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
 
 export function Icon({ name, size = 22, className }: IconProps) {
   const Lucide = ACTION_ICONS[name] ?? Square;
-  return <Lucide aria-hidden="true" size={size} className={className} style={{ flexShrink: 0 }} strokeWidth={1.8} />;
+  return <Lucide aria-hidden="true" size={size} className={`icon-img ${className ?? ''}`} strokeWidth={1.8} />;
 }
 
 export function DeviceIcon({ name, size = 64, className }: { name?: string; size?: number; className?: string }) {
-  return (
-    <img src={driveIconUrl()} alt="" width={size} height={size} style={{ flexShrink: 0 }} className={className} />
-  );
+  return <IconImg src={driveIconUrl()} alt="" width={size} height={size} className={className} />;
 }
 
 export function FileIcon({ entry, size = 22 }: { entry: FileEntry; size?: number }) {
   const iconSize = size <= 22 ? '22' : '64';
-  return (
-    <img src={fileTypeIconUrl(entry, iconSize)} alt="" width={size} height={size} style={{ flexShrink: 0 }} />
-  );
+  return <IconImg src={fileTypeIconUrl(entry, iconSize)} alt="" width={size} height={size} />;
 }
 
 export function FolderIcon({ size = 22 }: { size?: number }) {
   const iconSize = size <= 22 ? '22' : '64';
-  return (
-    <img src={folderIconUrl(iconSize)} alt="" width={size} height={size} style={{ flexShrink: 0 }} />
-  );
+  return <IconImg src={folderIconUrl(iconSize)} alt="" width={size} height={size} />;
 }
 
 export function TrashIcon({ full = false, size = 22 }: { full?: boolean; size?: number }) {
   const iconSize = size <= 22 ? '22' : '64';
-  return (
-    <img src={trashIconUrl(full, iconSize)} alt="" width={size} height={size} style={{ flexShrink: 0 }} />
-  );
+  return <IconImg src={trashIconUrl(full, iconSize)} alt="" width={size} height={size} />;
 }

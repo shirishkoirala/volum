@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon, FileIcon } from './Icon';
+import { Overlay } from './shared';
 import { chmodPath } from '../api/client';
 import type { FileEntry } from '../api/client';
 
@@ -30,7 +31,7 @@ function parsePermString(perm: string): boolean[] {
 }
 
 function formatPermBits(bits: boolean[]): string {
-  return bits.map((b) => (b ? ['r', 'w', 'x'][bits.indexOf(b) % 3] : '-')).join('');
+  return bits.map((b, i) => (b ? ['r', 'w', 'x'][i % 3] : '-')).join('');
 }
 
 export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
@@ -71,9 +72,9 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
   })();
 
   return (
-    <div className="preview-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <Overlay onClose={onClose}>
       <div className="info-panel">
-        <div className="info-panel-header">
+        <div className="panel-header">
           <h3>Info</h3>
           <button className="icon-button" onClick={onClose} type="button">
             <Icon name="window-close" size={18} />
@@ -160,6 +161,6 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
           </div>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }

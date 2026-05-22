@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   downloadUrl,
   isAudioExtension,
@@ -9,6 +9,7 @@ import {
   type FileEntry
 } from '../api/client';
 import { Icon } from './Icon';
+import { Overlay } from './shared';
 
 type PreviewModalProps = {
   entry: FileEntry;
@@ -16,7 +17,6 @@ type PreviewModalProps = {
 };
 
 export function PreviewModal({ entry, onClose }: PreviewModalProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
   const [textContent, setTextContent] = useState<string | null>(null);
   const [textError, setTextError] = useState<string | null>(null);
 
@@ -52,18 +52,12 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
       .catch((err: Error) => setTextError(err.message));
   }, [fileUrl, showText]);
 
-  const handleOverlayClick = (event: React.MouseEvent) => {
-    if (event.target === overlayRef.current) {
-      onClose();
-    }
-  };
-
   return (
-    <div className="preview-overlay" ref={overlayRef} onClick={handleOverlayClick}>
+    <Overlay onClose={onClose}>
       <div className="preview-panel">
         <div className="preview-header">
           <span className="preview-title">{entry.name}</span>
-          <div className="preview-actions">
+          <div className="panel-header-actions">
             <button
               className="icon-button"
               onClick={() => window.open(downloadUrl(entry.path), '_blank')}
@@ -129,6 +123,6 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
           )}
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }

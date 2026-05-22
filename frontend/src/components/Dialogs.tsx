@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon';
+import { Overlay } from './shared';
 import type { FileEntry } from '../api/client';
 import type { ConflictPolicy } from '../api/client';
 
@@ -57,9 +58,9 @@ export function ConfirmDialog({ dialog, onClose }: { dialog: NonNullable<Confirm
   };
 
   return (
-    <div className="dialog-overlay" onClick={(event) => event.target === event.currentTarget && onClose()}>
+    <Overlay zIndex={110} onClose={onClose}>
       <div className="app-dialog app-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
-        <div className="app-dialog-header">
+        <div className="panel-header">
           <h3 id="confirm-dialog-title">{dialog.title}</h3>
           <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
             <Icon name="window-close" size={18} />
@@ -77,7 +78,7 @@ export function ConfirmDialog({ dialog, onClose }: { dialog: NonNullable<Confirm
           </button>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -105,9 +106,9 @@ export function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextI
   };
 
   return (
-    <div className="dialog-overlay" onClick={(event) => event.target === event.currentTarget && onClose()}>
+    <Overlay zIndex={110} onClose={onClose}>
       <form className="app-dialog app-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title" onSubmit={handleSubmit}>
-        <div className="app-dialog-header">
+        <div className="panel-header">
           <h3 id="text-dialog-title">{dialog.title}</h3>
           <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
             <Icon name="window-close" size={18} />
@@ -141,7 +142,7 @@ export function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextI
           <button type="submit" className="dialog-button primary">{dialog.confirmLabel}</button>
         </div>
       </form>
-    </div>
+    </Overlay>
   );
 }
 
@@ -216,10 +217,10 @@ export function FolderPicker({
         <span className="folder-picker-title">Select destination</span>
         <div className="folder-picker-nav">
           <button type="button" className="icon-button" onClick={goBack} disabled={history.length === 0} title="Back">
-            <span style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}><Icon name="go-next" size={16} /></span>
+            <span className="icon-rotate-180"><Icon name="go-next" size={16} /></span>
           </button>
           <button type="button" className="icon-button" onClick={goUp} disabled={currentDir === '/'} title="Up">
-            <span style={{ display: 'inline-flex', transform: 'rotate(-90deg)' }}><Icon name="go-next" size={16} /></span>
+            <span className="icon-rotate-90"><Icon name="go-next" size={16} /></span>
           </button>
           <button type="button" className="icon-button" onClick={() => loadSubdirs(currentDir)} title="Refresh">
             <Icon name="view-refresh" size={16} />
@@ -276,9 +277,7 @@ export function FolderPicker({
                 onClick={() => onSelect(dir)}
                 title={dir}
               >
-                <svg width="18" height="18" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-                  <path d="M2 3.5C2 2.67 2.67 2 3.5 2h2.88l1.5 1.5H12.5c1.1 0 2 .9 2 2v7c0 1.1-.9 2-2 2h-9c-1.1 0-2-.9-2-2V3.5Z" fill="currentColor" opacity="0.8"/>
-                </svg>
+                <Icon name="folder-new" size={18} />
                 <span className="folder-picker-item-name">{dirName}</span>
               </button>
             );
@@ -339,9 +338,9 @@ export function TransferDialog({
   };
 
   return (
-    <div className="dialog-overlay" onClick={(event) => event.target === event.currentTarget && onClose()}>
+    <Overlay zIndex={110} onClose={onClose}>
       <form className="app-dialog" role="dialog" aria-modal="true" aria-labelledby="transfer-dialog-title" onSubmit={handleSubmit}>
-        <div className="app-dialog-header">
+        <div className="panel-header">
           <div>
             <h3 id="transfer-dialog-title">{title}</h3>
             <p>{itemLabel}</p>
@@ -405,7 +404,7 @@ export function TransferDialog({
           <button type="submit" className="dialog-button primary">{actionLabel}</button>
         </div>
       </form>
-    </div>
+    </Overlay>
   );
 }
 

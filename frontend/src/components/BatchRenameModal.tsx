@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Icon, FileIcon } from './Icon';
+import { Overlay } from './shared';
 import { batchRename } from '../api/client';
 import type { FileEntry } from '../api/client';
 
@@ -69,9 +70,9 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
   };
 
   return (
-    <div className="preview-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <Overlay onClose={onClose}>
       <div className="rename-modal">
-        <div className="rename-modal-header">
+        <div className="panel-header">
           <h3>Batch Rename ({entries.length} items)</h3>
           <button className="icon-button" onClick={onClose} type="button">
             <Icon name="window-close" size={18} />
@@ -140,6 +141,6 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
           </button>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }

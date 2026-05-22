@@ -46,6 +46,7 @@ import appIcon from './assets/icon-light.png';
 import { PreviewModal } from './components/PreviewModal';
 import { BatchRenameModal } from './components/BatchRenameModal';
 import { InfoPanel } from './components/InfoPanel';
+import { Overlay } from './components/shared';
 import { ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport } from './components/Dialogs';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState, Toast } from './components/Dialogs';
 
@@ -116,7 +117,6 @@ export function App() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
-  const shortcutsRef = useRef<HTMLDivElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileGridRef = useRef<HTMLDivElement>(null);
@@ -1800,7 +1800,7 @@ export function App() {
     return (
       <>
         {shell}
-        <div className="shortcuts-overlay" ref={shortcutsRef} onClick={(e) => { if (e.target === shortcutsRef.current) setShortcutsOpen(false); }}>
+        <Overlay onClose={() => setShortcutsOpen(false)}>
           <div className="shortcuts-panel">
             <h3>Keyboard Shortcuts</h3>
             <div className="shortcut-row"><span>Navigate into folder / Open file</span><span className="shortcut-key">Enter</span></div>
@@ -1820,7 +1820,7 @@ export function App() {
             <div className="shortcut-row"><span>Close preview / Clear search</span><span className="shortcut-key">Esc</span></div>
             <div className="shortcut-row"><span>Context menu</span><span className="shortcut-key">Right click</span></div>
           </div>
-        </div>
+        </Overlay>
       </>
     );
   }
