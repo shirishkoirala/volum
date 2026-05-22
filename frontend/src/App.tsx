@@ -49,6 +49,7 @@ import { InfoPanel } from './components/InfoPanel';
 import { Overlay } from './components/shared';
 import { ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport } from './components/Dialogs';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState, Toast } from './components/Dialogs';
+import styles from './App.module.css';
 
 type ViewMode = 'list' | 'grid' | 'columns';
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
@@ -978,7 +979,7 @@ export function App() {
   }, []);
 
   if (sessionLoading) {
-    return <div className="auth-shell">Loading...</div>;
+    return <div className={styles.authShell}>Loading...</div>;
   }
 
   if (session?.authEnabled && !session.authenticated) {
@@ -987,10 +988,10 @@ export function App() {
 
   const shell = (
     <>
-      <main className="app-shell">
-        <aside className="sidebar">
-          <div className="brand">
-            <img className="brand-mark" src={appIcon} alt="" />
+      <main className={styles.appShell}>
+        <aside className={styles.sidebar}>
+          <div className={styles.brand}>
+            <img className={styles.brandMark} src={appIcon} alt="" />
             <div>
               <strong>Volum</strong>
               <span>File manager</span>
@@ -998,23 +999,23 @@ export function App() {
             </div>
           </div>
 
-          <section className="nav-section">
+          <section className={styles.navSection}>
             <h2>Storage</h2>
-            <div className="root-list">
+            <div className={styles.rootList}>
               {roots.map((root) => (
                 <button
-                  className={root.path === currentPath ? 'root-item active' : 'root-item'}
+                  className={root.path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem}
                   key={root.path}
                   onClick={() => navigateTo(root.path)}
                   type="button"
                 >
                   <DeviceIcon name="drive-harddisk" size={18} />
-                  <span className="root-details">
+                  <span className={styles.rootDetails}>
                     <span>{rootLabel(root)}</span>
                     <small>{root.path}</small>
                     <small>{formatRootUsage(root)}</small>
                     {root.totalBytes > 0 && (
-                      <span className="root-meter" aria-hidden="true">
+                      <span className={styles.rootMeter} aria-hidden="true">
                         <span style={{ width: `${Math.min((root.usedBytes / root.totalBytes) * 100, 100)}%` }} />
                       </span>
                     )}
@@ -1025,14 +1026,14 @@ export function App() {
           </section>
 
           {favorites.length > 0 && (
-            <section className="nav-section">
-              <div className="section-heading">
+            <section className={styles.navSection}>
+              <div className={styles.sectionHeading}>
                 <h2>Favorites</h2>
               </div>
-              <div className="root-list">
+              <div className={styles.rootList}>
                 {favorites.map((path) => (
                   <div
-                    className={path === currentPath ? 'root-item active' : 'root-item'}
+                    className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem}
                     key={path}
                     onClick={() => navigateTo(path)}
                     role="button"
@@ -1044,12 +1045,12 @@ export function App() {
                     }}
                   >
                     <FolderIcon size={18} />
-                    <span className="fav-details">
+                    <span className={styles.favDetails}>
                       <span>{path.split('/').pop() || path}</span>
                       <small>{path}</small>
                     </span>
                     <button
-                      className="fav-remove"
+                      className={styles.favRemove}
                       onClick={(e) => { e.stopPropagation(); removeFavorite(path); }}
                       title="Remove from favorites"
                       type="button"
@@ -1063,20 +1064,20 @@ export function App() {
           )}
 
           {recentPaths.length > 0 && (
-            <section className="nav-section">
-              <div className="section-heading">
+            <section className={styles.navSection}>
+              <div className={styles.sectionHeading}>
                 <h2>Recent</h2>
               </div>
-              <div className="root-list">
+              <div className={styles.rootList}>
                 {recentPaths.map((path) => (
                   <button
-                    className={path === currentPath ? 'root-item active' : 'root-item'}
+                    className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem}
                     key={path}
                     onClick={() => navigateTo(path)}
                     type="button"
                   >
                     <FolderIcon size={18} />
-                    <span className="fav-details">
+                    <span className={styles.favDetails}>
                       <span>{path.split('/').pop() || path}</span>
                       <small>{path}</small>
                     </span>
@@ -1086,30 +1087,30 @@ export function App() {
             </section>
           )}
 
-          <section className="nav-section trash-section">
-            <div className="section-heading">
+          <section className={`${styles.navSection} ${styles.trashSection}`}>
+            <div className={styles.sectionHeading}>
               <h2>Trash</h2>
               <span>{trashEntries.length}</span>
             </div>
             {trashEntries.length === 0 ? (
               <p className="muted compact">Trash is empty</p>
             ) : (
-              <div className="trash-list">
+              <div className={styles.trashList}>
                 {trashEntries.slice(0, 6).map((entry) => (
-                  <div className="trash-item" key={entry.id}>
+                  <div className={styles.trashItem} key={entry.id}>
                     <div>
                       <strong>{entry.name}</strong>
                       <span>{formatTrashPath(entry.originalPath)}</span>
                       <small>{formatBytes(entry.size)} · {new Date(entry.deletedAt).toLocaleDateString()}</small>
                     </div>
                     {canWrite && (
-                      <div className="trash-actions">
+                      <div className={styles.trashActions}>
                         <button type="button" title="Restore" onClick={() => handleRestoreTrash(entry)}>
                           <Icon name="edit-restore" size={15} />
                         </button>
                         <button
                           type="button"
-                          className="danger"
+                          className={styles.danger}
                           title="Delete permanently"
                           onClick={() => handleDeleteTrash(entry)}
                         >
@@ -1125,12 +1126,12 @@ export function App() {
           </section>
         </aside>
 
-        <section className="workspace" onClick={handleWorkspaceClick}>
-        <header className="topbar">
+        <section className={styles.workspace} onClick={handleWorkspaceClick}>
+        <header className={styles.topbar}>
           {selectedEntries.length > 0 ? (
-            <div className="selection-bar">
+            <div className={styles.selectionBar}>
               <span>{selectedEntries.length} selected</span>
-              <div className="selection-actions">
+              <div className={styles.selectionActions}>
                 <button type="button" onClick={handleSelectAll} disabled={!canSelect}>
                   <Icon name="selection-select-all" size={16} />
                   Select all
@@ -1206,7 +1207,7 @@ export function App() {
                   </button>
                 )}
                 {canDelete && canWrite && (
-                  <button type="button" onClick={handleDelete} className="danger">
+                  <button type="button" onClick={handleDelete} className={styles.danger}>
                     <Icon name="edit-delete" size={16} />
                     Delete
                   </button>
@@ -1218,7 +1219,7 @@ export function App() {
             </div>
           ) : (
             <>
-              <nav className="breadcrumbs" aria-label="Breadcrumb">
+              <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
                 {breadcrumbs.map((crumb, index) => (
                   <button key={crumb.path} onClick={() => navigateTo(crumb.path)} type="button">
                     {index > 0 && <Icon name="go-next" size={16} />}
@@ -1227,7 +1228,7 @@ export function App() {
                 ))}
               </nav>
 
-              <div className="toolbar">
+              <div className={styles.toolbar}>
                 <button
                   className="icon-button"
                   disabled={!canWrite}
@@ -1248,7 +1249,7 @@ export function App() {
                 </button>
                 <input
                   ref={fileInputRef}
-                  className="hidden-file-input"
+                  className={styles.hiddenFileInput}
                   multiple
                   type="file"
                   onChange={(event) => {
@@ -1276,7 +1277,7 @@ export function App() {
                 >
                   <Icon name="selection-invert" size={18} />
                 </button>
-                <label className="search">
+                <label className={styles.searchBox}>
                   <Icon name="edit-find" size={16} />
                   <input
                     ref={searchRef}
@@ -1297,18 +1298,18 @@ export function App() {
                     }}
                   />
                   {query.length > 0 && (
-                    <button type="button" className="search-clear" onClick={() => { setQuery(''); setSearchResults(null); setSearchOpen(false); }}>
+                    <button type="button" className={styles.searchClear} onClick={() => { setQuery(''); setSearchResults(null); setSearchOpen(false); }}>
                       <Icon name="window-close" size={14} />
                     </button>
                   )}
                 </label>
                 {searchOpen && searchResults && searchResults.length > 0 && (
-                  <div className="search-results-dropdown">
+                  <div className={styles.searchResultsDropdown}>
                     {searchResults.map((result) => (
                       <button
                         key={result.path}
                         type="button"
-                        className="search-result-item"
+                        className={styles.searchResultItem}
                         onClick={() => {
                           if (result.type === 'directory') {
                             navigateTo(result.path);
@@ -1319,14 +1320,14 @@ export function App() {
                         }}
                       >
                         <FileIcon entry={{ ...result, hidden: false, permissions: '', owner: '', group: '' }} size={22} />
-                        <span className="search-result-name">{result.name}</span>
-                        <span className="search-result-path">{result.root}</span>
+                        <span className={styles.searchResultName}>{result.name}</span>
+                        <span className={styles.searchResultPath}>{result.root}</span>
                       </button>
                     ))}
                   </div>
                 )}
                 <select
-                  className="sort-select"
+                  className={styles.sortSelect}
                   value={`${sortField}:${sortDirection}`}
                   onChange={(event) => {
                     const [field, direction] = event.target.value.split(':') as [SortField, SortDirection];
@@ -1407,14 +1408,14 @@ export function App() {
           )}
         </header>
 
-        {error && <div className="error-banner">{error}</div>}
+        {error && <div className={styles.errorBanner}>{error}</div>}
 
         {!currentPath ? (
-          <div className="desktop">
+          <div className={styles.desktop}>
             {roots.map((root) => (
               <button
                 key={root.path}
-                className="desktop-icon"
+                className={styles.desktopIcon}
                 onClick={() => navigateTo(root.path)}
                 onContextMenu={(event) => {
                   event.preventDefault();
@@ -1423,29 +1424,29 @@ export function App() {
                 type="button"
               >
                 <DeviceIcon name="drive-harddisk" size={64} />
-                <span className="desktop-icon-label">{rootLabel(root)}</span>
-                <small className="desktop-icon-usage">{root.path}</small>
-                <small className="desktop-icon-usage">{formatRootUsage(root)}</small>
+                <span className={styles.desktopIconLabel}>{rootLabel(root)}</span>
+                <small className={styles.desktopIconUsage}>{root.path}</small>
+                <small className={styles.desktopIconUsage}>{formatRootUsage(root)}</small>
               </button>
             ))}
             <button
-              className="desktop-icon"
+              className={styles.desktopIcon}
               onClick={() => {
                 document.querySelector('.trash-section')?.scrollIntoView({ behavior: 'smooth' });
               }}
               type="button"
             >
-              <div className="desktop-trash-icon">
+              <div className={styles.desktopTrashIcon}>
                 <TrashIcon full={trashEntries.length > 0} size={64} />
-                {trashEntries.length > 0 && <span className="desktop-trash-badge">{trashEntries.length}</span>}
+                {trashEntries.length > 0 && <span className={styles.desktopTrashBadge}>{trashEntries.length}</span>}
               </div>
-              <span className="desktop-icon-label">Trash</span>
-              <small className="desktop-icon-usage">{trashEntries.length === 0 ? 'Empty' : `${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'}`}</small>
+              <span className={styles.desktopIconLabel}>Trash</span>
+              <small className={styles.desktopIconUsage}>{trashEntries.length === 0 ? 'Empty' : `${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'}`}</small>
             </button>
           </div>
         ) : (
         <section
-          className={`${viewMode === 'grid' ? 'file-grid' : viewMode === 'columns' ? 'file-columns' : 'file-list'}${draggingUpload ? ' drag-over' : ''}`}
+          className={`${viewMode === 'grid' ? styles.fileGrid : viewMode === 'columns' ? styles.fileColumns : styles.fileList}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
           ref={fileGridRef}
           onDragLeave={handleFileAreaDragLeave}
           onDragOver={handleFileAreaDragOver}
@@ -1457,34 +1458,34 @@ export function App() {
         >
           {loading ? (
             viewMode === 'columns' ? (
-              <div className="empty-state">Loading...</div>
+              <div className={styles.emptyState}>Loading...</div>
             ) : viewMode === 'grid' ? (
-              <div className="skeleton-grid">
+              <div className={styles.skeletonGrid}>
                 {Array.from({ length: 12 }).map((_, i) => (
-                  <div key={i} className="skeleton-card">
-                    <div className="skeleton-icon" />
-                    <div className="skeleton-line" />
-                    <div className="skeleton-line short" />
+                  <div key={i} className={styles.skeletonCard}>
+                    <div className={styles.skeletonIcon} />
+                    <div className={styles.skeletonLine} />
+                    <div className={`${styles.skeletonLine} ${styles.short}`} />
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="empty-state">Loading folder...</div>
+              <div className={styles.emptyState}>Loading folder...</div>
             )
           ) : filteredEntries.length === 0 ? (
             viewMode === 'columns' ? (
-              <div className="empty-state">No files found in {currentPath}</div>
+              <div className={styles.emptyState}>No files found in {currentPath}</div>
             ) : (
-              <div className="empty-state">No files found in {currentPath}</div>
+              <div className={styles.emptyState}>No files found in {currentPath}</div>
             )
           ) : viewMode === 'columns' ? (
-            <div className="column-browser">
+            <div className={styles.columnBrowser}>
               {buildColumnPath(currentPath).map((col, colIdx) => (
-                <div key={col} className="column-pane">
+                <div key={col} className={styles.columnPane}>
                   {col === currentPath ? (
                     filteredEntries.map((entry, index) => (
                       <div
-                        className={`column-item${selectedPaths.includes(entry.path) ? ' selected' : ''}`}
+                        className={`${styles.columnItem}${selectedPaths.includes(entry.path) ? ` ${styles.selected}` : ''}`}
                         key={entry.path}
                         data-index={index}
                         onClick={(event) => handleSelectEntry(entry, event)}
@@ -1504,16 +1505,16 @@ export function App() {
                         }}
                       >
                         {entry.type === 'directory' ? <FolderIcon size={18} /> : <FileIcon entry={entry} size={18} />}
-                        <span className="column-item-name">{entry.name}</span>
+                        <span className={styles.columnItemName}>{entry.name}</span>
                       </div>
                     ))
                   ) : (
                     <div
-                      className="column-item"
+                      className={styles.columnItem}
                       onClick={() => navigateTo(col)}
                     >
                       <FolderIcon size={18} />
-                      <span className="column-item-name">{col === '/' ? '/' : col.split('/').pop() || col}</span>
+                      <span className={styles.columnItemName}>{col === '/' ? '/' : col.split('/').pop() || col}</span>
                     </div>
                   )}
                 </div>
@@ -1524,7 +1525,7 @@ export function App() {
               const fileIconSize = viewMode === 'grid' ? 84 : 28;
               return (
                 <div
-                  className={selectedPaths.includes(entry.path) ? 'file-row selected' : 'file-row'}
+                  className={selectedPaths.includes(entry.path) ? `${styles.fileRow} ${styles.selected}` : styles.fileRow}
                   key={entry.path}
                   data-index={index}
                   onClick={(event) => handleSelectEntry(entry, event)}
@@ -1571,7 +1572,7 @@ export function App() {
                     <FolderIcon size={fileIconSize} />
                   ) : isImageExtension(entry.name.toLowerCase()) ? (
                     <img
-                      className="file-thumb"
+                      className={styles.fileThumb}
                       src={rawUrl(entry.path)}
                       alt={entry.name}
                       loading="lazy"
@@ -1602,10 +1603,10 @@ export function App() {
                       }}
                     />
                   ) : (
-                    <span className="file-name">{entry.name}</span>
+                    <span className={styles.fileName}>{entry.name}</span>
                   )}
                   {viewMode === 'grid' && (
-                    <span className="file-meta">
+                    <span className={styles.fileMeta}>
                       {formatBytes(entry.size)}
                       <span>{formatGridDate(entry.modifiedAt)}</span>
                     </span>
@@ -1624,13 +1625,13 @@ export function App() {
               );
             })
           )}
-          {rubberBandStyle && <div className="rubber-band" style={rubberBandStyle} />}
+          {rubberBandStyle && <div className={styles.rubberBand} style={rubberBandStyle} />}
         </section>
         )}
 
         {contextMenu && (
           <div
-            className="context-menu"
+            className={styles.contextMenu}
             style={{ left: contextMenu.x, top: contextMenu.y }}
             onClick={(event) => event.stopPropagation()}
           >
@@ -1680,7 +1681,7 @@ export function App() {
               <Icon name="edit-paste" size={16} />
               Paste
             </button>
-            <button type="button" className="danger" onClick={handleDelete} disabled={!canWrite || !canDelete}>
+            <button type="button" className={styles.danger} onClick={handleDelete} disabled={!canWrite || !canDelete}>
               <Icon name="edit-delete" size={16} />
               Delete
             </button>
@@ -1688,36 +1689,36 @@ export function App() {
         )}
       </section>
 
-      <aside className="job-drawer">
-        <div className="drawer-header">
+      <aside className={styles.jobDrawer}>
+        <div className={styles.drawerHeader}>
           <h2>Jobs</h2>
           <span>{jobs.length}</span>
         </div>
-        <div className="job-filter-tabs">
+        <div className={styles.jobFilterTabs}>
           {(['all', 'active', 'completed', 'failed'] as const).map((tab) => (
             <button
               key={tab}
               type="button"
-              className={`job-filter-tab${jobFilter === tab ? ' active' : ''}`}
+              className={`${styles.jobFilterTab}${jobFilter === tab ? ` ${styles.active}` : ''}`}
               onClick={() => setJobFilter(tab)}
             >
               {tab === 'all' ? 'All' : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
-        <div className="job-list">
+        <div className={styles.jobList}>
           {jobs.length === 0 ? (
             <p className="muted">No jobs yet</p>
           ) : (
             <>
               {renderJobGroup(jobs, jobFilter, completedCollapsed, setCompletedCollapsed, handleCancelJob, handlePauseJob, handleResumeJob, handleRetryJob)}
               {jobs.some((j) => j.status === 'completed' || j.status === 'cancelled') && (
-                <button type="button" className="job-clear-btn" onClick={handleClearCompleted}>
+                <button type="button" className={styles.jobClearBtn} onClick={handleClearCompleted}>
                   Clear completed
                 </button>
               )}
               {jobs.some((j) => j.status === 'failed') && (
-                <button type="button" className="job-clear-btn" onClick={handleClearFailed}>
+                <button type="button" className={styles.jobClearBtn} onClick={handleClearFailed}>
                   Clear failed
                 </button>
               )}
@@ -1801,24 +1802,24 @@ export function App() {
       <>
         {shell}
         <Overlay onClose={() => setShortcutsOpen(false)}>
-          <div className="shortcuts-panel">
+          <div className={styles.shortcutsPanel}>
             <h3>Keyboard Shortcuts</h3>
-            <div className="shortcut-row"><span>Navigate into folder / Open file</span><span className="shortcut-key">Enter</span></div>
-            <div className="shortcut-row"><span>Deselect all</span><span className="shortcut-key">Esc</span></div>
-            <div className="shortcut-row"><span>Select all</span><span className="shortcut-key">⌘A</span></div>
-            <div className="shortcut-row"><span>Copy selected items</span><span className="shortcut-key">⌘C</span></div>
-            <div className="shortcut-row"><span>Cut selected items</span><span className="shortcut-key">⌘X</span></div>
-            <div className="shortcut-row"><span>Paste clipboard items</span><span className="shortcut-key">⌘V</span></div>
-            <div className="shortcut-row"><span>Invert selection</span><span className="shortcut-key">⌘I</span></div>
-            <div className="shortcut-row"><span>Global search</span><span className="shortcut-key">⌘K</span></div>
-            <div className="shortcut-row"><span>Toggle shortcuts</span><span className="shortcut-key">?</span></div>
-            <div className="shortcut-row"><span>Rename selected item</span><span className="shortcut-key">F2</span></div>
-            <div className="shortcut-row"><span>Move selected items to trash</span><span className="shortcut-key">Delete</span></div>
-            <div className="shortcut-row"><span>Shift-range select</span><span className="shortcut-key">⇧+click</span></div>
-            <div className="shortcut-row"><span>Multi-select toggle</span><span className="shortcut-key">⌘+click</span></div>
+            <div className={styles.shortcutRow}><span>Navigate into folder / Open file</span><span className={styles.shortcutKey}>Enter</span></div>
+            <div className={styles.shortcutRow}><span>Deselect all</span><span className={styles.shortcutKey}>Esc</span></div>
+            <div className={styles.shortcutRow}><span>Select all</span><span className={styles.shortcutKey}>⌘A</span></div>
+            <div className={styles.shortcutRow}><span>Copy selected items</span><span className={styles.shortcutKey}>⌘C</span></div>
+            <div className={styles.shortcutRow}><span>Cut selected items</span><span className={styles.shortcutKey}>⌘X</span></div>
+            <div className={styles.shortcutRow}><span>Paste clipboard items</span><span className={styles.shortcutKey}>⌘V</span></div>
+            <div className={styles.shortcutRow}><span>Invert selection</span><span className={styles.shortcutKey}>⌘I</span></div>
+            <div className={styles.shortcutRow}><span>Global search</span><span className={styles.shortcutKey}>⌘K</span></div>
+            <div className={styles.shortcutRow}><span>Toggle shortcuts</span><span className={styles.shortcutKey}>?</span></div>
+            <div className={styles.shortcutRow}><span>Rename selected item</span><span className={styles.shortcutKey}>F2</span></div>
+            <div className={styles.shortcutRow}><span>Move selected items to trash</span><span className={styles.shortcutKey}>Delete</span></div>
+            <div className={styles.shortcutRow}><span>Shift-range select</span><span className={styles.shortcutKey}>⇧+click</span></div>
+            <div className={styles.shortcutRow}><span>Multi-select toggle</span><span className={styles.shortcutKey}>⌘+click</span></div>
             <hr />
-            <div className="shortcut-row"><span>Close preview / Clear search</span><span className="shortcut-key">Esc</span></div>
-            <div className="shortcut-row"><span>Context menu</span><span className="shortcut-key">Right click</span></div>
+            <div className={styles.shortcutRow}><span>Close preview / Clear search</span><span className={styles.shortcutKey}>Esc</span></div>
+            <div className={styles.shortcutRow}><span>Context menu</span><span className={styles.shortcutKey}>Right click</span></div>
           </div>
         </Overlay>
       </>
@@ -1844,9 +1845,9 @@ function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void })
   };
 
   return (
-    <main className="auth-shell">
-      <form className="login-panel" onSubmit={handleSubmit}>
-        <img className="brand-mark" src={appIcon} alt="" />
+    <main className={styles.authShell}>
+      <form className={styles.loginPanel} onSubmit={handleSubmit}>
+        <img className={styles.brandMark} src={appIcon} alt="" />
         <h1>Volum</h1>
         <select value={role} onChange={(event) => setRole(event.target.value as 'admin' | 'readonly')}>
           <option value="admin">Admin</option>
@@ -1859,7 +1860,7 @@ function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void })
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
-        {error && <p className="login-error">{error}</p>}
+        {error && <p className={styles.loginError}>{error}</p>}
         <button disabled={submitting || password.length === 0} type="submit">
           Log in
         </button>
@@ -1894,15 +1895,15 @@ function JobItem({
   const hasKnownTotal = job.totalBytes > 0;
 
   return (
-    <article className="job-item">
-      <div className="job-title-row">
+    <article className={styles.jobItem}>
+      <div className={styles.jobTitleRow}>
         <strong>{job.type}</strong>
         <span>{job.status}</span>
       </div>
-      <div className="progress-track">
-        <div className="progress-fill" style={{ width: `${progress}%` }} />
+      <div className={styles.progressTrack}>
+        <div className={styles.progressFill} style={{ width: `${progress}%` }} />
       </div>
-      <div className="job-meta">
+      <div className={styles.jobMeta}>
         <span>
           {hasKnownTotal
             ? `${formatBytes(job.processedBytes)} / ${formatBytes(job.totalBytes)}`
@@ -1912,9 +1913,9 @@ function JobItem({
         {showLiveStats && job.etaSeconds !== undefined ? <span>{formatDuration(job.etaSeconds)} left</span> : null}
       </div>
       <p>{job.currentItem ?? job.sourcePath ?? job.id}</p>
-      {job.errorMessage && <p className="job-error">{job.errorMessage}</p>}
+      {job.errorMessage && <p className={styles.jobError}>{job.errorMessage}</p>}
       {(canPause || canResume || canCancel || canRetry) && (
-        <div className="job-actions">
+        <div className={styles.jobActions}>
           {canPause && (
             <button type="button" onClick={() => onPause(job.id)}>
               <Icon name="media-playback-pause" size={15} />
@@ -1978,7 +1979,7 @@ function renderJobGroup(
         <>
           <button
             type="button"
-            className="job-collapse-toggle"
+            className={styles.jobCollapseToggle}
             onClick={() => setCompletedCollapsed(!completedCollapsed)}
           >
             {completedCollapsed ? `Show ${terminalJobs.length} completed` : 'Hide completed'}
