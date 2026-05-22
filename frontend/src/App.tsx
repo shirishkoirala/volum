@@ -121,6 +121,11 @@ export function App() {
   const renameInputRef = useRef<HTMLInputElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [showingTrash, setShowingTrash] = useState(false);
+  const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
+  const [lastSelectedTrashId, setLastSelectedTrashId] = useState<string | null>(null);
+  const [trashContextMenu, setTrashContextMenu] = useState<{
+    x: number; y: number; entry: TrashEntry;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileGridRef = useRef<HTMLDivElement>(null);
   const longPressEntry = useRef<{ entry: FileEntry; x: number; y: number } | null>(null);
@@ -358,7 +363,7 @@ export function App() {
   };
 
   const handleDeleteTrash = (entry: TrashEntry) => {
-    setContextMenu(null);
+    setTrashContextMenu(null);
     setConfirmDialog({
       title: 'Delete Permanently',
       message: `Permanently delete "${entry.name}"? This cannot be undone.`,
@@ -372,6 +377,86 @@ export function App() {
         }, 'Item deleted permanently');
       }
     });
+  };
+
+  const handleBulkRestoreTrash = () => {
+    const ids = [...selectedTrashIds];
+    if (ids.length === 0) return;
+    setConfirmDialog({
+      title: 'Restore Items',
+      message: `Restore ${ids.length} item${ids.length === 1 ? '' : 's'} to their original locations?`,
+      confirmLabel: 'Restore',
+      onConfirm: () => {
+        void runAction(async () => {
+          for (const id of ids) {
+            await restoreTrash(id);
+          }
+          setSelectedTrashIds([]);
+          const response = await getTrash();
+          setTrashEntries(response.entries ?? []);
+        }, `${ids.length} item${ids.length === 1 ? '' : 's'} restored`);
+      }
+    });
+  };
+
+  const handleBulkDeleteTrash = () => {
+    const ids = [...selectedTrashIds];
+    if (ids.length === 0) return;
+    setConfirmDialog({
+      title: 'Delete Permanently',
+      message: `Permanently delete ${ids.length} item${ids.length === 1 ? '' : 's'}? This cannot be undone.`,
+      confirmLabel: 'Delete Permanently',
+      danger: true,
+      onConfirm: () => {
+        void runAction(async () => {
+          for (const id of ids) {
+            await deleteTrash(id);
+          }
+          setSelectedTrashIds([]);
+          const response = await getTrash();
+          setTrashEntries(response.entries ?? []);
+        }, `${ids.length} item${ids.length === 1 ? '' : 's'} deleted permanently`);
+      }
+    });
+  };
+
+  const handleSelectTrashItem = (entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => {
+    setTrashContextMenu(null);
+    if (event.shiftKey && lastSelectedTrashId) {
+      const allEntries = trashEntries;
+      const from = allEntries.findIndex((e) => e.id === lastSelectedTrashId);
+      const to = allEntries.findIndex((e) => e.id === entry.id);
+      if (from !== -1 && to !== -1) {
+        const [start, end] = from < to ? [from, to] : [to, from];
+        setSelectedTrashIds(allEntries.slice(start, end + 1).map((e) => e.id));
+        return;
+      }
+    }
+    if (event.metaKey || event.ctrlKey) {
+      setSelectedTrashIds((prev) =>
+        prev.includes(entry.id)
+          ? prev.filter((id) => id !== entry.id)
+          : [...prev, entry.id]
+      );
+      setLastSelectedTrashId(entry.id);
+      return;
+    }
+    if (selectedTrashIds.includes(entry.id) && selectedTrashIds.length === 1) {
+      setSelectedTrashIds([]);
+      setLastSelectedTrashId(null);
+      return;
+    }
+    setSelectedTrashIds([entry.id]);
+    setLastSelectedTrashId(entry.id);
+  };
+
+  const handleTrashContextMenu = (entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    if (!selectedTrashIds.includes(entry.id)) {
+      setSelectedTrashIds([entry.id]);
+      setLastSelectedTrashId(entry.id);
+    }
+    setTrashContextMenu({ x: event.clientX, y: event.clientY, entry });
   };
 
   const handleDownload = () => {
@@ -958,7 +1043,7 @@ export function App() {
   };
 
   useEffect(() => {
-    const closeContextMenu = () => setContextMenu(null);
+    const closeContextMenu = () => { setContextMenu(null); setTrashContextMenu(null); };
     window.addEventListener('click', closeContextMenu);
     window.addEventListener('resize', closeContextMenu);
     return () => {
@@ -1377,24 +1462,67 @@ export function App() {
 
           {showingTrash ? (
             <>
-              <BreadcrumbBar
-                crumbs={[{ label: 'Desktop' }, { label: 'Trash' }]}
-                onBack={() => setShowingTrash(false)}
-                onNavigate={() => {}}
+              {selectedTrashIds.length > 0 ? (
+                <header className={styles.topbar}>
+                  <div className={styles.selectionBar}>
+                    <span>{selectedTrashIds.length} selected</span>
+                    <div className={styles.selectionActions}>
+                      {canWrite && (
+                        <button type="button" onClick={handleBulkRestoreTrash}>
+                          <Icon name="edit-restore" size={16} />
+                          Restore
+                        </button>
+                      )}
+                      {canWrite && (
+                        <button type="button" className="danger" onClick={handleBulkDeleteTrash}>
+                          <Icon name="edit-delete" size={16} />
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                    <button type="button" onClick={() => setSelectedTrashIds([])}>
+                      Clear
+                    </button>
+                  </div>
+                </header>
+              ) : (
+                <BreadcrumbBar
+                  crumbs={[{ label: 'Desktop' }, { label: 'Trash' }]}
+                  onBack={() => setShowingTrash(false)}
+                  onNavigate={() => {}}
+                >
+                  <button className="icon-button" onClick={() => { getTrash().then(r => setTrashEntries(r.entries ?? [])); }} title="Refresh" type="button">
+                    <Icon name="view-refresh" size={18} />
+                  </button>
+                </BreadcrumbBar>
+              )}
+              <section
+                className={styles.fileList}
+                onClick={(event) => {
+                  if (event.target === event.currentTarget) {
+                    setSelectedTrashIds([]);
+                    setLastSelectedTrashId(null);
+                    setTrashContextMenu(null);
+                  }
+                }}
+                onContextMenu={(event) => event.preventDefault()}
+                tabIndex={0}
               >
-                <button className="icon-button" onClick={() => { getTrash().then(r => setTrashEntries(r.entries ?? [])); }} title="Refresh" type="button">
-                  <Icon name="view-refresh" size={18} />
-                </button>
-              </BreadcrumbBar>
-              <div className={styles.trashGrid}>
               {trashEntries.length === 0 ? (
                 <div className={styles.emptyState}>Trash is empty</div>
               ) : (
-                trashEntries.map((entry) => (
-                  <div className={styles.trashItem} key={entry.id}>
-                    <div className={styles.trashItemRow}>
+                trashEntries.map((entry) => {
+                  const isSelected = selectedTrashIds.includes(entry.id);
+                  return (
+                    <div
+                      className={`${styles.fileRow}${isSelected ? ` ${styles.selected}` : ''}`}
+                      key={entry.id}
+                      onClick={(event) => handleSelectTrashItem(entry, event)}
+                      onContextMenu={(event) => handleTrashContextMenu(entry, event)}
+                      role="button"
+                    >
                       {entry.type === 'directory' ? (
-                        <FolderIcon size={24} />
+                        <FolderIcon size={28} />
                       ) : (
                         <FileIcon entry={{
                           name: entry.name,
@@ -1406,35 +1534,20 @@ export function App() {
                           owner: '',
                           group: '',
                           hidden: false,
-                        }} size={24} />
+                        }} size={28} />
                       )}
-                      <div className={styles.trashItemInfo}>
-                        <strong>{entry.name}</strong>
-                        <span>{formatTrashPath(entry.originalPath)}</span>
-                        <small>{formatBytes(entry.size)} · {new Date(entry.deletedAt).toLocaleDateString()}</small>
-                      </div>
+                      <span className={styles.fileName}>{entry.name}</span>
+                      <span>{entry.type}</span>
+                      <span>{formatBytes(entry.size)}</span>
+                      <span>{new Date(entry.deletedAt).toLocaleString()}</span>
+                      <span>{formatTrashPath(entry.originalPath)}</span>
+                      <span>{entry.id}</span>
+                      <span>{''}</span>
                     </div>
-                    {canWrite && (
-                      <div className={styles.trashActions}>
-                        <button type="button" className={styles.trashActionBtn} title="Restore" onClick={() => handleRestoreTrash(entry)}>
-                          <Icon name="edit-restore" size={16} />
-                          <span>Restore</span>
-                        </button>
-                        <button
-                          type="button"
-                          className={`${styles.trashActionBtn} ${styles.danger}`}
-                          title="Delete permanently"
-                          onClick={() => handleDeleteTrash(entry)}
-                        >
-                          <Icon name="edit-delete" size={16} />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               )}
-            </div>
+              </section>
           </>
         ) : !currentPath ? (
           <div className={styles.desktop}>
@@ -1712,6 +1825,31 @@ export function App() {
             <button type="button" className={styles.danger} onClick={handleDelete} disabled={!canWrite || !canDelete}>
               <Icon name="edit-delete" size={16} />
               Delete
+            </button>
+          </div>
+        )}
+        {trashContextMenu && canWrite && (
+          <div
+            className={styles.contextMenu}
+            style={{ left: trashContextMenu.x, top: trashContextMenu.y }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button type="button" onClick={() => {
+              handleRestoreTrash(trashContextMenu.entry);
+              setTrashContextMenu(null);
+            }}>
+              <Icon name="edit-restore" size={16} />
+              Restore
+            </button>
+            <button
+              type="button"
+              className={styles.danger}
+              onClick={() => {
+                handleDeleteTrash(trashContextMenu.entry);
+              }}
+            >
+              <Icon name="edit-delete" size={16} />
+              Delete permanently
             </button>
           </div>
         )}

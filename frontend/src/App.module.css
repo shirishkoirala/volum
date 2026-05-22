@@ -206,9 +206,6 @@
   box-shadow: var(--shadow-card-hover);
 }
 
-.trashSection {
-  min-height: 0;
-}
 
 .trashList {
   display: grid;
