@@ -537,10 +537,11 @@ export function App() {
   const canDelete = selectedEntries.length > 0;
   const canCopy = selectedEntries.length > 0;
   const canMove = selectedEntries.length > 0;
+  const canInfo = selectedEntries.length === 1;
   const canPreview = selectedEntries.length === 1 && selectedEntries[0].type === 'file';
   const canArchive = selectedEntries.length === 1;
   const canExtract = selectedEntries.length === 1 && selectedEntries[0].type === 'file' && isArchiveFile(selectedEntries[0].name);
-  const canChecksum = selectedEntries.length === 1;
+  const canChecksum = canWrite && selectedEntries.length === 1;
   const canSelect = filteredEntries.length > 0;
   const canPaste = canWrite && !!fileClipboard && fileClipboard.entries.length > 0;
 
@@ -855,7 +856,7 @@ export function App() {
     }
     if (event.key === 'Enter' && selectedEntries.length === 1) {
       if (selectedEntries[0].type === 'directory') {
-        setCurrentPath(selectedEntries[0].path);
+        navigateTo(selectedEntries[0].path);
       } else {
         handlePreview();
       }
@@ -1015,57 +1016,61 @@ export function App() {
     <>
       <main className="app-shell">
         <aside className="sidebar">
-        <div className="brand">
-          <img className="brand-mark" src={appIcon} alt="" />
-          <div>
-            <strong>Volum</strong>
-            <span>File manager</span>
-            {session?.authEnabled && <span>{session.role}</span>}
-          </div>
-        </div>
-
-        <section className="nav-section">
-          <h2>Storage</h2>
-          <div className="root-list">
-            {roots.map((root) => (
-              <button
-                className={root.path === currentPath ? 'root-item active' : 'root-item'}
-                key={root.path}
-                onClick={() => navigateTo(root.path)}
-                type="button"
-              >
-                <DeviceIcon name="drive-harddisk" size={18} />
-                <span className="root-details">
-                  <span>{root.path}</span>
-                  <small>{formatRootUsage(root)}</small>
-                  {root.totalBytes > 0 && (
-                    <span className="root-meter" aria-hidden="true">
-                      <span style={{ width: `${Math.min((root.usedBytes / root.totalBytes) * 100, 100)}%` }} />
-                    </span>
-                  )}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {favorites.length > 0 && (
-          <section className="nav-section">
-            <div className="section-heading">
-              <h2>Favorites</h2>
+          <div className="brand">
+            <img className="brand-mark" src={appIcon} alt="" />
+            <div>
+              <strong>Volum</strong>
+              <span>File manager</span>
+              {session?.authEnabled && <span>{session.role}</span>}
             </div>
+          </div>
+
+          <section className="nav-section">
+            <h2>Storage</h2>
             <div className="root-list">
-      {favorites.map((path) => (
+              {roots.map((root) => (
+                <button
+                  className={root.path === currentPath ? 'root-item active' : 'root-item'}
+                  key={root.path}
+                  onClick={() => navigateTo(root.path)}
+                  type="button"
+                >
+                  <DeviceIcon name="drive-harddisk" size={18} />
+                  <span className="root-details">
+                    <span>{root.path}</span>
+                    <small>{formatRootUsage(root)}</small>
+                    {root.totalBytes > 0 && (
+                      <span className="root-meter" aria-hidden="true">
+                        <span style={{ width: `${Math.min((root.usedBytes / root.totalBytes) * 100, 100)}%` }} />
+                      </span>
+                    )}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {favorites.length > 0 && (
+            <section className="nav-section">
+              <div className="section-heading">
+                <h2>Favorites</h2>
+              </div>
+              <div className="root-list">
+                {favorites.map((path) => (
                   <div
                     className={path === currentPath ? 'root-item active' : 'root-item'}
                     key={path}
-                    onClick={() => { setCurrentPath(path); }}
+                    onClick={() => navigateTo(path)}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter') setCurrentPath(path); }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        navigateTo(path);
+                      }
+                    }}
                   >
                     <FolderIcon size={18} />
-                    <span className="fav-details" style={{ flex: 1 }}>
+                    <span className="fav-details">
                       <span>{path.split('/').pop() || path}</span>
                       <small>{path}</small>
                     </span>
@@ -1079,74 +1084,74 @@ export function App() {
                     </button>
                   </div>
                 ))}
-            </div>
-          </section>
-        )}
-
-        {recentPaths.length > 0 && (
-          <section className="nav-section">
-            <div className="section-heading">
-              <h2>Recent</h2>
-            </div>
-            <div className="root-list">
-              {recentPaths.map((path) => (
-                <button
-                  className={path === currentPath ? 'root-item active' : 'root-item'}
-                  key={path}
-                  onClick={() => { setCurrentPath(path); }}
-                  type="button"
-                >
-                  <FolderIcon size={18} />
-                  <span className="fav-details" style={{ flex: 1 }}>
-                    <span>{path.split('/').pop() || path}</span>
-                    <small>{path}</small>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="nav-section trash-section">
-          <div className="section-heading">
-            <h2>Trash</h2>
-            <span>{trashEntries.length}</span>
-          </div>
-          {trashEntries.length === 0 ? (
-            <p className="muted compact">Trash is empty</p>
-          ) : (
-            <div className="trash-list">
-              {trashEntries.slice(0, 6).map((entry) => (
-                <div className="trash-item" key={entry.id}>
-                  <div>
-                    <strong>{entry.name}</strong>
-                    <span>{formatTrashPath(entry.originalPath)}</span>
-                    <small>{formatBytes(entry.size)} · {new Date(entry.deletedAt).toLocaleDateString()}</small>
-                  </div>
-                  {canWrite && (
-                    <div className="trash-actions">
-                      <button type="button" title="Restore" onClick={() => handleRestoreTrash(entry)}>
-                        <Icon name="edit-restore" size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        className="danger"
-                        title="Delete permanently"
-                        onClick={() => handleDeleteTrash(entry)}
-                      >
-                        <Icon name="edit-delete" size={15} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-              {trashEntries.length > 6 && <p className="muted compact">+{trashEntries.length - 6} more</p>}
-            </div>
+              </div>
+            </section>
           )}
-        </section>
-      </aside>
 
-      <section className="workspace" onClick={handleWorkspaceClick}>
+          {recentPaths.length > 0 && (
+            <section className="nav-section">
+              <div className="section-heading">
+                <h2>Recent</h2>
+              </div>
+              <div className="root-list">
+                {recentPaths.map((path) => (
+                  <button
+                    className={path === currentPath ? 'root-item active' : 'root-item'}
+                    key={path}
+                    onClick={() => navigateTo(path)}
+                    type="button"
+                  >
+                    <FolderIcon size={18} />
+                    <span className="fav-details">
+                      <span>{path.split('/').pop() || path}</span>
+                      <small>{path}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="nav-section trash-section">
+            <div className="section-heading">
+              <h2>Trash</h2>
+              <span>{trashEntries.length}</span>
+            </div>
+            {trashEntries.length === 0 ? (
+              <p className="muted compact">Trash is empty</p>
+            ) : (
+              <div className="trash-list">
+                {trashEntries.slice(0, 6).map((entry) => (
+                  <div className="trash-item" key={entry.id}>
+                    <div>
+                      <strong>{entry.name}</strong>
+                      <span>{formatTrashPath(entry.originalPath)}</span>
+                      <small>{formatBytes(entry.size)} · {new Date(entry.deletedAt).toLocaleDateString()}</small>
+                    </div>
+                    {canWrite && (
+                      <div className="trash-actions">
+                        <button type="button" title="Restore" onClick={() => handleRestoreTrash(entry)}>
+                          <Icon name="edit-restore" size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          className="danger"
+                          title="Delete permanently"
+                          onClick={() => handleDeleteTrash(entry)}
+                        >
+                          <Icon name="edit-delete" size={15} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {trashEntries.length > 6 && <p className="muted compact">+{trashEntries.length - 6} more</p>}
+              </div>
+            )}
+          </section>
+        </aside>
+
+        <section className="workspace" onClick={handleWorkspaceClick}>
         <header className="topbar">
           {selectedEntries.length > 0 ? (
             <div className="selection-bar">
@@ -1164,6 +1169,12 @@ export function App() {
                   <button type="button" onClick={handlePreview}>
                     <Icon name="view-preview" size={16} />
                     Preview
+                  </button>
+                )}
+                {canInfo && (
+                  <button type="button" onClick={handleShowInfo}>
+                    <Icon name="dialog-information" size={16} />
+                    Info
                   </button>
                 )}
                 {canDownload && (
@@ -1506,7 +1517,7 @@ export function App() {
                         onDoubleClick={() => {
                           if (renaming) return;
                           if (entry.type === 'directory') {
-                            setCurrentPath(entry.path);
+                            navigateTo(entry.path);
                           } else {
                             const ext = entry.name.toLowerCase();
                             if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext) || ext.endsWith('.pdf')) {
@@ -1524,7 +1535,7 @@ export function App() {
                   ) : (
                     <div
                       className="column-item"
-                      onClick={() => setCurrentPath(col)}
+                      onClick={() => navigateTo(col)}
                     >
                       <FolderIcon size={18} />
                       <span className="column-item-name">{col === '/' ? '/' : col.split('/').pop() || col}</span>
@@ -1569,7 +1580,7 @@ export function App() {
                       return;
                     }
                     if (entry.type === 'directory') {
-                      setCurrentPath(entry.path);
+                      navigateTo(entry.path);
                       return;
                     }
                     const ext = entry.name.toLowerCase();
@@ -1648,28 +1659,28 @@ export function App() {
             style={{ left: contextMenu.x, top: contextMenu.y }}
             onClick={(event) => event.stopPropagation()}
           >
+            <button type="button" onClick={handlePreview} disabled={!canPreview}>
+              <Icon name="view-preview" size={16} />
+              Preview
+            </button>
+            <button type="button" onClick={handleShowInfo} disabled={!canInfo}>
+              <Icon name="dialog-information" size={16} />
+              Info
+            </button>
+            <button type="button" onClick={handleDownload} disabled={!canDownload}>
+              <Icon name="edit-download" size={16} />
+              Download
+            </button>
             <button type="button" onClick={handleRename} disabled={!canWrite || !canRename}>
               <Icon name="edit-rename" size={16} />
               Rename
             </button>
             {canWrite && selectedEntries.length > 1 && (
               <button type="button" onClick={handleBatchRename}>
-              <Icon name="edit-rename" size={16} />
-              Batch rename
-            </button>
+                <Icon name="edit-rename" size={16} />
+                Batch rename
+              </button>
             )}
-            <button type="button" onClick={handleDownload} disabled={!canDownload}>
-              <Icon name="edit-download" size={16} />
-              Download
-            </button>
-            <button type="button" onClick={handlePreview} disabled={!canPreview}>
-              <Icon name="view-preview" size={16} />
-              Preview
-            </button>
-            <button type="button" onClick={handleShowInfo} disabled={!canPreview}>
-              <Icon name="dialog-information" size={16} />
-              Info
-            </button>
             <button type="button" onClick={handleCopy} disabled={!canWrite || !canCopy}>
               <Icon name="edit-copy" size={16} />
               Copy

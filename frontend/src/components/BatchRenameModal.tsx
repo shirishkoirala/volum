@@ -129,10 +129,10 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
         {error && <p className="rename-error">{error}</p>}
 
         <div className="rename-actions">
-          <button type="button" className="rename-cancel" onClick={onClose}>Cancel</button>
+          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
           <button
             type="button"
-            className="rename-apply"
+            className="dialog-button primary"
             disabled={submitting || previews.every((p) => !p.changed)}
             onClick={handleSubmit}
           >
