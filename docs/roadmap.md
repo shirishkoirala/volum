@@ -129,9 +129,12 @@ These are useful, but should not interrupt the phases above unless they become r
 - [x] CSS Modules migration: 7 scoped modules, global.css reduced from 2173 to 96 lines.
 - [x] Trash view overhaul: own page with grid/list views, selection, context menu, BreadcrumbBar, file/folder icons.
 - [x] Conflict preview dialog: scans destination, shows fate of each file (new/skip/overwrite/rename/cancel) before proceeding.
+- [x] Drag-and-drop into folders: drag files onto directory rows to open transfer dialog pre-filled with destination.
+- [x] Breadcrumb overflow: collapsible crumbs with "..." overflow menu when path exceeds available width.
+- [x] Saved view preferences: view mode, sort field/direction, hidden files persisted to localStorage.
 
 ## Next Three Tasks
 
-1. Improve drag-and-drop inside the app: drag selected files into folders to move/copy with a modifier-aware confirmation.
-2. Add breadcrumb overflow handling and quick root switching for deep paths.
-3. Add saved view preferences per folder: view mode, sort field, sort direction, hidden files.
+1. Add undo affordances: trash restore, recent rename, and recent move with an "Undo" toast.
+2. Add conflict preview for archive/extract operations.
+3. Add saved view preferences per folder (different view settings per directory path).

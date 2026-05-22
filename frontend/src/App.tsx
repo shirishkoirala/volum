@@ -86,8 +86,12 @@ export function App() {
   const [rubberBandStyle, setRubberBandStyle] = useState<React.CSSProperties | null>(null);
   const [jobFilter, setJobFilter] = useState<string>('all');
   const [completedCollapsed, setCompletedCollapsed] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [showHidden, setShowHidden] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    return (localStorage.getItem('volum_viewMode') as ViewMode) || 'grid';
+  });
+  const [showHidden, setShowHidden] = useState(() => {
+    return localStorage.getItem('volum_showHidden') === 'true';
+  });
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,10 +99,16 @@ export function App() {
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
   const [lastSelectedPath, setLastSelectedPath] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<RenameState>(null);
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortField, setSortField] = useState<SortField>(() => {
+    return (localStorage.getItem('volum_sortField') as SortField) || 'name';
+  });
+  const [sortDirection, setSortDirection] = useState<SortDirection>(() => {
+    return (localStorage.getItem('volum_sortDirection') as SortDirection) || 'asc';
+  });
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [draggingUpload, setDraggingUpload] = useState(false);
+  const [draggingPaths, setDraggingPaths] = useState<string[] | null>(null);
+  const [dragOverPath, setDragOverPath] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
   const [previewEntry, setPreviewEntry] = useState<FileEntry | null>(null);
@@ -1032,6 +1042,51 @@ export function App() {
     setContextMenu(null);
   };
 
+  const handleFileDragStart = (event: DragEvent<HTMLElement>, entry: FileEntry) => {
+    const paths = selectedPaths.length > 0 ? selectedPaths : [entry.path];
+    setDraggingPaths(paths);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', paths.join('\n'));
+  };
+
+  const handleFolderDragOver = (event: DragEvent<HTMLElement>, path: string) => {
+    if (draggingPaths || event.dataTransfer.types.includes('Files')) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      setDragOverPath(path);
+    }
+  };
+
+  const handleFolderDragLeave = () => {
+    setDragOverPath(null);
+  };
+
+  const handleDropOnFolder = (event: DragEvent<HTMLElement>, folderPath: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setDragOverPath(null);
+    setDraggingUpload(false);
+    if (draggingPaths && draggingPaths.length > 0) {
+      const sourceEntries = draggingPaths.map((p) => {
+        const found = filteredEntries.find((e) => e.path === p);
+        return found || { name: p.split('/').pop() || p, path: p, type: 'file' as const, size: 0, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false };
+      }).filter(Boolean);
+      if (sourceEntries.length > 0) {
+        setTransferDialog({
+          mode: draggingPaths === selectedPaths ? 'move' : 'copy',
+          entries: sourceEntries,
+          initialDestination: folderPath,
+        });
+      }
+      setDraggingPaths(null);
+      return;
+    }
+    if (canWrite && event.dataTransfer.files.length > 0) {
+      handleUploadFiles(event.dataTransfer.files);
+      return;
+    }
+  };
+
   const handleFileAreaDragOver = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     if (canWrite && event.dataTransfer.types.includes('Files')) {
@@ -1079,6 +1134,19 @@ export function App() {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('volum_theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('volum_viewMode', viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem('volum_sortField', sortField);
+    localStorage.setItem('volum_sortDirection', sortDirection);
+  }, [sortField, sortDirection]);
+
+  useEffect(() => {
+    localStorage.setItem('volum_showHidden', String(showHidden));
+  }, [showHidden]);
 
   useEffect(() => {
     if (Notification.permission === 'default') {
@@ -1763,9 +1831,14 @@ export function App() {
               const fileIconSize = viewMode === 'grid' ? 84 : 28;
               return (
                 <div
-                  className={selectedPaths.includes(entry.path) ? `${styles.fileRow} ${styles.selected}` : styles.fileRow}
+                  className={`${selectedPaths.includes(entry.path) ? `${styles.fileRow} ${styles.selected}` : styles.fileRow}${dragOverPath === entry.path ? ` ${styles.dragOver}` : ''}`}
                   key={entry.path}
                   data-index={index}
+                  draggable={canWrite}
+                  onDragStart={(event) => handleFileDragStart(event, entry)}
+                  onDragOver={(event) => entry.type === 'directory' ? handleFolderDragOver(event, entry.path) : undefined}
+                  onDragLeave={entry.type === 'directory' ? () => handleFolderDragLeave() : undefined}
+                  onDrop={(event) => entry.type === 'directory' ? handleDropOnFolder(event, entry.path) : undefined}
                   onClick={(event) => handleSelectEntry(entry, event)}
                   onContextMenu={(event) => handleContextMenu(entry, event)}
                   onTouchStart={(event) => {

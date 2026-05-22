@@ -12,6 +12,7 @@
   display: flex;
   gap: var(--space-md);
   min-width: 0;
+  flex: 1;
 }
 
 .right {
@@ -24,15 +25,25 @@
 .breadcrumbs {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.breadcrumbsInner {
+  align-items: center;
+  display: flex;
+  flex-wrap: nowrap;
   gap: 2px;
   min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .crumbRow {
   align-items: center;
   display: inline-flex;
   gap: 2px;
+  flex-shrink: 0;
 }
 
 .crumbBtn {
@@ -58,6 +69,67 @@
   font-size: 13px;
   font-weight: 600;
   padding: 5px 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overflowDots {
+  position: relative;
+  display: inline-flex;
+}
+
+.overflowBtn {
+  align-items: center;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  height: 26px;
+  justify-content: center;
+  letter-spacing: 1px;
+  min-width: 28px;
+  padding: 0 4px;
+  transition: background var(--transition-fast);
+}
+
+.overflowBtn:hover {
+  background: var(--color-hover);
+  color: var(--color-text-secondary);
+}
+
+.overflowMenu {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu);
+  left: 0;
+  max-height: 200px;
+  min-width: 160px;
+  overflow-y: auto;
+  position: absolute;
+  top: 100%;
+  z-index: 30;
+}
+
+.overflowItem {
+  background: transparent;
+  border: 0;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: block;
+  font-size: 13px;
+  padding: 8px 14px;
+  text-align: left;
+  transition: background var(--transition-fast);
+  width: 100%;
+}
+
+.overflowItem:hover {
+  background: var(--color-hover);
 }
 
 @media (max-width: 760px) {

@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Icon } from './Icon';
 import styles from './BreadcrumbBar.module.css';
@@ -15,6 +16,41 @@ type BreadcrumbBarProps = {
 };
 
 export function BreadcrumbBar({ crumbs, onBack, onNavigate, children }: BreadcrumbBarProps) {
+  const navRef = useRef<HTMLDivElement>(null);
+  const [overflowCount, setOverflowCount] = useState(0);
+  const [showOverflow, setShowOverflow] = useState(false);
+
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const check = () => {
+      const available = el.clientWidth;
+      let totalWidth = 0;
+      let count = 0;
+      const children = Array.from(el.children);
+      for (let i = 0; i < children.length; i++) {
+        totalWidth += (children[i] as HTMLElement).offsetWidth || 0;
+        if (totalWidth > available && i > 0) {
+          count = children.length - i;
+          break;
+        }
+      }
+      setOverflowCount(count);
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [crumbs]);
+
+  const overflowCrumbs = overflowCount > 0
+    ? crumbs.slice(1, -overflowCount - 1 > 0 ? -overflowCount : undefined)
+    : [];
+
+  const visibleCrumbs = overflowCount > 0
+    ? [crumbs[0], crumbs[crumbs.length - 1]]
+    : crumbs;
+
   if (crumbs.length === 0) {
     return null;
   }
@@ -31,23 +67,72 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, children }: Breadcru
           <span className="icon-rotate-180"><Icon name="go-next" size={18} /></span>
         </button>
         <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
-          {crumbs.map((crumb, index) => {
-            const isLast = index === crumbs.length - 1;
-            return (
-              <span key={index} className={styles.crumbRow}>
-                {index > 0 && <Icon name="go-next" size={16} />}
-                {isLast && !crumb.path ? (
-                  <span className={styles.current}>{crumb.label}</span>
-                ) : crumb.path ? (
-                  <button type="button" onClick={() => onNavigate(crumb.path!)} className={styles.crumbBtn}>
-                    {crumb.label}
-                  </button>
-                ) : (
-                  <span className={styles.current}>{crumb.label}</span>
+          <div ref={navRef} className={styles.breadcrumbsInner}>
+            {visibleCrumbs.map((crumb, rawIndex) => {
+              const index = overflowCount > 0 ? (rawIndex === 0 ? 0 : crumbs.length - 1) : rawIndex;
+              const isLast = index === crumbs.length - 1;
+              return (
+                <span key={crumb.path ?? index} className={styles.crumbRow}>
+                  {index > 0 && <Icon name="go-next" size={16} />}
+                  {isLast ? (
+                    <span className={styles.current}>{crumb.label}</span>
+                  ) : crumb.path ? (
+                    <button type="button" onClick={() => onNavigate(crumb.path!)} className={styles.crumbBtn}>
+                      {crumb.label}
+                    </button>
+                  ) : (
+                    <span className={styles.current}>{crumb.label}</span>
+                  )}
+                </span>
+              );
+            })}
+            {overflowCount > 1 && (
+              <span className={styles.crumbRow}>
+                <Icon name="go-next" size={16} />
+                <span className={styles.overflowDots} onClick={() => setShowOverflow(!showOverflow)}>
+                  <span className={styles.overflowBtn}>···</span>
+                </span>
+                {showOverflow && (
+                  <div className={styles.overflowMenu}>
+                    {overflowCrumbs.map((crumb) => (
+                      <button
+                        key={crumb.path}
+                        type="button"
+                        className={styles.overflowItem}
+                        onClick={() => { setShowOverflow(false); if (crumb.path) onNavigate(crumb.path); }}
+                      >
+                        {crumb.label}
+                      </button>
+                    ))}
+                  </div>
                 )}
               </span>
-            );
-          })}
+            )}
+            {overflowCount === 1 && (
+              <span className={styles.crumbRow}>
+                <Icon name="go-next" size={16} />
+                {(() => {
+                  const overflowCrumb = crumbs[crumbs.length - 2];
+                  return (
+                    <span className={styles.overflowDots} onClick={() => setShowOverflow(!showOverflow)}>
+                      <span className={styles.overflowBtn}>···</span>
+                      {showOverflow && (
+                        <div className={styles.overflowMenu}>
+                          <button
+                            type="button"
+                            className={styles.overflowItem}
+                            onClick={() => { setShowOverflow(false); if (overflowCrumb.path) onNavigate(overflowCrumb.path); }}
+                          >
+                            {overflowCrumb.label}
+                          </button>
+                        </div>
+                      )}
+                    </span>
+                  );
+                })()}
+              </span>
+            )}
+          </div>
         </nav>
       </div>
       {children && <div className={styles.right}>{children}</div>}

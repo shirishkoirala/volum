@@ -599,6 +599,19 @@
   box-shadow: inset 0 0 0 2px var(--color-brand);
 }
 
+.fileRow.dragOver {
+  background: var(--color-brand-bg) !important;
+  border-color: var(--color-brand) !important;
+  box-shadow: inset 0 0 0 2px var(--color-brand);
+  outline: none;
+}
+
+.fileGrid .fileRow.dragOver {
+  background: var(--color-brand-bg) !important;
+  border-color: var(--color-brand) !important;
+  box-shadow: inset 0 0 0 2px var(--color-brand);
+}
+
 .fileRow {
   align-items: center;
   background: var(--color-surface);
