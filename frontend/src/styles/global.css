@@ -1254,6 +1254,44 @@ button {
   color: var(--color-danger-text);
 }
 
+.dialog-suggestions {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.dialog-suggestions > span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dialog-suggestions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  max-height: 92px;
+  overflow-y: auto;
+}
+
+.dialog-suggestions button {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  min-height: 30px;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialog-suggestions button:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand-text);
+}
+
 .dialog-actions {
   align-items: center;
   display: flex;

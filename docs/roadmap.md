@@ -80,6 +80,7 @@ Volum is built in small, verifiable phases. Priority order: **data safety → re
 - Double-click/Enter for file preview
 - In-place rename `[done]`
 - App-native dialogs for create/delete/copy/move confirmations `[done]`
+- Folder picker suggestions for copy/move/archive/extract destinations `[done]`
 - Toast notifications for file and job actions `[done]`
 
 ---

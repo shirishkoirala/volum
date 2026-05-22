@@ -65,6 +65,9 @@ type TextInputDialogState = {
   initialValue?: string;
   placeholder?: string;
   confirmLabel: string;
+  folderSuggestions?: string[];
+  suggestionLabel?: string;
+  applyFolderSuggestion?: (path: string) => string;
   onSubmit: (value: string) => void;
 } | null;
 type TransferDialogState = {
@@ -246,6 +249,15 @@ export function App() {
   };
 
   const isFavorited = favorites.includes(currentPath);
+  const folderSuggestions = useMemo(
+    () => uniquePaths([
+      currentPath,
+      ...roots.map((root) => root.path),
+      ...favorites,
+      ...recentPaths
+    ]),
+    [currentPath, favorites, recentPaths, roots]
+  );
 
   const dismissToast = (id: number) => {
     setToasts((items) => items.filter((toast) => toast.id !== id));
@@ -565,7 +577,8 @@ export function App() {
     if (!entry || selectedEntries.length !== 1) {
       return;
     }
-    const defaultPath = `${currentPath.replace(/\/+$/, '')}/${archiveFileName(entry.name)}`;
+    const archiveName = archiveFileName(entry.name);
+    const defaultPath = joinPath(currentPath, archiveName);
     setContextMenu(null);
     setTextInputDialog({
       title: 'Create Archive',
@@ -573,6 +586,9 @@ export function App() {
       initialValue: defaultPath,
       placeholder: defaultPath,
       confirmLabel: 'Create Archive',
+      folderSuggestions,
+      suggestionLabel: 'Create in',
+      applyFolderSuggestion: (path) => joinPath(path, archiveName),
       onSubmit: (value) => {
         void runAction(() => createArchiveJob(entry.path, value.trim(), 'rename'), 'Archive job started');
       }
@@ -584,7 +600,7 @@ export function App() {
     if (!entry || selectedEntries.length !== 1 || entry.type !== 'file' || !isZipArchive(entry.name)) {
       return;
     }
-    const defaultPath = `${currentPath.replace(/\/+$/, '')}/${archiveBaseName(entry.name)}`;
+    const defaultPath = joinPath(currentPath, archiveBaseName(entry.name));
     setContextMenu(null);
     setTextInputDialog({
       title: 'Extract Archive',
@@ -592,6 +608,9 @@ export function App() {
       initialValue: defaultPath,
       placeholder: defaultPath,
       confirmLabel: 'Extract',
+      folderSuggestions,
+      suggestionLabel: 'Extract to',
+      applyFolderSuggestion: (path) => normalizeFolderPath(path),
       onSubmit: (value) => {
         void runAction(() => createExtractJob(entry.path, value.trim()), 'Extract job started');
       }
@@ -622,7 +641,7 @@ export function App() {
     void runAction(async () => {
       for (const entry of dialog.entries) {
         for (const dest of destinations) {
-          const targetPath = `${dest}/${entry.name}`;
+          const targetPath = joinPath(dest, entry.name);
           if (dialog.mode === 'copy') {
             await createCopyJob(entry.path, targetPath, conflictPolicy);
           } else {
@@ -1491,6 +1510,7 @@ export function App() {
         {shell}
         <TransferDialog
           dialog={transferDialog}
+          folderSuggestions={folderSuggestions}
           onClose={() => setTransferDialog(null)}
           onSubmit={handleTransferSubmit}
         />
@@ -1669,6 +1689,16 @@ function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextInputDia
             }}
           />
         </label>
+        {dialog.folderSuggestions && dialog.folderSuggestions.length > 0 && (
+          <FolderSuggestions
+            label={dialog.suggestionLabel ?? 'Folders'}
+            paths={dialog.folderSuggestions}
+            onSelect={(path) => {
+              setValue(dialog.applyFolderSuggestion ? dialog.applyFolderSuggestion(path) : normalizeFolderPath(path));
+              setError(null);
+            }}
+          />
+        )}
         {error && <p className="dialog-error">{error}</p>}
         <div className="dialog-actions">
           <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
@@ -1681,10 +1711,12 @@ function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextInputDia
 
 function TransferDialog({
   dialog,
+  folderSuggestions,
   onClose,
   onSubmit
 }: {
   dialog: NonNullable<TransferDialogState>;
+  folderSuggestions: string[];
   onClose: () => void;
   onSubmit: (dialog: TransferDialogState, destinationValue: string, conflictPolicy: ConflictPolicy) => void;
 }) {
@@ -1737,6 +1769,16 @@ function TransferDialog({
           />
         </label>
         <p className="dialog-help">Use | to send items to multiple destinations.</p>
+        {folderSuggestions.length > 0 && (
+          <FolderSuggestions
+            label="Choose destination"
+            paths={folderSuggestions}
+            onSelect={(path) => {
+              setDestination(normalizeFolderPath(path));
+              setError(null);
+            }}
+          />
+        )}
         <label className="dialog-field">
           <span>If a file already exists</span>
           <select value={conflictPolicy} onChange={(event) => setConflictPolicy(event.target.value as ConflictPolicy)}>
@@ -1753,6 +1795,29 @@ function TransferDialog({
           <button type="submit" className="dialog-button primary">{actionLabel}</button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function FolderSuggestions({
+  label,
+  paths,
+  onSelect
+}: {
+  label: string;
+  paths: string[];
+  onSelect: (path: string) => void;
+}) {
+  return (
+    <div className="dialog-suggestions">
+      <span>{label}</span>
+      <div>
+        {paths.map((path) => (
+          <button key={path} type="button" onClick={() => onSelect(path)} title={path}>
+            {folderSuggestionLabel(path)}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1905,4 +1970,33 @@ function archiveFileName(name: string) {
 
 function refreshesFiles(job: Job) {
   return job.type === 'copy' || job.type === 'move' || job.type === 'upload' || job.type === 'archive' || job.type === 'extract';
+}
+
+function normalizeFolderPath(path: string) {
+  return path.replace(/\/+$/, '') || '/';
+}
+
+function joinPath(parent: string, name: string) {
+  return `${normalizeFolderPath(parent).replace(/\/$/, '')}/${name}`.replace(/^\/\//, '/');
+}
+
+function uniquePaths(paths: string[]) {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const path of paths) {
+    const normalized = normalizeFolderPath(path.trim());
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    out.push(normalized);
+  }
+  return out;
+}
+
+function folderSuggestionLabel(path: string) {
+  if (path === '/') {
+    return '/';
+  }
+  return path.split('/').filter(Boolean).pop() ?? path;
 }
