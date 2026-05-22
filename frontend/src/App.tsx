@@ -46,6 +46,10 @@ type ContextMenuState = {
   y: number;
   entry: FileEntry;
 } | null;
+type RenameState = {
+  path: string;
+  value: string;
+} | null;
 
 export function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -58,6 +62,7 @@ export function App() {
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const knownJobIds = useRef(new Set<string>());
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showHidden, setShowHidden] = useState(false);
   const [query, setQuery] = useState('');
@@ -66,6 +71,7 @@ export function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
   const [lastSelectedPath, setLastSelectedPath] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<RenameState>(null);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
@@ -83,6 +89,7 @@ export function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [batchRenameOpen, setBatchRenameOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
   const shortcutsRef = useRef<HTMLDivElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -115,6 +122,7 @@ export function App() {
     setLoading(true);
     setSelectedPaths([]);
     setLastSelectedPath(null);
+    setRenaming(null);
     setContextMenu(null);
     getFiles(currentPath, showHidden)
       .then((response) => {
@@ -124,6 +132,14 @@ export function App() {
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, [currentPath, refreshKey, showHidden]);
+
+  useEffect(() => {
+    if (!renaming) {
+      return;
+    }
+    renameInputRef.current?.focus();
+    renameInputRef.current?.select();
+  }, [renaming]);
 
   const refresh = () => setRefreshKey((value) => value + 1);
 
@@ -216,11 +232,27 @@ export function App() {
     if (selectedEntries.length !== 1 || !entry) {
       return;
     }
-    const newName = window.prompt('New name', entry.name);
-    if (newName === null || newName.trim() === entry.name) {
+    setContextMenu(null);
+    setSelectedPaths([entry.path]);
+    setLastSelectedPath(entry.path);
+    setRenaming({ path: entry.path, value: entry.name });
+  };
+
+  const cancelRename = () => {
+    setRenaming(null);
+  };
+
+  const commitRename = (entry: FileEntry) => {
+    if (renaming?.path !== entry.path) {
       return;
     }
-    void runAction(() => renamePath(entry.path, newName.trim()));
+    const nextName = renaming.value.trim();
+    if (!nextName || nextName === entry.name) {
+      cancelRename();
+      return;
+    }
+    setRenaming(null);
+    void runAction(() => renamePath(entry.path, nextName));
   };
 
   const handleDelete = () => {
@@ -334,7 +366,11 @@ export function App() {
       return;
     }
     getJobs()
-      .then((response) => setJobs(response.jobs ?? []))
+      .then((response) => {
+        const initialJobs = response.jobs ?? [];
+        knownJobIds.current = new Set(initialJobs.map((j) => j.id));
+        setJobs(initialJobs);
+      })
       .catch(() => undefined);
 
     const events = new EventSource('/api/jobs/events');
@@ -342,10 +378,8 @@ export function App() {
       const response = JSON.parse((event as MessageEvent).data) as { jobs: Job[] | null };
       const nextJobs = response.jobs ?? [];
 
-      // browser notifications for completed/failed jobs
       for (const job of nextJobs) {
-        const prev = jobs.find((j) => j.id === job.id);
-        if (!prev && Notification.permission === 'granted') {
+        if (!knownJobIds.current.has(job.id) && Notification.permission === 'granted') {
           if (job.status === 'completed') {
             new Notification('Job completed', { body: `[${job.type}] ${job.sourcePath ?? job.id}` });
           } else if (job.status === 'failed') {
@@ -354,6 +388,7 @@ export function App() {
         }
       }
 
+      knownJobIds.current = new Set(nextJobs.map((j) => j.id));
       setJobs(nextJobs);
     });
     events.onerror = () => undefined;
@@ -493,7 +528,10 @@ export function App() {
     });
   };
 
-  const handleSelectEntry = (entry: FileEntry, event: MouseEvent<HTMLButtonElement>) => {
+  const handleSelectEntry = (entry: FileEntry, event: MouseEvent<HTMLElement>) => {
+    if (renaming) {
+      return;
+    }
     setContextMenu(null);
 
     if (event.shiftKey && lastSelectedPath) {
@@ -528,8 +566,11 @@ export function App() {
     setLastSelectedPath(entry.path);
   };
 
-  const handleContextMenu = (entry: FileEntry, event: MouseEvent<HTMLButtonElement>) => {
+  const handleContextMenu = (entry: FileEntry, event: MouseEvent<HTMLElement>) => {
     event.preventDefault();
+    if (renaming) {
+      return;
+    }
     if (!selectedPaths.includes(entry.path)) {
       setSelectedPaths([entry.path]);
       setLastSelectedPath(entry.path);
@@ -538,6 +579,12 @@ export function App() {
   };
 
   const handleFileAreaKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (renaming) {
+      if (event.key === 'Escape') {
+        cancelRename();
+      }
+      return;
+    }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
       event.preventDefault();
       handleSelectAll();
@@ -568,6 +615,7 @@ export function App() {
     }
     setSelectedPaths([]);
     setLastSelectedPath(null);
+    setRenaming(null);
     setContextMenu(null);
   };
 
@@ -577,6 +625,7 @@ export function App() {
     }
     setSelectedPaths([]);
     setLastSelectedPath(null);
+    setRenaming(null);
     setContextMenu(null);
   };
 
@@ -1057,12 +1106,15 @@ export function App() {
             filteredEntries.map((entry) => {
               const fileIconSize = viewMode === 'grid' ? 84 : 28;
               return (
-                <button
+                <div
                   className={selectedPaths.includes(entry.path) ? 'file-row selected' : 'file-row'}
                   key={entry.path}
                   onClick={(event) => handleSelectEntry(entry, event)}
                   onContextMenu={(event) => handleContextMenu(entry, event)}
                   onDoubleClick={() => {
+                    if (renaming) {
+                      return;
+                    }
                     if (entry.type === 'directory') {
                       setCurrentPath(entry.path);
                       return;
@@ -1074,14 +1126,38 @@ export function App() {
                       window.open(downloadUrl(entry.path), '_blank');
                     }
                   }}
-                  type="button"
+                  role="button"
                 >
                   {entry.type === 'directory' ? (
                     <FolderIcon size={fileIconSize} />
                   ) : (
                     <FileIcon entry={entry} size={fileIconSize} />
                   )}
-                  <span className="file-name">{entry.name}</span>
+                  {renaming?.path === entry.path ? (
+                    <input
+                      ref={renameInputRef}
+                      className="rename-input"
+                      value={renaming.value}
+                      onBlur={() => commitRename(entry)}
+                      onChange={(event) => setRenaming({ path: entry.path, value: event.target.value })}
+                      onClick={(event) => event.stopPropagation()}
+                      onContextMenu={(event) => event.stopPropagation()}
+                      onDoubleClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => {
+                        event.stopPropagation();
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          commitRename(entry);
+                        }
+                        if (event.key === 'Escape') {
+                          event.preventDefault();
+                          cancelRename();
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span className="file-name">{entry.name}</span>
+                  )}
                   {viewMode === 'grid' && (
                     <span className="file-meta">
                       {formatBytes(entry.size)}
@@ -1096,7 +1172,7 @@ export function App() {
                       <span>{entry.permissions}</span>
                     </>
                   )}
-                </button>
+                </div>
               );
             })
           )}
