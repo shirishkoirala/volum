@@ -1,5 +1,5 @@
 import { DragEvent, FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Icon, FileIcon, FolderIcon, DeviceIcon } from './components/Icon';
+import { Icon, FileIcon, FolderIcon, DeviceIcon, TrashIcon } from './components/Icon';
 import {
   ConflictPolicy,
   FileEntry,
@@ -1450,7 +1450,7 @@ export function App() {
               type="button"
             >
               <div className="desktop-trash-icon">
-                <Icon name="edit-delete" size={48} />
+                <TrashIcon full={trashEntries.length > 0} size={64} />
                 {trashEntries.length > 0 && <span className="desktop-trash-badge">{trashEntries.length}</span>}
               </div>
               <span className="desktop-icon-label">Trash</span>

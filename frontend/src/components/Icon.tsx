@@ -5,7 +5,7 @@ import {
   ListTree, LogOut, ListX, Pause, Pencil, Play, RefreshCw, RotateCcw,
   Scissors, Search, Square, Trash2, Upload, X, type LucideIcon,
 } from 'lucide-react';
-import { fileTypeIconUrl, folderIconUrl, driveIconUrl } from '../api/icons';
+import { fileTypeIconUrl, folderIconUrl, driveIconUrl, trashIconUrl } from '../api/icons';
 
 type IconProps = { name: string; size?: number; className?: string };
 
@@ -61,5 +61,12 @@ export function FolderIcon({ size = 22 }: { size?: number }) {
   const iconSize = size <= 22 ? '22' : '64';
   return (
     <img src={folderIconUrl(iconSize)} alt="" width={size} height={size} style={{ flexShrink: 0 }} />
+  );
+}
+
+export function TrashIcon({ full = false, size = 22 }: { full?: boolean; size?: number }) {
+  const iconSize = size <= 22 ? '22' : '64';
+  return (
+    <img src={trashIconUrl(full, iconSize)} alt="" width={size} height={size} style={{ flexShrink: 0 }} />
   );
 }
