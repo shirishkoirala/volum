@@ -7,7 +7,9 @@ This document captures the current Volum state so another coding agent can conti
 Volum is a self-hosted Docker file manager with a Go backend API, React/Vite frontend, and SQLite-backed job system.
 
 ### Core capabilities:
-- Browse configured roots, list files, preview images/video/audio/text
+- Desktop view with drive icons (like "My Computer") and trash icon
+- Browse configured roots, list files, preview images/video/audio/text/PDF
+- Create folders, rename, move-to-trash with restore, delete permanently
 - Create folders, rename, move-to-trash with restore, delete permanently
 - Upload files with drag-and-drop and size verification
 - Download files or directories (streamed as zip on-the-fly)
