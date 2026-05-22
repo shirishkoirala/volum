@@ -879,7 +879,7 @@ button {
   display: grid;
   font-size: 13px;
   gap: 12px;
-  grid-template-columns: 28px minmax(160px, 1fr) 72px 90px 160px 80px;
+  grid-template-columns: 28px minmax(160px, 1fr) 72px 90px 160px 80px 80px 80px;
   min-height: 44px;
   padding: 0 14px;
   text-align: left;

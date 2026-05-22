@@ -16,6 +16,8 @@ export type FileEntry = {
   size: number;
   modifiedAt: string;
   permissions: string;
+  owner: string;
+  group: string;
   hidden: boolean;
 };
 

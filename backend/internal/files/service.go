@@ -22,6 +22,8 @@ type Entry struct {
 	Size        int64     `json:"size"`
 	ModifiedAt  time.Time `json:"modifiedAt"`
 	Permissions string    `json:"permissions"`
+	Owner       string    `json:"owner"`
+	Group       string    `json:"group"`
 	Hidden      bool      `json:"hidden"`
 }
 
@@ -124,6 +126,8 @@ func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
 			Size:        entrySize(filepath.Join(resolved, name), info),
 			ModifiedAt:  info.ModTime(),
 			Permissions: info.Mode().Perm().String(),
+			Owner:       ownerName(info),
+			Group:       groupName(info),
 			Hidden:      hidden,
 		})
 	}
@@ -491,8 +495,24 @@ func entryFromPath(path string) (Entry, error) {
 		Size:        entrySize(path, info),
 		ModifiedAt:  info.ModTime(),
 		Permissions: info.Mode().Perm().String(),
+		Owner:       ownerName(info),
+		Group:       groupName(info),
 		Hidden:      strings.HasPrefix(filepath.Base(path), "."),
 	}, nil
+}
+
+func ownerName(info os.FileInfo) string {
+	if stat, ok := info.Sys().(*syscall.Stat_t); ok {
+		return fmt.Sprintf("%d", stat.Uid)
+	}
+	return ""
+}
+
+func groupName(info os.FileInfo) string {
+	if stat, ok := info.Sys().(*syscall.Stat_t); ok {
+		return fmt.Sprintf("%d", stat.Gid)
+	}
+	return ""
 }
 
 func entrySize(path string, info os.FileInfo) int64 {

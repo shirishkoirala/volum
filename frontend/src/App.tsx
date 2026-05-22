@@ -1333,7 +1333,7 @@ export function App() {
                           }
                         }}
                       >
-                        <FileIcon entry={{ ...result, hidden: false, permissions: '' }} size={22} />
+                        <FileIcon entry={{ ...result, hidden: false, permissions: '', owner: '', group: '' }} size={22} />
                         <span className="search-result-name">{result.name}</span>
                         <span className="search-result-path">{result.root}</span>
                       </button>
@@ -1591,6 +1591,8 @@ export function App() {
                       <span>{formatBytes(entry.size)}</span>
                       <span>{new Date(entry.modifiedAt).toLocaleString()}</span>
                       <span>{entry.permissions}</span>
+                      <span>{entry.owner}</span>
+                      <span>{entry.group}</span>
                     </>
                   )}
                 </div>

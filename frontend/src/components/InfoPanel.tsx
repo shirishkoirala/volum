@@ -96,6 +96,10 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
             <dd>{sizeStr}</dd>
             <dt>Modified</dt>
             <dd>{new Date(entry.modifiedAt).toLocaleString()}</dd>
+            <dt>Owner</dt>
+            <dd>{entry.owner || '—'}</dd>
+            <dt>Group</dt>
+            <dd>{entry.group || '—'}</dd>
           </dl>
 
           <h4>Permissions</h4>
