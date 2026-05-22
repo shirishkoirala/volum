@@ -1424,6 +1424,40 @@ export function App() {
 
         {error && <div className="error-banner">{error}</div>}
 
+        {!currentPath ? (
+          <div className="desktop">
+            {roots.map((root) => (
+              <button
+                key={root.path}
+                className="desktop-icon"
+                onClick={() => navigateTo(root.path)}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  setContextMenu({ x: event.clientX, y: event.clientY, entry: { name: root.path, path: root.path, type: 'directory', size: 0, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false } });
+                }}
+                type="button"
+              >
+                <DeviceIcon name="drive-harddisk" size={64} />
+                <span className="desktop-icon-label">{root.path}</span>
+                <small className="desktop-icon-usage">{formatRootUsage(root)}</small>
+              </button>
+            ))}
+            <button
+              className="desktop-icon"
+              onClick={() => {
+                document.querySelector('.trash-section')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              type="button"
+            >
+              <div className="desktop-trash-icon">
+                <Icon name="edit-delete" size={48} />
+                {trashEntries.length > 0 && <span className="desktop-trash-badge">{trashEntries.length}</span>}
+              </div>
+              <span className="desktop-icon-label">Trash</span>
+              <small className="desktop-icon-usage">{trashEntries.length === 0 ? 'Empty' : `${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'}`}</small>
+            </button>
+          </div>
+        ) : (
         <section
           className={`${viewMode === 'grid' ? 'file-grid' : viewMode === 'columns' ? 'file-columns' : 'file-list'}${draggingUpload ? ' drag-over' : ''}`}
           ref={fileGridRef}
@@ -1606,6 +1640,7 @@ export function App() {
           )}
           {rubberBandStyle && <div className="rubber-band" style={rubberBandStyle} />}
         </section>
+        )}
 
         {contextMenu && (
           <div
