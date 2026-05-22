@@ -135,9 +135,10 @@ These are useful, but should not interrupt the phases above unless they become r
 - [x] Undo affordances: toast with Undo button after trash restore and rename (8s timeout).
 - [x] Conflict preview for archive/extract: checks destination existence and shows confirmation dialog before creating or extracting archives.
 - [x] Toast system enhanced with action button support.
+- [x] Sharing & Collaboration: shares table, API endpoints (create/list/delete/public-download), ShareDialog component with password/expiration/max-downloads controls, public download with validation (expiry, password, max downloads).
 
-## Next Three Tasks (Phase 3: Sharing & Collaboration)
+## Next Three Tasks
 
-1. Add expiring share links for files and folders, disabled by default — backend endpoint + frontend UI.
-2. Add per-share controls: readonly download, optional password, expiration, max downloads — backend model + frontend dialog.
-3. Add admin share management UI — list/revoke active shares with audit trail.
+1. Add admin share management UI — list/revoke active shares with copy-link and delete actions.
+2. Add observability — settings/status page with app version, DB info, root health, worker status.
+3. Add version metadata and release process.

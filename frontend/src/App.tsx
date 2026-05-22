@@ -47,6 +47,7 @@ import { PreviewModal } from './components/PreviewModal';
 import { BatchRenameModal } from './components/BatchRenameModal';
 import { InfoPanel } from './components/InfoPanel';
 import { BreadcrumbBar } from './components/BreadcrumbBar';
+import { ShareDialog } from './components/ShareDialog';
 import { Overlay } from './components/shared';
 import { ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport } from './components/Dialogs';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState, Toast } from './components/Dialogs';
@@ -133,6 +134,7 @@ export function App() {
   const [showingTrash, setShowingTrash] = useState(false);
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
   const [lastSelectedTrashId, setLastSelectedTrashId] = useState<string | null>(null);
+  const [shareDialogPath, setShareDialogPath] = useState<{ path: string; name: string } | null>(null);
   const [trashContextMenu, setTrashContextMenu] = useState<{
     x: number; y: number; entry: TrashEntry;
   } | null>(null);
@@ -2058,6 +2060,15 @@ export function App() {
               <Icon name="edit-paste" size={16} />
               Paste
             </button>
+            {canInfo && (
+              <button type="button" onClick={() => {
+                const entry = contextMenu?.entry;
+                if (entry) setShareDialogPath({ path: entry.path, name: entry.name });
+              }}>
+                <Icon name="edit-download" size={16} />
+                Share
+              </button>
+            )}
             <button type="button" className={styles.danger} onClick={handleDelete} disabled={!canWrite || !canDelete}>
               <Icon name="edit-delete" size={16} />
               Delete
@@ -2195,6 +2206,15 @@ export function App() {
           onClose={() => setTransferDialog(null)}
           onSubmit={handleTransferSubmit}
         />
+      </>
+    );
+  }
+
+  if (shareDialogPath) {
+    return (
+      <>
+        {shell}
+        <ShareDialog path={shareDialogPath.path} name={shareDialogPath.name} onClose={() => setShareDialogPath(null)} />
       </>
     );
   }

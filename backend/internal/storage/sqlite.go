@@ -38,6 +38,20 @@ func migrate(db *sql.DB) error {
 	}
 	_, _ = db.Exec(`ALTER TABLE jobs ADD COLUMN scheduled_at DATETIME`)
 	_, _ = db.Exec(`ALTER TABLE jobs ADD COLUMN next_job_id TEXT`)
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS shares (
+			id TEXT PRIMARY KEY,
+			path TEXT NOT NULL,
+			token TEXT NOT NULL UNIQUE,
+			password_hash TEXT,
+			expires_at DATETIME,
+			max_downloads INTEGER,
+			download_count INTEGER DEFAULT 0,
+			enabled INTEGER DEFAULT 1,
+			created_by TEXT,
+			created_at DATETIME NOT NULL
+		)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_shares_token ON shares(token)`)
 	return nil
 }
 

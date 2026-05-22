@@ -22,6 +22,7 @@ type Config struct {
 	SessionSecret    string
 	AuthRequired     bool
 	HostRoot         string
+	PublicURL        string
 }
 
 func Load() (Config, error) {
@@ -56,6 +57,7 @@ func Load() (Config, error) {
 		SessionSecret:    os.Getenv("VOLUM_SESSION_SECRET"),
 		AuthRequired:     parseBool(os.Getenv("VOLUM_AUTH_REQUIRED")),
 		HostRoot:         hostRoot,
+		PublicURL:        os.Getenv("VOLUM_PUBLIC_URL"),
 	}
 	if cfg.AuthRequired {
 		if strings.TrimSpace(cfg.AdminPassword) == "" {

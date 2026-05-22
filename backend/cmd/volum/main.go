@@ -16,6 +16,7 @@ import (
 	"github.com/volum-app/volum/backend/internal/files"
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/security"
+	"github.com/volum-app/volum/backend/internal/shares"
 	"github.com/volum-app/volum/backend/internal/storage"
 	"github.com/volum-app/volum/backend/internal/worker"
 )
@@ -61,7 +62,8 @@ func run(log *slog.Logger) error {
 	go backgroundWorker.Start(ctx)
 
 	filesService := files.NewService(guard)
-	server := api.New(filesService, jobStore, guard, authService)
+	shareStore := shares.NewStore(db)
+	server := api.New(filesService, jobStore, guard, authService, shareStore)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,
