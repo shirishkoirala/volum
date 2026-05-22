@@ -70,6 +70,10 @@ type TransferDialogState = {
   entries: FileEntry[];
   initialDestination: string;
 } | null;
+type ClipboardState = {
+  mode: 'copy' | 'move';
+  entries: FileEntry[];
+} | null;
 type Toast = {
   id: number;
   title: string;
@@ -117,6 +121,7 @@ export function App() {
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
   const [textInputDialog, setTextInputDialog] = useState<TextInputDialogState>(null);
   const [transferDialog, setTransferDialog] = useState<TransferDialogState>(null);
+  const [fileClipboard, setFileClipboard] = useState<ClipboardState>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -491,6 +496,7 @@ export function App() {
   const canMove = selectedEntries.length > 0;
   const canPreview = selectedEntries.length === 1 && selectedEntries[0].type === 'file';
   const canSelect = filteredEntries.length > 0;
+  const canPaste = canWrite && !!fileClipboard && fileClipboard.entries.length > 0;
 
   const handleSelectAll = () => {
     const nextPaths = filteredEntries.map((entry) => entry.path);
@@ -518,6 +524,19 @@ export function App() {
     });
   };
 
+  const setClipboardFromSelection = (mode: 'copy' | 'move') => {
+    if (!canWrite || selectedEntries.length === 0) {
+      return;
+    }
+    const entriesToStore = [...selectedEntries];
+    setFileClipboard({ mode, entries: entriesToStore });
+    showToast({
+      title: mode === 'copy' ? 'Copied to clipboard' : 'Cut to clipboard',
+      message: `${entriesToStore.length} item${entriesToStore.length === 1 ? '' : 's'}`,
+      variant: 'success'
+    });
+  };
+
   const handleMove = () => {
     if (!canMove) {
       return;
@@ -526,6 +545,18 @@ export function App() {
     setTransferDialog({
       mode: 'move',
       entries: [...selectedEntries],
+      initialDestination: currentPath
+    });
+  };
+
+  const handlePaste = () => {
+    if (!fileClipboard || !canWrite) {
+      return;
+    }
+    setContextMenu(null);
+    setTransferDialog({
+      mode: fileClipboard.mode,
+      entries: [...fileClipboard.entries],
       initialDestination: currentPath
     });
   };
@@ -549,6 +580,9 @@ export function App() {
             await createMoveJob(entry.path, targetPath, conflictPolicy);
           }
         }
+      }
+      if (dialog.mode === 'move') {
+        setFileClipboard(null);
       }
     }, dialog.mode === 'copy' ? 'Copy job started' : 'Move job started');
   };
@@ -645,6 +679,21 @@ export function App() {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
       event.preventDefault();
       handleSelectAll();
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'c') {
+      event.preventDefault();
+      setClipboardFromSelection('copy');
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'x') {
+      event.preventDefault();
+      setClipboardFromSelection('move');
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'v') {
+      event.preventDefault();
+      handlePaste();
       return;
     }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'i') {
@@ -935,6 +984,12 @@ export function App() {
                   <button type="button" onClick={handleMove}>
                     <Icon name="edit-cut" size={16} />
                     Move
+                  </button>
+                )}
+                {canWrite && (
+                  <button type="button" onClick={handlePaste} disabled={!canPaste}>
+                    <Icon name="edit-paste" size={16} />
+                    Paste
                   </button>
                 )}
                 {canDelete && canWrite && (
@@ -1274,6 +1329,10 @@ export function App() {
               <Icon name="edit-cut" size={16} />
               Move
             </button>
+            <button type="button" onClick={handlePaste} disabled={!canPaste}>
+              <Icon name="edit-paste" size={16} />
+              Paste
+            </button>
             <button type="button" className="danger" onClick={handleDelete} disabled={!canWrite || !canDelete}>
               <Icon name="edit-delete" size={16} />
               Delete
@@ -1375,6 +1434,9 @@ export function App() {
             <div className="shortcut-row"><span>Navigate into folder / Open file</span><span className="shortcut-key">Enter</span></div>
             <div className="shortcut-row"><span>Deselect all</span><span className="shortcut-key">Esc</span></div>
             <div className="shortcut-row"><span>Select all</span><span className="shortcut-key">⌘A</span></div>
+            <div className="shortcut-row"><span>Copy selected items</span><span className="shortcut-key">⌘C</span></div>
+            <div className="shortcut-row"><span>Cut selected items</span><span className="shortcut-key">⌘X</span></div>
+            <div className="shortcut-row"><span>Paste clipboard items</span><span className="shortcut-key">⌘V</span></div>
             <div className="shortcut-row"><span>Invert selection</span><span className="shortcut-key">⌘I</span></div>
             <div className="shortcut-row"><span>Global search</span><span className="shortcut-key">⌘K</span></div>
             <div className="shortcut-row"><span>Toggle shortcuts</span><span className="shortcut-key">?</span></div>

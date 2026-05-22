@@ -2,6 +2,7 @@ import type { FileEntry } from '../api/client';
 import {
   ChevronRight,
   CheckSquare,
+  Clipboard,
   Copy,
   Download,
   Eye,
@@ -42,6 +43,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'edit-delete': Trash2,
   'edit-download': Download,
   'edit-find': Search,
+  'edit-paste': Clipboard,
   'edit-rename': Pencil,
   'folder-new': FolderPlus,
   'go-next': ChevronRight,
