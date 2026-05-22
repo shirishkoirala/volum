@@ -10,6 +10,7 @@ import {
 } from '../api/client';
 import { Icon } from './Icon';
 import { Overlay } from './shared';
+import styles from './Preview.module.css';
 
 type PreviewModalProps = {
   entry: FileEntry;
@@ -54,10 +55,10 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
 
   return (
     <Overlay onClose={onClose}>
-      <div className="preview-panel">
-        <div className="preview-header">
-          <span className="preview-title">{entry.name}</span>
-          <div className="panel-header-actions">
+      <div className={styles.previewPanel}>
+        <div className={styles.previewHeader}>
+          <span className={styles.previewTitle}>{entry.name}</span>
+          <div className={styles.previewActions}>
             <button
               className="icon-button"
               onClick={() => window.open(downloadUrl(entry.path), '_blank')}
@@ -85,38 +86,38 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
           </div>
         </div>
 
-        <div className="preview-content">
+        <div className={styles.previewContent}>
           {showImage && (
             <img
               alt={entry.name}
-              className="preview-image"
+              className={styles.previewImage}
               src={fileUrl}
             />
           )}
           {showVideo && (
             <video
-              className="preview-video"
+              className={styles.previewVideo}
               controls
               src={fileUrl}
             />
           )}
           {showAudio && (
-            <div className="preview-audio-wrapper">
-              <p className="preview-audio-label">{entry.name}</p>
+            <div className={styles.previewAudioWrapper}>
+              <p className={styles.previewAudioLabel}>{entry.name}</p>
               <audio controls src={fileUrl} />
             </div>
           )}
           {showText && textContent !== null && (
-            <pre className="preview-text"><code>{textContent}</code></pre>
+            <pre className={styles.previewText}><code>{textContent}</code></pre>
           )}
           {showText && textError !== null && (
-            <div className="preview-error">{textError}</div>
+            <div className={styles.previewError}>{textError}</div>
           )}
           {showPDF && (
-            <iframe className="preview-iframe" src={fileUrl} title={entry.name} />
+            <iframe className={styles.previewIframe} src={fileUrl} title={entry.name} />
           )}
           {!showImage && !showVideo && !showAudio && !showText && !showPDF && (
-            <div className="preview-unsupported">
+            <div className={styles.previewUnsupported}>
               <p>No preview available for this file type.</p>
               <a href={downloadUrl(entry.path)}>Download instead</a>
             </div>

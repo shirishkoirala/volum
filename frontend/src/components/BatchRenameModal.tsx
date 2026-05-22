@@ -3,6 +3,7 @@ import { Icon, FileIcon } from './Icon';
 import { Overlay } from './shared';
 import { batchRename } from '../api/client';
 import type { FileEntry } from '../api/client';
+import styles from './BatchRename.module.css';
 
 type PatternType = 'replace' | 'prefix' | 'suffix' | 'case';
 
@@ -71,7 +72,7 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
 
   return (
     <Overlay onClose={onClose}>
-      <div className="rename-modal">
+      <div className={styles.renameModal}>
         <div className="panel-header">
           <h3>Batch Rename ({entries.length} items)</h3>
           <button className="icon-button" onClick={onClose} type="button">
@@ -79,7 +80,7 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
           </button>
         </div>
 
-        <div className="rename-pattern">
+        <div className={styles.renamePattern}>
           <select value={patternType} onChange={(e) => setPatternType(e.target.value as PatternType)}>
             <option value="replace">Find & Replace</option>
             <option value="prefix">Add Prefix</option>
@@ -88,24 +89,24 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
           </select>
 
           {patternType === 'replace' && (
-            <div className="rename-fields">
+            <div className={styles.renameFields}>
               <input placeholder="Find" value={find} onChange={(e) => setFind(e.target.value)} />
               <Icon name="go-next" size={16} />
               <input placeholder="Replace with" value={replace} onChange={(e) => setReplace(e.target.value)} />
             </div>
           )}
           {patternType === 'prefix' && (
-            <div className="rename-fields">
+            <div className={styles.renameFields}>
               <input placeholder="Prefix text" value={prefix} onChange={(e) => setPrefix(e.target.value)} />
             </div>
           )}
           {patternType === 'suffix' && (
-            <div className="rename-fields">
+            <div className={styles.renameFields}>
               <input placeholder="Suffix text" value={suffix} onChange={(e) => setSuffix(e.target.value)} />
             </div>
           )}
           {patternType === 'case' && (
-            <div className="rename-fields">
+            <div className={styles.renameFields}>
               <select value={caseType} onChange={(e) => setCaseType(e.target.value as 'lower' | 'upper' | 'title')}>
                 <option value="lower">Lowercase</option>
                 <option value="upper">Uppercase</option>
@@ -115,21 +116,21 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
           )}
         </div>
 
-        <div className="rename-preview-list">
+        <div className={styles.renamePreviewList}>
           {previews.slice(0, 100).map(({ entry, newName, changed }) => (
-            <div key={entry.path} className={`rename-preview-item${changed ? ' changed' : ''}`}>
+            <div key={entry.path} className={`${styles.renamePreviewItem}${changed ? ` ${styles.changed}` : ''}`}>
               <FileIcon entry={entry} size={22} />
-              <span className="rename-old">{entry.name}</span>
+              <span className={styles.renameOld}>{entry.name}</span>
               <Icon name="go-next" size={14} />
-              <span className="rename-new">{newName}</span>
+              <span className={styles.renameNew}>{newName}</span>
             </div>
           ))}
           {previews.length > 100 && <p className="muted compact">+{previews.length - 100} more items</p>}
         </div>
 
-        {error && <p className="rename-error">{error}</p>}
+        {error && <p className={styles.renameError}>{error}</p>}
 
-        <div className="rename-actions">
+        <div className={styles.renameActions}>
           <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
           <button
             type="button"

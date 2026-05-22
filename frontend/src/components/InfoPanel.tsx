@@ -3,6 +3,7 @@ import { Icon, FileIcon } from './Icon';
 import { Overlay } from './shared';
 import { chmodPath } from '../api/client';
 import type { FileEntry } from '../api/client';
+import styles from './InfoPanel.module.css';
 
 type InfoPanelProps = {
   entry: FileEntry;
@@ -73,7 +74,7 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
 
   return (
     <Overlay onClose={onClose}>
-      <div className="info-panel">
+      <div className={styles.infoPanel}>
         <div className="panel-header">
           <h3>Info</h3>
           <button className="icon-button" onClick={onClose} type="button">
@@ -81,8 +82,8 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
           </button>
         </div>
 
-        <div className="info-panel-body">
-          <div className="info-icon-row">
+        <div className={styles.infoPanelBody}>
+          <div className={styles.infoIconRow}>
             <FileIcon entry={entry} size={48} />
             <div>
               <strong>{entry.name}</strong>
@@ -90,7 +91,7 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
             </div>
           </div>
 
-          <dl className="info-dl">
+          <dl className={styles.infoDl}>
             <dt>Path</dt>
             <dd>{entry.path}</dd>
             <dt>Size</dt>
@@ -104,55 +105,55 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
           </dl>
 
           <h4>Permissions</h4>
-          <div className="perm-grid">
-            <span className="perm-group-label"/>
-            <span className="perm-col-label">Read</span>
-            <span className="perm-col-label">Write</span>
-            <span className="perm-col-label">Execute</span>
-            <span className="perm-group-label">Owner</span>
+          <div className={styles.permGrid}>
+            <span className={styles.permGroupLabel}/>
+            <span className={styles.permColLabel}>Read</span>
+            <span className={styles.permColLabel}>Write</span>
+            <span className={styles.permColLabel}>Execute</span>
+            <span className={styles.permGroupLabel}>Owner</span>
             {[0, 1, 2].map((i) => (
               <button
                 key={i}
                 type="button"
-                className={`perm-toggle${permBits[i] ? ' on' : ''}`}
+                className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
                 onClick={() => toggleBit(i)}
               >
                 {permBits[i] ? PERM_BITS[i].bit : '-'}
               </button>
             ))}
-            <span className="perm-group-label">Group</span>
+            <span className={styles.permGroupLabel}>Group</span>
             {[3, 4, 5].map((i) => (
               <button
                 key={i}
                 type="button"
-                className={`perm-toggle${permBits[i] ? ' on' : ''}`}
+                className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
                 onClick={() => toggleBit(i)}
               >
                 {permBits[i] ? PERM_BITS[i].bit : '-'}
               </button>
             ))}
-            <span className="perm-group-label">Other</span>
+            <span className={styles.permGroupLabel}>Other</span>
             {[6, 7, 8].map((i) => (
               <button
                 key={i}
                 type="button"
-                className={`perm-toggle${permBits[i] ? ' on' : ''}`}
+                className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
                 onClick={() => toggleBit(i)}
               >
                 {permBits[i] ? PERM_BITS[i].bit : '-'}
               </button>
             ))}
           </div>
-          <div className="perm-preview">{permString}</div>
+          <div className={styles.permPreview}>{permString}</div>
 
-          {error && <p className="info-error">{error}</p>}
-          {saved && <p className="info-saved">Permissions updated</p>}
+          {error && <p className={styles.infoError}>{error}</p>}
+          {saved && <p className={styles.infoSaved}>Permissions updated</p>}
 
-          <div className="info-actions">
+          <div className={styles.infoActions}>
             <button type="button" onClick={onClose}>Close</button>
             <button
               type="button"
-              className="info-apply"
+              className={styles.infoApply}
               disabled={changing || saved || permString === entry.permissions}
               onClick={handleSave}
             >

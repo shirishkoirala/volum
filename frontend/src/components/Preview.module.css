@@ -1,0 +1,141 @@
+.previewPanel {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-menu);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  max-width: 90vw;
+  min-height: 200px;
+  min-width: 400px;
+  overflow: hidden;
+}
+
+.previewHeader {
+  align-items: center;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  flex-shrink: 0;
+  justify-content: space-between;
+  padding: 12px var(--space-lg);
+}
+
+.previewTitle {
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previewActions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-sm);
+}
+
+.previewContent {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.previewImage {
+  display: block;
+  max-height: 80vh;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.previewVideo {
+  display: block;
+  max-height: 80vh;
+  max-width: 100%;
+  width: 100%;
+}
+
+.previewAudioWrapper {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 200px;
+  padding: 40px;
+}
+
+.previewAudioLabel {
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 var(--space-xl);
+}
+
+.previewAudioWrapper audio {
+  width: 100%;
+  max-width: 480px;
+}
+
+.previewText {
+  background: var(--color-code-bg);
+  color: var(--color-code-text);
+  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+  min-height: 100%;
+  overflow: auto;
+  padding: var(--space-xl);
+  tab-size: 2;
+  white-space: pre;
+}
+
+.previewUnsupported {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 180px;
+  padding: var(--space-3xl);
+  text-align: center;
+}
+
+.previewUnsupported a {
+  color: var(--color-brand);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.previewError {
+  align-items: center;
+  color: var(--color-danger-text);
+  display: flex;
+  justify-content: center;
+  min-height: 120px;
+  padding: var(--space-2xl);
+}
+
+.previewIframe {
+  border: 0;
+  display: block;
+  height: 80vh;
+  width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .previewPanel {
+    max-width: 95vw;
+    min-width: 320px;
+  }
+}
+
+@media (max-width: 760px) {
+  .previewPanel {
+    max-height: 95vh;
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+}
