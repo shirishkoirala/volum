@@ -247,8 +247,9 @@
 }
 
 .trashActions {
+  align-items: center;
   display: flex;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
 }
 
 .trashActions button {
@@ -456,6 +457,7 @@
 }
 
 .searchBox input {
+  background: transparent;
   border: 0;
   min-width: 0;
   outline: 0;
@@ -472,6 +474,76 @@
   font-size: 13px;
   max-width: 150px;
   padding: 0 10px;
+}
+
+.topbarLeft {
+  align-items: center;
+  display: flex;
+  gap: var(--space-md);
+}
+
+.breadcrumbCurrent {
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.trashGrid {
+  display: grid;
+  gap: var(--space-sm);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.trashItemInfo {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.trashItemInfo strong {
+  color: var(--color-text);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trashItemInfo span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trashItemInfo small {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.trashActionBtn {
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  transition: border-color var(--transition-fast);
+  width: auto;
+}
+
+.trashActionBtn span {
+  display: inline;
+}
+
+.trashActionBtn:hover {
+  border-color: var(--color-text-muted);
 }
 
 .errorBanner {

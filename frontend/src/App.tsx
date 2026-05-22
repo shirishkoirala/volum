@@ -119,6 +119,7 @@ export function App() {
   const searchRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [showingTrash, setShowingTrash] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileGridRef = useRef<HTMLDivElement>(null);
   const longPressEntry = useRef<{ entry: FileEntry; x: number; y: number } | null>(null);
@@ -1087,43 +1088,6 @@ export function App() {
             </section>
           )}
 
-          <section className={`${styles.navSection} ${styles.trashSection}`}>
-            <div className={styles.sectionHeading}>
-              <h2>Trash</h2>
-              <span>{trashEntries.length}</span>
-            </div>
-            {trashEntries.length === 0 ? (
-              <p className="muted compact">Trash is empty</p>
-            ) : (
-              <div className={styles.trashList}>
-                {trashEntries.slice(0, 6).map((entry) => (
-                  <div className={styles.trashItem} key={entry.id}>
-                    <div>
-                      <strong>{entry.name}</strong>
-                      <span>{formatTrashPath(entry.originalPath)}</span>
-                      <small>{formatBytes(entry.size)} · {new Date(entry.deletedAt).toLocaleDateString()}</small>
-                    </div>
-                    {canWrite && (
-                      <div className={styles.trashActions}>
-                        <button type="button" title="Restore" onClick={() => handleRestoreTrash(entry)}>
-                          <Icon name="edit-restore" size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.danger}
-                          title="Delete permanently"
-                          onClick={() => handleDeleteTrash(entry)}
-                        >
-                          <Icon name="edit-delete" size={15} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {trashEntries.length > 6 && <p className="muted compact">+{trashEntries.length - 6} more</p>}
-              </div>
-            )}
-          </section>
         </aside>
 
         <section className={styles.workspace} onClick={handleWorkspaceClick}>
@@ -1410,7 +1374,66 @@ export function App() {
 
         {error && <div className={styles.errorBanner}>{error}</div>}
 
-        {!currentPath ? (
+        {showingTrash ? (
+          <>
+            <header className={styles.topbar}>
+              <div className={styles.topbarLeft}>
+                <button
+                  className="icon-button"
+                  onClick={() => setShowingTrash(false)}
+                  title="Back to desktop"
+                  type="button"
+                >
+                  <span className="icon-rotate-180"><Icon name="go-next" size={18} /></span>
+                </button>
+                <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
+                  <button type="button" onClick={() => setShowingTrash(false)}>
+                    <span>Desktop</span>
+                  </button>
+                  <Icon name="go-next" size={16} />
+                  <span className={styles.breadcrumbCurrent}>Trash</span>
+                </nav>
+              </div>
+              <div className={styles.toolbar}>
+                <button className="icon-button" onClick={() => { getTrash().then(r => setTrashEntries(r.entries ?? [])); }} title="Refresh" type="button">
+                  <Icon name="view-refresh" size={18} />
+                </button>
+              </div>
+            </header>
+            <div className={styles.trashGrid}>
+              {trashEntries.length === 0 ? (
+                <div className={styles.emptyState}>Trash is empty</div>
+              ) : (
+                trashEntries.map((entry) => (
+                  <div className={styles.trashItem} key={entry.id}>
+                    <div className={styles.trashItemInfo}>
+                      <strong>{entry.name}</strong>
+                      <span>{formatTrashPath(entry.originalPath)}</span>
+                      <small>{formatBytes(entry.size)} · {new Date(entry.deletedAt).toLocaleDateString()}</small>
+                    </div>
+                    {canWrite && (
+                      <div className={styles.trashActions}>
+                        <button type="button" className={styles.trashActionBtn} title="Restore" onClick={() => handleRestoreTrash(entry)}>
+                          <Icon name="edit-restore" size={16} />
+                          <span>Restore</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.trashActionBtn} ${styles.danger}`}
+                          title="Delete permanently"
+                          onClick={() => handleDeleteTrash(entry)}
+                        >
+                          <Icon name="edit-delete" size={16} />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        ) : !currentPath ? (
           <div className={styles.desktop}>
             {roots.map((root) => (
               <button
@@ -1432,7 +1455,9 @@ export function App() {
             <button
               className={styles.desktopIcon}
               onClick={() => {
-                document.querySelector('.trash-section')?.scrollIntoView({ behavior: 'smooth' });
+                setCurrentPath('');
+                setShowingTrash(true);
+                setSelectedPaths([]);
               }}
               type="button"
             >
