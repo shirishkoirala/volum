@@ -602,6 +602,18 @@ export function App() {
     [filteredEntries, selectedPaths]
   );
 
+  const sortedTrashEntries = useMemo(() => {
+    return [...trashEntries].sort((a, b) => {
+      const dir = sortDirection === 'asc' ? 1 : -1;
+      if (sortField === 'name') return a.name.localeCompare(b.name) * dir;
+      if (sortField === 'size') return (a.size - b.size) * dir;
+      if (sortField === 'type') return a.type.localeCompare(b.type) * dir;
+      const dateA = new Date(a.deletedAt).getTime();
+      const dateB = new Date(b.deletedAt).getTime();
+      return (dateA - dateB) * dir;
+    });
+  }, [trashEntries, sortField, sortDirection]);
+
   const canRename = selectedEntries.length === 1;
   const canDownload = selectedEntries.length === 1;
   const canDelete = selectedEntries.length > 0;
@@ -1491,13 +1503,69 @@ export function App() {
                   onBack={() => setShowingTrash(false)}
                   onNavigate={() => {}}
                 >
+                  <button
+                    className="icon-button"
+                    disabled={trashEntries.length === 0}
+                    onClick={() => {
+                      setSelectedTrashIds(trashEntries.map((e) => e.id));
+                      setLastSelectedTrashId(trashEntries.length > 0 ? trashEntries[trashEntries.length - 1].id : null);
+                    }}
+                    title="Select all"
+                    type="button"
+                  >
+                    <Icon name="selection-select-all" size={18} />
+                  </button>
+                  <button
+                    className="icon-button"
+                    disabled={trashEntries.length === 0}
+                    onClick={() => {
+                      const allIds = trashEntries.map((e) => e.id);
+                      setSelectedTrashIds(allIds.filter((id) => !selectedTrashIds.includes(id)));
+                      setLastSelectedTrashId(null);
+                    }}
+                    title="Invert selection"
+                    type="button"
+                  >
+                    <Icon name="selection-invert" size={18} />
+                  </button>
+                  <select
+                    className={styles.sortSelect}
+                    value={`${sortField}:${sortDirection}`}
+                    onChange={(event) => {
+                      const [field, direction] = event.target.value.split(':') as [SortField, SortDirection];
+                      setSortField(field);
+                      setSortDirection(direction);
+                    }}
+                    title="Sort trash"
+                  >
+                    <option value="name:asc">Name A-Z</option>
+                    <option value="name:desc">Name Z-A</option>
+                    <option value="size:asc">Size small first</option>
+                    <option value="size:desc">Size large first</option>
+                    <option value="type:asc">Type A-Z</option>
+                    <option value="type:desc">Type Z-A</option>
+                    <option value="modifiedAt:desc">Deleted newest first</option>
+                    <option value="modifiedAt:asc">Deleted oldest first</option>
+                  </select>
+                  <button
+                    className="icon-button"
+                    onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
+                    title="Toggle grid view"
+                    type="button"
+                  >
+                    {viewMode === 'list' ? (
+                      <Icon name="view-grid" size={18} />
+                    ) : (
+                      <Icon name="view-list-tree" size={18} />
+                    )}
+                  </button>
                   <button className="icon-button" onClick={() => { getTrash().then(r => setTrashEntries(r.entries ?? [])); }} title="Refresh" type="button">
                     <Icon name="view-refresh" size={18} />
                   </button>
                 </BreadcrumbBar>
               )}
               <section
-                className={styles.fileList}
+                className={`${viewMode === 'grid' ? styles.fileGrid : styles.fileList}`}
                 onClick={(event) => {
                   if (event.target === event.currentTarget) {
                     setSelectedTrashIds([]);
@@ -1511,9 +1579,38 @@ export function App() {
               {trashEntries.length === 0 ? (
                 <div className={styles.emptyState}>Trash is empty</div>
               ) : (
-                trashEntries.map((entry) => {
+                sortedTrashEntries.map((entry) => {
                   const isSelected = selectedTrashIds.includes(entry.id);
-                  return (
+                  return viewMode === 'grid' ? (
+                    <div
+                      className={`${styles.fileRow}${isSelected ? ` ${styles.selected}` : ''}`}
+                      key={entry.id}
+                      onClick={(event) => handleSelectTrashItem(entry, event)}
+                      onContextMenu={(event) => handleTrashContextMenu(entry, event)}
+                      role="button"
+                    >
+                      {entry.type === 'directory' ? (
+                        <FolderIcon size={84} />
+                      ) : (
+                        <FileIcon entry={{
+                          name: entry.name,
+                          type: entry.type,
+                          path: entry.originalPath,
+                          size: entry.size,
+                          modifiedAt: entry.deletedAt,
+                          permissions: '',
+                          owner: '',
+                          group: '',
+                          hidden: false,
+                        }} size={84} />
+                      )}
+                      <span className={styles.fileName}>{entry.name}</span>
+                      <span className={styles.fileMeta}>
+                        {formatBytes(entry.size)}
+                        <span>{formatGridDate(entry.deletedAt)}</span>
+                      </span>
+                    </div>
+                  ) : (
                     <div
                       className={`${styles.fileRow}${isSelected ? ` ${styles.selected}` : ''}`}
                       key={entry.id}
