@@ -1,41 +1,13 @@
 import type { FileEntry } from '../api/client';
 import {
-  Archive,
-  ChevronRight,
-  CheckSquare,
-  Clipboard,
-  Copy,
-  Download,
-  Eye,
-  EyeOff,
-  FileInput,
-  FolderPlus,
-  Grid3X3,
-  HardDrive,
-  Info,
-  ListTree,
-  LogOut,
-  ListX,
-  Pause,
-  Pencil,
-  Play,
-  RefreshCw,
-  RotateCcw,
-  Scissors,
-  Search,
-  Square,
-  Trash2,
-  Upload,
-  X,
-  type LucideIcon,
+  Archive, ChevronRight, CheckSquare, Clipboard, Copy, Download,
+  Eye, EyeOff, FileInput, FolderPlus, Grid3X3, Info,
+  ListTree, LogOut, ListX, Pause, Pencil, Play, RefreshCw, RotateCcw,
+  Scissors, Search, Square, Trash2, Upload, X, type LucideIcon,
 } from 'lucide-react';
-import { fileTypeIconUrl, folderIconUrl } from '../api/icons';
+import { fileTypeIconUrl, folderIconUrl, driveIconUrl } from '../api/icons';
 
-type IconProps = {
-  name: string;
-  size?: number;
-  className?: string;
-};
+type IconProps = { name: string; size?: number; className?: string };
 
 const ACTION_ICONS: Record<string, LucideIcon> = {
   'archive-create': Archive,
@@ -72,30 +44,22 @@ export function Icon({ name, size = 22, className }: IconProps) {
   return <Lucide aria-hidden="true" size={size} className={className} style={{ flexShrink: 0 }} strokeWidth={1.8} />;
 }
 
-export function DeviceIcon({ name, size = 64, className }: { name: string; size?: number; className?: string }) {
-  return <HardDrive aria-hidden="true" size={size} className={className} style={{ flexShrink: 0 }} strokeWidth={1.8} />;
-}
-
-export function FileIcon({ entry, size = 64 }: { entry: FileEntry; size?: number }) {
+export function DeviceIcon({ name, size = 64, className }: { name?: string; size?: number; className?: string }) {
   return (
-    <img
-      src={fileTypeIconUrl(entry, String(size))}
-      alt=""
-      width={size}
-      height={size}
-      style={{ flexShrink: 0 }}
-    />
+    <img src={driveIconUrl()} alt="" width={size} height={size} style={{ flexShrink: 0 }} className={className} />
   );
 }
 
-export function FolderIcon({ size = 64 }: { size?: number }) {
+export function FileIcon({ entry, size = 22 }: { entry: FileEntry; size?: number }) {
+  const iconSize = size <= 22 ? '22' : '64';
   return (
-    <img
-      src={folderIconUrl(String(size))}
-      alt=""
-      width={size}
-      height={size}
-      style={{ flexShrink: 0 }}
-    />
+    <img src={fileTypeIconUrl(entry, iconSize)} alt="" width={size} height={size} style={{ flexShrink: 0 }} />
+  );
+}
+
+export function FolderIcon({ size = 22 }: { size?: number }) {
+  const iconSize = size <= 22 ? '22' : '64';
+  return (
+    <img src={folderIconUrl(iconSize)} alt="" width={size} height={size} style={{ flexShrink: 0 }} />
   );
 }

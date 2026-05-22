@@ -164,9 +164,7 @@ export function App() {
     }
     getRoots()
       .then((response) => {
-        const safeRoots = response.roots ?? [];
-        setRoots(safeRoots);
-        setCurrentPath(safeRoots[0]?.path ?? '');
+        setRoots(response.roots ?? []);
       })
       .catch((err: Error) => setError(err.message));
   }, [session, sessionLoading]);
@@ -1057,28 +1055,30 @@ export function App() {
               <h2>Favorites</h2>
             </div>
             <div className="root-list">
-              {favorites.map((path) => (
-                <button
-                  className={path === currentPath ? 'root-item active' : 'root-item'}
-                  key={path}
-                  onClick={() => { setCurrentPath(path); }}
-                  type="button"
-                >
-                  <FolderIcon size={18} />
-                  <span className="fav-details" style={{ flex: 1 }}>
-                    <span>{path.split('/').pop() || path}</span>
-                    <small>{path}</small>
-                  </span>
-                  <button
-                    className="fav-remove"
-                    onClick={(e) => { e.stopPropagation(); removeFavorite(path); }}
-                    title="Remove from favorites"
-                    type="button"
+      {favorites.map((path) => (
+                  <div
+                    className={path === currentPath ? 'root-item active' : 'root-item'}
+                    key={path}
+                    onClick={() => { setCurrentPath(path); }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter') setCurrentPath(path); }}
                   >
-                    <Icon name="edit-delete" size={12} />
-                  </button>
-                </button>
-              ))}
+                    <FolderIcon size={18} />
+                    <span className="fav-details" style={{ flex: 1 }}>
+                      <span>{path.split('/').pop() || path}</span>
+                      <small>{path}</small>
+                    </span>
+                    <button
+                      className="fav-remove"
+                      onClick={(e) => { e.stopPropagation(); removeFavorite(path); }}
+                      title="Remove from favorites"
+                      type="button"
+                    >
+                      <Icon name="edit-delete" size={12} />
+                    </button>
+                  </div>
+                ))}
             </div>
           </section>
         )}

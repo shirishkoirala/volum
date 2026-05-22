@@ -1,22 +1,43 @@
 import type { FileEntry } from '../api/client';
-import applicationJsonIcon from '../assets/mimetypes/64/application-json.svg?url';
-import applicationOctetStreamIcon from '../assets/mimetypes/64/application-octet-stream.svg?url';
-import applicationPdfIcon from '../assets/mimetypes/64/application-pdf.svg?url';
-import applicationAppleDiskImageIcon from '../assets/mimetypes/64/application-x-apple-diskimage.svg?url';
-import applicationZipIcon from '../assets/mimetypes/64/application-zip.svg?url';
-import audioGenericIcon from '../assets/mimetypes/64/audio-x-generic.svg?url';
-import imageGenericIcon from '../assets/mimetypes/64/image-x-generic.svg?url';
-import textCssIcon from '../assets/mimetypes/64/text-css.svg?url';
-import textGenericIcon from '../assets/mimetypes/64/text-x-generic.svg?url';
-import textHtmlIcon from '../assets/mimetypes/64/text-html.svg?url';
-import textMarkdownIcon from '../assets/mimetypes/64/text-x-markdown.svg?url';
-import textScriptIcon from '../assets/mimetypes/64/text-x-script.svg?url';
-import unknownIcon from '../assets/mimetypes/64/unknown.svg?url';
-import videoGenericIcon from '../assets/mimetypes/64/video-x-generic.svg?url';
-import officeDocumentIcon from '../assets/mimetypes/64/x-office-document.svg?url';
-import officePresentationIcon from '../assets/mimetypes/64/x-office-presentation.svg?url';
-import officeSpreadsheetIcon from '../assets/mimetypes/64/x-office-spreadsheet.svg?url';
-import folderIcon from '../assets/places/64/folder.svg?url';
+
+import folderIcon22 from '../assets/places/22/folder.svg?url';
+import folderIcon64 from '../assets/places/64/folder.svg?url';
+import driveHarddisk64 from '../assets/devices/64/drive-harddisk.svg?url';
+
+import textGeneric22 from '../assets/mimetypes/22/text-x-generic.svg?url';
+import textGeneric64 from '../assets/mimetypes/64/text-x-generic.svg?url';
+import textCss22 from '../assets/mimetypes/22/text-css.svg?url';
+import textCss64 from '../assets/mimetypes/64/text-css.svg?url';
+import textHtml22 from '../assets/mimetypes/22/text-html.svg?url';
+import textHtml64 from '../assets/mimetypes/64/text-html.svg?url';
+import textScript22 from '../assets/mimetypes/22/text-x-script.svg?url';
+import textScript64 from '../assets/mimetypes/64/text-x-script.svg?url';
+import textMarkdown22 from '../assets/mimetypes/22/text-x-markdown.svg?url';
+import textMarkdown64 from '../assets/mimetypes/64/text-x-markdown.svg?url';
+import imageGeneric22 from '../assets/mimetypes/22/image-x-generic.svg?url';
+import imageGeneric64 from '../assets/mimetypes/64/image-x-generic.svg?url';
+import audioGeneric22 from '../assets/mimetypes/22/audio-x-generic.svg?url';
+import audioGeneric64 from '../assets/mimetypes/64/audio-x-generic.svg?url';
+import videoGeneric22 from '../assets/mimetypes/22/video-x-generic.svg?url';
+import videoGeneric64 from '../assets/mimetypes/64/video-x-generic.svg?url';
+import applicationZip22 from '../assets/mimetypes/22/application-zip.svg?url';
+import applicationZip64 from '../assets/mimetypes/64/application-zip.svg?url';
+import applicationPdf22 from '../assets/mimetypes/22/application-pdf.svg?url';
+import applicationPdf64 from '../assets/mimetypes/64/application-pdf.svg?url';
+import applicationJson22 from '../assets/mimetypes/22/application-json.svg?url';
+import applicationJson64 from '../assets/mimetypes/64/application-json.svg?url';
+import applicationOctet22 from '../assets/mimetypes/22/application-octet-stream.svg?url';
+import applicationOctet64 from '../assets/mimetypes/64/application-octet-stream.svg?url';
+import applicationDiskImage22 from '../assets/mimetypes/22/application-x-apple-diskimage.svg?url';
+import applicationDiskImage64 from '../assets/mimetypes/64/application-x-apple-diskimage.svg?url';
+import officeDocument22 from '../assets/mimetypes/22/x-office-document.svg?url';
+import officeDocument64 from '../assets/mimetypes/64/x-office-document.svg?url';
+import officePresentation22 from '../assets/mimetypes/22/x-office-presentation.svg?url';
+import officePresentation64 from '../assets/mimetypes/64/x-office-presentation.svg?url';
+import officeSpreadsheet22 from '../assets/mimetypes/22/x-office-spreadsheet.svg?url';
+import officeSpreadsheet64 from '../assets/mimetypes/64/x-office-spreadsheet.svg?url';
+import unknown22 from '../assets/mimetypes/22/unknown.svg?url';
+import unknown64 from '../assets/mimetypes/64/unknown.svg?url';
 
 function ext(name: string) {
   const dot = name.lastIndexOf('.');
@@ -24,30 +45,39 @@ function ext(name: string) {
   return name.slice(dot + 1).toLowerCase();
 }
 
-const MIME_ICONS: Record<string, string> = {
-  'application-json': applicationJsonIcon,
-  'application-octet-stream': applicationOctetStreamIcon,
-  'application-pdf': applicationPdfIcon,
-  'application-x-apple-diskimage': applicationAppleDiskImageIcon,
-  'application-x-raw-disk-image': applicationAppleDiskImageIcon,
-  'application-zip': applicationZipIcon,
-  'audio-x-generic': audioGenericIcon,
-  'image-x-generic': imageGenericIcon,
-  'text-css': textCssIcon,
-  'text-html': textHtmlIcon,
-  'text-plain': textGenericIcon,
-  'text-x-generic': textGenericIcon,
-  'text-x-markdown': textMarkdownIcon,
-  'text-x-script': textScriptIcon,
-  unknown: unknownIcon,
-  'video-x-generic': videoGenericIcon,
-  'x-office-document': officeDocumentIcon,
-  'x-office-presentation': officePresentationIcon,
-  'x-office-spreadsheet': officeSpreadsheetIcon,
+const MIME_ICONS: Record<string, { s22: string; s64: string }> = {
+  'application-json': { s22: applicationJson22, s64: applicationJson64 },
+  'application-octet-stream': { s22: applicationOctet22, s64: applicationOctet64 },
+  'application-pdf': { s22: applicationPdf22, s64: applicationPdf64 },
+  'application-x-apple-diskimage': { s22: applicationDiskImage22, s64: applicationDiskImage64 },
+  'application-x-raw-disk-image': { s22: applicationDiskImage22, s64: applicationDiskImage64 },
+  'application-zip': { s22: applicationZip22, s64: applicationZip64 },
+  'audio-x-generic': { s22: audioGeneric22, s64: audioGeneric64 },
+  'image-x-generic': { s22: imageGeneric22, s64: imageGeneric64 },
+  'text-css': { s22: textCss22, s64: textCss64 },
+  'text-html': { s22: textHtml22, s64: textHtml64 },
+  'text-plain': { s22: textGeneric22, s64: textGeneric64 },
+  'text-x-generic': { s22: textGeneric22, s64: textGeneric64 },
+  'text-x-markdown': { s22: textMarkdown22, s64: textMarkdown64 },
+  'text-x-script': { s22: textScript22, s64: textScript64 },
+  unknown: { s22: unknown22, s64: unknown64 },
+  'video-x-generic': { s22: videoGeneric22, s64: videoGeneric64 },
+  'x-office-document': { s22: officeDocument22, s64: officeDocument64 },
+  'x-office-presentation': { s22: officePresentation22, s64: officePresentation64 },
+  'x-office-spreadsheet': { s22: officeSpreadsheet22, s64: officeSpreadsheet64 },
+};
+
+const FOLDER_ICONS: Record<string, string> = {
+  '22': folderIcon22,
+  '64': folderIcon64,
 };
 
 export function folderIconUrl(size = '22') {
-  return folderIcon;
+  return FOLDER_ICONS[size] ?? FOLDER_ICONS['64'] ?? folderIcon64;
+}
+
+export function driveIconUrl(size = '64') {
+  return driveHarddisk64;
 }
 
 export function fileTypeIconUrl(entry: FileEntry, size = '22') {
@@ -58,25 +88,32 @@ export function fileTypeIconUrl(entry: FileEntry, size = '22') {
 function mimetypeIconUrl(filename: string, size = '22'): string {
   const e = ext(filename);
   const m = MIMETYPE_MAP[e];
-  if (m) return MIME_ICONS[m] ?? genericMimetypeIcon(m);
-  return unknownIcon;
+  if (m) return pickIcon(m, size);
+  return pickIcon('unknown', size);
 }
 
-function genericMimetypeIcon(mimetype: string) {
-  if (mimetype.startsWith('image-')) return imageGenericIcon;
-  if (mimetype.startsWith('audio-')) return audioGenericIcon;
-  if (mimetype.startsWith('video-')) return videoGenericIcon;
-  if (mimetype.startsWith('text-')) return textGenericIcon;
-  if (mimetype.includes('spreadsheet') || mimetype.includes('excel')) return officeSpreadsheetIcon;
-  if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) return officePresentationIcon;
-  if (mimetype.includes('document') || mimetype.includes('word')) return officeDocumentIcon;
+function pickIcon(mimetype: string, size: string): string {
+  const entry = MIME_ICONS[mimetype];
+  if (entry) return size === '22' ? entry.s22 : entry.s64;
+  return genericMimetypeIcon(mimetype, size);
+}
+
+function genericMimetypeIcon(mimetype: string, size: string) {
+  const s = size === '22' ? '22' : '64';
+  if (mimetype.startsWith('image-')) return size === '22' ? MIME_ICONS['image-x-generic'].s22 : MIME_ICONS['image-x-generic'].s64;
+  if (mimetype.startsWith('audio-')) return size === '22' ? MIME_ICONS['audio-x-generic'].s22 : MIME_ICONS['audio-x-generic'].s64;
+  if (mimetype.startsWith('video-')) return size === '22' ? MIME_ICONS['video-x-generic'].s22 : MIME_ICONS['video-x-generic'].s64;
+  if (mimetype.startsWith('text-')) return size === '22' ? MIME_ICONS['text-x-generic'].s22 : MIME_ICONS['text-x-generic'].s64;
+  if (mimetype.includes('spreadsheet') || mimetype.includes('excel')) return size === '22' ? MIME_ICONS['x-office-spreadsheet'].s22 : MIME_ICONS['x-office-spreadsheet'].s64;
+  if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) return size === '22' ? MIME_ICONS['x-office-presentation'].s22 : MIME_ICONS['x-office-presentation'].s64;
+  if (mimetype.includes('document') || mimetype.includes('word')) return size === '22' ? MIME_ICONS['x-office-document'].s22 : MIME_ICONS['x-office-document'].s64;
   if (mimetype.includes('zip') || mimetype.includes('compressed') || mimetype.includes('tar') || mimetype.includes('gzip')) {
-    return applicationZipIcon;
+    return size === '22' ? MIME_ICONS['application-zip'].s22 : MIME_ICONS['application-zip'].s64;
   }
   if (mimetype.includes('executable') || mimetype.includes('sharedlib') || mimetype.includes('octet-stream')) {
-    return applicationOctetStreamIcon;
+    return size === '22' ? MIME_ICONS['application-octet-stream'].s22 : MIME_ICONS['application-octet-stream'].s64;
   }
-  return unknownIcon;
+  return unknown64;
 }
 
 const MIMETYPE_MAP: Record<string, string> = {
