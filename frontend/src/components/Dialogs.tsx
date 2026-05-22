@@ -3,6 +3,7 @@ import { Icon } from './Icon';
 import { Overlay } from './shared';
 import type { FileEntry } from '../api/client';
 import type { ConflictPolicy } from '../api/client';
+import styles from './Dialogs.module.css';
 
 export type ConfirmDialogState = {
   title: string;
@@ -59,19 +60,19 @@ export function ConfirmDialog({ dialog, onClose }: { dialog: NonNullable<Confirm
 
   return (
     <Overlay zIndex={110} onClose={onClose}>
-      <div className="app-dialog app-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
+      <div className={`${styles.appDialog} ${styles.appDialogSm}`} role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
         <div className="panel-header">
           <h3 id="confirm-dialog-title">{dialog.title}</h3>
           <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
             <Icon name="window-close" size={18} />
           </button>
         </div>
-        <p className="dialog-message">{dialog.message}</p>
-        <div className="dialog-actions">
-          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
+        <p className={styles.dialogMessage}>{dialog.message}</p>
+        <div className={styles.dialogActions}>
+          <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
           <button
             type="button"
-            className={`dialog-button ${dialog.danger ? 'danger' : 'primary'}`}
+            className={`${styles.dialogButton} ${dialog.danger ? styles.danger : styles.primary}`}
             onClick={handleConfirm}
           >
             {dialog.confirmLabel}
@@ -107,14 +108,14 @@ export function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextI
 
   return (
     <Overlay zIndex={110} onClose={onClose}>
-      <form className="app-dialog app-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title" onSubmit={handleSubmit}>
+      <form className={`${styles.appDialog} ${styles.appDialogSm}`} role="dialog" aria-modal="true" aria-labelledby="text-dialog-title" onSubmit={handleSubmit}>
         <div className="panel-header">
           <h3 id="text-dialog-title">{dialog.title}</h3>
           <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
             <Icon name="window-close" size={18} />
           </button>
         </div>
-        <label className="dialog-field">
+        <label className={styles.dialogField}>
           <span>{dialog.label}</span>
           <input
             ref={inputRef}
@@ -136,10 +137,10 @@ export function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextI
             }}
           />
         )}
-        {error && <p className="dialog-error">{error}</p>}
-        <div className="dialog-actions">
-          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="dialog-button primary">{dialog.confirmLabel}</button>
+        {error && <p className={styles.dialogError}>{error}</p>}
+        <div className={styles.dialogActions}>
+          <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
+          <button type="submit" className={`${styles.dialogButton} ${styles.primary}`}>{dialog.confirmLabel}</button>
         </div>
       </form>
     </Overlay>
@@ -212,10 +213,10 @@ export function FolderPicker({
   };
 
   return (
-    <div className="folder-picker">
-      <div className="folder-picker-header">
-        <span className="folder-picker-title">Select destination</span>
-        <div className="folder-picker-nav">
+    <div className={styles.folderPicker}>
+      <div className={styles.folderPickerHeader}>
+        <span className={styles.folderPickerTitle}>Select destination</span>
+        <div className={styles.folderPickerNav}>
           <button type="button" className="icon-button" onClick={goBack} disabled={history.length === 0} title="Back">
             <span className="icon-rotate-180"><Icon name="go-next" size={16} /></span>
           </button>
@@ -227,14 +228,14 @@ export function FolderPicker({
           </button>
         </div>
       </div>
-      <div className="folder-picker-breadcrumb">
+      <div className={styles.folderPickerBreadcrumb}>
         {pathParts.length === 0 ? (
-          <span className="folder-picker-crumb active">/</span>
+          <span className={`${styles.folderPickerCrumb} ${styles.folderPickerCrumbActive}`}>/</span>
         ) : (
           <>
             <button
               type="button"
-              className="folder-picker-crumb"
+              className={styles.folderPickerCrumb}
               onClick={() => setCurrentDir('/')}
             >
               /
@@ -243,11 +244,11 @@ export function FolderPicker({
               const path = '/' + pathParts.slice(0, index + 1).join('/');
               const isLast = index === pathParts.length - 1;
               return (
-                <span key={path} className="folder-picker-crumb-row">
+                <span key={path} className={styles.folderPickerCrumbRow}>
                   <Icon name="go-next" size={12} />
                   <button
                     type="button"
-                    className={`folder-picker-crumb${isLast ? ' active' : ''}`}
+                    className={`${styles.folderPickerCrumb}${isLast ? ` ${styles.folderPickerCrumbActive}` : ''}`}
                     onClick={() => isLast ? null : setCurrentDir(path)}
                   >
                     {part}
@@ -258,13 +259,13 @@ export function FolderPicker({
           </>
         )}
       </div>
-      <div className="folder-picker-body">
+      <div className={styles.folderPickerBody}>
         {loading ? (
-          <div className="folder-picker-loading">Loading...</div>
+          <div className={styles.folderPickerLoading}>Loading...</div>
         ) : error ? (
-          <div className="folder-picker-error">{error}</div>
+          <div className={styles.folderPickerError}>{error}</div>
         ) : subdirs.length === 0 ? (
-          <div className="folder-picker-empty">No subdirectories</div>
+          <div className={styles.folderPickerEmpty}>No subdirectories</div>
         ) : (
           subdirs.map((dir) => {
             const dirName = dir.split('/').filter(Boolean).pop() || dir;
@@ -272,25 +273,25 @@ export function FolderPicker({
               <button
                 key={dir}
                 type="button"
-                className="folder-picker-item"
+                className={styles.folderPickerItem}
                 onDoubleClick={() => navigateTo(dir)}
                 onClick={() => onSelect(dir)}
                 title={dir}
               >
                 <Icon name="folder-new" size={18} />
-                <span className="folder-picker-item-name">{dirName}</span>
+                <span className={styles.folderPickerItemName}>{dirName}</span>
               </button>
             );
           })
         )}
       </div>
-      <div className="folder-picker-footer">
-        <span className="folder-picker-path">{currentDir}</span>
-        <div className="folder-picker-actions">
-          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
+      <div className={styles.folderPickerFooter}>
+        <span className={styles.folderPickerPath}>{currentDir}</span>
+        <div className={styles.folderPickerActions}>
+          <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
           <button
             type="button"
-            className="dialog-button primary"
+            className={`${styles.dialogButton} ${styles.primary}`}
             onClick={() => onSelect(currentDir)}
           >
             Choose
@@ -339,7 +340,7 @@ export function TransferDialog({
 
   return (
     <Overlay zIndex={110} onClose={onClose}>
-      <form className="app-dialog" role="dialog" aria-modal="true" aria-labelledby="transfer-dialog-title" onSubmit={handleSubmit}>
+      <form className={styles.appDialog} role="dialog" aria-modal="true" aria-labelledby="transfer-dialog-title" onSubmit={handleSubmit}>
         <div className="panel-header">
           <div>
             <h3 id="transfer-dialog-title">{title}</h3>
@@ -349,9 +350,9 @@ export function TransferDialog({
             <Icon name="window-close" size={18} />
           </button>
         </div>
-        <label className="dialog-field">
+        <label className={styles.dialogField}>
           <span>Destination folder path</span>
-          <div className="dialog-field-row">
+          <div className={styles.dialogFieldRow}>
             <input
               ref={inputRef}
               value={destination}
@@ -366,7 +367,7 @@ export function TransferDialog({
             </button>
           </div>
         </label>
-        <p className="dialog-help">Use | to send items to multiple destinations.</p>
+        <p className={styles.dialogHelp}>Use | to send items to multiple destinations.</p>
         {pickerOpen && (
           <FolderPicker
             initialPath={destination}
@@ -388,7 +389,7 @@ export function TransferDialog({
             }}
           />
         )}
-        <label className="dialog-field">
+        <label className={styles.dialogField}>
           <span>If a file already exists</span>
           <select value={conflictPolicy} onChange={(event) => setConflictPolicy(event.target.value as ConflictPolicy)}>
             <option value="ask">Ask when needed</option>
@@ -398,10 +399,10 @@ export function TransferDialog({
             <option value="cancel">Cancel the job</option>
           </select>
         </label>
-        {error && <p className="dialog-error">{error}</p>}
-        <div className="dialog-actions">
-          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="dialog-button primary">{actionLabel}</button>
+        {error && <p className={styles.dialogError}>{error}</p>}
+        <div className={styles.dialogActions}>
+          <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
+          <button type="submit" className={`${styles.dialogButton} ${styles.primary}`}>{actionLabel}</button>
         </div>
       </form>
     </Overlay>
@@ -418,7 +419,7 @@ export function FolderSuggestions({
   onSelect: (path: string) => void;
 }) {
   return (
-    <div className="dialog-suggestions">
+    <div className={styles.dialogSuggestions}>
       <span>{label}</span>
       <div>
         {paths.map((path) => (
@@ -437,9 +438,9 @@ export function ToastViewport({ toasts, onDismiss }: { toasts: Toast[]; onDismis
   }
 
   return (
-    <div className="toast-viewport" aria-live="polite" aria-atomic="true">
+    <div className={styles.toastViewport} aria-live="polite" aria-atomic="true">
       {toasts.map((toast) => (
-        <div className={`toast toast-${toast.variant}`} key={toast.id}>
+        <div className={`${styles.toast} ${toast.variant === 'success' ? styles.toastSuccess : styles.toastError}`} key={toast.id}>
           <div>
             <strong>{toast.title}</strong>
             {toast.message && <span>{toast.message}</span>}

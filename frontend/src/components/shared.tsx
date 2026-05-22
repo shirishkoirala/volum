@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react';
+import styles from './shared.module.css';
 
 type OverlayProps = {
   children: ReactNode;
   zIndex?: number;
   onClose?: () => void;
-  className?: string;
 };
 
-export function Overlay({ children, zIndex = 100, onClose, className = '' }: OverlayProps) {
+export function Overlay({ children, zIndex = 100, onClose }: OverlayProps) {
   return (
     <div
-      className={`overlay ${className}`}
+      className={styles.overlay}
       style={{ zIndex }}
       onClick={(event) => {
         if (event.target === event.currentTarget && onClose) {
@@ -41,7 +41,7 @@ export function PanelHeader({ title, subtitle, onClose, children }: PanelHeaderP
         {children}
         {onClose && (
           <button className="icon-button" onClick={onClose} type="button" aria-label="Close">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={styles.iconImg}>
               <path d="M18 6 6 18" /><path d="m6 6 12 12" />
             </svg>
           </button>
@@ -53,6 +53,6 @@ export function PanelHeader({ title, subtitle, onClose, children }: PanelHeaderP
 
 export function IconImg({ src, alt = '', width, height, className = '' }: { src: string; alt?: string; width: number; height: number; className?: string }) {
   return (
-    <img src={src} alt={alt} width={width} height={height} className={`icon-img ${className}`} />
+    <img src={src} alt={alt} width={width} height={height} className={`${styles.iconImg} ${className}`} />
   );
 }
