@@ -1392,10 +1392,27 @@ export function App() {
               ) : (
                 trashEntries.map((entry) => (
                   <div className={styles.trashItem} key={entry.id}>
-                    <div className={styles.trashItemInfo}>
-                      <strong>{entry.name}</strong>
-                      <span>{formatTrashPath(entry.originalPath)}</span>
-                      <small>{formatBytes(entry.size)} · {new Date(entry.deletedAt).toLocaleDateString()}</small>
+                    <div className={styles.trashItemRow}>
+                      {entry.type === 'directory' ? (
+                        <FolderIcon size={24} />
+                      ) : (
+                        <FileIcon entry={{
+                          name: entry.name,
+                          type: entry.type,
+                          path: entry.originalPath,
+                          size: entry.size,
+                          modifiedAt: entry.deletedAt,
+                          permissions: '',
+                          owner: '',
+                          group: '',
+                          hidden: false,
+                        }} size={24} />
+                      )}
+                      <div className={styles.trashItemInfo}>
+                        <strong>{entry.name}</strong>
+                        <span>{formatTrashPath(entry.originalPath)}</span>
+                        <small>{formatBytes(entry.size)} · {new Date(entry.deletedAt).toLocaleDateString()}</small>
+                      </div>
                     </div>
                     {canWrite && (
                       <div className={styles.trashActions}>

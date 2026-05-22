@@ -458,6 +458,13 @@
   overflow-y: auto;
 }
 
+.trashItemRow {
+  align-items: center;
+  display: flex;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
 .trashItemInfo {
   display: grid;
   gap: 2px;
