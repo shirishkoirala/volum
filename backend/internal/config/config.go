@@ -136,6 +136,17 @@ func discoverMountRoots(hostRoot string) ([]security.Root, error) {
 		if excludedMountPath(mount.mountPoint) {
 			continue
 		}
+		mountPath := mount.mountPoint
+		if strings.TrimSpace(hostRoot) != "" {
+			if mount.mountPoint == "/" {
+				mountPath = hostRoot
+			} else {
+				mountPath = filepath.Join(hostRoot, strings.TrimPrefix(mount.mountPoint, string(filepath.Separator)))
+			}
+		}
+		if info, err := os.Stat(mountPath); err != nil || !info.IsDir() {
+			continue
+		}
 		label := filepath.Base(mount.mountPoint)
 		if mount.mountPoint == "/" {
 			label = "Server root"
