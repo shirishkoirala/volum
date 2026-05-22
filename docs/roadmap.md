@@ -19,6 +19,8 @@ Volum is built in small, verifiable phases. Priority order: **data safety → re
 
 - Single-select and multi-select (Ctrl/Cmd, Shift-range)
 - Keyboard shortcuts (Escape, Enter)
+- Keyboard rename shortcut (F2) `[done]`
+- File clipboard shortcuts (Ctrl/Cmd+C, Ctrl/Cmd+X, Ctrl/Cmd+V) `[done]`
 - Context menu
 - Toolbar actions for selected items
 - Sort by name, size, type, modified date
@@ -76,6 +78,9 @@ Volum is built in small, verifiable phases. Priority order: **data safety → re
 - Responsive layout (desktop, tablet, mobile)
 - Hover/active/focus states
 - Double-click/Enter for file preview
+- In-place rename `[done]`
+- App-native dialogs for create/delete/copy/move confirmations `[done]`
+- Toast notifications for file and job actions `[done]`
 
 ---
 
@@ -100,7 +105,7 @@ Goal: match the capabilities of a desktop file manager.
 - Folder sizes (calculate total size of directory contents) `[done]`
 - Disk usage info per root (free/total space) `[done]`
 - Select all / invert selection `[done]`
-- Cut path to clipboard for paste navigation
+- Copy/cut selected files to clipboard for paste actions `[done]`
 - Recycle bin (`.volum-trash/` per root, restore before permanent delete) `[done]`
 - Directory download (archive folder on-the-fly as zip)
 - File permissions display as `rwxr-xr-x` with owner/group
@@ -146,13 +151,9 @@ Goal: refine the experience for daily homelab use.
 
 ## Immediate Next Tasks
 
-## Immediate Next Tasks
-
 1. Archive/extract frontend UI (context menu + toolbar) — `Phase 9`
 2. Export/import job history — `Phase 12`
-3. PDF preview — `Phase 13`
-4. Image/video thumbnails in grid view — `Phase 13`
-5. Dark mode — `Phase 13`
-6. Drag-select (rubber band) — `Phase 13`
-7. Loading skeletons — `Phase 13`
-8. Keyboard shortcut reference overlay — `Phase 13`
+3. Image/video thumbnails in grid view — `Phase 13`
+4. Drag-select (rubber band) — `Phase 13`
+5. Column view — `Phase 13`
+6. File/folder info panel — `Phase 13`

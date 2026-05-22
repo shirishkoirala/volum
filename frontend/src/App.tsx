@@ -706,6 +706,11 @@ export function App() {
       handleRename();
       return;
     }
+    if (event.key === 'Delete' && canWrite && canDelete) {
+      event.preventDefault();
+      handleDelete();
+      return;
+    }
     if (event.key === 'Escape') {
       setSelectedPaths([]);
       setContextMenu(null);
@@ -1441,6 +1446,7 @@ export function App() {
             <div className="shortcut-row"><span>Global search</span><span className="shortcut-key">⌘K</span></div>
             <div className="shortcut-row"><span>Toggle shortcuts</span><span className="shortcut-key">?</span></div>
             <div className="shortcut-row"><span>Rename selected item</span><span className="shortcut-key">F2</span></div>
+            <div className="shortcut-row"><span>Move selected items to trash</span><span className="shortcut-key">Delete</span></div>
             <div className="shortcut-row"><span>Shift-range select</span><span className="shortcut-key">⇧+click</span></div>
             <div className="shortcut-row"><span>Multi-select toggle</span><span className="shortcut-key">⌘+click</span></div>
             <hr />
