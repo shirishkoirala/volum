@@ -37,6 +37,7 @@ export type Toast = {
   title: string;
   message?: string;
   variant: 'success' | 'error';
+  action?: { label: string; onClick: () => void };
 };
 
 function useDialogEscape(onClose: () => void) {
@@ -557,13 +558,20 @@ export function ToastViewport({ toasts, onDismiss }: { toasts: Toast[]; onDismis
     <div className={styles.toastViewport} aria-live="polite" aria-atomic="true">
       {toasts.map((toast) => (
         <div className={`${styles.toast} ${toast.variant === 'success' ? styles.toastSuccess : styles.toastError}`} key={toast.id}>
-          <div>
+          <div className={styles.toastContent}>
             <strong>{toast.title}</strong>
             {toast.message && <span>{toast.message}</span>}
           </div>
-          <button type="button" onClick={() => onDismiss(toast.id)} aria-label="Dismiss notification">
-            <Icon name="window-close" size={16} />
-          </button>
+          <div className={styles.toastActions}>
+            {toast.action && (
+              <button type="button" className={styles.toastActionBtn} onClick={() => { toast.action!.onClick(); onDismiss(toast.id); }}>
+                {toast.action.label}
+              </button>
+            )}
+            <button type="button" onClick={() => onDismiss(toast.id)} aria-label="Dismiss notification">
+              <Icon name="window-close" size={16} />
+            </button>
+          </div>
         </div>
       ))}
     </div>

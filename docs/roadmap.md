@@ -132,9 +132,12 @@ These are useful, but should not interrupt the phases above unless they become r
 - [x] Drag-and-drop into folders: drag files onto directory rows to open transfer dialog pre-filled with destination.
 - [x] Breadcrumb overflow: collapsible crumbs with "..." overflow menu when path exceeds available width.
 - [x] Saved view preferences: view mode, sort field/direction, hidden files persisted to localStorage.
+- [x] Undo affordances: toast with Undo button after trash restore and rename (8s timeout).
+- [x] Conflict preview for archive/extract: checks destination existence and shows confirmation dialog before creating or extracting archives.
+- [x] Toast system enhanced with action button support.
 
-## Next Three Tasks
+## Next Three Tasks (Phase 3: Sharing & Collaboration)
 
-1. Add undo affordances: trash restore, recent rename, and recent move with an "Undo" toast.
-2. Add conflict preview for archive/extract operations.
-3. Add saved view preferences per folder (different view settings per directory path).
+1. Add expiring share links for files and folders, disabled by default — backend endpoint + frontend UI.
+2. Add per-share controls: readonly download, optional password, expiration, max downloads — backend model + frontend dialog.
+3. Add admin share management UI — list/revoke active shares with audit trail.

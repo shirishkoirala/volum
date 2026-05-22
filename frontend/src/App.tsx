@@ -276,10 +276,10 @@ export function App() {
     setToasts((items) => items.filter((toast) => toast.id !== id));
   };
 
-  const showToast = (toast: Omit<Toast, 'id'>) => {
+  const showToast = (toast: Omit<Toast, 'id'>, timeout = 4000) => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
     setToasts((items) => [...items.slice(-3), { ...toast, id }]);
-    window.setTimeout(() => dismissToast(id), 4000);
+    window.setTimeout(() => dismissToast(id), timeout);
   };
 
   const runAction = async (action: () => Promise<unknown>, successTitle?: string) => {
@@ -334,8 +334,22 @@ export function App() {
       cancelRename();
       return;
     }
+    const oldName = entry.name;
+    const oldPath = entry.path;
     setRenaming(null);
-    void runAction(() => renamePath(entry.path, nextName), 'Item renamed');
+    void runAction(() => renamePath(oldPath, nextName), 'Item renamed');
+    showToast({
+      title: 'Item renamed',
+      message: `${oldName} → ${nextName}`,
+      variant: 'success',
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const newPath = joinPath(oldPath.substring(0, oldPath.lastIndexOf('/')), nextName);
+          void runAction(() => renamePath(newPath, oldName), 'Rename undone');
+        }
+      }
+    }, 8000);
   };
 
   const handleDelete = () => {
@@ -369,7 +383,20 @@ export function App() {
       await restoreTrash(entry.id);
       const response = await getTrash();
       setTrashEntries(response.entries ?? []);
-    }, 'Item restored');
+    });
+    showToast({
+      title: 'Item restored',
+      message: entry.originalPath,
+      variant: 'success',
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          void deletePath(entry.originalPath, entry.name);
+          getTrash().then((r) => setTrashEntries(r.entries ?? []));
+          showToast({ title: 'Restore undone', variant: 'success' });
+        }
+      }
+    }, 8000);
   };
 
   const handleDeleteTrash = (entry: TrashEntry) => {
@@ -688,6 +715,28 @@ export function App() {
     });
   };
 
+  const handleCreateArchiveWithPreview = (entry: FileEntry, targetPath: string, archiveName: string) => {
+    getFiles(currentPath, false).then((response) => {
+      const entries = response.entries ?? [];
+      const conflict = entries.find((e) => e.name === archiveName);
+      if (conflict) {
+        setConfirmDialog({
+          title: 'Archive Already Exists',
+          message: `"${archiveName}" already exists in ${currentPath}. Overwrite it?`,
+          confirmLabel: 'Overwrite',
+          danger: true,
+          onConfirm: () => {
+            void runAction(() => createArchiveJob(entry.path, targetPath, 'overwrite'), 'Archive job started');
+          }
+        });
+      } else {
+        void runAction(() => createArchiveJob(entry.path, targetPath, 'rename'), 'Archive job started');
+      }
+    }).catch(() => {
+      void runAction(() => createArchiveJob(entry.path, targetPath, 'rename'), 'Archive job started');
+    });
+  };
+
   const handleCreateArchive = () => {
     const entry = selectedEntries[0];
     if (!entry || selectedEntries.length !== 1) {
@@ -706,7 +755,7 @@ export function App() {
       suggestionLabel: 'Create in',
       applyFolderSuggestion: (path) => joinPath(path, archiveName),
       onSubmit: (value) => {
-        void runAction(() => createArchiveJob(entry.path, value.trim(), 'rename'), 'Archive job started');
+        handleCreateArchiveWithPreview(entry, value.trim(), archiveName);
       }
     });
   };
@@ -728,7 +777,24 @@ export function App() {
       suggestionLabel: 'Extract to',
       applyFolderSuggestion: (path) => normalizeFolderPath(path),
       onSubmit: (value) => {
-        void runAction(() => createExtractJob(entry.path, value.trim()), 'Extract job started');
+        const dest = value.trim();
+        getFiles(dest, false).then((response) => {
+          const existing = response.entries ?? [];
+          if (existing.length > 0) {
+            setConfirmDialog({
+              title: 'Destination Not Empty',
+              message: `The destination folder contains ${existing.length} item${existing.length === 1 ? '' : 's'}. Extract here anyway? Existing files with the same name may be renamed.`,
+              confirmLabel: 'Extract Anyway',
+              onConfirm: () => {
+                void runAction(() => createExtractJob(entry.path, dest), 'Extract job started');
+              }
+            });
+          } else {
+            void runAction(() => createExtractJob(entry.path, dest), 'Extract job started');
+          }
+        }).catch(() => {
+          void runAction(() => createExtractJob(entry.path, dest), 'Extract job started');
+        });
       }
     });
   };
