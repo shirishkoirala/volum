@@ -114,15 +114,14 @@ For homelab deployment, use `docker-compose.homelab.yml`.
 
 ## Known Gaps
 
-- Export/import job history — `Phase 12`
-- No automated backend tests (beyond the transfer resume test)
-- No frontend component tests
+- Export/import job history (low priority)
+- Frontend component test coverage could be expanded
 
-## Immediate Next Tasks (from roadmap)
+## Immediate Next Tasks
 
-1. Export/import job history — `Phase 12`
-2. Automated backend tests
-3. Frontend component tests
+1. Export/import job history
+2. Expand frontend component test coverage
+3. Feature requests and bug fixes from real usage
 
 ## Safety Rules For Next Agent
 

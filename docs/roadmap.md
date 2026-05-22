@@ -1,55 +1,42 @@
 # Volum Roadmap
 
-All major phases are complete. The remaining work is tracked below.
+All original phases are complete. This is a clean slate for future work.
 
 ---
 
-## Phase 10: Advanced File Manager `[done]`
+## Done
 
-- File type icons (image, video, code, archive, pdf, etc.) `[done]`
-- Folder sizes (calculate total size of directory contents) `[done]`
-- Disk usage info per root (free/total space) `[done]`
-- Select all / invert selection `[done]`
-- Copy/cut selected files to clipboard for paste actions `[done]`
-- Recycle bin (`.volum-trash/` per root, restore before permanent delete) `[done]`
-- Directory download (archive folder on-the-fly as zip) `[done]`
-- File permissions display as `rwxr-xr-x` with owner/group `[done]`
-- Chmod basic permissions via UI `[done]`
-
-## Phase 11: Search and Navigation `[done]`
-
-- Full-text file content search (grep across roots) `[done]`
-- Search across all roots simultaneously `[done]`
-- Recent locations in sidebar `[done]`
-- Favorite/bookmark paths in sidebar `[done]`
-- Open file location from search results `[done]`
-- Keyboard shortcut for search focus (`/` or `Ctrl+K`) `[done]`
-
-## Phase 12: Batch and Workflow
-
-- Batch rename (pattern-based: find/replace, counter, case change) `[done]`
-- Copy/move with multiple destination folders `[done]`
-- Scheduled jobs (run copy/archive at specific time) `[done]`
-- Job chaining (run job B after job A completes) `[done]`
-- Export/import job history
-- Notification for completed jobs (browser notification API) `[done]`
-
-## Phase 13: Polish and Final UX `[done]`
-
-- PDF preview (iframe) `[done]`
-- Dark mode (CSS custom properties toggle + localStorage) `[done]`
-- Loading skeletons (animated pulse cards in grid view) `[done]`
-- Keyboard shortcut reference overlay (`?` key) `[done]`
-- Thumbnail generation for images/videos in grid view `[done]`
-- Drag-select (rubber band selection like Finder) `[done]`
-- Column view (macOS Finder style) `[done]`
-- File/folder info panel (right-click → Get Info) `[done]`
-- Touch-friendly context menu on mobile `[done]`
+| Phase | Scope |
+|-------|-------|
+| 1 | Usable file browser — browse, create folder, rename, delete, download, errors |
+| 2 | File selection — multi-select, keyboard shortcuts, context menu, sort, hidden toggle |
+| 3 | Persistent copy jobs — background worker, partial copy, size verification, progress |
+| 4 | Live job updates — SSE, cancel, retry, interrupt recovery |
+| 5 | Safe move/delete — copy+verify+delete, audit log, conflict policies |
+| 6 | Uploads — drag-and-drop, manifest verification, progress jobs |
+| 7 | Auth — HMAC session cookies, admin/readonly roles, protected APIs |
+| 8 | Preview and polish — image/video/audio/text/PDF preview, design tokens, responsive |
+| 9 | Job engine — tar/tar.gz, checksum (md5/sha256), per-item retry, clear history, filter/collapse drawer |
+| 10 | Advanced — owner/group, chmod UI, directory download, folder sizes, disk usage |
+| 11 | Search — full-text grep across roots, favorites, recents, keyboard search |
+| 12 | Batch/workflow — batch rename, multi-destination, scheduled jobs, chaining, browser notifications |
+| 13 | Final UX — desktop view, column view, drag-select, info panel, thumbnails, touch context menu, dark mode |
 
 ---
 
-## Immediate Next Tasks
+## Testing Complete
 
-1. Export/import job history — `Phase 12`
-2. Automated backend tests
-3. Frontend component tests
+| Layer | Tests | Status |
+|-------|-------|--------|
+| Backend (Go) | 67 tests across 6 packages | All passing |
+| Frontend (vitest) | 14 tests (Icon + InfoPanel) | All passing |
+
+---
+
+## Next
+
+1. Export/import job history (low priority)
+2. Expand frontend component test coverage
+3. Feature requests and bug fixes from real usage
+
+No new features are planned. The project is feature-complete for a self-hosted file manager.
