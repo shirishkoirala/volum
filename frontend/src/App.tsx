@@ -70,6 +70,12 @@ type TransferDialogState = {
   entries: FileEntry[];
   initialDestination: string;
 } | null;
+type Toast = {
+  id: number;
+  title: string;
+  message?: string;
+  variant: 'success' | 'error';
+};
 
 export function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -111,6 +117,7 @@ export function App() {
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
   const [textInputDialog, setTextInputDialog] = useState<TextInputDialogState>(null);
   const [transferDialog, setTransferDialog] = useState<TransferDialogState>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const shortcutsRef = useRef<HTMLDivElement>(null);
@@ -232,13 +239,28 @@ export function App() {
 
   const isFavorited = favorites.includes(currentPath);
 
-  const runAction = async (action: () => Promise<unknown>) => {
+  const dismissToast = (id: number) => {
+    setToasts((items) => items.filter((toast) => toast.id !== id));
+  };
+
+  const showToast = (toast: Omit<Toast, 'id'>) => {
+    const id = Date.now() + Math.floor(Math.random() * 1000);
+    setToasts((items) => [...items.slice(-3), { ...toast, id }]);
+    window.setTimeout(() => dismissToast(id), 4000);
+  };
+
+  const runAction = async (action: () => Promise<unknown>, successTitle?: string) => {
     try {
       await action();
       setError(null);
+      if (successTitle) {
+        showToast({ title: successTitle, variant: 'success' });
+      }
       refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Action failed');
+      const message = err instanceof Error ? err.message : 'Action failed';
+      setError(message);
+      showToast({ title: 'Action failed', message, variant: 'error' });
     }
   };
 
@@ -250,7 +272,7 @@ export function App() {
       placeholder: 'Folder name',
       confirmLabel: 'Create',
       onSubmit: (value) => {
-        void runAction(() => createFolder(currentPath, value.trim()));
+        void runAction(() => createFolder(currentPath, value.trim()), 'Folder created');
       }
     });
   };
@@ -280,7 +302,7 @@ export function App() {
       return;
     }
     setRenaming(null);
-    void runAction(() => renamePath(entry.path, nextName));
+    void runAction(() => renamePath(entry.path, nextName), 'Item renamed');
   };
 
   const handleDelete = () => {
@@ -304,7 +326,7 @@ export function App() {
           }
           const response = await getTrash();
           setTrashEntries(response.entries ?? []);
-        });
+        }, 'Moved to trash');
       }
     });
   };
@@ -314,7 +336,7 @@ export function App() {
       await restoreTrash(entry.id);
       const response = await getTrash();
       setTrashEntries(response.entries ?? []);
-    });
+    }, 'Item restored');
   };
 
   const handleDeleteTrash = (entry: TrashEntry) => {
@@ -329,7 +351,7 @@ export function App() {
           await deleteTrash(entry.id);
           const response = await getTrash();
           setTrashEntries(response.entries ?? []);
-        });
+        }, 'Item deleted permanently');
       }
     });
   };
@@ -371,7 +393,7 @@ export function App() {
       await uploadFiles(currentPath, selectedFiles);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    });
+    }, `${selectedFiles.length} upload${selectedFiles.length === 1 ? '' : 's'} started`);
   };
 
   const handleLoggedIn = (nextSession: Session) => {
@@ -528,7 +550,7 @@ export function App() {
           }
         }
       }
-    });
+    }, dialog.mode === 'copy' ? 'Copy job started' : 'Move job started');
   };
 
   const handleCancelJob = (id: string) => {
@@ -536,7 +558,7 @@ export function App() {
       await cancelJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    });
+    }, 'Job cancelled');
   };
 
   const handleRetryJob = (id: string) => {
@@ -544,7 +566,7 @@ export function App() {
       await retryJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    });
+    }, 'Job retried');
   };
 
   const handlePauseJob = (id: string) => {
@@ -552,7 +574,7 @@ export function App() {
       await pauseJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    });
+    }, 'Job paused');
   };
 
   const handleResumeJob = (id: string) => {
@@ -560,7 +582,7 @@ export function App() {
       await resumeJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    });
+    }, 'Job resumed');
   };
 
   const handleSelectEntry = (entry: FileEntry, event: MouseEvent<HTMLElement>) => {
@@ -733,8 +755,9 @@ export function App() {
   }
 
   const shell = (
-    <main className="app-shell">
-      <aside className="sidebar">
+    <>
+      <main className="app-shell">
+        <aside className="sidebar">
         <div className="brand">
           <img className="brand-mark" src={appIcon} alt="" />
           <div>
@@ -1281,7 +1304,9 @@ export function App() {
           )}
         </div>
       </aside>
-    </main>
+      </main>
+      <ToastViewport toasts={toasts} onDismiss={dismissToast} />
+    </>
   );
 
   if (previewEntry) {
@@ -1300,7 +1325,10 @@ export function App() {
         <BatchRenameModal
           entries={selectedEntries}
           onClose={() => setBatchRenameOpen(false)}
-          onDone={() => { refresh(); }}
+          onDone={() => {
+            showToast({ title: 'Items renamed', variant: 'success' });
+            refresh();
+          }}
         />
       </>
     );
@@ -1402,6 +1430,28 @@ function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void })
         </button>
       </form>
     </main>
+  );
+}
+
+function ToastViewport({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
+  if (toasts.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="toast-viewport" aria-live="polite" aria-atomic="true">
+      {toasts.map((toast) => (
+        <div className={`toast toast-${toast.variant}`} key={toast.id}>
+          <div>
+            <strong>{toast.title}</strong>
+            {toast.message && <span>{toast.message}</span>}
+          </div>
+          <button type="button" onClick={() => onDismiss(toast.id)} aria-label="Dismiss notification">
+            <Icon name="window-close" size={16} />
+          </button>
+        </div>
+      ))}
+    </div>
   );
 }
 
