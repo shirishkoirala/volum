@@ -12,43 +12,61 @@ Volum is a self-hosted web file manager for Ubuntu and Docker home servers. It i
 - **Metadata** — Info panel, permissions editor (chmod rwx toggles), checksums (md5/sha256), folder size and disk usage
 - **Search** — Global search across all roots with content grep
 - **Desktop view** — Drive icons (like "My Computer"), trash icon with badge count, desktop-style navigation
-- **UX** — Context menus, keyboard shortcuts, rubber-band drag select, touch long-press on mobile, dark mode, loading skeletons, action toasts, browser notifications
+- **Sharing** — Create expiring share links with optional password and download limits
+- **UX** — Context menus, keyboard shortcuts, rubber-band drag select, touch long-press on mobile, dark mode, loading skeletons, action toasts, browser notifications, undo for rename/restore
 - **Auth** — Admin and readonly session-cookie auth with HMAC-signed cookies
 - **Safety** — Copy via `.partial` temp files with size verification, safe move (copy+verify+delete), per-root `.volum-trash/` recycle bin, configurable conflict policies (ask, skip, overwrite, rename, cancel)
 
+## Quick Start — Home Server
+
+1. Create a directory for Volum data and clone the repo:
+   ```sh
+   mkdir -p /opt/docker/volum/data /opt/docker/volum/storage
+   git clone https://github.com/shirishkoirala/volum /opt/docker/volum
+   cd /opt/docker/volum
+   ```
+
+2. Create `.env`:
+   ```env
+   VOLUM_ADMIN_PASSWORD=your-strong-password
+   VOLUM_SESSION_SECRET=$(openssl rand -base64 32)
+   VOLUM_AUTH_REQUIRED=true
+   VOLUM_ROOTS=/mnt/storage,/mnt/data,/opt/docker
+   VOLUM_DATA_DIR=/opt/docker/volum/data
+   VOLUM_STORAGE=/opt/docker/volum/storage
+   VOLUM_PUBLIC_URL=https://volum.yourdomain.com
+   ```
+
+3. Start Volum:
+   ```sh
+   docker compose up --build -d
+   ```
+
+4. Open `http://your-server-ip:8090` and log in with the admin password.
+
+For full server mode with host `/` access and automatic mounted-drive discovery, use `docker-compose.server.yml`:
+```sh
+docker compose -f docker-compose.server.yml up --build -d
+```
+
 ## Development
 
-Mac Docker:
-
-```sh
-mkdir -p storage data
-docker compose up --build
-```
-
-Open `http://localhost:8090`. The default Compose file exposes only the local `./storage` folder inside Volum, with SQLite stored in `./data/volum.db`.
-
-Mac Docker development with Vite frontend:
-
-```sh
-mkdir -p storage data
-docker compose -f docker-compose.dev.yml up --build
-```
-
-Open `http://localhost:5174` for the frontend dev server. The API runs at `http://localhost:8090`, and the frontend container proxies `/api` and `/healthz` to the API container.
-
 Backend:
-
 ```sh
 cd backend
 go run ./cmd/volum
 ```
 
 Frontend:
-
 ```sh
 cd frontend
 npm install
 npm run dev
+```
+
+Docker development (Vite hot reload):
+```sh
+docker compose -f docker-compose.dev.yml up --build
 ```
 
 ## Environment
@@ -64,6 +82,7 @@ VOLUM_AUTH_REQUIRED=true
 VOLUM_INCLUDE_ROOT=true
 VOLUM_DISCOVER_ROOTS=true
 VOLUM_HOST_ROOT=/host
+VOLUM_PUBLIC_URL=https://volum.example.com
 ```
 
 Authentication is disabled when both password variables are empty. Set `VOLUM_ADMIN_PASSWORD` to require login and allow write operations only for the admin role. Set `VOLUM_READONLY_PASSWORD` to allow a browse/download-only account. Use a long random `VOLUM_SESSION_SECRET` so sessions survive restarts.
@@ -71,11 +90,7 @@ Authentication is disabled when both password variables are empty. Set `VOLUM_AD
 ## Deployment
 
 ```sh
-docker compose -f docker-compose.homelab.yml up --build
+docker compose up --build -d
 ```
 
-The homelab Compose file exposes Volum on port `8090` and stores the SQLite database under `/opt/docker/volum`.
-
 For homelab use, expose Volum only over a private network such as Tailscale or WireGuard. Avoid publishing it directly to the public internet.
-
-For full Linux server mode with host `/` and automatic mounted-drive discovery, see `docs/linux-server.md` and `docker-compose.server.yml`.
