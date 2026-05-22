@@ -34,7 +34,7 @@ func run(log *slog.Logger) error {
 		return err
 	}
 
-	guard, err := security.NewRootGuard(cfg.Roots)
+	guard, err := security.NewRootGuardWithRoots(cfg.Roots)
 	if err != nil {
 		return err
 	}

@@ -11,8 +11,8 @@ services:
       - VOLUM_ROOTS=/storage
       - VOLUM_DB=/data/volum.db
       - VOLUM_PORT=8090
-      # Set these to enable login and protect write APIs.
-      - VOLUM_ADMIN_PASSWORD=123qwe
-      - VOLUM_READONLY_PASSWORD=123qwe
-      - VOLUM_SESSION_SECRET=b4z/gyKWN2iclkXBwJ+KD5GLOQ1hPdx8sf4Mmyz3kjA=
+      - VOLUM_AUTH_REQUIRED=${VOLUM_AUTH_REQUIRED:-false}
+      - VOLUM_ADMIN_PASSWORD=${VOLUM_ADMIN_PASSWORD:-}
+      - VOLUM_READONLY_PASSWORD=${VOLUM_READONLY_PASSWORD:-}
+      - VOLUM_SESSION_SECRET=${VOLUM_SESSION_SECRET:-}
     restart: unless-stopped

@@ -1,5 +1,10 @@
 export type RootEntry = {
   path: string;
+  label?: string;
+  source?: string;
+  fsType?: string;
+  discovered: boolean;
+  available: boolean;
   totalBytes: number;
   freeBytes: number;
   usedBytes: number;

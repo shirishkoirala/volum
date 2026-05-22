@@ -1037,7 +1037,8 @@ export function App() {
                 >
                   <DeviceIcon name="drive-harddisk" size={18} />
                   <span className="root-details">
-                    <span>{root.path}</span>
+                    <span>{rootLabel(root)}</span>
+                    <small>{root.path}</small>
                     <small>{formatRootUsage(root)}</small>
                     {root.totalBytes > 0 && (
                       <span className="root-meter" aria-hidden="true">
@@ -1444,12 +1445,13 @@ export function App() {
                 onClick={() => navigateTo(root.path)}
                 onContextMenu={(event) => {
                   event.preventDefault();
-                  setContextMenu({ x: event.clientX, y: event.clientY, entry: { name: root.path, path: root.path, type: 'directory', size: 0, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false } });
+                  setContextMenu({ x: event.clientX, y: event.clientY, entry: { name: rootLabel(root), path: root.path, type: 'directory', size: 0, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false } });
                 }}
                 type="button"
               >
                 <DeviceIcon name="drive-harddisk" size={64} />
-                <span className="desktop-icon-label">{root.path}</span>
+                <span className="desktop-icon-label">{rootLabel(root)}</span>
+                <small className="desktop-icon-usage">{root.path}</small>
                 <small className="desktop-icon-usage">{formatRootUsage(root)}</small>
               </button>
             ))}
@@ -2267,10 +2269,24 @@ function formatBytes(value: number) {
 }
 
 function formatRootUsage(root: RootEntry) {
+  if (!root.available) {
+    return 'Unavailable';
+  }
   if (root.totalBytes <= 0) {
     return 'Usage unavailable';
   }
-  return `${formatBytes(root.usedBytes)} used of ${formatBytes(root.totalBytes)} | ${formatBytes(root.freeBytes)} free`;
+  const fsType = root.fsType ? ` · ${root.fsType}` : '';
+  return `${formatBytes(root.usedBytes)} used of ${formatBytes(root.totalBytes)} | ${formatBytes(root.freeBytes)} free${fsType}`;
+}
+
+function rootLabel(root: RootEntry) {
+  if (root.label) {
+    return root.label;
+  }
+  if (root.path === '/') {
+    return 'Server root';
+  }
+  return root.path.split('/').filter(Boolean).pop() || root.path;
 }
 
 function formatGridDate(value: string) {

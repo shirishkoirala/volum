@@ -29,6 +29,11 @@ type Entry struct {
 
 type Root struct {
 	Path       string `json:"path"`
+	Label      string `json:"label,omitempty"`
+	Source     string `json:"source,omitempty"`
+	FSType     string `json:"fsType,omitempty"`
+	Discovered bool   `json:"discovered"`
+	Available  bool   `json:"available"`
 	TotalBytes int64  `json:"totalBytes"`
 	FreeBytes  int64  `json:"freeBytes"`
 	UsedBytes  int64  `json:"usedBytes"`
@@ -46,13 +51,13 @@ type TrashEntry struct {
 }
 
 type SearchResult struct {
-	Name        string `json:"name"`
-	Path        string `json:"path"`
-	Type        string `json:"type"`
-	Size        int64  `json:"size"`
-	ModifiedAt  string `json:"modifiedAt"`
-	Root        string `json:"root"`
-	LineMatch   string `json:"lineMatch,omitempty"`
+	Name       string `json:"name"`
+	Path       string `json:"path"`
+	Type       string `json:"type"`
+	Size       int64  `json:"size"`
+	ModifiedAt string `json:"modifiedAt"`
+	Root       string `json:"root"`
+	LineMatch  string `json:"lineMatch,omitempty"`
 }
 
 var (
@@ -76,14 +81,22 @@ func (s *Service) Roots() []string {
 }
 
 func (s *Service) RootUsage() []Root {
-	roots := s.guard.Roots()
+	roots := s.guard.RootEntries()
 	usage := make([]Root, 0, len(roots))
 	for _, root := range roots {
-		item := Root{Path: root}
-		if total, free, err := diskUsage(root); err == nil {
+		item := Root{
+			Path:       root.Path,
+			Label:      root.Label,
+			Source:     root.Source,
+			FSType:     root.FSType,
+			Discovered: root.Discovered,
+			Available:  root.Available,
+		}
+		if total, free, err := diskUsage(root.InternalPath); err == nil {
 			item.TotalBytes = total
 			item.FreeBytes = free
 			item.UsedBytes = max(total-free, 0)
+			item.Available = true
 		}
 		usage = append(usage, item)
 	}
@@ -119,11 +132,16 @@ func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
 			entryType = "directory"
 		}
 
+		itemPath := filepath.Join(resolved, name)
+		publicPath, err := s.guard.PublicPath(itemPath)
+		if err != nil {
+			continue
+		}
 		entries = append(entries, Entry{
 			Name:        name,
-			Path:        filepath.Join(resolved, name),
+			Path:        publicPath,
 			Type:        entryType,
-			Size:        entrySize(filepath.Join(resolved, name), info),
+			Size:        entrySize(itemPath, info),
 			ModifiedAt:  info.ModTime(),
 			Permissions: info.Mode().Perm().String(),
 			Owner:       ownerName(info),
@@ -152,9 +170,13 @@ func (s *Service) CreateFolder(parentPath, name string) (Entry, error) {
 		return Entry{}, err
 	}
 
-	target, err := s.resolveChild(parent, name)
+	targetPublic := filepath.Join(filepath.Clean(parentPath), name)
+	target, err := s.guard.Resolve(targetPublic)
 	if err != nil {
 		return Entry{}, err
+	}
+	if filepath.Dir(target) != parent {
+		return Entry{}, security.ErrPathTraversal
 	}
 	if _, err := os.Stat(target); err == nil {
 		return Entry{}, ErrDestinationExists
@@ -165,7 +187,7 @@ func (s *Service) CreateFolder(parentPath, name string) (Entry, error) {
 	if err := os.Mkdir(target, 0o755); err != nil {
 		return Entry{}, err
 	}
-	return entryFromPath(target)
+	return s.entryFromPath(target)
 }
 
 func (s *Service) Rename(path, newName string) (Entry, error) {
@@ -177,13 +199,17 @@ func (s *Service) Rename(path, newName string) (Entry, error) {
 	if err != nil {
 		return Entry{}, err
 	}
-	if s.isRoot(source) {
+	if s.guard.IsRoot(source) {
 		return Entry{}, ErrRootOperation
 	}
 
-	target, err := s.resolveChild(filepath.Dir(source), newName)
+	targetPublic := filepath.Join(filepath.Dir(filepath.Clean(path)), newName)
+	target, err := s.guard.Resolve(targetPublic)
 	if err != nil {
 		return Entry{}, err
+	}
+	if filepath.Dir(target) != filepath.Dir(source) {
+		return Entry{}, security.ErrPathTraversal
 	}
 	if _, err := os.Stat(target); err == nil {
 		return Entry{}, ErrDestinationExists
@@ -194,7 +220,7 @@ func (s *Service) Rename(path, newName string) (Entry, error) {
 	if err := os.Rename(source, target); err != nil {
 		return Entry{}, err
 	}
-	return entryFromPath(target)
+	return s.entryFromPath(target)
 }
 
 func (s *Service) Delete(path string) error {
@@ -207,7 +233,7 @@ func (s *Service) Chmod(path, mode string) (Entry, error) {
 	if err != nil {
 		return Entry{}, err
 	}
-	if s.isRoot(resolved) {
+	if s.guard.IsRoot(resolved) {
 		return Entry{}, ErrRootOperation
 	}
 
@@ -218,7 +244,7 @@ func (s *Service) Chmod(path, mode string) (Entry, error) {
 	if err := os.Chmod(resolved, parsed); err != nil {
 		return Entry{}, err
 	}
-	return entryFromPath(resolved)
+	return s.entryFromPath(resolved)
 }
 
 func parseMode(mode string) (os.FileMode, error) {
@@ -250,7 +276,7 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 	if err != nil {
 		return TrashEntry{}, err
 	}
-	if s.isRoot(resolved) {
+	if s.guard.IsRoot(resolved) {
 		return TrashEntry{}, ErrRootOperation
 	}
 	info, err := os.Stat(resolved)
@@ -258,11 +284,11 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 		return TrashEntry{}, err
 	}
 
-	root, ok := s.rootFor(resolved)
+	root, ok := s.guard.RootFor(resolved)
 	if !ok {
 		return TrashEntry{}, security.ErrOutsideRoots
 	}
-	trashRoot := filepath.Join(root, ".volum-trash")
+	trashRoot := filepath.Join(root.InternalPath, ".volum-trash")
 	if isPathInside(trashRoot, resolved) {
 		return TrashEntry{}, ErrTrashOperation
 	}
@@ -285,12 +311,12 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 	entry := TrashEntry{
 		ID:           id,
 		Name:         filepath.Base(resolved),
-		OriginalPath: resolved,
+		OriginalPath: path,
 		TrashPath:    trashPath,
 		Type:         entryType,
 		Size:         entrySize(resolved, info),
 		DeletedAt:    time.Now().UTC(),
-		RootPath:     root,
+		RootPath:     root.Path,
 	}
 
 	if err := os.Rename(resolved, trashPath); err != nil {
@@ -305,8 +331,8 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 
 func (s *Service) ListTrash() ([]TrashEntry, error) {
 	entries := []TrashEntry{}
-	for _, root := range s.guard.Roots() {
-		metaDir := filepath.Join(root, ".volum-trash", "meta")
+	for _, root := range s.guard.RootEntries() {
+		metaDir := filepath.Join(root.InternalPath, ".volum-trash", "meta")
 		items, err := os.ReadDir(metaDir)
 		if errors.Is(err, os.ErrNotExist) {
 			continue
@@ -339,24 +365,28 @@ func (s *Service) RestoreTrash(id string) (Entry, error) {
 	if err != nil {
 		return Entry{}, err
 	}
-	if _, ok := s.rootFor(entry.OriginalPath); !ok {
+	originalPath, err := s.guard.Resolve(entry.OriginalPath)
+	if err != nil {
+		return Entry{}, err
+	}
+	if _, ok := s.guard.RootFor(originalPath); !ok {
 		return Entry{}, security.ErrOutsideRoots
 	}
-	if _, err := os.Stat(entry.OriginalPath); err == nil {
+	if _, err := os.Stat(originalPath); err == nil {
 		return Entry{}, ErrDestinationExists
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return Entry{}, err
 	}
-	if err := os.MkdirAll(filepath.Dir(entry.OriginalPath), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(originalPath), 0o755); err != nil {
 		return Entry{}, err
 	}
-	if err := os.Rename(entry.TrashPath, entry.OriginalPath); err != nil {
+	if err := os.Rename(entry.TrashPath, originalPath); err != nil {
 		return Entry{}, err
 	}
 	if err := os.Remove(metaPath); err != nil {
 		return Entry{}, err
 	}
-	return entryFromPath(entry.OriginalPath)
+	return s.entryFromPath(originalPath)
 }
 
 func (s *Service) DeleteTrash(id string) error {
@@ -404,34 +434,12 @@ func (s *Service) ThumbnailPath(path string) (string, os.FileInfo, error) {
 	return resolved, info, nil
 }
 
-func (s *Service) resolveChild(parent, name string) (string, error) {
-	return s.guard.Resolve(filepath.Join(parent, name))
-}
-
-func (s *Service) isRoot(path string) bool {
-	for _, root := range s.guard.Roots() {
-		if path == root {
-			return true
-		}
-	}
-	return false
-}
-
-func (s *Service) rootFor(path string) (string, bool) {
-	for _, root := range s.guard.Roots() {
-		if isPathInside(root, path) {
-			return root, true
-		}
-	}
-	return "", false
-}
-
 func (s *Service) trashEntryByID(id string) (TrashEntry, string, error) {
 	if !validBaseName(id) {
 		return TrashEntry{}, "", ErrInvalidName
 	}
-	for _, root := range s.guard.Roots() {
-		metaPath := filepath.Join(root, ".volum-trash", "meta", id+".json")
+	for _, root := range s.guard.RootEntries() {
+		metaPath := filepath.Join(root.InternalPath, ".volum-trash", "meta", id+".json")
 		entry, err := readTrashEntry(metaPath)
 		if errors.Is(err, os.ErrNotExist) {
 			continue
@@ -477,8 +485,12 @@ func writeTrashEntry(path string, entry TrashEntry) error {
 	return os.WriteFile(path, data, 0o644)
 }
 
-func entryFromPath(path string) (Entry, error) {
+func (s *Service) entryFromPath(path string) (Entry, error) {
 	info, err := os.Stat(path)
+	if err != nil {
+		return Entry{}, err
+	}
+	publicPath, err := s.guard.PublicPath(path)
 	if err != nil {
 		return Entry{}, err
 	}
@@ -490,7 +502,7 @@ func entryFromPath(path string) (Entry, error) {
 
 	return Entry{
 		Name:        filepath.Base(path),
-		Path:        path,
+		Path:        publicPath,
 		Type:        entryType,
 		Size:        entrySize(path, info),
 		ModifiedAt:  info.ModTime(),
@@ -559,10 +571,10 @@ func (s *Service) Search(query string, maxResults int) ([]SearchResult, error) {
 
 	lower := strings.ToLower(query)
 	results := make([]SearchResult, 0)
-	roots := s.guard.Roots()
+	roots := s.guard.RootEntries()
 
 	for _, root := range roots {
-		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+		err := filepath.WalkDir(root.InternalPath, func(path string, entry os.DirEntry, walkErr error) error {
 			if walkErr != nil {
 				return nil
 			}
@@ -585,13 +597,17 @@ func (s *Service) Search(query string, maxResults int) ([]SearchResult, error) {
 				if entry.IsDir() {
 					entryType = "directory"
 				}
+				publicPath, err := s.guard.PublicPath(path)
+				if err != nil {
+					return nil
+				}
 				results = append(results, SearchResult{
 					Name:       name,
-					Path:       path,
+					Path:       publicPath,
 					Type:       entryType,
 					Size:       info.Size(),
 					ModifiedAt: info.ModTime().UTC().Format(time.RFC3339),
-					Root:       root,
+					Root:       root.Path,
 				})
 				if len(results) >= maxResults {
 					return errSearchComplete

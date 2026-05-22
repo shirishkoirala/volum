@@ -1,6 +1,6 @@
 # Security
 
-Volum only accesses configured roots from `VOLUM_ROOTS`.
+Volum only accesses configured roots from `VOLUM_ROOTS` plus roots explicitly enabled through server mode discovery.
 
 ## Path Rules
 
@@ -10,12 +10,13 @@ Volum only accesses configured roots from `VOLUM_ROOTS`.
 - Confirm the resolved path is inside an allowed root.
 - Never expose `/` unless explicitly configured.
 - Never trust frontend paths directly.
+- In Docker server mode, map public host paths to internal container paths before filesystem access.
 
 ## Roles
 
-The planned MVP roles are:
+Roles:
 
 - `admin`: browse, upload, download, copy, move, rename, delete, manage jobs
 - `readonly`: browse, preview, download
 
-Authentication is planned after the file and job foundations are stable.
+Set `VOLUM_AUTH_REQUIRED=true` for Linux server deployment. In that mode, Volum refuses to start without `VOLUM_ADMIN_PASSWORD` and `VOLUM_SESSION_SECRET`.

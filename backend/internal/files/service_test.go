@@ -324,7 +324,13 @@ func TestEntryFromPath(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	entry, err := entryFromPath(path)
+	guard, err := security.NewRootGuard([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := NewService(guard)
+
+	entry, err := service.entryFromPath(path)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,11 +345,45 @@ func TestEntryFromPath(t *testing.T) {
 	if err := os.Mkdir(dirPath, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	entry, err = entryFromPath(dirPath)
+	entry, err = service.entryFromPath(dirPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if entry.Type != "directory" {
 		t.Fatalf("expected directory type, got %s", entry.Type)
+	}
+}
+
+func TestServiceUsesPublicPathsWithHostMapping(t *testing.T) {
+	hostRoot := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(hostRoot, "mnt/disk"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(hostRoot, "mnt/disk/file.txt"), []byte("hello"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	guard, err := security.NewRootGuardWithRoots([]security.Root{{
+		Path:         "/mnt/disk",
+		InternalPath: filepath.Join(hostRoot, "mnt/disk"),
+		Label:        "disk",
+		Discovered:   true,
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := NewService(guard)
+
+	entries, err := service.List("/mnt/disk", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].Path != "/mnt/disk/file.txt" {
+		t.Fatalf("expected public path in entries, got %#v", entries)
+	}
+
+	roots := service.RootUsage()
+	if len(roots) != 1 || roots[0].Path != "/mnt/disk" || !roots[0].Discovered {
+		t.Fatalf("expected public discovered root, got %#v", roots)
 	}
 }

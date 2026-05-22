@@ -1,0 +1,27 @@
+services:
+  volum:
+    build: .
+    container_name: volum
+    ports:
+      - "${VOLUM_PORT:-8090}:8090"
+    volumes:
+      - type: bind
+        source: /
+        target: /host
+        bind:
+          propagation: rslave
+      - type: bind
+        source: /opt/docker/volum
+        target: /data
+    environment:
+      - VOLUM_AUTH_REQUIRED=true
+      - VOLUM_ADMIN_PASSWORD=${VOLUM_ADMIN_PASSWORD}
+      - VOLUM_SESSION_SECRET=${VOLUM_SESSION_SECRET}
+      - VOLUM_READONLY_PASSWORD=${VOLUM_READONLY_PASSWORD:-}
+      - VOLUM_INCLUDE_ROOT=true
+      - VOLUM_DISCOVER_ROOTS=true
+      - VOLUM_HOST_ROOT=/host
+      - VOLUM_ROOTS=${VOLUM_ROOTS:-}
+      - VOLUM_DB=/data/volum.db
+      - VOLUM_PORT=8090
+    restart: unless-stopped

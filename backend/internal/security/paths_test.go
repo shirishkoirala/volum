@@ -1,6 +1,7 @@
 package security
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -105,5 +106,62 @@ func TestRootGuardResolveSymlinkInPath(t *testing.T) {
 	_, err := g.Resolve("/storage/valid/../../etc/shadow")
 	if err == nil {
 		t.Fatal("expected error for traversal with parent dir")
+	}
+}
+
+func TestRootGuardHostPathMapping(t *testing.T) {
+	hostRoot := t.TempDir()
+	internalRoot := filepath.Join(hostRoot, "mnt/disk")
+	if err := os.MkdirAll(filepath.Join(internalRoot, "folder"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	g, err := NewRootGuardWithRoots([]Root{{
+		Path:         "/mnt/disk",
+		InternalPath: internalRoot,
+		Label:        "disk",
+		Discovered:   true,
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resolved, err := g.Resolve("/mnt/disk/folder")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resolved != filepath.Join(internalRoot, "folder") {
+		t.Fatalf("expected internal path, got %s", resolved)
+	}
+
+	publicPath, err := g.PublicPath(filepath.Join(internalRoot, "folder"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if publicPath != "/mnt/disk/folder" {
+		t.Fatalf("expected public path, got %s", publicPath)
+	}
+}
+
+func TestRootGuardRejectsHostMappingEscape(t *testing.T) {
+	hostRoot := t.TempDir()
+	internalRoot := filepath.Join(hostRoot, "storage")
+	outside := filepath.Join(hostRoot, "outside")
+	if err := os.MkdirAll(internalRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(outside, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(internalRoot, "link")); err != nil {
+		t.Fatal(err)
+	}
+
+	g, err := NewRootGuardWithRoots([]Root{{Path: "/storage", InternalPath: internalRoot}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := g.Resolve("/storage/link"); err == nil {
+		t.Fatal("expected symlink escape to be rejected")
 	}
 }

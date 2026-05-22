@@ -409,7 +409,8 @@ func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
-	targetDir, err := s.guard.Resolve(r.URL.Query().Get("path"))
+	targetPublic := r.URL.Query().Get("path")
+	targetDir, err := s.guard.Resolve(targetPublic)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -456,7 +457,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		}
 
 		expectedBytes := uploadSizes.Take(part.FileName())
-		job, err := s.uploadPart(r.Context(), targetDir, part, uploadConflictPolicy(r), expectedBytes)
+		job, err := s.uploadPart(r.Context(), targetPublic, targetDir, part, uploadConflictPolicy(r), expectedBytes)
 		part.Close()
 		if err != nil {
 			writeError(w, err)
@@ -472,13 +473,14 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, map[string]any{"jobs": uploaded})
 }
 
-func (s *Server) uploadPart(ctx context.Context, targetDir string, part *multipart.Part, conflictPolicy string, expectedBytes int64) (jobs.Job, error) {
+func (s *Server) uploadPart(ctx context.Context, targetPublic, targetDir string, part *multipart.Part, conflictPolicy string, expectedBytes int64) (jobs.Job, error) {
 	name := filepath.Base(part.FileName())
 	if !validUploadName(name) {
 		return jobs.Job{}, files.ErrInvalidName
 	}
 
-	destination, err := s.guard.Resolve(filepath.Join(targetDir, name))
+	destinationPublic := filepath.Join(filepath.Clean(targetPublic), name)
+	destination, err := s.guard.Resolve(destinationPublic)
 	if err != nil {
 		return jobs.Job{}, err
 	}
@@ -489,12 +491,15 @@ func (s *Server) uploadPart(ctx context.Context, targetDir string, part *multipa
 	if err != nil {
 		return jobs.Job{}, err
 	}
-	name = filepath.Base(destination)
+	if publicPath, err := s.guard.PublicPath(destination); err == nil {
+		destinationPublic = publicPath
+	}
+	name = filepath.Base(destinationPublic)
 
 	job, err := s.jobs.Create(ctx, jobs.CreateRequest{
 		Type:            jobs.TypeUpload,
 		SourcePath:      name,
-		DestinationPath: destination,
+		DestinationPath: destinationPublic,
 		ConflictPolicy:  conflictPolicy,
 		VerifyMode:      "size",
 	})
@@ -604,6 +609,9 @@ func (s *Server) uploadPart(ctx context.Context, targetDir string, part *multipa
 		return jobs.Job{}, err
 	} else if finalDestination != destination {
 		destination = finalDestination
+		if publicPath, err := s.guard.PublicPath(destination); err == nil {
+			destinationPublic = publicPath
+		}
 	}
 	if err := os.Rename(tempPath, destination); err != nil {
 		_ = os.Remove(tempPath)
@@ -624,7 +632,7 @@ func (s *Server) uploadPart(ctx context.Context, targetDir string, part *multipa
 	if err := s.jobs.CompleteJob(ctx, job.ID); err != nil {
 		return jobs.Job{}, err
 	}
-	if err := s.jobs.CreateAuditLog(ctx, "upload", destination, "uploaded "+name); err != nil {
+	if err := s.jobs.CreateAuditLog(ctx, "upload", destinationPublic, "uploaded "+name); err != nil {
 		return jobs.Job{}, err
 	}
 	return s.jobs.Get(ctx, job.ID)
@@ -746,14 +754,19 @@ func (s *Server) handleCreateExtractJob(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unsupported archive format, supported: .zip, .tar, .tar.gz, .tgz"})
 		return
 	}
-	req.SourcePath = source
-
+	if _, err := s.guard.Resolve(req.DestinationPath); err != nil {
+		writeError(w, err)
+		return
+	}
 	destination, err := s.guard.Resolve(req.DestinationPath)
 	if err != nil {
 		writeError(w, err)
 		return
 	}
-	req.DestinationPath = destination
+	if destination == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "destinationPath is required"})
+		return
+	}
 
 	job, err := s.jobs.Create(r.Context(), req)
 	if err != nil {
@@ -784,15 +797,14 @@ func (s *Server) handleCreateChecksumJob(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	source, err := s.guard.Resolve(req.SourcePath)
-	if err != nil {
+	if _, err := s.guard.Resolve(req.SourcePath); err != nil {
 		writeError(w, err)
 		return
 	}
 
 	job, err := s.jobs.Create(r.Context(), jobs.CreateRequest{
 		Type:       jobs.TypeChecksum,
-		SourcePath: source,
+		SourcePath: req.SourcePath,
 		VerifyMode: req.VerifyMode,
 	})
 	if err != nil {
@@ -814,13 +826,10 @@ func (s *Server) handleCreateTransferJob(w http.ResponseWriter, r *http.Request,
 		writeError(w, err)
 		return
 	}
-	destination, err := s.guard.Resolve(req.DestinationPath)
-	if err != nil {
+	if _, err := s.guard.Resolve(req.DestinationPath); err != nil {
 		writeError(w, err)
 		return
 	}
-	req.SourcePath = source
-	req.DestinationPath = destination
 	if jobType == jobs.TypeMove {
 		if _, err := os.Stat(source); err != nil {
 			writeError(w, err)
@@ -834,7 +843,7 @@ func (s *Server) handleCreateTransferJob(w http.ResponseWriter, r *http.Request,
 		return
 	}
 	if jobType == jobs.TypeMove {
-		if err := s.jobs.CreateAuditLog(r.Context(), "move_queued", source, "queued move to "+destination); err != nil {
+		if err := s.jobs.CreateAuditLog(r.Context(), "move_queued", req.SourcePath, "queued move to "+req.DestinationPath); err != nil {
 			writeError(w, err)
 			return
 		}

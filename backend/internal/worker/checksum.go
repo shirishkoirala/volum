@@ -66,7 +66,7 @@ func (w *Worker) checksumOne(ctx context.Context, jobID, source, mode string) er
 	}); err != nil {
 		return err
 	}
-	if err := w.store.UpdateJobProgress(ctx, jobID, 1, 1, source); err != nil {
+	if err := w.store.UpdateJobProgress(ctx, jobID, 1, 1, w.publicPath(source)); err != nil {
 		return err
 	}
 	return w.store.CompleteJob(ctx, jobID)
@@ -133,7 +133,7 @@ func (w *Worker) checksumDir(ctx context.Context, jobID, source, mode string) er
 			return err
 		}
 		processedItems++
-		if err := w.store.UpdateJobProgress(ctx, jobID, processedItems, processedItems, path); err != nil {
+		if err := w.store.UpdateJobProgress(ctx, jobID, processedItems, processedItems, w.publicPath(path)); err != nil {
 			return err
 		}
 		return nil

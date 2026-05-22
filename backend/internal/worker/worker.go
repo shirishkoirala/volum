@@ -131,7 +131,7 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 	if err != nil {
 		return err
 	}
-	if job.Type == jobs.TypeMove && w.isRoot(source) {
+	if job.Type == jobs.TypeMove && w.guard.IsRoot(source) {
 		return errors.New("operation is not allowed on a configured root")
 	}
 	if containsPath(source, destination) {
@@ -181,7 +181,7 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 		}
 		processedBytes += copied
 		processedItems++
-		if err := w.store.UpdateJobProgress(ctx, job.ID, processedBytes, processedItems, item.Source); err != nil {
+		if err := w.store.UpdateJobProgress(ctx, job.ID, processedBytes, processedItems, w.publicPath(item.Source)); err != nil {
 			return err
 		}
 	}
@@ -302,7 +302,7 @@ func (w *Worker) resumeTransferItems(ctx context.Context, jobID string, storedIt
 	}
 	currentItem := ""
 	if len(items) > 0 {
-		currentItem = items[0].Source
+		currentItem = w.publicPath(items[0].Source)
 	}
 	if err := w.store.UpdateJobProgress(ctx, jobID, processedBytes, processedItems, currentItem); err != nil {
 		return nil, 0, 0, err
@@ -459,7 +459,7 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 				temp.Close()
 				return copied, err
 			}
-			if err := w.store.UpdateJobProgress(ctx, job.ID, baseBytes+copied, processedItems, item.Source); err != nil {
+			if err := w.store.UpdateJobProgress(ctx, job.ID, baseBytes+copied, processedItems, w.publicPath(item.Source)); err != nil {
 				temp.Close()
 				return copied, err
 			}
@@ -568,16 +568,7 @@ func (w *Worker) finishMove(ctx context.Context, job jobs.Job, source string) er
 	if err := os.RemoveAll(source); err != nil {
 		return err
 	}
-	return w.store.CreateAuditLog(ctx, "move", source, fmt.Sprintf("moved to %s", deref(job.DestinationPath)))
-}
-
-func (w *Worker) isRoot(path string) bool {
-	for _, root := range w.guard.Roots() {
-		if path == root {
-			return true
-		}
-	}
-	return false
+	return w.store.CreateAuditLog(ctx, "move", w.publicPath(source), fmt.Sprintf("moved to %s", deref(job.DestinationPath)))
 }
 
 func containsPath(parent, child string) bool {
@@ -593,6 +584,14 @@ func deref(value *string) string {
 		return ""
 	}
 	return *value
+}
+
+func (w *Worker) publicPath(path string) string {
+	publicPath, err := w.guard.PublicPath(path)
+	if err != nil {
+		return path
+	}
+	return publicPath
 }
 
 func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, error) {
@@ -648,7 +647,7 @@ func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, erro
 	if err := w.store.UpdateJobProgress(ctx, job.ID, info.Size(), 1, *job.SourcePath); err != nil {
 		return "", err
 	}
-	if err := w.store.CreateAuditLog(ctx, "archive", archivePath, "created archive from "+*job.SourcePath); err != nil {
+	if err := w.store.CreateAuditLog(ctx, "archive", w.publicPath(archivePath), "created archive from "+*job.SourcePath); err != nil {
 		return "", err
 	}
 	if err := w.store.CompleteJob(ctx, job.ID); err != nil {
@@ -689,7 +688,7 @@ func (w *Worker) processExtract(ctx context.Context, job jobs.Job) (string, erro
 	default:
 		return "", fmt.Errorf("unsupported archive format: %s (supported: .zip, .tar, .tar.gz, .tgz)", format)
 	}
-	if err := w.store.CreateAuditLog(ctx, "extract", dest, "extracted from "+*job.SourcePath); err != nil {
+	if err := w.store.CreateAuditLog(ctx, "extract", w.publicPath(dest), "extracted from "+*job.SourcePath); err != nil {
 		return "", err
 	}
 	if err := w.store.CompleteJob(ctx, job.ID); err != nil {
