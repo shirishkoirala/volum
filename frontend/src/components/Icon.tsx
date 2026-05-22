@@ -1,9 +1,9 @@
 import type { FileEntry } from '../api/client';
 import {
-  Archive, ChevronRight, CheckSquare, Clipboard, Copy, Download,
+  Archive, Bookmark, ChevronRight, CheckSquare, Clipboard, Copy, Download,
   Eye, EyeOff, FileInput, FolderPlus, Grid3X3, Info,
-  ListTree, LogOut, ListX, Pause, Pencil, Play, RefreshCw, RotateCcw,
-  Scissors, Search, Square, Trash2, Upload, X, type LucideIcon,
+  ListTree, LogOut, ListX, Moon, Pause, Pencil, Play, RefreshCw, RotateCcw,
+  Scissors, Search, Square, Sun, Trash2, Upload, X, type LucideIcon,
 } from 'lucide-react';
 import { fileTypeIconUrl, folderIconUrl, driveIconUrl, trashIconUrl } from '../api/icons';
 
@@ -12,6 +12,7 @@ type IconProps = { name: string; size?: number; className?: string };
 const ACTION_ICONS: Record<string, LucideIcon> = {
   'archive-create': Archive,
   'archive-extract': Archive,
+  'bookmark-new': Bookmark,
   'dialog-information': Info,
   'document-import': Upload,
   'document-open': FileInput,
@@ -36,6 +37,8 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'view-preview': Eye,
   'view-refresh': RefreshCw,
   'edit-restore': RotateCcw,
+  'weather-clear': Sun,
+  'weather-clear-night': Moon,
   'window-close': X,
 };
 
