@@ -121,8 +121,14 @@ These are useful, but should not interrupt the phases above unless they become r
 - End-to-end browser tests with Playwright
 - Internationalization
 
+## Completed
+
+- [x] Docs refresh: `README.md`, `docs/security.md`, and `docs/handoff.md` updated to reflect actual product state.
+- [x] Frontend tests expanded: dialog component tests (`ConfirmDialog`, `TextInputDialog`, `ToastViewport`, `FolderSuggestions`) and `FolderPicker` tests added.
+- [x] Reusable `FolderPicker` component built and wired into `TransferDialog` for copy/move destination browsing.
+
 ## Next Three Tasks
 
-1. Bring docs up to date: `README.md`, `docs/security.md`, and `docs/handoff.md`.
-2. Add focused frontend workflow tests for selection, dialogs, and readonly permissions.
-3. Build the reusable folder picker and wire it into copy, move, archive, and extract.
+1. Add conflict preview before large copy/move/extract operations so users know what will skip, overwrite, or rename.
+2. Improve drag-and-drop inside the app: drag selected files into folders to move/copy with a modifier-aware confirmation.
+3. Add breadcrumb overflow handling and quick root switching for deep paths.

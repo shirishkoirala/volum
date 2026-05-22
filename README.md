@@ -1,20 +1,20 @@
 # Volum
 
-Volum is a self-hosted web file manager for Ubuntu and Docker home servers. It is designed around a reliable backend job engine so long-running filesystem operations can continue after the browser closes.
+Volum is a self-hosted web file manager for Ubuntu and Docker home servers. It is designed around a reliable backend job engine so long-running filesystem operations (copy, move, delete, archive, upload) can continue on the server even if the browser window is closed.
 
-## Current Scope
+## Features
 
-This repository starts the MVP foundation:
-
-- Go API server
-- Configurable storage roots via `VOLUM_ROOTS`
-- Optional Linux server mode with host `/` and mounted drive discovery
-- Server-side path validation
-- SQLite schema for persistent jobs
-- File listing API
-- Job API skeleton with persistent state
-- React + TypeScript frontend shell
-- Docker and Compose deployment files
+- **File browsing** — Grid, list, and column (macOS Finder-style) views with sorting, hidden file toggle, favorites, and recents
+- **File actions** — Create folder, rename, batch rename, copy, move, trash with restore, permanent delete
+- **Background jobs** — Persistent SQLite-backed jobs with real-time SSE progress, cancel, retry (including per-item retry), pause/resume
+- **Upload & download** — Upload with size verification, single-file download, streamed directory zip download
+- **Archives** — Create and extract zip, tar, tar.gz
+- **Metadata** — Info panel, permissions editor (chmod rwx toggles), checksums (md5/sha256), folder size and disk usage
+- **Search** — Global search across all roots with content grep
+- **Desktop view** — Drive icons (like "My Computer"), trash icon with badge count, desktop-style navigation
+- **UX** — Context menus, keyboard shortcuts, rubber-band drag select, touch long-press on mobile, dark mode, loading skeletons, action toasts, browser notifications
+- **Auth** — Admin and readonly session-cookie auth with HMAC-signed cookies
+- **Safety** — Copy via `.partial` temp files with size verification, safe move (copy+verify+delete), per-root `.volum-trash/` recycle bin, configurable conflict policies (ask, skip, overwrite, rename, cancel)
 
 ## Development
 
@@ -54,7 +54,7 @@ npm run dev
 ## Environment
 
 ```txt
-VOLUM_ROOTS=/mnt/storage,/mnt/data1,/mnt/data2,/mnt/backup,/opt/docker
+VOLUM_ROOTS=/mnt/storage,/mnt/data1
 VOLUM_DB=/data/volum.db
 VOLUM_PORT=8090
 VOLUM_ADMIN_PASSWORD=change-me

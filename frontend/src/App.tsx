@@ -46,6 +46,8 @@ import appIcon from './assets/icon-light.png';
 import { PreviewModal } from './components/PreviewModal';
 import { BatchRenameModal } from './components/BatchRenameModal';
 import { InfoPanel } from './components/InfoPanel';
+import { ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport } from './components/Dialogs';
+import type { ConfirmDialogState, TextInputDialogState, TransferDialogState, Toast } from './components/Dialogs';
 
 type ViewMode = 'list' | 'grid' | 'columns';
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
@@ -59,39 +61,10 @@ type RenameState = {
   path: string;
   value: string;
 } | null;
-type ConfirmDialogState = {
-  title: string;
-  message: string;
-  confirmLabel: string;
-  danger?: boolean;
-  onConfirm: () => void;
-} | null;
-type TextInputDialogState = {
-  title: string;
-  label: string;
-  initialValue?: string;
-  placeholder?: string;
-  confirmLabel: string;
-  folderSuggestions?: string[];
-  suggestionLabel?: string;
-  applyFolderSuggestion?: (path: string) => string;
-  onSubmit: (value: string) => void;
-} | null;
-type TransferDialogState = {
-  mode: 'copy' | 'move';
-  entries: FileEntry[];
-  initialDestination: string;
-} | null;
 type ClipboardState = {
   mode: 'copy' | 'move';
   entries: FileEntry[];
 } | null;
-type Toast = {
-  id: number;
-  title: string;
-  message?: string;
-  variant: 'success' | 'error';
-};
 
 export function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -1895,249 +1868,9 @@ function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void })
   );
 }
 
-function ToastViewport({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
-  if (toasts.length === 0) {
-    return null;
-  }
 
-  return (
-    <div className="toast-viewport" aria-live="polite" aria-atomic="true">
-      {toasts.map((toast) => (
-        <div className={`toast toast-${toast.variant}`} key={toast.id}>
-          <div>
-            <strong>{toast.title}</strong>
-            {toast.message && <span>{toast.message}</span>}
-          </div>
-          <button type="button" onClick={() => onDismiss(toast.id)} aria-label="Dismiss notification">
-            <Icon name="window-close" size={16} />
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-}
 
-function ConfirmDialog({ dialog, onClose }: { dialog: NonNullable<ConfirmDialogState>; onClose: () => void }) {
-  useDialogEscape(onClose);
 
-  const handleConfirm = () => {
-    onClose();
-    dialog.onConfirm();
-  };
-
-  return (
-    <div className="dialog-overlay" onClick={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="app-dialog app-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
-        <div className="app-dialog-header">
-          <h3 id="confirm-dialog-title">{dialog.title}</h3>
-          <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
-            <Icon name="window-close" size={18} />
-          </button>
-        </div>
-        <p className="dialog-message">{dialog.message}</p>
-        <div className="dialog-actions">
-          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
-          <button
-            type="button"
-            className={`dialog-button ${dialog.danger ? 'danger' : 'primary'}`}
-            onClick={handleConfirm}
-          >
-            {dialog.confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextInputDialogState>; onClose: () => void }) {
-  const [value, setValue] = useState(dialog.initialValue ?? '');
-  const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useDialogEscape(onClose);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-    inputRef.current?.select();
-  }, []);
-
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    const trimmed = value.trim();
-    if (!trimmed) {
-      setError(`${dialog.label} is required.`);
-      return;
-    }
-    dialog.onSubmit(trimmed);
-    onClose();
-  };
-
-  return (
-    <div className="dialog-overlay" onClick={(event) => event.target === event.currentTarget && onClose()}>
-      <form className="app-dialog app-dialog-sm" role="dialog" aria-modal="true" aria-labelledby="text-dialog-title" onSubmit={handleSubmit}>
-        <div className="app-dialog-header">
-          <h3 id="text-dialog-title">{dialog.title}</h3>
-          <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
-            <Icon name="window-close" size={18} />
-          </button>
-        </div>
-        <label className="dialog-field">
-          <span>{dialog.label}</span>
-          <input
-            ref={inputRef}
-            value={value}
-            placeholder={dialog.placeholder}
-            onChange={(event) => {
-              setValue(event.target.value);
-              setError(null);
-            }}
-          />
-        </label>
-        {dialog.folderSuggestions && dialog.folderSuggestions.length > 0 && (
-          <FolderSuggestions
-            label={dialog.suggestionLabel ?? 'Folders'}
-            paths={dialog.folderSuggestions}
-            onSelect={(path) => {
-              setValue(dialog.applyFolderSuggestion ? dialog.applyFolderSuggestion(path) : normalizeFolderPath(path));
-              setError(null);
-            }}
-          />
-        )}
-        {error && <p className="dialog-error">{error}</p>}
-        <div className="dialog-actions">
-          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="dialog-button primary">{dialog.confirmLabel}</button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-function TransferDialog({
-  dialog,
-  folderSuggestions,
-  onClose,
-  onSubmit
-}: {
-  dialog: NonNullable<TransferDialogState>;
-  folderSuggestions: string[];
-  onClose: () => void;
-  onSubmit: (dialog: TransferDialogState, destinationValue: string, conflictPolicy: ConflictPolicy) => void;
-}) {
-  const [destination, setDestination] = useState(dialog.initialDestination);
-  const [conflictPolicy, setConflictPolicy] = useState<ConflictPolicy>('ask');
-  const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const title = dialog.mode === 'copy' ? 'Copy Items' : 'Move Items';
-  const actionLabel = dialog.mode === 'copy' ? 'Copy' : 'Move';
-  const itemLabel = dialog.entries.length === 1 ? dialog.entries[0].name : `${dialog.entries.length} selected items`;
-
-  useDialogEscape(onClose);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-    inputRef.current?.select();
-  }, []);
-
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    if (destination.split('|').map((s) => s.trim()).filter(Boolean).length === 0) {
-      setError('Destination folder path is required.');
-      return;
-    }
-    onSubmit(dialog, destination, conflictPolicy);
-  };
-
-  return (
-    <div className="dialog-overlay" onClick={(event) => event.target === event.currentTarget && onClose()}>
-      <form className="app-dialog" role="dialog" aria-modal="true" aria-labelledby="transfer-dialog-title" onSubmit={handleSubmit}>
-        <div className="app-dialog-header">
-          <div>
-            <h3 id="transfer-dialog-title">{title}</h3>
-            <p>{itemLabel}</p>
-          </div>
-          <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
-            <Icon name="window-close" size={18} />
-          </button>
-        </div>
-        <label className="dialog-field">
-          <span>Destination folder path</span>
-          <input
-            ref={inputRef}
-            value={destination}
-            onChange={(event) => {
-              setDestination(event.target.value);
-              setError(null);
-            }}
-            placeholder="/path/to/folder"
-          />
-        </label>
-        <p className="dialog-help">Use | to send items to multiple destinations.</p>
-        {folderSuggestions.length > 0 && (
-          <FolderSuggestions
-            label="Choose destination"
-            paths={folderSuggestions}
-            onSelect={(path) => {
-              setDestination(normalizeFolderPath(path));
-              setError(null);
-            }}
-          />
-        )}
-        <label className="dialog-field">
-          <span>If a file already exists</span>
-          <select value={conflictPolicy} onChange={(event) => setConflictPolicy(event.target.value as ConflictPolicy)}>
-            <option value="ask">Ask when needed</option>
-            <option value="skip">Skip existing files</option>
-            <option value="overwrite">Overwrite existing files</option>
-            <option value="rename">Rename new files</option>
-            <option value="cancel">Cancel the job</option>
-          </select>
-        </label>
-        {error && <p className="dialog-error">{error}</p>}
-        <div className="dialog-actions">
-          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
-          <button type="submit" className="dialog-button primary">{actionLabel}</button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-function FolderSuggestions({
-  label,
-  paths,
-  onSelect
-}: {
-  label: string;
-  paths: string[];
-  onSelect: (path: string) => void;
-}) {
-  return (
-    <div className="dialog-suggestions">
-      <span>{label}</span>
-      <div>
-        {paths.map((path) => (
-          <button key={path} type="button" onClick={() => onSelect(path)} title={path}>
-            {folderSuggestionLabel(path)}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function useDialogEscape(onClose: () => void) {
-  useEffect(() => {
-    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-}
 
 function JobItem({
   job,
@@ -2362,14 +2095,6 @@ function uniquePaths(paths: string[]) {
     out.push(normalized);
   }
   return out;
-}
-
-function folderSuggestionLabel(path: string) {
-  if (path === '/') {
-    return '/';
-  }
-  const parts = path.split('/').filter(Boolean);
-  return parts.length > 0 ? parts[parts.length - 1] : path;
 }
 
 function buildColumnPath(currentPath: string, roots: string[] = ['/']): string[] {

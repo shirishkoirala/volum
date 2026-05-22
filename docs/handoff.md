@@ -10,7 +10,6 @@ Volum is a self-hosted Docker file manager with a Go backend API, React/Vite fro
 - Desktop view with drive icons (like "My Computer") and trash icon
 - Browse configured roots, list files, preview images/video/audio/text/PDF
 - Create folders, rename, move-to-trash with restore, delete permanently
-- Create folders, rename, move-to-trash with restore, delete permanently
 - Upload files with drag-and-drop and size verification
 - Download files or directories (streamed as zip on-the-fly)
 - Copy/move files via background jobs with conflict policies (ask, skip, overwrite, rename, cancel)
@@ -31,6 +30,7 @@ Volum is a self-hosted Docker file manager with a Go backend API, React/Vite fro
 - Image thumbnails in grid view
 - Rubber band drag-select for multi-select
 - Touch-friendly long-press context menu on mobile
+- Folder picker component for copy/move/archive/extract destination selection
 
 ## Repository Notes
 
@@ -57,8 +57,10 @@ Volum is a self-hosted Docker file manager with a Go backend API, React/Vite fro
 - `backend/internal/storage/sqlite.go`: SQLite open and schema migration
 - `frontend/src/App.tsx`: main UI shell with all views and dialogs
 - `frontend/src/api/client.ts`: frontend API client types and requests
+- `frontend/src/components/FolderPicker.tsx`: reusable folder picker for destination selection
 - `frontend/src/components/BatchRenameModal.tsx`: batch rename UI
 - `frontend/src/components/InfoPanel.tsx`: file info panel with permissions editor
+- `frontend/src/components/PreviewModal.tsx`: file preview (image/video/audio/text/PDF)
 - `frontend/src/styles/global.css`: design tokens and component styles
 - `docker-compose.yml`: single-container production-style run
 - `docker-compose.dev.yml`: Dockerized backend plus Vite frontend
@@ -116,12 +118,14 @@ For homelab deployment, use `docker-compose.homelab.yml`.
 
 - Export/import job history (low priority)
 - Frontend component test coverage could be expanded
-
-## Immediate Next Tasks
-
-1. Export/import job history
-2. Expand frontend component test coverage
-3. Feature requests and bug fixes from real usage
+- Conflict preview before large copy/move/extract operations
+- Drag-and-drop files into folders for move/copy
+- Breadcrumb overflow handling and quick root switching
+- Saved view preferences per folder
+- Undo for trash restore, rename, move
+- Sharing and collaboration (expiring share links)
+- Observability (settings/status page, structured logging, DB maintenance)
+- Versioning and release process
 
 ## Safety Rules For Next Agent
 
