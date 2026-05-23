@@ -17,8 +17,28 @@ type BreadcrumbBarProps = {
 
 export function BreadcrumbBar({ crumbs, onBack, onNavigate, children }: BreadcrumbBarProps) {
   const navRef = useRef<HTMLDivElement>(null);
+  const overflowRef = useRef<HTMLDivElement>(null);
   const [overflowCount, setOverflowCount] = useState(0);
   const [showOverflow, setShowOverflow] = useState(false);
+
+  useEffect(() => {
+    if (!showOverflow) return;
+    const handler = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent) {
+        if (e.key === 'Escape') setShowOverflow(false);
+        return;
+      }
+      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
+        setShowOverflow(false);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    document.addEventListener('mousedown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+      document.removeEventListener('mousedown', handler);
+    };
+  }, [showOverflow]);
 
   useEffect(() => {
     const el = navRef.current;
@@ -93,7 +113,7 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, children }: Breadcru
                   <span className={styles.overflowBtn}>···</span>
                 </span>
                 {showOverflow && (
-                  <div className={styles.overflowMenu}>
+                  <div ref={overflowRef} className={styles.overflowMenu}>
                     {overflowCrumbs.map((crumb) => (
                       <button
                         key={crumb.path}
@@ -117,7 +137,7 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, children }: Breadcru
                     <span className={styles.overflowDots} onClick={() => setShowOverflow(!showOverflow)}>
                       <span className={styles.overflowBtn}>···</span>
                       {showOverflow && (
-                        <div className={styles.overflowMenu}>
+                        <div ref={overflowRef} className={styles.overflowMenu}>
                           <button
                             type="button"
                             className={styles.overflowItem}

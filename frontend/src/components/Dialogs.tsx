@@ -265,7 +265,7 @@ export function FolderPicker({
         {loading ? (
           <div className={styles.folderPickerLoading}>Loading...</div>
         ) : error ? (
-          <div className={styles.folderPickerError}>{error}</div>
+          <div className={styles.folderPickerError}>{error} <button type="button" onClick={() => loadSubdirs(currentDir)}>Retry</button></div>
         ) : subdirs.length === 0 ? (
           <div className={styles.folderPickerEmpty}>No subdirectories</div>
         ) : (

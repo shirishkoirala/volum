@@ -55,8 +55,9 @@ import { ShareDialog } from './components/ShareDialog';
 import { ShareManager } from './components/ShareManager';
 import { SettingsPanel } from './components/SettingsPanel';
 import { Overlay, IconImg } from './components/shared';
-import { folderIconUrl, preferencesIconUrl } from './api/icons';
+import { folderIconUrl, preferencesIconUrl, jobsIconUrl } from './api/icons';
 import { ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport } from './components/Dialogs';
+import { JobsPage } from './components/JobsPage';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState, Toast } from './components/Dialogs';
 import styles from './App.module.css';
 
@@ -143,6 +144,7 @@ export function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [showingTrash, setShowingTrash] = useState(false);
   const [showingSettings, setShowingSettings] = useState(false);
+  const [showingJobs, setShowingJobs] = useState(false);
   const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
   const [lastSelectedTrashId, setLastSelectedTrashId] = useState<string | null>(null);
@@ -159,7 +161,9 @@ export function App() {
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileGridRef = useRef<HTMLDivElement>(null);
+  const longPressTimerRef = useRef<number | null>(null);
   const longPressEntry = useRef<{ entry: FileEntry; x: number; y: number } | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const canWrite = session?.role === 'admin';
 
@@ -354,6 +358,7 @@ export function App() {
   const navigateTo = (path: string) => {
     pushRecent(path);
     setCurrentPath(path);
+    setShowingJobs(false);
     localStorage.setItem('volum_currentPath', path);
     setSearchOpen(false);
     setSearchResults(null);
@@ -668,7 +673,7 @@ export function App() {
     }
     getTrash()
       .then((response) => setTrashEntries(response.entries ?? []))
-      .catch(() => undefined);
+      .catch((err) => console.error('Failed to fetch trash:', err));
   }, [session, sessionLoading, refreshKey]);
 
   useEffect(() => {
@@ -682,7 +687,7 @@ export function App() {
         jobStatuses.current = new Map(initialJobs.map((j) => [j.id, j.status]));
         setJobs(initialJobs);
       })
-      .catch(() => undefined);
+      .catch((err) => console.error('Failed to fetch jobs:', err));
 
     const events = new EventSource('/api/jobs/events');
     events.addEventListener('jobs', (event) => {
@@ -707,7 +712,9 @@ export function App() {
       jobStatuses.current = new Map(nextJobs.map((j) => [j.id, j.status]));
       setJobs(nextJobs);
     });
-    events.onerror = () => undefined;
+    events.onerror = () => {
+      console.warn('SSE connection lost, will auto-reconnect');
+    };
     return () => events.close();
   }, [session, sessionLoading]);
 
@@ -1181,7 +1188,7 @@ export function App() {
       const height = Math.abs(endY - rubberBand.current.startY);
       setRubberBandStyle({ left, top, width, height });
 
-      const gridRects = fileGridRef.current?.querySelectorAll('.file-row');
+      const gridRects = fileGridRef.current?.querySelectorAll('[data-index]');
       if (!gridRects) return;
       const bandRect = { left, top, right: left + width, bottom: top + height };
       const selected: string[] = [];
@@ -1346,9 +1353,12 @@ export function App() {
   const shell = (
     <>
       <main className={`${styles.appShell}${sidebarCollapsed ? ` ${styles.sidebarHidden}` : ''}`}>
+        <button className={`${styles.sidebarToggle}${sidebarCollapsed ? ` ${styles.sidebarToggleCollapsed}` : ''}`} onClick={() => { setSidebarCollapsed(v => { const next = !v; localStorage.setItem('volum_sidebarCollapsed', String(next)); return next; }); }} type="button" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+          <Icon name="go-next" size={16} className={sidebarCollapsed ? '' : styles.sidebarToggleOpen} />
+        </button>
         <aside className={styles.sidebar}>
           <div className={styles.sidebarHeader}>
-            <button className={styles.brand} onClick={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); }} type="button" title="Go to desktop">
+            <button className={styles.brand} onClick={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); }} type="button" title="Go to desktop" aria-label="Go to desktop">
               <img className={styles.brandMark} src={appIcon} alt="" />
               <div>
                 <strong>Volum</strong>
@@ -1356,31 +1366,38 @@ export function App() {
                 {session?.authEnabled && <span>{session.role}</span>}
               </div>
             </button>
-            <button className={styles.sidebarToggle} onClick={() => { setSidebarCollapsed(v => { const next = !v; localStorage.setItem('volum_sidebarCollapsed', String(next)); return next; }); }} type="button" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-              <Icon name="go-next" size={16} className={sidebarCollapsed ? '' : styles.sidebarToggleOpen} />
-            </button>
           </div>
 
           <section className={`${styles.navSection}${sectionCollapsed.quick ? ` ${styles.sectionCollapsed}` : ''}`}>
             <div className={styles.sectionHeader} onClick={() => toggleSection('quick')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') toggleSection('quick'); }}>
-              <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.quick ? ` ${styles.chevronCollapsed}` : ''}`} />
+              <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.quick ? ` ${styles.chevronCollapsed}` : ''}`} aria-hidden="true" />
               <h2>Quick Access</h2>
             </div>
             <div className={styles.sectionBody}>
-              <button className={!currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); }} type="button" title="Go to desktop">
+              <button className={!currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); }} type="button" title="Go to desktop">
                 <DeviceIcon name="drive-harddisk" size={18} />
                 <span className={styles.favDetails}>
                   <span>This PC</span>
                   <small>Desktop</small>
                 </span>
               </button>
-              <button className={trashEntries.length > 0 ? `${styles.rootItem} ${styles.trashItem}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setSelectedPaths([]); }} type="button">
+              <button className={trashEntries.length > 0 ? `${styles.rootItem} ${styles.trashItem}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setSelectedPaths([]); setViewMode((prev) => prev === 'columns' ? 'list' : prev); }} type="button">
                 <TrashIcon full={trashEntries.length > 0} size={18} />
                 <span className={styles.favDetails}>
                   <span>Trash</span>
                   <small>{trashEntries.length === 0 ? 'Empty' : `${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'}`}</small>
                 </span>
                 {trashEntries.length > 0 && <span className={styles.trashBadge}>{trashEntries.length}</span>}
+              </button>
+              <button className={styles.rootItem} onClick={() => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setSelectedDriveName(null); }} type="button">
+                <IconImg src={jobsIconUrl()} alt="" width={18} height={18} />
+                <span className={styles.favDetails}>
+                  <span>Jobs</span>
+                  <small>{jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length} active</small>
+                </span>
+                {jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length > 0 && (
+                  <span className={styles.trashBadge}>{jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length}</span>
+                )}
               </button>
               {favorites.map((path) => (
                 <div className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} key={path} onClick={() => navigateTo(path)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigateTo(path); }}>
@@ -1408,12 +1425,12 @@ export function App() {
 
           <section className={`${styles.navSection}${sectionCollapsed.storage ? ` ${styles.sectionCollapsed}` : ''}`}>
             <div className={styles.sectionHeader} onClick={() => toggleSection('storage')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') toggleSection('storage'); }}>
-              <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.storage ? ` ${styles.chevronCollapsed}` : ''}`} />
-              <h2>Storage</h2>
+              <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.storage ? ` ${styles.chevronCollapsed}` : ''}`} aria-hidden="true" />
+              <h2>Removable</h2>
             </div>
             <div className={styles.sectionBody}>
               <div className={styles.rootList}>
-                {devices.map((dev) => (
+                {devices.filter((dev) => dev.transport === 'usb').map((dev) => (
                   <div key={dev.name} className={styles.deviceGroup}>
                     <div className={styles.deviceHeader}>
                       <DeviceIcon name="drive-harddisk" size={18} />
@@ -1432,17 +1449,17 @@ export function App() {
                             <small>{formatDeviceUsage(part)}</small>
                             {part.totalBytes != null && part.totalBytes > 0 && (
                               <span className={styles.rootMeter} aria-hidden="true">
-                                <span style={{ width: `${Math.min((part.usedBytes! / part.totalBytes!) * 100, 100)}%` }} />
+                                <span style={{ '--meter-width': `${Math.min((part.usedBytes! / part.totalBytes!) * 100, 100)}%` } as React.CSSProperties} />
                               </span>
                             )}
                           </span>
                         </button>
                       ) : (
-                        <div className={styles.partitionItem} key={part.name} style={{ opacity: 0.45, cursor: 'default' }}>
+                        <div className={`${styles.partitionItem} ${styles.partitionUnmounted}`} key={part.name}>
                           <Icon name="media-removable" size={18} />
                           <span className={styles.rootDetails}>
                             <span>{part.name}</span>
-                            <small>{part.size}</small>
+                            <small>{part.size || 'Unknown'}</small>
                             <small>Not mounted</small>
                           </span>
                         </div>
@@ -1457,8 +1474,8 @@ export function App() {
           {currentPath && subdirs.length > 0 && (
             <section className={`${styles.navSection}${sectionCollapsed.folder ? ` ${styles.sectionCollapsed}` : ''}`}>
               <div className={styles.sectionHeader} onClick={() => toggleSection('folder')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') toggleSection('folder'); }}>
-                <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.folder ? ` ${styles.chevronCollapsed}` : ''}`} />
-                <h2>Current Folder</h2>
+              <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.folder ? ` ${styles.chevronCollapsed}` : ''}`} aria-hidden="true" />
+              <h2>Current Folder</h2>
               </div>
               <div className={styles.sectionBody}>
                 <div className={styles.rootList}>
@@ -1558,7 +1575,7 @@ export function App() {
                   </button>
                 )}
                 {canDelete && canWrite && (
-                  <button type="button" onClick={handleDelete} className="danger">
+                  <button type="button" onClick={handleDelete} className={styles.danger}>
                     <Icon name="edit-delete" size={16} />
                     Delete
                   </button>
@@ -1576,9 +1593,11 @@ export function App() {
                 <h1>This PC</h1>
               </div>
               <div className={styles.toolbar}>
-                <button className="icon-button" onClick={() => setViewMode(viewMode === 'list' ? 'grid' : viewMode === 'grid' ? 'columns' : 'list')} title="Change view" type="button">
+<button className="icon-button" onClick={() => setViewMode(cycleViewMode)} title="Change view" type="button">
                   {viewMode === 'list' ? (
                     <Icon name="view-grid" size={18} />
+                  ) : viewMode === 'grid' ? (
+                    <Icon name="view-list-column" size={18} />
                   ) : (
                     <Icon name="view-list-tree" size={18} />
                   )}
@@ -1657,7 +1676,8 @@ export function App() {
                     onFocus={() => setSearchOpen(true)}
                     onChange={(event) => {
                       setQuery(event.target.value);
-                      handleGlobalSearch(event.target.value);
+                      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+                      searchTimerRef.current = setTimeout(() => handleGlobalSearch(event.target.value), 200);
                       setSearchOpen(true);
                     }}
                     onKeyDown={(event) => {
@@ -1685,7 +1705,8 @@ export function App() {
                           if (result.type === 'directory') {
                             navigateTo(result.path);
                           } else {
-                            const parentDir = result.path.substring(0, result.path.lastIndexOf('/') || 1);
+                            const idx = result.path.lastIndexOf('/');
+                            const parentDir = idx < 0 ? '/' : result.path.substring(0, idx) || '/';
                             navigateTo(parentDir || '/');
                           }
                         }}
@@ -1705,6 +1726,7 @@ export function App() {
                     setSortField(field);
                     setSortDirection(direction);
                   }}
+                  aria-label="Sort files"
                   title="Sort files"
                 >
                   <option value="name:asc">Name A-Z</option>
@@ -1742,12 +1764,14 @@ export function App() {
                 </button>
                 <button
                   className="icon-button"
-                  onClick={() => setViewMode(viewMode === 'list' ? 'grid' : viewMode === 'grid' ? 'columns' : 'list')}
+                  onClick={() => setViewMode(cycleViewMode)}
                   title="Change view"
                   type="button"
                 >
                   {viewMode === 'list' ? (
                     <Icon name="view-grid" size={18} />
+                  ) : viewMode === 'grid' ? (
+                    <Icon name="view-list-column" size={18} />
                   ) : (
                     <Icon name="view-list-tree" size={18} />
                   )}
@@ -1778,9 +1802,24 @@ export function App() {
               </BreadcrumbBar>
             )}
 
-          {error && <div className={styles.errorBanner}>{error}</div>}
+          {error && <div className={styles.errorBanner}>{error} <button type="button" className={styles.errorDismiss} onClick={() => setError(null)} aria-label="Dismiss error">×</button></div>}
 
-          {showingSettings ? (
+          {showingJobs ? (
+            <JobsPage
+              jobs={jobs}
+              jobFilter={jobFilter}
+              setJobFilter={setJobFilter}
+              completedCollapsed={completedCollapsed}
+              setCompletedCollapsed={setCompletedCollapsed}
+              onCancel={handleCancelJob}
+              onPause={handlePauseJob}
+              onResume={handleResumeJob}
+              onRetry={handleRetryJob}
+              onClearCompleted={handleClearCompleted}
+              onClearFailed={handleClearFailed}
+              onClose={() => setShowingJobs(false)}
+            />
+          ) : showingSettings ? (
             <SettingsPanel variant="page" onClose={() => setShowingSettings(false)} onOpenShares={() => { setShowingSettings(false); setSharesOpen(true); }} />
           ) : showingTrash ? (
             <>
@@ -1796,7 +1835,7 @@ export function App() {
                         </button>
                       )}
                       {canWrite && (
-                        <button type="button" className="danger" onClick={handleBulkDeleteTrash}>
+                        <button type="button" className={styles.danger} onClick={handleBulkDeleteTrash}>
                           <Icon name="edit-delete" size={16} />
                           Delete
                         </button>
@@ -1846,6 +1885,7 @@ export function App() {
                       setSortField(field);
                       setSortDirection(direction);
                     }}
+                    aria-label="Sort trash"
                     title="Sort trash"
                   >
                     <option value="name:asc">Name A-Z</option>
@@ -1959,11 +1999,12 @@ export function App() {
         ) : !currentPath ? (
           selectedDriveName ? (
             <>
+              {(() => { const d = devices.find(dd => dd.name === selectedDriveName); const driveLabel = d?.model || d?.name || selectedDriveName; return (
               <BreadcrumbBar
-                crumbs={[{ label: 'Desktop' }, { label: (() => { const d = devices.find(dd => dd.name === selectedDriveName); return d?.model || d?.name || selectedDriveName; })() }]}
+                crumbs={[{ label: 'Desktop' }, { label: driveLabel }]}
                 onBack={() => setSelectedDriveName(null)}
                 onNavigate={() => {}}
-              />
+              />); })()}
               <div className={styles.driveContents}>
                 {(devices.find((d) => d.name === selectedDriveName))?.partitions?.map((part) =>
                   part.volumPath ? (
@@ -1975,17 +2016,17 @@ export function App() {
                         <small>{formatDeviceUsage(part)}</small>
                         {part.totalBytes != null && part.totalBytes > 0 && (
                           <span className={styles.drivePartitionMeter}>
-                            <span style={{ width: `${Math.min((part.usedBytes! / part.totalBytes!) * 100, 100)}%` }} />
+                            <span style={{ '--meter-width': `${Math.min((part.usedBytes! / part.totalBytes!) * 100, 100)}%` } as React.CSSProperties} />
                           </span>
                         )}
                       </span>
                     </button>
-                  ) : (
-                    <div key={part.name} className={styles.drivePartitionItem} style={{ opacity: 0.45, cursor: 'default' }}>
+                    ) : (
+                      <div key={part.name} className={`${styles.drivePartitionItem} ${styles.partitionUnmounted}`}>
                       <Icon name="media-removable" size={32} />
                       <span className={styles.drivePartitionInfo}>
                         <span>{part.name}</span>
-                        <small>{part.size}</small>
+                        <small>{part.size || 'Unknown'}</small>
                         <small>Not mounted</small>
                       </span>
                     </div>
@@ -2004,11 +2045,12 @@ export function App() {
                   className={styles.desktopIcon}
                   onClick={() => setSelectedDriveName(dev.name)}
                   type="button"
+                  aria-label={`Open ${dev.model || dev.name}`}
                 >
                   <DeviceIcon name="drive-harddisk" size={64} />
                   <span className={styles.desktopIconLabel}>{dev.model || dev.name}</span>
                   <small className={styles.desktopIconUsage}>{dev.size}{dev.transport ? ` · ${dev.transport.toUpperCase()}` : ''}{dev.rotational ? ' · HDD' : ' · SSD'}</small>
-                  <small className={styles.desktopIconUsage}>{dev.partitions?.filter(p => p.volumPath).length ?? 0} volume{(dev.partitions?.filter(p => p.volumPath).length ?? 0) !== 1 ? 's' : ''} mounted</small>
+                  <small className={styles.desktopIconUsage}>{(() => { const c = dev.partitions?.filter(p => p.volumPath).length ?? 0; return `${c} volume${c !== 1 ? 's' : ''} mounted`; })()}</small>
                 </button>
               ))}
               <button
@@ -2021,8 +2063,9 @@ export function App() {
                   setSelectedDriveName(null);
                 }}
                 type="button"
+                aria-label="Open Trash"
               >
-                <div className={styles.desktopTrashIcon}>
+                <div className={styles.desktopIconWrapper}>
                   <TrashIcon full={trashEntries.length > 0} size={64} />
                   {trashEntries.length > 0 && <span className={styles.desktopTrashBadge}>{trashEntries.length}</span>}
                 </div>
@@ -2033,31 +2076,43 @@ export function App() {
                 className={styles.desktopIcon}
                 onClick={() => { setShowingSettings(true); setShowingTrash(false); setSelectedDriveName(null); }}
                 type="button"
+                aria-label="Open Settings"
               >
-                <div className={styles.desktopTrashIcon}>
+                <div className={styles.desktopIconWrapper}>
                   <IconImg src={preferencesIconUrl()} alt="" width={64} height={64} />
                 </div>
                 <span className={styles.desktopIconLabel}>Settings</span>
                 <small className={styles.desktopIconUsage}>System info &amp; maintenance</small>
               </button>
+              <button
+                className={styles.desktopIcon}
+                onClick={() => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setSelectedDriveName(null); }}
+                type="button"
+                aria-label="Open Jobs"
+              >
+                <div className={styles.desktopIconWrapper}>
+                  <IconImg src={jobsIconUrl()} alt="" width={64} height={64} />
+                  {jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length > 0 && (
+                    <span className={styles.desktopTrashBadge}>{jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length}</span>
+                  )}
+                </div>
+                <span className={styles.desktopIconLabel}>Jobs</span>
+                <small className={styles.desktopIconUsage}>{jobs.length === 0 ? 'No jobs' : `${jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length} active`}</small>
+              </button>
             </div>
           )
         ) : loading ? (
-            viewMode === 'columns' ? (
-              <div className={styles.emptyState}>Loading...</div>
-            ) : (
-              <div className={styles.skeletonGrid}>
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <div key={i} className={styles.skeletonCard}>
-                    <div className={styles.skeletonIcon} />
-                    <div className={styles.skeletonLine} />
-                    <div className={`${styles.skeletonLine} ${styles.short}`} />
-                  </div>
-                ))}
-              </div>
-            )
+            <div className={viewMode === 'columns' ? styles.columnSkeleton : styles.skeletonGrid}>
+              {Array.from({ length: viewMode === 'columns' ? 4 : 12 }).map((_, i) => (
+                <div key={i} className={styles.skeletonCard}>
+                  <div className={styles.skeletonIcon} />
+                  <div className={styles.skeletonLine} />
+                  <div className={`${styles.skeletonLine} ${styles.short}`} />
+                </div>
+              ))}
+            </div>
           ) : filteredEntries.length === 0 ? (
-            <div className={styles.folderEmptyState}>
+            <div className={styles.folderEmptyState} role="status" aria-live="polite">
               <IconImg src={folderIconUrl('64')} alt="" width={64} height={64} className={styles.folderEmptyIcon} />
               <span className={styles.folderEmptyTitle}>This folder is empty</span>
               <span className={styles.folderEmptySubtitle}>{currentPath}</span>
@@ -2148,16 +2203,14 @@ export function App() {
                         longPressEntry.current = null;
                       }
                     }, 500);
-                    (document as any).__longPressTimer = timer;
+                    longPressTimerRef.current = timer;
                   }}
                   onTouchMove={() => {
                     longPressEntry.current = null;
-                    const timer = (document as any).__longPressTimer;
-                    if (timer) { window.clearTimeout(timer); delete (document as any).__longPressTimer; }
+                    if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
                   }}
                   onTouchEnd={() => {
-                    const timer = (document as any).__longPressTimer;
-                    if (timer) { window.clearTimeout(timer); delete (document as any).__longPressTimer; }
+                    if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
                   }}
                   onDoubleClick={() => {
                     if (renaming) {
@@ -2240,7 +2293,7 @@ export function App() {
         {contextMenu && (
           <div
             className={styles.contextMenu}
-            style={{ left: contextMenu.x, top: contextMenu.y }}
+            style={{ left: Math.min(contextMenu.x, window.innerWidth - 200), top: Math.min(contextMenu.y, window.innerHeight - 300) }}
             onClick={(event) => event.stopPropagation()}
           >
             <button type="button" onClick={handlePreview} disabled={!canPreview}>
@@ -2300,7 +2353,7 @@ export function App() {
                 const entry = contextMenu?.entry;
                 if (entry) setShareDialogPath({ path: entry.path, name: entry.name });
               }}>
-                <Icon name="edit-download" size={16} />
+                <Icon name="mail-send" size={16} />
                 Share
               </button>
             )}
@@ -2313,7 +2366,7 @@ export function App() {
         {trashContextMenu && canWrite && (
           <div
             className={styles.contextMenu}
-            style={{ left: trashContextMenu.x, top: trashContextMenu.y }}
+            style={{ left: Math.min(trashContextMenu.x, window.innerWidth - 200), top: Math.min(trashContextMenu.y, window.innerHeight - 300) }}
             onClick={(event) => event.stopPropagation()}
           >
             <button type="button" onClick={() => {
@@ -2337,43 +2390,6 @@ export function App() {
         )}
       </section>
 
-      <aside className={styles.jobDrawer}>
-        <div className={styles.drawerHeader}>
-          <h2>Jobs</h2>
-          <span>{jobs.length}</span>
-        </div>
-        <div className={styles.jobFilterTabs}>
-          {(['all', 'active', 'completed', 'failed'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              className={`${styles.jobFilterTab}${jobFilter === tab ? ` ${styles.active}` : ''}`}
-              onClick={() => setJobFilter(tab)}
-            >
-              {tab === 'all' ? 'All' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-        <div className={styles.jobList}>
-          {jobs.length === 0 ? (
-            <p className="muted">No jobs yet</p>
-          ) : (
-            <>
-              {renderJobGroup(jobs, jobFilter, completedCollapsed, setCompletedCollapsed, handleCancelJob, handlePauseJob, handleResumeJob, handleRetryJob)}
-              {jobs.some((j) => j.status === 'completed' || j.status === 'cancelled') && (
-                <button type="button" className={styles.jobClearBtn} onClick={handleClearCompleted}>
-                  Clear completed
-                </button>
-              )}
-              {jobs.some((j) => j.status === 'failed') && (
-                <button type="button" className={styles.jobClearBtn} onClick={handleClearFailed}>
-                  Clear failed
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </aside>
       </main>
       <ToastViewport toasts={toasts} onDismiss={dismissToast} />
     </>
@@ -2536,128 +2552,8 @@ function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void })
 
 
 
-function JobItem({
-  job,
-  onCancel,
-  onPause,
-  onResume,
-  onRetry
-}: {
-  job: Job;
-  onCancel: (id: string) => void;
-  onPause: (id: string) => void;
-  onResume: (id: string) => void;
-  onRetry: (id: string) => void;
-}) {
-  const progress = job.totalBytes > 0 ? Math.round((job.processedBytes / job.totalBytes) * 100) : 0;
-  const canCancel = job.status === 'queued' || job.status === 'running' || job.status === 'paused';
-  const canPause = job.status === 'running';
-  const canResume = job.status === 'paused';
-  const canRetry = job.status === 'failed' || job.status === 'cancelled';
-  const showLiveStats = job.status === 'running';
-  const hasKnownTotal = job.totalBytes > 0;
-
-  return (
-    <article className={styles.jobItem}>
-      <div className={styles.jobTitleRow}>
-        <strong>{job.type}</strong>
-        <span>{job.status}</span>
-      </div>
-      <div className={styles.progressTrack}>
-        <div className={styles.progressFill} style={{ width: `${progress}%` }} />
-      </div>
-      <div className={styles.jobMeta}>
-        <span>
-          {hasKnownTotal
-            ? `${formatBytes(job.processedBytes)} / ${formatBytes(job.totalBytes)}`
-            : `${formatBytes(job.processedBytes)} uploaded`}
-        </span>
-        {showLiveStats && job.speedBytesPerSecond ? <span>{formatBytes(job.speedBytesPerSecond)}/s</span> : null}
-        {showLiveStats && job.etaSeconds !== undefined ? <span>{formatDuration(job.etaSeconds)} left</span> : null}
-      </div>
-      <p>{job.currentItem ?? job.sourcePath ?? job.id}</p>
-      {job.errorMessage && <p className={styles.jobError}>{job.errorMessage}</p>}
-      {(canPause || canResume || canCancel || canRetry) && (
-        <div className={styles.jobActions}>
-          {canPause && (
-            <button type="button" onClick={() => onPause(job.id)}>
-              <Icon name="media-playback-pause" size={15} />
-              Pause
-            </button>
-          )}
-          {canResume && (
-            <button type="button" onClick={() => onResume(job.id)}>
-              <Icon name="media-playback-start" size={15} />
-              Resume
-            </button>
-          )}
-          {canCancel && (
-            <button type="button" onClick={() => onCancel(job.id)}>
-              <Icon name="process-stop" size={15} />
-              Cancel
-            </button>
-          )}
-          {canRetry && (
-            <button type="button" onClick={() => onRetry(job.id)}>
-              <Icon name="view-refresh" size={15} />
-              Retry
-            </button>
-          )}
-        </div>
-      )}
-    </article>
-  );
-}
-
-function isActiveStatus(status: string) {
-  return status === 'queued' || status === 'running' || status === 'paused';
-}
-
-function renderJobGroup(
-  jobs: Job[],
-  jobFilter: string,
-  completedCollapsed: boolean,
-  setCompletedCollapsed: (v: boolean) => void,
-  onCancel: (id: string) => void,
-  onPause: (id: string) => void,
-  onResume: (id: string) => void,
-  onRetry: (id: string) => void,
-) {
-  const terminal = ['completed', 'failed', 'cancelled'];
-  const filtered = jobFilter === 'all'
-    ? jobs
-    : jobFilter === 'active'
-      ? jobs.filter((j) => isActiveStatus(j.status))
-      : jobs.filter((j) => j.status === jobFilter);
-
-  const active = filtered.filter((j) => isActiveStatus(j.status));
-  const terminalJobs = filtered.filter((j) => terminal.includes(j.status));
-
-  return (
-    <>
-      {active.map((job) => (
-        <JobItem key={job.id} job={job} onCancel={onCancel} onPause={onPause} onResume={onResume} onRetry={onRetry} />
-      ))}
-      {terminalJobs.length > 0 && (
-        <>
-          <button
-            type="button"
-            className={styles.jobCollapseToggle}
-            onClick={() => setCompletedCollapsed(!completedCollapsed)}
-          >
-            {completedCollapsed ? `Show ${terminalJobs.length} completed` : 'Hide completed'}
-          </button>
-          {!completedCollapsed && terminalJobs.map((job) => (
-            <JobItem key={job.id} job={job} onCancel={onCancel} onPause={onPause} onResume={onResume} onRetry={onRetry} />
-          ))}
-        </>
-      )}
-    </>
-  );
-}
-
 function formatBytes(value: number) {
-  if (value === 0) {
+  if (value == null || Number.isNaN(value) || value === 0) {
     return '0 B';
   }
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -2676,17 +2572,6 @@ function formatUptime(seconds: number) {
   return parts.join(' ') || '< 1m';
 }
 
-function formatRootUsage(root: RootEntry) {
-  if (!root.available) {
-    return 'Unavailable';
-  }
-  if (root.totalBytes <= 0) {
-    return 'Usage unavailable';
-  }
-  const fsType = root.fsType ? ` · ${root.fsType}` : '';
-  return `${formatBytes(root.usedBytes)} used of ${formatBytes(root.totalBytes)} | ${formatBytes(root.freeBytes)} free${fsType}`;
-}
-
 function formatDeviceUsage(part: BlockDevice) {
   if (part.totalBytes != null && part.totalBytes > 0) {
     const fsType = part.fsType ? ` · ${part.fsType}` : '';
@@ -2698,14 +2583,8 @@ function formatDeviceUsage(part: BlockDevice) {
   return 'Not mounted';
 }
 
-function rootLabel(root: RootEntry) {
-  if (root.label) {
-    return root.label;
-  }
-  if (root.path === '/') {
-    return 'Server root';
-  }
-  return root.path.split('/').filter(Boolean).pop() || root.path;
+function cycleViewMode(current: ViewMode): ViewMode {
+  return current === 'list' ? 'grid' : current === 'grid' ? 'columns' : 'list';
 }
 
 function formatGridDate(value: string) {
@@ -2727,18 +2606,6 @@ function formatTrashPath(path: string) {
     return path;
   }
   return `.../${parts.slice(-2).join('/')}`;
-}
-
-function formatDuration(totalSeconds: number) {
-  if (totalSeconds <= 0) {
-    return 'less than 1s';
-  }
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = Math.round(totalSeconds % 60);
-  if (minutes === 0) {
-    return `${seconds}s`;
-  }
-  return `${minutes}m ${seconds}s`;
 }
 
 function isArchiveFile(name: string) {
@@ -2783,7 +2650,7 @@ function uniquePaths(paths: string[]) {
   return out;
 }
 
-function buildColumnPath(currentPath: string, roots: string[] = ['/']): string[] {
+function buildColumnPath(currentPath: string): string[] {
   if (!currentPath || currentPath === '/') {
     return ['/'];
   }

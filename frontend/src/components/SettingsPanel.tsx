@@ -88,9 +88,13 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay' }: Se
   const content = (
     <>
       {loading && !status ? (
-        <p className="muted">Loading...</p>
+        <div className={styles.settingsSkeleton}>
+          <div className={styles.skeletonBlock} />
+          <div className={styles.skeletonBlock} />
+          <div className={`${styles.skeletonBlock} ${styles.short}`} />
+        </div>
       ) : !status ? (
-        <p className="muted">Failed to load status.</p>
+        <p className="muted">Failed to load status. <button type="button" onClick={() => window.location.reload()} style={{ color: 'var(--color-accent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Retry</button></p>
       ) : (
         <>
           <section className={styles.settingsSection}>

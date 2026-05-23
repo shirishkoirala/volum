@@ -64,7 +64,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
         {loading ? (
           <p className={dStyles.dialogMessage}>Loading shares...</p>
         ) : error ? (
-          <p className={dStyles.dialogError}>{error}</p>
+          <p className={dStyles.dialogError}>{error} <button type="button" onClick={loadShares} style={{ color: 'var(--color-accent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Retry</button></p>
         ) : shares.length === 0 ? (
           <p className={dStyles.dialogMessage}>No shares created yet. Right-click a file or folder and select Share to create one.</p>
         ) : (

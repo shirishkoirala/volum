@@ -119,7 +119,7 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
           {!showImage && !showVideo && !showAudio && !showText && !showPDF && (
             <div className={styles.previewUnsupported}>
               <p>No preview available for this file type.</p>
-              <a href={downloadUrl(entry.path)}>Download instead</a>
+              <a href={downloadUrl(entry.path)} target="_blank" rel="noopener noreferrer">Download instead</a>
             </div>
           )}
         </div>

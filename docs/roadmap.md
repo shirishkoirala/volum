@@ -1,145 +1,187 @@
-# Volum Roadmap v2
+# Volum Roadmap
 
-Volum is the only self-hosted file manager that combines a **desktop metaphor** (drives, trash, icons), a **background job engine** (copy/move/archive with retry/pause/cancel), and **rich media previews** (images, video, audio, PDF, text). The competition splits: FileBrowser has the stars but broken thumbnails and no jobs; Filestash has multi-backend but no desktop UX. Volum spans both.
+## Architecture
 
-## Principles
+```
+Current: [ Sidebar 300px ] [ Workspace flex:1 ] [ Jobs Drawer 300px ]
+Target:  [ Sidebar 300px ] [ Workspace flex:1 (full width) ]
+```
 
-- **Reliability before novelty**: every destructive or long-running operation must be resumable, observable, and recoverable.
-- **Filesystem safety is non-negotiable**: every backend path must continue through `RootGuard`.
-- **UI actions should feel local**: avoid full page refreshes, preserve selection where useful, and show job/file changes immediately.
-- **Admin and readonly roles must stay clear**: readonly users can browse, preview, and download; write operations stay admin-only.
-- **Keep Docker-first deployment simple**: one container should remain enough for normal homelab use.
-- **Speed over slickness**: users consistently rank load times above visual polish. Every render should feel instant.
+**Key problems being solved:**
+- Jobs drawer permanently eats 300px — move to desktop icon + page
+- Sidebar Storage shows every drive (SATA, NVMe, USB) — too noisy, hide internal drives
+- `roots` state is fetched but never displayed — dead data
+- 81 UI audit issues (6 critical bugs, missing states, a11y gaps, edge cases, inline styles)
 
-## Current Baseline
+## Batch 1 — Critical Bugs (6 items)
 
-| Area | Status |
-|------|--------|
-| Browsing | Roots, grid/list/column/desktop views, sorting, hidden files, favorites, recents |
-| File actions | Create folder, rename, batch rename, copy, move, trash, restore, permanent delete |
-| Jobs | Persistent SQLite jobs, SSE updates, cancel/retry, per-item retry, clear history |
-| Transfers | Upload, file download, streamed directory zip download |
-| Archives | Create/extract zip, tar, tar.gz |
-| Metadata | Info panel, permissions editor, checksums, folder size/disk usage |
-| Search | Global search across roots with content grep |
-| UX | Context menus, keyboard shortcuts, drag select, touch long-press, thumbnails, dark mode |
-| Auth | Admin and readonly session-cookie auth |
-| Share links | Expiring, password-protected, max-downloads. ShareDialog + ShareManager (list/revoke) |
-| Observability | Settings page: version, DB maintenance (vacuum, prune jobs/audit), root health, worker status |
-| Desktop view | Physical drives with partition detail, trash icon, settings icon |
-| Utility states | Empty folder UI (icon + "New Folder" button) |
+| # | Problem | Fix | File |
+|---|---------|-----|------|
+| 1.1 | Rubber band selection — `querySelectorAll('.file-row')` bare string won't match CSS Modules hashed class | Use `[data-index]` attribute selector | `App.tsx:1184` |
+| 1.2 | Danger buttons use bare `className="danger"` — not CSS Modules hashed, so no red styling | `className={styles.danger}` | `App.tsx:1561,1799` |
+| 1.3 | Search result click — `path.lastIndexOf('/')` returns -1 for root-level items (no `/`) | Change `|| 1` to check `lastIndexOf` < 0 | `App.tsx:1688` |
+| 1.4 | Trash view toggle only cycles list↔grid — if user was in columns mode, preference is lost | Reset to `list` when entering trash if `columns` | `App.tsx:1377` (trash entry handler) |
+| 1.5 | Column view drag-over — `styles.fileColumns.dragOver` CSS rule referenced but doesn't exist | Add `.fileColumns.dragOver` style | `App.module.css` |
+| 1.6 | Breadcrumb overflow menu — no Escape or click-outside to dismiss | Add useEffect for keydown + outside-click | `BreadcrumbBar.tsx` |
 
-## Phase 1 — Ship It
+## Batch 2 — Sidebar Cleanup
 
-Goal: a tagged release that someone can discover, deploy, and trust.
+Goal: sidebar shows what matters, hides noise.
 
-| # | Task | Notes |
-|---|------|-------|
-| 1.1 | **Version endpoint** | Expose `GET /api/version` from `backend/internal/version/`. Show in settings footer |
-| 1.2 | **Multi-arch Docker** | Build `linux/amd64` + `linux/arm64` in CI or buildx. FileBrowser users consistently complain about missing arm64 |
-| 1.3 | **Release checklist** | Write `RELEASE.md`: tag -> build -> smoke test -> changelog -> publish |
-| 1.4 | **README screenshots** | 4-6 screenshots: desktop view, file grid, preview modal, job drawer |
-| 1.5 | **Quick-start compose** | One-file `docker-compose.yml` that "just works" -- minimal config, clear comments |
+| # | Change | Detail |
+|---|--------|--------|
+| 2.1 | Rename "Storage" → "Removable" | Section header label |
+| 2.2 | Filter to USB/removable only | `dev.transport === 'usb'` filter in sidebar render |
+| 2.3 | Add "Jobs" to sidebar Quick Access | Button below Trash with active count badge |
+| 2.4 | Remove unused `roots` state from sidebar rendering | Still fetched for folder picker, but no sidebar dead code |
 
-Acceptance:
-- A user can `git clone && docker compose up`, see it in 30 seconds.
-- Docker images are published for both architectures.
-- Release process is documented and reproducible.
+**Result sidebar:**
+```
+Quick Access
+  ○ This PC
+  ● Trash (3)
+  ● Jobs (1 active)
+  ★ Favorites
+  ⌚ Recent
 
-## Phase 2 — Discoverability & Trust
+Removable
+  USB: SanDisk 128GB
+    · /mnt/usb
 
-Goal: someone searching "self-hosted file manager" finds Volum and tries it.
+Current Folder
+  · subdir/
+  · another/
+```
 
-| # | Task | Notes |
-|---|------|-------|
-| 2.1 | **Awesome-selfhosted PR** | Submit Volum to the list under File Transfer > Web-based File Managers |
-| 2.2 | **Demo instance** | Public read-only demo (e.g. `demo.volum.app`) with sample files |
-| 2.3 | **Smoke test script** | `scripts/smoke.sh` -- curl health, browse a root, verify auth. Run in CI |
-| 2.4 | **Reverse proxy docs** | Nginx + Traefik examples with `VOLUM_PUBLIC_BASE_URL`. This is the #1 support issue for FileBrowser |
+## Batch 3 — Jobs → Desktop Icon + Page
 
-Acceptance:
-- Volum appears in awesome-selfhosted.
-- Demo is reachable and functional.
-- Smoke test catches regressions before release.
-- Reverse proxy setups are documented and reproducible.
+Goal: remove permanent right column, add Jobs as desktop system icon (same pattern as Trash/Settings).
 
-## Phase 3 — File Manager UX Gaps
+| # | Change | Detail |
+|---|--------|--------|
+| 3.1 | Remove job drawer from app shell | `grid-template-columns: 300px minmax(0, 1fr)` (remove final 300px) |
+| 3.2 | Delete `.jobDrawer` + related CSS | `.jobDrawer`, `.jobFilterTabs`, `.jobFilterTab`, `.jobClearBtn` from `App.module.css` |
+| 3.3 | Add `showingJobs` state | Same pattern as `showingTrash`, `showingSettings` |
+| 3.4 | Create `JobsPage` component | Full page with BreadcrumbBar, filter tabs, job list, clear buttons |
+| 3.5 | Add Jobs desktop icon | Desktop icon with badge count — same pattern as Trash/Settings |
+| 3.6 | Wire sidebar Jobs button | Navigate to Jobs page |
+| 3.7 | Extract job list rendering | Move job cards from `App.tsx` into `JobsPage.tsx` |
 
-Goal: close the features users actually ask for in Reddit, HN, and GitHub.
+**Result:**
+```
+[ Sidebar 300px ] [ Workspace flex:1 (FULL WIDTH) ]
+```
 
-| # | Task | Notes |
-|---|------|-------|
-| 3.1 | **Quick share ("Send")** | Right-click -> "Share" -> copy link. Minimal: no password, no expiry, just a one-click temp share. Keep current ShareDialog for power users who want configuration |
-| 3.2 | **Disk usage analyzer** | Tree-style visualization: what folders/files are eating space. "Disk Usage" action on any folder, shows sorted breakdown. Consistently requested in homelab communities |
-| 3.3 | **Per-folder view preferences** | Currently global-only. Save `volum_viewMode` etc. per directory path |
-| 3.4 | **Dual-pane / split view** | Side-by-side browse for copy/move workflows. Users coming from desktop file managers expect this |
-| 3.5 | **Bookmarks / pinned paths** | Quick-jump sidebar section for frequently used folders. Simple: store list in localStorage |
+Desktop has 4 icons: Drives, Trash, Settings, Jobs.
 
-Acceptance:
-- A user coming from macOS Finder or Windows Explorer can do everything they expect without reaching for the terminal.
+## Batch 4 — Loading & Error States (15 items)
 
-## Phase 4 — Power User Features
+| # | Fix |
+|---|-----|
+| 4.1 | Column view loading: skeleton cards |
+| 4.2 | Jobs page empty: icon + "No jobs yet" layout |
+| 4.3 | Settings loading: skeleton card |
+| 4.4 | InfoPanel saving: spinner during chmod submit |
+| 4.5 | ShareDialog submit: spinner during "Creating..." |
+| 4.6 | ShareManager loading: skeleton rows |
+| 4.7 | BatchRename submit: spinner during "Renaming..." |
+| 4.8 | SSE disconnect: reconnect with backoff + "Connection lost" indicator |
+| 4.9 | Error banner: add dismiss button |
+| 4.10 | ShareManager error: add "Retry" button |
+| 4.11 | FolderPicker error: add "Retry" button |
+| 4.12 | Settings error: add "Retry" button |
+| 4.13 | Silent `.catch(() => undefined)` on trash/jobs fetch → at least `console.error` |
+| 4.14 | Silent `.catch(() => undefined)` on dir sizes polling → at least `console.error` |
+| 4.15 | Toast animations: fade-in/fade-out transitions |
 
-Goal: features that make Volum indispensable for the self-hosted crowd.
+## Batch 5 — Edge Cases & Code Cleanup (16 items)
 
-| # | Task | Notes |
-|---|------|-------|
-| 4.1 | **WebDAV endpoint** | Expose each root via WebDAV so Finder/Nautilus can mount Volum as a network drive. Bridges the gap: power users get native file manager, casual users get web UI |
-| 4.2 | **Audit log UI** | Backend already logs everything to `audit_logs`. Surface it in settings: filterable table of who did what when |
-| 4.3 | **Duplicate finder** | Hash-based duplicate detection as a background job. Scan a folder -> report of duplicates with size savings |
-| 4.4 | **Disk health monitoring** | SMART data for physical drives (when available via `smartctl`). Surface in settings alongside root health |
-| 4.5 | **Notification hooks** | Webhook / Gotify / ntfy integration for job completion, disk space warnings, share access |
+| # | Fix |
+|---|-----|
+| 5.1 | `part.size` null guard — fallback to `'Unknown'` |
+| 5.2 | `entry.size` null guard in `formatBytes` — avoid NaN |
+| 5.3 | `dev.name` / `dev.model` fallback — "Unknown device" |
+| 5.4 | Extract `formatBytes` + `formatUptime` to `utils/format.ts` |
+| 5.5 | Extract duplicated sort-select JSX to `<SortSelect>` |
+| 5.6 | Extract duplicated theme toggle to `<ThemeToggle>` |
+| 5.7 | Extract duplicated logout button to `<LogoutButton>` |
+| 5.8 | Fix `(document as any).__longPressTimer` → `useRef` |
+| 5.9 | Rename `.desktopTrashIcon` → `.desktopIconWrapper` (used by both trash and settings) |
+| 5.10 | Fix "Share" icon: `edit-download` → `mail-send` |
+| 5.11 | Fix "Clear completed" label when failed/cancelled present |
+| 5.12 | Fix trash empty `<span>` column — fill or remove |
+| 5.13 | Fix `buildColumnPath` unused `roots` parameter |
+| 5.14 | Fix desktop drive mounted-count computed twice |
+| 5.15 | Fix BreadcrumbBar drive label IIFE — extract to variable |
+| 5.16 | Fix `cycleViewMode` nested ternary — extract to function |
 
-Acceptance:
-- Volum replaces 3-4 separate tools for a typical homelab user.
+## Batch 6 — Accessibility (12 items)
 
-## Phase 5 — Polish & Ecosystem
+| # | Fix |
+|---|-----|
+| 6.1 | Context menu: `role="menu"`, `role="menuitem"`, Escape close, arrow-key nav |
+| 6.2 | Hidden file input: `visually-hidden` class not `display: none` |
+| 6.3 | Section chevrons: `aria-hidden="true"` |
+| 6.4 | Brand button: `aria-label="Go to desktop"` |
+| 6.5 | Sort select: wrap in `<label>` or add `aria-label` |
+| 6.6 | Search results: `aria-label` on result buttons |
+| 6.7 | Favorite remove button: keyboard-accessible (Tab, not hover-only) |
+| 6.8 | Desktop icons: `aria-label` concatenating label + details |
+| 6.9 | Trash items: keyboard navigation (arrow keys, Enter) |
+| 6.10 | Jobs page items: keyboard-navigable list |
+| 6.11 | Empty states: `role="status"` / `aria-live="polite"` |
+| 6.12 | PDF preview: `target="_blank"` + `rel="noopener noreferrer"` |
 
-Goal: long-term sustainability and community.
+## Batch 7 — Inline Styles → CSS Modules (11 items)
 
-| # | Task | Notes |
-|---|------|-------|
-| 5.1 | **E2E test suite** | Playwright tests for critical paths: login, browse, upload, preview, share, trash |
-| 5.2 | **Mobile PWA** | Service worker, offline cache, "Add to Home Screen" for phone/tablet access |
-| 5.3 | **i18n framework** | Not translating yet, but wire up the framework so community can contribute translations |
-| 5.4 | **Plugin/hook system** | Allow custom actions registered via config. Example: "Send to Jellyfin" on media files |
-| 5.5 | **Theme marketplace** | Community-contributed color schemes beyond light/dark |
+| # | Fix |
+|---|-----|
+| 7.1 | Usage meter bars: CSS custom property `--meter-width` |
+| 7.2 | Unmounted partition opacity: CSS class not `style={{ opacity }}` |
+| 7.3 | Root warning label: CSS class |
+| 7.4 | "Manage Shares" marginTop: CSS class |
+| 7.5 | Progress bar width: CSS custom property `--progress` |
+| 7.6 | `34px` gap in file grid → `var(--space-3xl)` |
+| 7.7 | `128px` column width → CSS variable |
+| 7.8 | `.rename-input` global → `.renameInput` CSS module |
+| 7.9 | Context menu viewport clamping |
+| 7.10 | "No jobs yet" → `.emptyState` CSS class |
+| 7.11 | Search debounce: 200ms debounce to `handleGlobalSearch` |
 
-Acceptance:
-- Volum has a contributing guide, test framework, and community contribution surface area.
+## Batch 8 — Future Features (from Phase 3)
 
-## Backlog
+| # | Feature |
+|---|---------|
+| 8.1 | Disk usage analyzer — recursive folder size scanning + tree UI |
+| 8.2 | Bookmarks / pinned paths — sidebar section, localStorage |
+| 8.3 | Per-folder view preferences — persist view mode/sort per directory |
+| 8.4 | Dual-pane view — side-by-side browser for copy/move |
 
-Not blocked on anything above, but no immediate plans to pick up:
+## Execution Order
 
-- Multi-user accounts beyond admin/readonly
-- Media metadata indexing (EXIF, album art)
-- Rule-based automation (e.g. "auto-extract zip files")
-- WebDAV or SMB bridge integration (moved to Phase 4)
+```
+Batch 1 (bugs) → Batch 2 (sidebar) → Batch 3 (jobs) → Batch 4 (states)
+→ Batch 5 (edge cases) → Batch 6 (a11y) → Batch 7 (CSS) → Batch 8 (features)
+```
+
+Batches 1–3 are structural (bugs, layout, new page). Batches 4–7 are code-level polish. Batch 8 is feature work.
 
 ## Completed
 
-### Current Session
-
-- [x] Admin share management UI (ShareManager -- list/revoke/copy-link)
+- [x] Admin share management UI (ShareManager)
 - [x] Settings page (version, DB maintenance, root health, worker status)
-- [x] Desktop drive view (physical drives -> partition contents)
+- [x] Desktop drive view (physical drives → partition contents)
 - [x] Empty folder UI (centered icon + "New Folder" button)
-- [x] Scrollbar theming (global WebKit + Firefox, removed per-component overrides)
+- [x] Scrollbar theming (global, removed per-component overrides)
 - [x] Desktop settings icon (SVG from assets, removed from sidebar)
-
-### Previous Sessions
-
-- [x] Docs refresh: `README.md`, `docs/security.md`, `docs/handoff.md` updated to reflect actual product state.
-- [x] Frontend tests expanded: dialog component tests (`ConfirmDialog`, `TextInputDialog`, `ToastViewport`, `FolderSuggestions`) and `FolderPicker` tests added.
-- [x] Reusable `FolderPicker` component built and wired into `TransferDialog` for copy/move destination browsing.
-- [x] CSS Modules migration: 7 scoped modules, global.css reduced from 2173 to 96 lines.
-- [x] Trash view overhaul: own page with grid/list views, selection, context menu, BreadcrumbBar, file/folder icons.
-- [x] Conflict preview dialog: scans destination, shows fate of each file (new/skip/overwrite/rename/cancel) before proceeding.
-- [x] Drag-and-drop into folders: drag files onto directory rows to open transfer dialog pre-filled with destination.
-- [x] Breadcrumb overflow: collapsible crumbs with "..." overflow menu when path exceeds available width.
-- [x] Saved view preferences: view mode, sort field/direction, hidden files persisted to localStorage.
-- [x] Undo affordances: toast with Undo button after trash restore and rename (8s timeout).
-- [x] Conflict preview for archive/extract: checks destination existence and shows confirmation dialog before creating or extracting archives.
-- [x] Toast system enhanced with action button support.
-- [x] Sharing & Collaboration: shares table, API endpoints (create/list/delete/public-download), ShareDialog component with password/expiration/max-downloads controls, public download with validation (expiry, password, max downloads).
+- [x] Quick Share (one-click context menu, copies link to clipboard)
+- [x] Multi-arch Docker builds (linux/amd64 + linux/arm64)
+- [x] Release checklist (RELEASE.md)
+- [x] Screenshot capture script (scripts/capture-screenshots.mjs)
+- [x] Quick-start compose file (docker-compose.yml)
+- [x] Reverse proxy docs (Nginx + Traefik + Tailscale)
+- [x] Awesome-selfhosted PR template
+- [x] Smoke test script (scripts/smoke.sh)
+- [x] Version endpoint (GET /api/version, public)
+- [x] MIT License
+- [x] CI workflow (.github/workflows/docker.yml)
