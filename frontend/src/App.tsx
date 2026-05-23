@@ -43,7 +43,8 @@ import {
   clearCompletedJobs,
   clearFailedJobs,
   chmodPath,
-  getDirSizes
+  getDirSizes,
+  createShare
 } from './api/client';
 import appIcon from './assets/icon-light.png';
 import { PreviewModal } from './components/PreviewModal';
@@ -928,6 +929,20 @@ export function App() {
       entries: [...fileClipboard.entries],
       initialDestination: currentPath
     });
+  };
+
+  const handleQuickShare = async () => {
+    const entry = contextMenu?.entry;
+    if (!entry) return;
+    setContextMenu(null);
+    try {
+      const share = await createShare({ path: entry.path });
+      const url = `${window.location.origin}/api/public/${share.token}`;
+      await navigator.clipboard.writeText(url);
+      showToast({ title: 'Share link copied to clipboard', variant: 'success' });
+    } catch (err) {
+      showToast({ title: 'Quick share failed', message: err instanceof Error ? err.message : undefined, variant: 'error' });
+    }
   };
 
   const handleTransferSubmit = (dialog: TransferDialogState, destinationValue: string, conflictPolicy: ConflictPolicy) => {
@@ -2274,6 +2289,12 @@ export function App() {
               <Icon name="edit-paste" size={16} />
               Paste
             </button>
+            {canWrite && (
+              <button type="button" onClick={handleQuickShare}>
+                <Icon name="mail-send" size={16} />
+                Quick Share
+              </button>
+            )}
             {canInfo && (
               <button type="button" onClick={() => {
                 const entry = contextMenu?.entry;
