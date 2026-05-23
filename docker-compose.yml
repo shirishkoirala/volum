@@ -1,3 +1,10 @@
+# Quick-start: docker compose up -d
+# Open http://localhost:8090 — no auth required by default.
+# Files go in ./storage, database in ./data.
+#
+# For published releases, replace "build: ." with:
+#   image: ghcr.io/shirishkoirala/volum:latest
+
 services:
   volum:
     build: .

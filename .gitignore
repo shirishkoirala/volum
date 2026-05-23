@@ -6,6 +6,7 @@
 # Backend
 backend/volum.db
 backend/web
+backend/volum
 data/*
 !data/.gitkeep
 

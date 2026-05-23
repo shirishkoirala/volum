@@ -17,6 +17,18 @@ Volum is a self-hosted web file manager for Ubuntu and Docker home servers. It i
 - **Auth** — Admin and readonly session-cookie auth with HMAC-signed cookies
 - **Safety** — Copy via `.partial` temp files with size verification, safe move (copy+verify+delete), per-root `.volum-trash/` recycle bin, configurable conflict policies (ask, skip, overwrite, rename, cancel)
 
+## Screenshots
+
+| Desktop view | File grid | Column browser |
+|---|---|---|
+| ![Desktop](docs/screenshots/desktop.png) | ![File grid](docs/screenshots/file-grid.png) | ![Column browser](docs/screenshots/columns.png) |
+
+| Preview modal | Settings | Job drawer |
+|---|---|---|
+| ![Preview](docs/screenshots/preview.png) | ![Settings](docs/screenshots/settings.png) | ![Jobs](docs/screenshots/jobs.png) |
+
+*To regenerate: `node scripts/capture-screenshots.mjs` (requires Puppeteer)*
+
 ## Quick Start — Home Server
 
 1. Create a directory for Volum data and clone the repo:

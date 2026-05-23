@@ -75,6 +75,7 @@ func (s *Server) routes() {
 		r.Get("/session", s.handleSession)
 		r.Post("/login", s.handleLogin)
 		r.Post("/logout", s.handleLogout)
+		r.Get("/version", s.handleVersion)
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.requireUser)
@@ -189,6 +190,14 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 			"completed": completed,
 			"failed":    failed,
 		},
+	})
+}
+
+func (s *Server) handleVersion(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{
+		"version":   version.Version,
+		"buildTime": version.BuildTime,
+		"goVersion": runtime.Version(),
 	})
 }
 

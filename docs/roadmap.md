@@ -1,16 +1,15 @@
-# Volum Roadmap
+# Volum Roadmap v2
 
-Volum is no longer in MVP mode. The base file manager, job engine, auth, previews, archive/extract, search, batch rename, keyboard shortcuts, and desktop-style UI are in place.
-
-The next roadmap should protect that foundation while turning Volum into a dependable daily-use file manager for a home server.
+Volum is the only self-hosted file manager that combines a **desktop metaphor** (drives, trash, icons), a **background job engine** (copy/move/archive with retry/pause/cancel), and **rich media previews** (images, video, audio, PDF, text). The competition splits: FileBrowser has the stars but broken thumbnails and no jobs; Filestash has multi-backend but no desktop UX. Volum spans both.
 
 ## Principles
 
-- Reliability before novelty: every destructive or long-running operation must be resumable, observable, and recoverable.
-- Filesystem safety is non-negotiable: every backend path must continue through `RootGuard`.
-- UI actions should feel local: avoid full page refreshes, preserve selection where useful, and show job/file changes immediately.
-- Admin and readonly roles must stay clear: readonly users can browse, preview, and download; write operations stay admin-only.
-- Keep Docker-first deployment simple: one container should remain enough for normal homelab use.
+- **Reliability before novelty**: every destructive or long-running operation must be resumable, observable, and recoverable.
+- **Filesystem safety is non-negotiable**: every backend path must continue through `RootGuard`.
+- **UI actions should feel local**: avoid full page refreshes, preserve selection where useful, and show job/file changes immediately.
+- **Admin and readonly roles must stay clear**: readonly users can browse, preview, and download; write operations stay admin-only.
+- **Keep Docker-first deployment simple**: one container should remain enough for normal homelab use.
+- **Speed over slickness**: users consistently rank load times above visual polish. Every render should feel instant.
 
 ## Current Baseline
 
@@ -25,105 +24,113 @@ The next roadmap should protect that foundation while turning Volum into a depen
 | Search | Global search across roots with content grep |
 | UX | Context menus, keyboard shortcuts, drag select, touch long-press, thumbnails, dark mode |
 | Auth | Admin and readonly session-cookie auth |
+| Share links | Expiring, password-protected, max-downloads. ShareDialog + ShareManager (list/revoke) |
+| Observability | Settings page: version, DB maintenance (vacuum, prune jobs/audit), root health, worker status |
+| Desktop view | Physical drives with partition detail, trash icon, settings icon |
+| Utility states | Empty folder UI (icon + "New Folder" button) |
 
-## Phase 1: Product Hardening
+## Phase 1 — Ship It
 
-Goal: make the existing feature set trustworthy under real use.
+Goal: a tagged release that someone can discover, deploy, and trust.
 
-- Expand frontend tests around `App.tsx` workflows: selection, rename, copy/move dialogs, archive/extract, paste shortcuts, and readonly gating.
-- Add backend regression tests for recently added archive/extract destination handling and job completion refresh behavior.
-- Add a lightweight smoke script for Docker Compose startup, health check, and a simple browse request.
-- Review all stale docs and align `README.md`, `docs/security.md`, and `docs/handoff.md` with the actual implemented feature set.
-- Add UI empty/error/loading states audit: no silent failures, no dead buttons, no confusing disabled states.
-
-Acceptance:
-
-- Frontend and backend tests cover the highest-risk user flows.
-- Documentation reflects the current product, not the original MVP plan.
-- A fresh clone can be started and verified from docs alone.
-
-## Phase 2: File Manager UX Completion
-
-Goal: close the remaining interaction gaps that users expect from a desktop-class file manager.
-
-- Add a real folder picker component for every destination field, including copy, move, archive, and extract.
-- Add conflict preview before large copy/move/extract operations so users know what will skip, overwrite, or rename.
-- Improve drag-and-drop inside the app: drag selected files into folders to move/copy with a modifier-aware confirmation.
-- Add breadcrumb overflow handling and quick root switching for deep paths.
-- Add saved view preferences per folder or globally: view mode, sort field, sort direction, hidden files, sidebar width.
-- Add undo affordances where feasible: trash restore, recent rename, and recent move.
+| # | Task | Notes |
+|---|------|-------|
+| 1.1 | **Version endpoint** | Expose `GET /api/version` from `backend/internal/version/`. Show in settings footer |
+| 1.2 | **Multi-arch Docker** | Build `linux/amd64` + `linux/arm64` in CI or buildx. FileBrowser users consistently complain about missing arm64 |
+| 1.3 | **Release checklist** | Write `RELEASE.md`: tag -> build -> smoke test -> changelog -> publish |
+| 1.4 | **README screenshots** | 4-6 screenshots: desktop view, file grid, preview modal, job drawer |
+| 1.5 | **Quick-start compose** | One-file `docker-compose.yml` that "just works" -- minimal config, clear comments |
 
 Acceptance:
+- A user can `git clone && docker compose up`, see it in 30 seconds.
+- Docker images are published for both architectures.
+- Release process is documented and reproducible.
 
-- Destination entry no longer depends on typing paths.
-- Common file actions are reachable from toolbar, context menu, keyboard, and touch where appropriate.
-- Navigation and selection state behave consistently across all views.
+## Phase 2 — Discoverability & Trust
 
-## Phase 3: Sharing And Collaboration
+Goal: someone searching "self-hosted file manager" finds Volum and tries it.
 
-Goal: support controlled file sharing without turning Volum into a public cloud product.
-
-- Add expiring share links for files and folders, disabled by default.
-- Add per-share controls: readonly download, optional password, expiration, max downloads.
-- Add admin share management UI.
-- Add audit log visibility for auth events, shares, downloads, deletes, permission changes, and job creation.
-- Add optional public-base-url configuration for reverse proxy deployments.
-
-Acceptance:
-
-- Sharing is explicitly opt-in and admin-only.
-- Share access never grants broader filesystem access than the target path.
-- Audit trail answers who did what and when.
-
-## Phase 4: Observability And Maintenance
-
-Goal: make Volum easy to operate on a long-running home server.
-
-- Add settings/status page: app version, database path, configured roots, root health, disk usage, worker status.
-- Add job history export/import if still useful after audit log improvements.
-- Add log level configuration and structured request/job logging.
-- Add database maintenance actions: vacuum, prune old jobs, prune old audit logs.
-- Add root availability warnings when mounted drives disappear.
-- Add backup guidance for `volum.db` and configuration.
+| # | Task | Notes |
+|---|------|-------|
+| 2.1 | **Awesome-selfhosted PR** | Submit Volum to the list under File Transfer > Web-based File Managers |
+| 2.2 | **Demo instance** | Public read-only demo (e.g. `demo.volum.app`) with sample files |
+| 2.3 | **Smoke test script** | `scripts/smoke.sh` -- curl health, browse a root, verify auth. Run in CI |
+| 2.4 | **Reverse proxy docs** | Nginx + Traefik examples with `VOLUM_PUBLIC_BASE_URL`. This is the #1 support issue for FileBrowser |
 
 Acceptance:
+- Volum appears in awesome-selfhosted.
+- Demo is reachable and functional.
+- Smoke test catches regressions before release.
+- Reverse proxy setups are documented and reproducible.
 
-- Admin can tell whether Volum is healthy from the UI.
-- Common maintenance tasks do not require poking through SQLite manually.
-- Missing mounts and job failures are obvious.
+## Phase 3 — File Manager UX Gaps
 
-## Phase 5: Packaging And Release
+Goal: close the features users actually ask for in Reddit, HN, and GitHub.
 
-Goal: make Volum straightforward to install, upgrade, and trust.
-
-- Add version metadata shown in UI and logs.
-- Add release checklist: tests, Docker build, migration check, smoke test, changelog.
-- Publish multi-arch Docker images.
-- Add sample Compose files for local, homelab, Tailscale/reverse-proxy, and readonly-demo setups.
-- Add upgrade notes and migration compatibility rules.
-- Add screenshots or short GIFs to the README once UI stabilizes.
+| # | Task | Notes |
+|---|------|-------|
+| 3.1 | **Quick share ("Send")** | Right-click -> "Share" -> copy link. Minimal: no password, no expiry, just a one-click temp share. Keep current ShareDialog for power users who want configuration |
+| 3.2 | **Disk usage analyzer** | Tree-style visualization: what folders/files are eating space. "Disk Usage" action on any folder, shows sorted breakdown. Consistently requested in homelab communities |
+| 3.3 | **Per-folder view preferences** | Currently global-only. Save `volum_viewMode` etc. per directory path |
+| 3.4 | **Dual-pane / split view** | Side-by-side browse for copy/move workflows. Users coming from desktop file managers expect this |
+| 3.5 | **Bookmarks / pinned paths** | Quick-jump sidebar section for frequently used folders. Simple: store list in localStorage |
 
 Acceptance:
+- A user coming from macOS Finder or Windows Explorer can do everything they expect without reaching for the terminal.
 
-- A tagged release can be built and deployed repeatably.
-- Users can upgrade without losing jobs, trash records, audit logs, or settings.
-- Deployment docs cover the common homelab paths.
+## Phase 4 — Power User Features
+
+Goal: features that make Volum indispensable for the self-hosted crowd.
+
+| # | Task | Notes |
+|---|------|-------|
+| 4.1 | **WebDAV endpoint** | Expose each root via WebDAV so Finder/Nautilus can mount Volum as a network drive. Bridges the gap: power users get native file manager, casual users get web UI |
+| 4.2 | **Audit log UI** | Backend already logs everything to `audit_logs`. Surface it in settings: filterable table of who did what when |
+| 4.3 | **Duplicate finder** | Hash-based duplicate detection as a background job. Scan a folder -> report of duplicates with size savings |
+| 4.4 | **Disk health monitoring** | SMART data for physical drives (when available via `smartctl`). Surface in settings alongside root health |
+| 4.5 | **Notification hooks** | Webhook / Gotify / ntfy integration for job completion, disk space warnings, share access |
+
+Acceptance:
+- Volum replaces 3-4 separate tools for a typical homelab user.
+
+## Phase 5 — Polish & Ecosystem
+
+Goal: long-term sustainability and community.
+
+| # | Task | Notes |
+|---|------|-------|
+| 5.1 | **E2E test suite** | Playwright tests for critical paths: login, browse, upload, preview, share, trash |
+| 5.2 | **Mobile PWA** | Service worker, offline cache, "Add to Home Screen" for phone/tablet access |
+| 5.3 | **i18n framework** | Not translating yet, but wire up the framework so community can contribute translations |
+| 5.4 | **Plugin/hook system** | Allow custom actions registered via config. Example: "Send to Jellyfin" on media files |
+| 5.5 | **Theme marketplace** | Community-contributed color schemes beyond light/dark |
+
+Acceptance:
+- Volum has a contributing guide, test framework, and community contribution surface area.
 
 ## Backlog
 
-These are useful, but should not interrupt the phases above unless they become real user pain.
+Not blocked on anything above, but no immediate plans to pick up:
 
-- WebDAV or SMB bridge integration
-- Media metadata indexing
-- Duplicate finder
-- Rule-based automation
 - Multi-user accounts beyond admin/readonly
-- End-to-end browser tests with Playwright
-- Internationalization
+- Media metadata indexing (EXIF, album art)
+- Rule-based automation (e.g. "auto-extract zip files")
+- WebDAV or SMB bridge integration (moved to Phase 4)
 
 ## Completed
 
-- [x] Docs refresh: `README.md`, `docs/security.md`, and `docs/handoff.md` updated to reflect actual product state.
+### Current Session
+
+- [x] Admin share management UI (ShareManager -- list/revoke/copy-link)
+- [x] Settings page (version, DB maintenance, root health, worker status)
+- [x] Desktop drive view (physical drives -> partition contents)
+- [x] Empty folder UI (centered icon + "New Folder" button)
+- [x] Scrollbar theming (global WebKit + Firefox, removed per-component overrides)
+- [x] Desktop settings icon (SVG from assets, removed from sidebar)
+
+### Previous Sessions
+
+- [x] Docs refresh: `README.md`, `docs/security.md`, `docs/handoff.md` updated to reflect actual product state.
 - [x] Frontend tests expanded: dialog component tests (`ConfirmDialog`, `TextInputDialog`, `ToastViewport`, `FolderSuggestions`) and `FolderPicker` tests added.
 - [x] Reusable `FolderPicker` component built and wired into `TransferDialog` for copy/move destination browsing.
 - [x] CSS Modules migration: 7 scoped modules, global.css reduced from 2173 to 96 lines.
@@ -136,9 +143,3 @@ These are useful, but should not interrupt the phases above unless they become r
 - [x] Conflict preview for archive/extract: checks destination existence and shows confirmation dialog before creating or extracting archives.
 - [x] Toast system enhanced with action button support.
 - [x] Sharing & Collaboration: shares table, API endpoints (create/list/delete/public-download), ShareDialog component with password/expiration/max-downloads controls, public download with validation (expiry, password, max downloads).
-
-## Next Three Tasks
-
-1. Add admin share management UI — list/revoke active shares with copy-link and delete actions.
-2. Add observability — settings/status page with app version, DB info, root health, worker status.
-3. Add version metadata and release process.
