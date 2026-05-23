@@ -49,13 +49,16 @@ import {
 import appIcon from './assets/icon-light.png';
 import { PreviewModal } from './components/PreviewModal';
 import { BatchRenameModal } from './components/BatchRenameModal';
+import { Select } from './components/Select';
+import { ProgressBar } from './components/ProgressBar';
+import { EmptyState } from './components/EmptyState';
 import { InfoPanel } from './components/InfoPanel';
 import { BreadcrumbBar } from './components/BreadcrumbBar';
 import { ShareDialog } from './components/ShareDialog';
 import { ShareManager } from './components/ShareManager';
 import { SettingsPanel } from './components/SettingsPanel';
 import { Overlay, IconImg } from './components/shared';
-import { folderIconUrl, preferencesIconUrl, jobsIconUrl } from './api/icons';
+import { folderIconUrl, preferencesIconUrl, jobsIconUrl, computerIconUrl, trashIconUrl } from './api/icons';
 import { ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport } from './components/Dialogs';
 import { JobsPage } from './components/JobsPage';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState, Toast } from './components/Dialogs';
@@ -1375,14 +1378,14 @@ export function App() {
             </div>
             <div className={styles.sectionBody}>
               <button className={!currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); }} type="button" title="Go to desktop">
-                <DeviceIcon name="drive-harddisk" size={18} />
+                <IconImg src={computerIconUrl()} alt="" width={18} height={18} />
                 <span className={styles.favDetails}>
                   <span>This PC</span>
                   <small>Desktop</small>
                 </span>
               </button>
               <button className={trashEntries.length > 0 ? `${styles.rootItem} ${styles.trashItem}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setSelectedPaths([]); setViewMode((prev) => prev === 'columns' ? 'list' : prev); }} type="button">
-                <TrashIcon full={trashEntries.length > 0} size={18} />
+                <IconImg src={trashIconUrl(trashEntries.length > 0, '64')} alt="" width={18} height={18} />
                 <span className={styles.favDetails}>
                   <span>Trash</span>
                   <small>{trashEntries.length === 0 ? 'Empty' : `${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'}`}</small>
@@ -1448,9 +1451,7 @@ export function App() {
                             <small>{part.volumPath}</small>
                             <small>{formatDeviceUsage(part)}</small>
                             {part.totalBytes != null && part.totalBytes > 0 && (
-                              <span className={styles.rootMeter} aria-hidden="true">
-                                <span style={{ '--meter-width': `${Math.min((part.usedBytes! / part.totalBytes!) * 100, 100)}%` } as React.CSSProperties} />
-                              </span>
+                              <ProgressBar value={(part.usedBytes! / part.totalBytes!) * 100} className={styles.rootMeter} />
                             )}
                           </span>
                         </button>
@@ -1718,16 +1719,15 @@ export function App() {
                     ))}
                   </div>
                 )}
-                <select
+                <Select
                   className={styles.sortSelect}
                   value={`${sortField}:${sortDirection}`}
-                  onChange={(event) => {
-                    const [field, direction] = event.target.value.split(':') as [SortField, SortDirection];
+                  onChange={(value) => {
+                    const [field, direction] = value.split(':') as [SortField, SortDirection];
                     setSortField(field);
                     setSortDirection(direction);
                   }}
-                  aria-label="Sort files"
-                  title="Sort files"
+                  ariaLabel="Sort files"
                 >
                   <option value="name:asc">Name A-Z</option>
                   <option value="name:desc">Name Z-A</option>
@@ -1737,7 +1737,7 @@ export function App() {
                   <option value="type:desc">Type Z-A</option>
                   <option value="modifiedAt:desc">Newest first</option>
                   <option value="modifiedAt:asc">Oldest first</option>
-                </select>
+                </Select>
                 <button
                   className="icon-button"
                   onClick={() => setShowHidden((value) => !value)}
@@ -1877,16 +1877,15 @@ export function App() {
                   >
                     <Icon name="selection-invert" size={18} />
                   </button>
-                  <select
+                  <Select
                     className={styles.sortSelect}
                     value={`${sortField}:${sortDirection}`}
-                    onChange={(event) => {
-                      const [field, direction] = event.target.value.split(':') as [SortField, SortDirection];
+                    onChange={(value) => {
+                      const [field, direction] = value.split(':') as [SortField, SortDirection];
                       setSortField(field);
                       setSortDirection(direction);
                     }}
-                    aria-label="Sort trash"
-                    title="Sort trash"
+                    ariaLabel="Sort trash"
                   >
                     <option value="name:asc">Name A-Z</option>
                     <option value="name:desc">Name Z-A</option>
@@ -1896,19 +1895,21 @@ export function App() {
                     <option value="type:desc">Type Z-A</option>
                     <option value="modifiedAt:desc">Deleted newest first</option>
                     <option value="modifiedAt:asc">Deleted oldest first</option>
-                  </select>
-                  <button
-                    className="icon-button"
-                    onClick={() => setViewMode(viewMode === 'list' ? 'grid' : 'list')}
-                    title="Toggle grid view"
-                    type="button"
-                  >
-                    {viewMode === 'list' ? (
-                      <Icon name="view-grid" size={18} />
-                    ) : (
-                      <Icon name="view-list-tree" size={18} />
-                    )}
-                  </button>
+                </Select>
+                <button
+                  className="icon-button"
+                  onClick={() => setViewMode(cycleViewMode)}
+                  title="Change view"
+                  type="button"
+                >
+                  {viewMode === 'list' ? (
+                    <Icon name="view-grid" size={18} />
+                  ) : viewMode === 'grid' ? (
+                    <Icon name="view-list-column" size={18} />
+                  ) : (
+                    <Icon name="view-list-tree" size={18} />
+                  )}
+                </button>
                   <button className="icon-button" onClick={() => { getTrash().then(r => setTrashEntries(r.entries ?? [])); }} title="Refresh" type="button">
                     <Icon name="view-refresh" size={18} />
                   </button>
@@ -2015,9 +2016,7 @@ export function App() {
                         <small>{part.volumPath}</small>
                         <small>{formatDeviceUsage(part)}</small>
                         {part.totalBytes != null && part.totalBytes > 0 && (
-                          <span className={styles.drivePartitionMeter}>
-                            <span style={{ '--meter-width': `${Math.min((part.usedBytes! / part.totalBytes!) * 100, 100)}%` } as React.CSSProperties} />
-                          </span>
+                          <ProgressBar value={(part.usedBytes! / part.totalBytes!) * 100} className={styles.drivePartitionMeter} />
                         )}
                       </span>
                     </button>
@@ -2112,18 +2111,7 @@ export function App() {
               ))}
             </div>
           ) : filteredEntries.length === 0 ? (
-            <div className={styles.folderEmptyState} role="status" aria-live="polite">
-              <IconImg src={folderIconUrl('64')} alt="" width={64} height={64} className={styles.folderEmptyIcon} />
-              <span className={styles.folderEmptyTitle}>This folder is empty</span>
-              <span className={styles.folderEmptySubtitle}>{currentPath}</span>
-              {canWrite && (
-                <div className={styles.folderEmptyActions}>
-                  <button type="button" onClick={handleCreateFolder}>
-                    <Icon name="folder-new" size={16} /> New Folder
-                  </button>
-                </div>
-              )}
-            </div>
+            <EmptyState icon={folderIconUrl('64')} title="This folder is empty" subtitle={currentPath} />
           ) : (
             <section
               className={`${viewMode === 'grid' ? styles.fileGrid : viewMode === 'columns' ? styles.fileColumns : styles.fileList}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
@@ -2528,10 +2516,10 @@ function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void })
       <form className={styles.loginPanel} onSubmit={handleSubmit}>
         <img className={styles.brandMark} src={appIcon} alt="" />
         <h1>Volum</h1>
-        <select value={role} onChange={(event) => setRole(event.target.value as 'admin' | 'readonly')}>
+        <Select value={role} onChange={(value) => setRole(value as 'admin' | 'readonly')}>
           <option value="admin">Admin</option>
           <option value="readonly">Readonly</option>
-        </select>
+        </Select>
         <input
           autoFocus
           placeholder="Password"

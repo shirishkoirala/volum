@@ -3,6 +3,7 @@ import type { FileEntry } from '../api/client';
 import folderIcon22 from '../assets/places/22/folder.svg?url';
 import folderIcon64 from '../assets/places/64/folder.svg?url';
 import driveHarddisk64 from '../assets/devices/64/drive-harddisk.svg?url';
+import computerIconSvg from '../assets/devices/22/computer.svg?url';
 import trashIcon22 from '../assets/places/22/user-trash.svg?url';
 import trashFull22 from '../assets/places/22/user-trash-full.svg?url';
 import trashIcon64 from '../assets/places/64/user-trash.svg?url';
@@ -84,6 +85,10 @@ export function folderIconUrl(size = '22') {
 
 export function driveIconUrl(size = '64') {
   return driveHarddisk64;
+}
+
+export function computerIconUrl() {
+  return computerIconSvg;
 }
 
 export function trashIconUrl(full: boolean, size = '22') {

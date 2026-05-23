@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from './Icon';
 import { Overlay } from './shared';
+import { Select } from './Select';
 import type { FileEntry } from '../api/client';
 import type { ConflictPolicy } from '../api/client';
 import { getFiles } from '../api/client';
@@ -504,13 +505,13 @@ export function TransferDialog({
         )}
         <label className={styles.dialogField}>
           <span>If a file already exists</span>
-          <select value={conflictPolicy} onChange={(event) => setConflictPolicy(event.target.value as ConflictPolicy)}>
+          <Select value={conflictPolicy} onChange={(value) => setConflictPolicy(value as ConflictPolicy)}>
             <option value="ask">Ask when needed</option>
             <option value="skip">Skip existing files</option>
             <option value="overwrite">Overwrite existing files</option>
             <option value="rename">Rename new files</option>
             <option value="cancel">Cancel the job</option>
-          </select>
+          </Select>
         </label>
         {error && <p className={styles.dialogError}>{error}</p>}
         {previewError && <p className={styles.dialogError}>{previewError}</p>}

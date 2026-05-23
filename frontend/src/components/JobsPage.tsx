@@ -4,6 +4,7 @@ import { BreadcrumbBar } from './BreadcrumbBar';
 import { Icon } from './Icon';
 import { IconImg } from './shared';
 import { jobsIconUrl } from '../api/icons';
+import { ProgressBar } from './ProgressBar';
 import styles from './JobsPage.module.css';
 
 function isActiveStatus(status: string) {
@@ -56,9 +57,7 @@ function JobItem({
         <strong>{job.type}</strong>
         <span className={styles.jobStatus}>{job.status}</span>
       </div>
-      <div className={styles.progressTrack}>
-        <div className={styles.progressFill} style={{ '--progress': `${progress}%` } as React.CSSProperties} />
-      </div>
+      <ProgressBar value={progress} />
       <div className={styles.jobMeta}>
         <span>
           {hasKnownTotal

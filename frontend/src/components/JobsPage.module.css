@@ -87,22 +87,6 @@
   text-transform: capitalize;
 }
 
-.progressTrack {
-  background: var(--color-border-light);
-  border-radius: 99px;
-  height: 6px;
-  margin-bottom: var(--space-xs);
-  overflow: hidden;
-}
-
-.progressFill {
-  background: var(--color-accent);
-  border-radius: 99px;
-  height: 100%;
-  transition: width 0.5s ease;
-  width: var(--progress);
-}
-
 .jobMeta {
   display: flex;
   gap: var(--space-md);

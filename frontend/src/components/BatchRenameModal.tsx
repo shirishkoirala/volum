@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Icon, FileIcon } from './Icon';
 import { Overlay } from './shared';
+import { Select } from './Select';
 import { batchRename } from '../api/client';
 import type { FileEntry } from '../api/client';
 import styles from './BatchRename.module.css';
@@ -81,12 +82,12 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
         </div>
 
         <div className={styles.renamePattern}>
-          <select value={patternType} onChange={(e) => setPatternType(e.target.value as PatternType)}>
+          <Select value={patternType} onChange={(value) => setPatternType(value as PatternType)}>
             <option value="replace">Find & Replace</option>
             <option value="prefix">Add Prefix</option>
             <option value="suffix">Add Suffix</option>
             <option value="case">Change Case</option>
-          </select>
+          </Select>
 
           {patternType === 'replace' && (
             <div className={styles.renameFields}>
@@ -107,11 +108,11 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
           )}
           {patternType === 'case' && (
             <div className={styles.renameFields}>
-              <select value={caseType} onChange={(e) => setCaseType(e.target.value as 'lower' | 'upper' | 'title')}>
+              <Select value={caseType} onChange={(value) => setCaseType(value as 'lower' | 'upper' | 'title')}>
                 <option value="lower">Lowercase</option>
                 <option value="upper">Uppercase</option>
                 <option value="title">Title Case</option>
-              </select>
+              </Select>
             </div>
           )}
         </div>

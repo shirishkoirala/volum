@@ -1,0 +1,13 @@
+.track {
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+  height: 6px;
+  overflow: hidden;
+}
+
+.fill {
+  background: var(--color-brand);
+  display: block;
+  height: 100%;
+  transition: width 300ms ease;
+}
