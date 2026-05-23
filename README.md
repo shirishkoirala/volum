@@ -1,5 +1,8 @@
 # Volum
 
+[![MIT License](https://img.shields.io/github/license/shirishkoirala/volum)](LICENSE)
+[![Go](https://img.shields.io/github/go-mod/go-version/shirishkoirala/volum)](backend/go.mod)
+
 Volum is a self-hosted web file manager for Ubuntu and Docker home servers. It is designed around a reliable backend job engine so long-running filesystem operations (copy, move, delete, archive, upload) can continue on the server even if the browser window is closed.
 
 ## Features
@@ -106,3 +109,5 @@ docker compose up --build -d
 ```
 
 For homelab use, expose Volum only over a private network such as Tailscale or WireGuard. Avoid publishing it directly to the public internet.
+
+For reverse proxy configuration with Nginx or Traefik, see [docs/reverse-proxy.md](docs/reverse-proxy.md).
