@@ -126,6 +126,11 @@ func discoverMountRoots(hostRoot string) ([]security.Root, error) {
 	}
 	defer file.Close()
 
+	hr := ""
+	if strings.TrimSpace(hostRoot) != "" {
+		hr = filepath.Clean(hostRoot)
+	}
+
 	roots := make([]security.Root, 0)
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -133,25 +138,52 @@ func discoverMountRoots(hostRoot string) ([]security.Root, error) {
 		if !ok || !realFilesystem(mount.fsType) {
 			continue
 		}
-		if excludedMountPath(mount.mountPoint) {
-			continue
-		}
-		mountPath := mount.mountPoint
-		if strings.TrimSpace(hostRoot) != "" {
-			if mount.mountPoint == "/" {
-				mountPath = hostRoot
-			} else {
-				mountPath = filepath.Join(hostRoot, strings.TrimPrefix(mount.mountPoint, string(filepath.Separator)))
+
+		// Mounts under hostRoot (e.g. /host/mnt/data1) are host filesystems
+		// visible via bind propagation. Their mount point is already the
+		// container path — use it directly and strip the hostRoot prefix
+		// for the public path.
+		// Mounts not under hostRoot (e.g. /data) are container-native and
+		// need the normal hostRoot-prefixed stat path.
+		var statPath string
+		var publicPath string
+		if hr != "" && hr != "/" && strings.HasPrefix(mount.mountPoint, hr+"/") {
+			statPath = mount.mountPoint
+			publicPath = filepath.Join("/", strings.TrimPrefix(mount.mountPoint, hr))
+		} else {
+			statPath = mount.mountPoint
+			if hr != "" && hr != "/" {
+				if mount.mountPoint == "/" {
+					statPath = hr
+				} else {
+					statPath = filepath.Join(hr, strings.TrimPrefix(mount.mountPoint, string(filepath.Separator)))
+				}
 			}
+			publicPath = mount.mountPoint
 		}
-		if info, err := os.Stat(mountPath); err != nil || !info.IsDir() {
+		if excludedMountPath(publicPath) {
 			continue
 		}
-		label := filepath.Base(mount.mountPoint)
-		if mount.mountPoint == "/" {
-			label = "Server root"
+		if info, err := os.Stat(statPath); err != nil || !info.IsDir() {
+			continue
 		}
-		roots = append(roots, rootSpec(mount.mountPoint, hostRoot, label, mount.source, mount.fsType, true))
+		if hr != "" && hr != "/" && strings.HasPrefix(mount.mountPoint, hr+"/") {
+			label := filepath.Base(publicPath)
+			roots = append(roots, security.Root{
+				Path:         publicPath,
+				InternalPath: mount.mountPoint,
+				Label:        label,
+				Source:       mount.source,
+				FSType:       mount.fsType,
+				Discovered:   true,
+			})
+		} else {
+			label := filepath.Base(mount.mountPoint)
+			if mount.mountPoint == "/" {
+				label = "Server root"
+			}
+			roots = append(roots, rootSpec(mount.mountPoint, hostRoot, label, mount.source, mount.fsType, true))
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err

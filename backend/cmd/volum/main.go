@@ -61,9 +61,10 @@ func run(log *slog.Logger) error {
 	}
 	go backgroundWorker.Start(ctx)
 
-	filesService := files.NewService(guard)
+	dirSizeCache := files.NewDirSizeCache(5 * time.Minute)
+	filesService := files.NewService(guard, dirSizeCache)
 	shareStore := shares.NewStore(db)
-	server := api.New(filesService, jobStore, guard, authService, shareStore)
+	server := api.New(filesService, jobStore, guard, authService, shareStore, cfg.DB)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,

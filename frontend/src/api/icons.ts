@@ -7,6 +7,7 @@ import trashIcon22 from '../assets/places/22/user-trash.svg?url';
 import trashFull22 from '../assets/places/22/user-trash-full.svg?url';
 import trashIcon64 from '../assets/places/64/user-trash.svg?url';
 import trashFull64 from '../assets/places/64/user-trash-full.svg?url';
+import preferencesIconSvg from '../assets/preferences/22/preferences-system.svg?url';
 
 import textGeneric22 from '../assets/mimetypes/22/text-x-generic.svg?url';
 import textGeneric64 from '../assets/mimetypes/64/text-x-generic.svg?url';
@@ -87,6 +88,10 @@ export function driveIconUrl(size = '64') {
 export function trashIconUrl(full: boolean, size = '22') {
   if (size === '22') return full ? trashFull22 : trashIcon22;
   return full ? trashFull64 : trashIcon64;
+}
+
+export function preferencesIconUrl() {
+  return preferencesIconSvg;
 }
 
 export function fileTypeIconUrl(entry: FileEntry, size = '22') {

@@ -70,10 +70,15 @@ var (
 
 type Service struct {
 	guard *security.RootGuard
+	cache *DirSizeCache
 }
 
-func NewService(guard *security.RootGuard) *Service {
-	return &Service{guard: guard}
+func NewService(guard *security.RootGuard, cache *DirSizeCache) *Service {
+	return &Service{guard: guard, cache: cache}
+}
+
+func (s *Service) Cache() *DirSizeCache {
+	return s.cache
 }
 
 func (s *Service) Roots() []string {
@@ -114,6 +119,8 @@ func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
 		return nil, err
 	}
 
+	var pendingDirs []string
+
 	entries := make([]Entry, 0, len(items))
 	for _, item := range items {
 		name := item.Name()
@@ -137,17 +144,33 @@ func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
 		if err != nil {
 			continue
 		}
+
+		var size int64
+		if info.IsDir() {
+			if cached, ok := s.cache.Get(publicPath); ok {
+				size = cached
+			} else {
+				pendingDirs = append(pendingDirs, publicPath)
+			}
+		} else {
+			size = info.Size()
+		}
+
 		entries = append(entries, Entry{
 			Name:        name,
 			Path:        publicPath,
 			Type:        entryType,
-			Size:        entrySize(itemPath, info),
+			Size:        size,
 			ModifiedAt:  info.ModTime(),
 			Permissions: info.Mode().Perm().String(),
 			Owner:       ownerName(info),
 			Group:       groupName(info),
 			Hidden:      hidden,
 		})
+	}
+
+	if len(pendingDirs) > 0 {
+		go s.computeDirSizes(pendingDirs)
 	}
 
 	sort.Slice(entries, func(i, j int) bool {
@@ -531,22 +554,20 @@ func entrySize(path string, info os.FileInfo) int64 {
 	if !info.IsDir() {
 		return info.Size()
 	}
-
+	items, err := os.ReadDir(path)
+	if err != nil {
+		return 0
+	}
 	var total int64
-	_ = filepath.WalkDir(path, func(current string, entry os.DirEntry, err error) error {
+	for _, item := range items {
+		itemInfo, err := item.Info()
 		if err != nil {
-			return nil
+			continue
 		}
-		if entry.IsDir() {
-			return nil
+		if !itemInfo.IsDir() {
+			total += itemInfo.Size()
 		}
-		itemInfo, err := entry.Info()
-		if err != nil {
-			return nil
-		}
-		total += itemInfo.Size()
-		return nil
-	})
+	}
 	return total
 }
 
@@ -636,4 +657,22 @@ var textExtensions = map[string]bool{
 func isTextFile(name string) bool {
 	ext := strings.ToLower(filepath.Ext(name))
 	return textExtensions[ext]
+}
+
+func (s *Service) computeDirSizes(publicPaths []string) {
+	for _, publicPath := range publicPaths {
+		internalPath, err := s.guard.Resolve(publicPath)
+		if err != nil {
+			continue
+		}
+		info, err := os.Stat(internalPath)
+		if err != nil || !info.IsDir() {
+			continue
+		}
+		s.cache.Set(publicPath, entrySize(internalPath, info))
+	}
+}
+
+func (s *Service) GetDirSizes(publicPaths []string) map[string]int64 {
+	return s.cache.GetMap(publicPaths)
 }

@@ -5,6 +5,7 @@ import {
   FileEntry,
   Job,
   SearchResult,
+  BlockDevice,
   cancelJob,
   createArchiveJob,
   createChecksumJob,
@@ -15,6 +16,7 @@ import {
   deleteTrash,
   deletePath,
   downloadUrl,
+  getDevices,
   getFiles,
   getJobs,
   getRoots,
@@ -40,7 +42,8 @@ import {
   uploadFiles,
   clearCompletedJobs,
   clearFailedJobs,
-  chmodPath
+  chmodPath,
+  getDirSizes
 } from './api/client';
 import appIcon from './assets/icon-light.png';
 import { PreviewModal } from './components/PreviewModal';
@@ -48,7 +51,10 @@ import { BatchRenameModal } from './components/BatchRenameModal';
 import { InfoPanel } from './components/InfoPanel';
 import { BreadcrumbBar } from './components/BreadcrumbBar';
 import { ShareDialog } from './components/ShareDialog';
-import { Overlay } from './components/shared';
+import { ShareManager } from './components/ShareManager';
+import { SettingsPanel } from './components/SettingsPanel';
+import { Overlay, IconImg } from './components/shared';
+import { folderIconUrl, preferencesIconUrl } from './api/icons';
 import { ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport } from './components/Dialogs';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState, Toast } from './components/Dialogs';
 import styles from './App.module.css';
@@ -77,7 +83,10 @@ export function App() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
   const [roots, setRoots] = useState<RootEntry[]>([]);
-  const [currentPath, setCurrentPath] = useState('');
+  const [devices, setDevices] = useState<BlockDevice[]>([]);
+  const [currentPath, setCurrentPath] = useState(
+    () => localStorage.getItem('volum_currentPath') ?? ''
+  );
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -132,9 +141,18 @@ export function App() {
   const renameInputRef = useRef<HTMLInputElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [showingTrash, setShowingTrash] = useState(false);
+  const [showingSettings, setShowingSettings] = useState(false);
+  const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
   const [lastSelectedTrashId, setLastSelectedTrashId] = useState<string | null>(null);
   const [shareDialogPath, setShareDialogPath] = useState<{ path: string; name: string } | null>(null);
+  const [sharesOpen, setSharesOpen] = useState(false);
+  const [sectionCollapsed, setSectionCollapsed] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('volum_sectionCollapsed') ?? '{}'); } catch { return {}; }
+  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
+    localStorage.getItem('volum_sidebarCollapsed') === 'true'
+  );
   const [trashContextMenu, setTrashContextMenu] = useState<{
     x: number; y: number; entry: TrashEntry;
   } | null>(null);
@@ -158,6 +176,17 @@ export function App() {
     getRoots()
       .then((response) => {
         setRoots(response.roots ?? []);
+      })
+      .catch((err: Error) => setError(err.message));
+  }, [session, sessionLoading]);
+
+  useEffect(() => {
+    if (sessionLoading || (session?.authEnabled && !session.authenticated)) {
+      return;
+    }
+    getDevices()
+      .then((response) => {
+        setDevices(response.devices ?? []);
       })
       .catch((err: Error) => setError(err.message));
   }, [session, sessionLoading]);
@@ -188,6 +217,64 @@ export function App() {
     renameInputRef.current?.select();
   }, [renaming]);
 
+  const entriesRef = useRef(entries);
+  entriesRef.current = entries;
+
+  const subdirs = useMemo(() =>
+    entries.filter((e) => e.type === 'directory').slice(0, 20),
+    [entries]
+  );
+  const pollingPath = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!currentPath || loading) {
+      pollingPath.current = null;
+      return;
+    }
+
+    if (pollingPath.current === currentPath) return;
+
+    const hasPendingDir = entriesRef.current.some((e) => e.type === 'directory' && e.size === 0);
+    if (!hasPendingDir) {
+      pollingPath.current = null;
+      return;
+    }
+
+    pollingPath.current = currentPath;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await getDirSizes(currentPath);
+        const sizes = response.sizes ?? {};
+        setEntries((prev) => {
+          let changed = false;
+          const next = prev.map((e) => {
+            if (sizes[e.path] !== undefined && e.size !== sizes[e.path]) {
+              changed = true;
+              return { ...e, size: sizes[e.path] };
+            }
+            return e;
+          });
+          if (!changed) return prev;
+          const allDone = !next.some((e) => e.type === 'directory' && e.size === 0);
+          if (allDone && pollingPath.current === currentPath) {
+            pollingPath.current = null;
+          }
+          return next;
+        });
+      } catch {
+        // retry next tick
+      }
+    }, 500);
+
+    return () => {
+      clearInterval(interval);
+      if (pollingPath.current === currentPath) {
+        pollingPath.current = null;
+      }
+    };
+  }, [currentPath, loading]);
+
   const refresh = () => setRefreshKey((value) => value + 1);
 
   const handleBreadcrumbBack = () => {
@@ -212,6 +299,14 @@ export function App() {
 
   const removeFavorite = (path: string) => {
     persistFavorites(favorites.filter((f) => f !== path));
+  };
+
+  const toggleSection = (section: string) => {
+    setSectionCollapsed((prev) => {
+      const next = { ...prev, [section]: !prev[section] };
+      localStorage.setItem('volum_sectionCollapsed', JSON.stringify(next));
+      return next;
+    });
   };
 
   const pushRecent = (path: string) => {
@@ -258,9 +353,11 @@ export function App() {
   const navigateTo = (path: string) => {
     pushRecent(path);
     setCurrentPath(path);
+    localStorage.setItem('volum_currentPath', path);
     setSearchOpen(false);
     setSearchResults(null);
     setQuery('');
+    setSelectedDriveName(null);
   };
 
   const isFavorited = favorites.includes(currentPath);
@@ -268,10 +365,11 @@ export function App() {
     () => uniquePaths([
       currentPath,
       ...roots.map((root) => root.path),
+      ...devices.flatMap((d) => (d.partitions ?? []).filter((p) => p.volumPath).map((p) => p.volumPath!)),
       ...favorites,
       ...recentPaths
     ]),
-    [currentPath, favorites, recentPaths, roots]
+    [currentPath, favorites, recentPaths, roots, devices]
   );
 
   const dismissToast = (id: number) => {
@@ -1232,105 +1330,136 @@ export function App() {
 
   const shell = (
     <>
-      <main className={styles.appShell}>
+      <main className={`${styles.appShell}${sidebarCollapsed ? ` ${styles.sidebarHidden}` : ''}`}>
         <aside className={styles.sidebar}>
-          <div className={styles.brand}>
-            <img className={styles.brandMark} src={appIcon} alt="" />
-            <div>
-              <strong>Volum</strong>
-              <span>File manager</span>
-              {session?.authEnabled && <span>{session.role}</span>}
-            </div>
+          <div className={styles.sidebarHeader}>
+            <button className={styles.brand} onClick={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); }} type="button" title="Go to desktop">
+              <img className={styles.brandMark} src={appIcon} alt="" />
+              <div>
+                <strong>Volum</strong>
+                <span>File manager</span>
+                {session?.authEnabled && <span>{session.role}</span>}
+              </div>
+            </button>
+            <button className={styles.sidebarToggle} onClick={() => { setSidebarCollapsed(v => { const next = !v; localStorage.setItem('volum_sidebarCollapsed', String(next)); return next; }); }} type="button" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+              <Icon name="go-next" size={16} className={sidebarCollapsed ? '' : styles.sidebarToggleOpen} />
+            </button>
           </div>
 
-          <section className={styles.navSection}>
-            <h2>Storage</h2>
-            <div className={styles.rootList}>
-              {roots.map((root) => (
-                <button
-                  className={root.path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem}
-                  key={root.path}
-                  onClick={() => navigateTo(root.path)}
-                  type="button"
-                >
-                  <DeviceIcon name="drive-harddisk" size={18} />
-                  <span className={styles.rootDetails}>
-                    <span>{rootLabel(root)}</span>
-                    <small>{root.path}</small>
-                    <small>{formatRootUsage(root)}</small>
-                    {root.totalBytes > 0 && (
-                      <span className={styles.rootMeter} aria-hidden="true">
-                        <span style={{ width: `${Math.min((root.usedBytes / root.totalBytes) * 100, 100)}%` }} />
-                      </span>
-                    )}
+          <section className={`${styles.navSection}${sectionCollapsed.quick ? ` ${styles.sectionCollapsed}` : ''}`}>
+            <div className={styles.sectionHeader} onClick={() => toggleSection('quick')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') toggleSection('quick'); }}>
+              <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.quick ? ` ${styles.chevronCollapsed}` : ''}`} />
+              <h2>Quick Access</h2>
+            </div>
+            <div className={styles.sectionBody}>
+              <button className={!currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); }} type="button" title="Go to desktop">
+                <DeviceIcon name="drive-harddisk" size={18} />
+                <span className={styles.favDetails}>
+                  <span>This PC</span>
+                  <small>Desktop</small>
+                </span>
+              </button>
+              <button className={trashEntries.length > 0 ? `${styles.rootItem} ${styles.trashItem}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setSelectedPaths([]); }} type="button">
+                <TrashIcon full={trashEntries.length > 0} size={18} />
+                <span className={styles.favDetails}>
+                  <span>Trash</span>
+                  <small>{trashEntries.length === 0 ? 'Empty' : `${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'}`}</small>
+                </span>
+                {trashEntries.length > 0 && <span className={styles.trashBadge}>{trashEntries.length}</span>}
+              </button>
+              {favorites.map((path) => (
+                <div className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} key={path} onClick={() => navigateTo(path)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigateTo(path); }}>
+                  <Icon name="bookmark-new" size={18} />
+                  <span className={styles.favDetails}>
+                    <span>{path.split('/').pop() || path}</span>
+                    <small>{path}</small>
+                  </span>
+                  <button className={styles.favRemove} onClick={(e) => { e.stopPropagation(); removeFavorite(path); }} title="Remove from favorites" type="button">
+                    <Icon name="edit-delete" size={12} />
+                  </button>
+                </div>
+              ))}
+              {recentPaths.slice(0, 5).map((path) => (
+                <button className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} key={path} onClick={() => navigateTo(path)} type="button">
+                  <Icon name="document-open" size={18} />
+                  <span className={styles.favDetails}>
+                    <span>{path.split('/').pop() || path}</span>
+                    <small>{path}</small>
                   </span>
                 </button>
               ))}
             </div>
           </section>
 
-          {favorites.length > 0 && (
-            <section className={styles.navSection}>
-              <div className={styles.sectionHeading}>
-                <h2>Favorites</h2>
-              </div>
+          <section className={`${styles.navSection}${sectionCollapsed.storage ? ` ${styles.sectionCollapsed}` : ''}`}>
+            <div className={styles.sectionHeader} onClick={() => toggleSection('storage')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') toggleSection('storage'); }}>
+              <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.storage ? ` ${styles.chevronCollapsed}` : ''}`} />
+              <h2>Storage</h2>
+            </div>
+            <div className={styles.sectionBody}>
               <div className={styles.rootList}>
-                {favorites.map((path) => (
-                  <div
-                    className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem}
-                    key={path}
-                    onClick={() => navigateTo(path)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        navigateTo(path);
-                      }
-                    }}
-                  >
-                    <FolderIcon size={18} />
-                    <span className={styles.favDetails}>
-                      <span>{path.split('/').pop() || path}</span>
-                      <small>{path}</small>
-                    </span>
-                    <button
-                      className={styles.favRemove}
-                      onClick={(e) => { e.stopPropagation(); removeFavorite(path); }}
-                      title="Remove from favorites"
-                      type="button"
-                    >
-                      <Icon name="edit-delete" size={12} />
-                    </button>
+                {devices.map((dev) => (
+                  <div key={dev.name} className={styles.deviceGroup}>
+                    <div className={styles.deviceHeader}>
+                      <DeviceIcon name="drive-harddisk" size={18} />
+                      <span className={styles.rootDetails}>
+                        <span>{dev.model || dev.name}</span>
+                        <small>{dev.size}{dev.transport ? ` · ${dev.transport.toUpperCase()}` : ''}{dev.rotational ? ' · HDD' : ' · SSD'}</small>
+                      </span>
+                    </div>
+                    {dev.partitions?.map((part) => (
+                      part.volumPath ? (
+                        <button className={part.volumPath === currentPath ? `${styles.partitionItem} ${styles.active}` : styles.partitionItem} key={part.name} onClick={() => navigateTo(part.volumPath!)} type="button">
+                          <FolderIcon size={18} />
+                          <span className={styles.rootDetails}>
+                            <span>{part.label || part.name}</span>
+                            <small>{part.volumPath}</small>
+                            <small>{formatDeviceUsage(part)}</small>
+                            {part.totalBytes != null && part.totalBytes > 0 && (
+                              <span className={styles.rootMeter} aria-hidden="true">
+                                <span style={{ width: `${Math.min((part.usedBytes! / part.totalBytes!) * 100, 100)}%` }} />
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                      ) : (
+                        <div className={styles.partitionItem} key={part.name} style={{ opacity: 0.45, cursor: 'default' }}>
+                          <Icon name="media-removable" size={18} />
+                          <span className={styles.rootDetails}>
+                            <span>{part.name}</span>
+                            <small>{part.size}</small>
+                            <small>Not mounted</small>
+                          </span>
+                        </div>
+                      )
+                    ))}
                   </div>
                 ))}
               </div>
-            </section>
-          )}
+            </div>
+          </section>
 
-          {recentPaths.length > 0 && (
-            <section className={styles.navSection}>
-              <div className={styles.sectionHeading}>
-                <h2>Recent</h2>
+          {currentPath && subdirs.length > 0 && (
+            <section className={`${styles.navSection}${sectionCollapsed.folder ? ` ${styles.sectionCollapsed}` : ''}`}>
+              <div className={styles.sectionHeader} onClick={() => toggleSection('folder')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') toggleSection('folder'); }}>
+                <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.folder ? ` ${styles.chevronCollapsed}` : ''}`} />
+                <h2>Current Folder</h2>
               </div>
-              <div className={styles.rootList}>
-                {recentPaths.map((path) => (
-                  <button
-                    className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem}
-                    key={path}
-                    onClick={() => navigateTo(path)}
-                    type="button"
-                  >
-                    <FolderIcon size={18} />
-                    <span className={styles.favDetails}>
-                      <span>{path.split('/').pop() || path}</span>
-                      <small>{path}</small>
-                    </span>
-                  </button>
-                ))}
+              <div className={styles.sectionBody}>
+                <div className={styles.rootList}>
+                  {subdirs.map((entry) => (
+                    <button className={entry.path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} key={entry.path} onClick={() => navigateTo(entry.path)} type="button">
+                      <FolderIcon size={18} />
+                      <span className={styles.favDetails}>
+                        <span>{entry.name}</span>
+                        <small>{entry.path}</small>
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </section>
           )}
-
         </aside>
 
         <section className={styles.workspace} onClick={handleWorkspaceClick}>
@@ -1424,6 +1553,34 @@ export function App() {
                 Clear
               </button>
             </div>
+            </header>
+          ) : !currentPath ? (
+            <header className={styles.topbar}>
+              <div className={styles.desktopHeader}>
+                <DeviceIcon name="drive-harddisk" size={22} />
+                <h1>This PC</h1>
+              </div>
+              <div className={styles.toolbar}>
+                <button className="icon-button" onClick={() => setViewMode(viewMode === 'list' ? 'grid' : viewMode === 'grid' ? 'columns' : 'list')} title="Change view" type="button">
+                  {viewMode === 'list' ? (
+                    <Icon name="view-grid" size={18} />
+                  ) : (
+                    <Icon name="view-list-tree" size={18} />
+                  )}
+                </button>
+                <button className="icon-button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} title={theme === 'light' ? 'Dark mode' : 'Light mode'} type="button">
+                  {theme === 'light' ? (
+                    <Icon name="weather-clear-night" size={18} />
+                  ) : (
+                    <Icon name="weather-clear" size={18} />
+                  )}
+                </button>
+                {session?.authEnabled && (
+                  <button className="icon-button" onClick={handleLogout} title="Log out" type="button">
+                    <Icon name="system-log-out" size={18} />
+                  </button>
+                )}
+              </div>
             </header>
           ) : (
             <BreadcrumbBar crumbs={breadcrumbs} onBack={handleBreadcrumbBack} onNavigate={navigateTo}>
@@ -1608,7 +1765,9 @@ export function App() {
 
           {error && <div className={styles.errorBanner}>{error}</div>}
 
-          {showingTrash ? (
+          {showingSettings ? (
+            <SettingsPanel variant="page" onClose={() => setShowingSettings(false)} onOpenShares={() => { setShowingSettings(false); setSharesOpen(true); }} />
+          ) : showingTrash ? (
             <>
               {selectedTrashIds.length > 0 ? (
                 <header className={styles.topbar}>
@@ -1783,57 +1942,95 @@ export function App() {
               </section>
           </>
         ) : !currentPath ? (
-          <div className={styles.desktop}>
-            {roots.map((root) => (
+          selectedDriveName ? (
+            <>
+              <BreadcrumbBar
+                crumbs={[{ label: 'Desktop' }, { label: (() => { const d = devices.find(dd => dd.name === selectedDriveName); return d?.model || d?.name || selectedDriveName; })() }]}
+                onBack={() => setSelectedDriveName(null)}
+                onNavigate={() => {}}
+              />
+              <div className={styles.driveContents}>
+                {(devices.find((d) => d.name === selectedDriveName))?.partitions?.map((part) =>
+                  part.volumPath ? (
+                    <button key={part.name} className={styles.drivePartitionItem} onClick={() => navigateTo(part.volumPath!)} type="button">
+                      <DeviceIcon name="drive-harddisk" size={32} />
+                      <span className={styles.drivePartitionInfo}>
+                        <span>{part.label || part.name}</span>
+                        <small>{part.volumPath}</small>
+                        <small>{formatDeviceUsage(part)}</small>
+                        {part.totalBytes != null && part.totalBytes > 0 && (
+                          <span className={styles.drivePartitionMeter}>
+                            <span style={{ width: `${Math.min((part.usedBytes! / part.totalBytes!) * 100, 100)}%` }} />
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  ) : (
+                    <div key={part.name} className={styles.drivePartitionItem} style={{ opacity: 0.45, cursor: 'default' }}>
+                      <Icon name="media-removable" size={32} />
+                      <span className={styles.drivePartitionInfo}>
+                        <span>{part.name}</span>
+                        <small>{part.size}</small>
+                        <small>Not mounted</small>
+                      </span>
+                    </div>
+                  )
+                )}
+                {(!devices.find((d) => d.name === selectedDriveName)?.partitions?.length) && (
+                  <div className={styles.emptyState}>No partitions found</div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className={styles.desktop}>
+              {devices.map((dev) => (
+                <button
+                  key={dev.name}
+                  className={styles.desktopIcon}
+                  onClick={() => setSelectedDriveName(dev.name)}
+                  type="button"
+                >
+                  <DeviceIcon name="drive-harddisk" size={64} />
+                  <span className={styles.desktopIconLabel}>{dev.model || dev.name}</span>
+                  <small className={styles.desktopIconUsage}>{dev.size}{dev.transport ? ` · ${dev.transport.toUpperCase()}` : ''}{dev.rotational ? ' · HDD' : ' · SSD'}</small>
+                  <small className={styles.desktopIconUsage}>{dev.partitions?.filter(p => p.volumPath).length ?? 0} volume{(dev.partitions?.filter(p => p.volumPath).length ?? 0) !== 1 ? 's' : ''} mounted</small>
+                </button>
+              ))}
               <button
-                key={root.path}
                 className={styles.desktopIcon}
-                onClick={() => navigateTo(root.path)}
-                onContextMenu={(event) => {
-                  event.preventDefault();
-                  setContextMenu({ x: event.clientX, y: event.clientY, entry: { name: rootLabel(root), path: root.path, type: 'directory', size: 0, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false } });
+                onClick={() => {
+                  setCurrentPath('');
+                  setShowingTrash(true);
+                  setShowingSettings(false);
+                  setSelectedPaths([]);
+                  setSelectedDriveName(null);
                 }}
                 type="button"
               >
-                <DeviceIcon name="drive-harddisk" size={64} />
-                <span className={styles.desktopIconLabel}>{rootLabel(root)}</span>
-                <small className={styles.desktopIconUsage}>{root.path}</small>
-                <small className={styles.desktopIconUsage}>{formatRootUsage(root)}</small>
+                <div className={styles.desktopTrashIcon}>
+                  <TrashIcon full={trashEntries.length > 0} size={64} />
+                  {trashEntries.length > 0 && <span className={styles.desktopTrashBadge}>{trashEntries.length}</span>}
+                </div>
+                <span className={styles.desktopIconLabel}>Trash</span>
+                <small className={styles.desktopIconUsage}>{trashEntries.length === 0 ? 'Empty' : `${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'}`}</small>
               </button>
-            ))}
-            <button
-              className={styles.desktopIcon}
-              onClick={() => {
-                setCurrentPath('');
-                setShowingTrash(true);
-                setSelectedPaths([]);
-              }}
-              type="button"
-            >
-              <div className={styles.desktopTrashIcon}>
-                <TrashIcon full={trashEntries.length > 0} size={64} />
-                {trashEntries.length > 0 && <span className={styles.desktopTrashBadge}>{trashEntries.length}</span>}
-              </div>
-              <span className={styles.desktopIconLabel}>Trash</span>
-              <small className={styles.desktopIconUsage}>{trashEntries.length === 0 ? 'Empty' : `${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'}`}</small>
-            </button>
-          </div>
-        ) : (
-        <section
-          className={`${viewMode === 'grid' ? styles.fileGrid : viewMode === 'columns' ? styles.fileColumns : styles.fileList}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
-          ref={fileGridRef}
-          onDragLeave={handleFileAreaDragLeave}
-          onDragOver={handleFileAreaDragOver}
-          onDrop={handleFileAreaDrop}
-          onClick={handleFileAreaClick}
-          onMouseDown={handleFileAreaMouseDown}
-          onKeyDown={handleFileAreaKeyDown}
-          tabIndex={0}
-        >
-          {loading ? (
+              <button
+                className={styles.desktopIcon}
+                onClick={() => { setShowingSettings(true); setShowingTrash(false); setSelectedDriveName(null); }}
+                type="button"
+              >
+                <div className={styles.desktopTrashIcon}>
+                  <IconImg src={preferencesIconUrl()} alt="" width={64} height={64} />
+                </div>
+                <span className={styles.desktopIconLabel}>Settings</span>
+                <small className={styles.desktopIconUsage}>System info &amp; maintenance</small>
+              </button>
+            </div>
+          )
+        ) : loading ? (
             viewMode === 'columns' ? (
               <div className={styles.emptyState}>Loading...</div>
-            ) : viewMode === 'grid' ? (
+            ) : (
               <div className={styles.skeletonGrid}>
                 {Array.from({ length: 12 }).map((_, i) => (
                   <div key={i} className={styles.skeletonCard}>
@@ -1843,17 +2040,34 @@ export function App() {
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className={styles.emptyState}>Loading folder...</div>
             )
           ) : filteredEntries.length === 0 ? (
-            viewMode === 'columns' ? (
-              <div className={styles.emptyState}>No files found in {currentPath}</div>
-            ) : (
-              <div className={styles.emptyState}>No files found in {currentPath}</div>
-            )
-          ) : viewMode === 'columns' ? (
-            <div className={styles.columnBrowser}>
+            <div className={styles.folderEmptyState}>
+              <IconImg src={folderIconUrl('64')} alt="" width={64} height={64} className={styles.folderEmptyIcon} />
+              <span className={styles.folderEmptyTitle}>This folder is empty</span>
+              <span className={styles.folderEmptySubtitle}>{currentPath}</span>
+              {canWrite && (
+                <div className={styles.folderEmptyActions}>
+                  <button type="button" onClick={handleCreateFolder}>
+                    <Icon name="folder-new" size={16} /> New Folder
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <section
+              className={`${viewMode === 'grid' ? styles.fileGrid : viewMode === 'columns' ? styles.fileColumns : styles.fileList}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
+              ref={fileGridRef}
+              onDragLeave={handleFileAreaDragLeave}
+              onDragOver={handleFileAreaDragOver}
+              onDrop={handleFileAreaDrop}
+              onClick={handleFileAreaClick}
+              onMouseDown={handleFileAreaMouseDown}
+              onKeyDown={handleFileAreaKeyDown}
+              tabIndex={0}
+            >
+              {viewMode === 'columns' ? (
+                <div className={styles.columnBrowser}>
               {buildColumnPath(currentPath).map((col, colIdx) => (
                 <div key={col} className={styles.columnPane}>
                   {col === currentPath ? (
@@ -2243,12 +2457,18 @@ export function App() {
             <div className={styles.shortcutRow}><span>Close preview / Clear search</span><span className={styles.shortcutKey}>Esc</span></div>
             <div className={styles.shortcutRow}><span>Context menu</span><span className={styles.shortcutKey}>Right click</span></div>
           </div>
-        </Overlay>
-      </>
-    );
-  }
+    </Overlay>
+  </>);
+}
 
-  return shell;
+if (sharesOpen) {
+  return (<>
+    {shell}
+    <ShareManager onClose={() => setSharesOpen(false)} />
+  </>);
+}
+
+return shell;
 }
 
 function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void }) {
@@ -2424,6 +2644,17 @@ function formatBytes(value: number) {
   return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 }
 
+function formatUptime(seconds: number) {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  return parts.join(' ') || '< 1m';
+}
+
 function formatRootUsage(root: RootEntry) {
   if (!root.available) {
     return 'Unavailable';
@@ -2433,6 +2664,17 @@ function formatRootUsage(root: RootEntry) {
   }
   const fsType = root.fsType ? ` · ${root.fsType}` : '';
   return `${formatBytes(root.usedBytes)} used of ${formatBytes(root.totalBytes)} | ${formatBytes(root.freeBytes)} free${fsType}`;
+}
+
+function formatDeviceUsage(part: BlockDevice) {
+  if (part.totalBytes != null && part.totalBytes > 0) {
+    const fsType = part.fsType ? ` · ${part.fsType}` : '';
+    return `${formatBytes(part.usedBytes!)} used of ${formatBytes(part.totalBytes)} | ${formatBytes(part.freeBytes!)} free${fsType}`;
+  }
+  if (part.mountPoint) {
+    return 'Usage unavailable';
+  }
+  return 'Not mounted';
 }
 
 function rootLabel(root: RootEntry) {

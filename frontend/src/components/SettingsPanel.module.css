@@ -1,0 +1,192 @@
+.settingsPanel {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-menu);
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+  max-width: 520px;
+  width: 100%;
+}
+
+.settingsHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-xl) var(--space-xl) 0;
+}
+
+.settingsHeader h3 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.settingsClose {
+  background: none;
+  border: 0;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.settingsClose:hover {
+  color: var(--color-text);
+}
+
+.settingsBody {
+  overflow-y: auto;
+  padding: var(--space-lg) var(--space-xl) var(--space-xl);
+}
+
+.settingsSection {
+  margin-bottom: var(--space-xl);
+}
+
+.settingsSection h4 {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 0 0 var(--space-sm);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.settingsDetails {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.settingsDetails dt {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  margin-top: var(--space-sm);
+}
+
+.settingsDetails dd {
+  font-size: 13px;
+  margin: 0;
+  word-break: break-all;
+}
+
+.settingsRootList {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.settingsRootItem {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 6px;
+  padding: var(--space-md);
+}
+
+.rootUnavailable {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+}
+
+.settingsRootName {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: space-between;
+}
+
+.settingsRootName span {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.settingsRootName small {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.settingsRootItem > small {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.rootUnavailable > small {
+  color: var(--color-danger-text);
+  font-weight: 600;
+}
+
+.rootMeter {
+  background: var(--color-border-light);
+  border-radius: var(--radius-pill);
+  display: block;
+  height: 4px;
+  overflow: hidden;
+}
+
+.rootMeter span {
+  background: var(--color-brand);
+  display: block;
+  height: 100%;
+}
+
+.maintenanceActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.maintenanceBtn {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 32px;
+  padding: 0 var(--space-md);
+}
+
+.maintenanceBtn:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand-text);
+}
+
+.maintenanceBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.maintenanceMsg {
+  color: var(--color-brand);
+  font-size: 12px;
+  margin: var(--space-sm) 0 0;
+}
+
+.maintenanceError {
+  color: var(--color-danger-text);
+  font-size: 12px;
+  margin: var(--space-sm) 0 0;
+}
+
+.workerStatus {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--space-xs);
+  font-size: 13px;
+}
+
+.statusDot {
+  border-radius: 50%;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+
+.dotBusy {
+  background: var(--color-brand);
+}
+
+.dotIdle {
+  background: var(--color-text-muted);
+}

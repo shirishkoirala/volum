@@ -3,7 +3,7 @@ import {
   Archive, Bookmark, ChevronRight, CheckSquare, Clipboard, Copy, Download,
   Eye, EyeOff, FileInput, FolderPlus, Grid3X3, Info,
   ListTree, LogOut, ListX, Moon, Pause, Pencil, Play, RefreshCw, RotateCcw,
-  Scissors, Search, Square, Sun, Trash2, Upload, X, type LucideIcon,
+  Scissors, Search, Settings, Square, Sun, Trash2, Upload, X, type LucideIcon,
 } from 'lucide-react';
 import { IconImg } from './shared';
 import { fileTypeIconUrl, folderIconUrl, driveIconUrl, trashIconUrl } from '../api/icons';
@@ -38,6 +38,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'view-preview': Eye,
   'view-refresh': RefreshCw,
   'edit-restore': RotateCcw,
+  'preferences-system': Settings,
   'weather-clear': Sun,
   'weather-clear-night': Moon,
   'window-close': X,

@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -21,30 +22,36 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/volum-app/volum/backend/internal/auth"
+	"github.com/volum-app/volum/backend/internal/devices"
 	"github.com/volum-app/volum/backend/internal/files"
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/security"
 	"github.com/volum-app/volum/backend/internal/shares"
+	"github.com/volum-app/volum/backend/internal/version"
 	"github.com/volum-app/volum/backend/internal/worker"
 )
 
 type Server struct {
-	router *chi.Mux
-	files  *files.Service
-	jobs   *jobs.Store
-	guard  *security.RootGuard
-	auth   *auth.Service
-	shares *shares.Store
+	router    *chi.Mux
+	files     *files.Service
+	jobs      *jobs.Store
+	guard     *security.RootGuard
+	auth      *auth.Service
+	shares    *shares.Store
+	startTime time.Time
+	dbPath    string
 }
 
-func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service, shareStore *shares.Store) *Server {
+func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service, shareStore *shares.Store, dbPath string) *Server {
 	s := &Server{
-		router: chi.NewRouter(),
-		files:  filesService,
-		jobs:   jobStore,
-		guard:  guard,
-		auth:   authService,
-		shares: shareStore,
+		router:    chi.NewRouter(),
+		files:     filesService,
+		jobs:      jobStore,
+		guard:     guard,
+		auth:      authService,
+		shares:    shareStore,
+		startTime: time.Now(),
+		dbPath:    dbPath,
 	}
 	s.routes()
 	return s
@@ -72,14 +79,17 @@ func (s *Server) routes() {
 		r.Group(func(r chi.Router) {
 			r.Use(s.requireUser)
 			r.Get("/roots", s.handleRoots)
+			r.Get("/devices", s.handleDevices)
 			r.Get("/files", s.handleFiles)
 			r.Get("/files/download", s.handleDownload)
 			r.Get("/files/raw", s.handleRaw)
 			r.Get("/files/search", s.handleSearch)
+			r.Get("/files/sizes", s.handleDirSizes)
 			r.Get("/trash", s.handleTrash)
 			r.Get("/jobs", s.handleJobs)
 			r.Get("/jobs/events", s.handleJobEvents)
 			r.Get("/jobs/{id}", s.handleJob)
+			r.Get("/status", s.handleStatus)
 		})
 
 		r.Group(func(r chi.Router) {
@@ -108,6 +118,9 @@ func (s *Server) routes() {
 			r.Post("/shares", s.handleCreateShare)
 			r.Get("/shares", s.handleListShares)
 			r.Delete("/shares/{id}", s.handleDeleteShare)
+			r.Post("/db/vacuum", s.handleVacuum)
+			r.Post("/db/prune-jobs", s.handlePruneJobs)
+			r.Post("/db/prune-audit-logs", s.handlePruneAuditLogs)
 		})
 	})
 
@@ -134,12 +147,48 @@ func (s *Server) handleRoots(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"roots": s.files.RootUsage()})
 }
 
+func (s *Server) handleDevices(w http.ResponseWriter, r *http.Request) {
+	roots := s.guard.RootEntries()
+	devs, err := devices.List(roots)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"devices": devs})
+}
+
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	user, ok := s.auth.UserFromRequest(r)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authEnabled":   s.auth.Enabled(),
 		"authenticated": ok,
 		"role":          user.Role,
+	})
+}
+
+func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
+	uptime := int64(time.Since(s.startTime).Seconds())
+
+	var dbSize int64
+	if fi, err := os.Stat(s.dbPath); err == nil {
+		dbSize = fi.Size()
+	}
+
+	active, completed, failed, _ := s.jobs.CountByStatus(r.Context())
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"version":   version.Version,
+		"buildTime": version.BuildTime,
+		"goVersion": runtime.Version(),
+		"uptime":    uptime,
+		"dbPath":    s.dbPath,
+		"dbSize":    dbSize,
+		"roots":     s.files.RootUsage(),
+		"jobCounts": map[string]int{
+			"active":    active,
+			"completed": completed,
+			"failed":    failed,
+		},
 	})
 }
 
@@ -405,6 +454,41 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"results": results})
+}
+
+func (s *Server) handleDirSizes(w http.ResponseWriter, r *http.Request) {
+	parentPath := r.URL.Query().Get("path")
+	if parentPath == "" {
+		writeJSON(w, http.StatusOK, map[string]any{"sizes": map[string]int64{}})
+		return
+	}
+
+	resolved, err := s.guard.Resolve(parentPath)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	items, err := os.ReadDir(resolved)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	publicPaths := make([]string, 0, len(items))
+	for _, item := range items {
+		if !item.IsDir() {
+			continue
+		}
+		itemPath := filepath.Join(resolved, item.Name())
+		publicPath, err := s.guard.PublicPath(itemPath)
+		if err != nil {
+			continue
+		}
+		publicPaths = append(publicPaths, publicPath)
+	}
+
+	sizes := s.files.GetDirSizes(publicPaths)
+	writeJSON(w, http.StatusOK, map[string]any{"sizes": sizes})
 }
 
 func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
@@ -1180,4 +1264,42 @@ func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(realPath)))
 	w.Header().Set("Content-Type", "application/octet-stream")
 	http.ServeFile(w, r, realPath)
+}
+
+func (s *Server) handleVacuum(w http.ResponseWriter, r *http.Request) {
+	if err := s.jobs.Vacuum(r.Context()); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (s *Server) handlePruneJobs(w http.ResponseWriter, r *http.Request) {
+	olderThan := 7 * 24 * time.Hour
+	if val := r.URL.Query().Get("olderThan"); val != "" {
+		if d, err := time.ParseDuration(val); err == nil {
+			olderThan = d
+		}
+	}
+	removed, err := s.jobs.PruneJobs(r.Context(), olderThan)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"removed": removed})
+}
+
+func (s *Server) handlePruneAuditLogs(w http.ResponseWriter, r *http.Request) {
+	olderThan := 30 * 24 * time.Hour
+	if val := r.URL.Query().Get("olderThan"); val != "" {
+		if d, err := time.ParseDuration(val); err == nil {
+			olderThan = d
+		}
+	}
+	removed, err := s.jobs.PruneAuditLogs(r.Context(), olderThan)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"removed": removed})
 }

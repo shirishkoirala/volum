@@ -1,3 +1,25 @@
+export type BlockDevice = {
+  name: string;
+  size: string;
+  type: string;
+  mountPoint?: string;
+  fsType?: string;
+  label?: string;
+  uuid?: string;
+  model?: string;
+  rotational: boolean;
+  transport?: string;
+  volumPath?: string;
+  totalBytes?: number;
+  usedBytes?: number;
+  freeBytes?: number;
+  partitions?: BlockDevice[];
+};
+
+export type DevicesResponse = {
+  devices: BlockDevice[] | null;
+};
+
 export type RootEntry = {
   path: string;
   label?: string;
@@ -123,6 +145,10 @@ async function requestVoid(url: string, options?: RequestInit): Promise<void> {
 
 export function getRoots() {
   return request<RootResponse>('/api/roots');
+}
+
+export function getDevices() {
+  return request<DevicesResponse>('/api/devices');
 }
 
 export function getSession() {
@@ -342,6 +368,11 @@ export function isTextExtension(name: string) {
   return /\.(cfg|conf|csv|css|env|go|html?|ini|java|jsx?|json|log|md|php|properties|py|rb|rst|sh|sql|svg|toml|tsx?|txt|xml|ya?ml)$/i.test(name);
 }
 
+export function getDirSizes(path: string) {
+  const params = new URLSearchParams({ path });
+  return request<{ sizes: Record<string, number> }>(`/api/files/sizes?${params.toString()}`);
+}
+
 export function searchFiles(query: string, limit = 50) {
   const params = new URLSearchParams({ q: query, limit: String(limit) });
   return request<SearchResponse>(`/api/files/search?${params.toString()}`);
@@ -388,4 +419,37 @@ export function deleteShare(id: string) {
   return requestVoid(`/api/shares/${encodeURIComponent(id)}`, {
     method: 'DELETE'
   });
+}
+
+export type StatusResponse = {
+  version: string;
+  buildTime: string;
+  goVersion: string;
+  uptime: number;
+  dbPath: string;
+  dbSize: number;
+  roots: RootEntry[];
+  jobCounts: {
+    active: number;
+    completed: number;
+    failed: number;
+  };
+};
+
+export function getStatus() {
+  return request<StatusResponse>('/api/status');
+}
+
+export function dbVacuum() {
+  return request<{ status: string }>('/api/db/vacuum', { method: 'POST' });
+}
+
+export function dbPruneJobs(olderThan?: string) {
+  const params = olderThan ? `?olderThan=${encodeURIComponent(olderThan)}` : '';
+  return request<{ removed: number }>(`/api/db/prune-jobs${params}`, { method: 'POST' });
+}
+
+export function dbPruneAuditLogs(olderThan?: string) {
+  const params = olderThan ? `?olderThan=${encodeURIComponent(olderThan)}` : '';
+  return request<{ removed: number }>(`/api/db/prune-audit-logs${params}`, { method: 'POST' });
 }

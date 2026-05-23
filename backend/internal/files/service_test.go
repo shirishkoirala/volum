@@ -8,7 +8,41 @@ import (
 	"github.com/volum-app/volum/backend/internal/security"
 )
 
-func TestListReportsRecursiveDirectorySize(t *testing.T) {
+func testCache() *DirSizeCache {
+	return NewDirSizeCache(0)
+}
+
+func TestListReturnsDirectoryEntry(t *testing.T) {
+	root := t.TempDir()
+	folder := filepath.Join(root, "folder")
+	if err := os.MkdirAll(folder, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(folder, "a.txt"), []byte("12345"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	guard, err := security.NewRootGuard([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	entries, err := NewService(guard, testCache()).List(root, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 entry, got %d", len(entries))
+	}
+	if entries[0].Type != "directory" {
+		t.Fatalf("expected directory type, got %s", entries[0].Type)
+	}
+	if entries[0].Name != "folder" {
+		t.Fatalf("expected folder name, got %s", entries[0].Name)
+	}
+}
+
+func TestComputeDirSizes(t *testing.T) {
 	root := t.TempDir()
 	folder := filepath.Join(root, "folder")
 	nested := filepath.Join(folder, "nested")
@@ -22,20 +56,26 @@ func TestListReportsRecursiveDirectorySize(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	guard, err := security.NewRootGuard([]string{root})
+	guard, err := security.NewRootGuardWithRoots([]security.Root{{
+		Path:         "/",
+		InternalPath: root,
+		Label:        "test",
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	entries, err := NewService(guard).List(root, false)
-	if err != nil {
-		t.Fatal(err)
+	cache := testCache()
+	svc := NewService(guard, cache)
+
+	svc.computeDirSizes([]string{"/folder"})
+
+	got, ok := cache.Get("/folder")
+	if !ok {
+		t.Fatal("expected cached size for /folder")
 	}
-	if len(entries) != 1 {
-		t.Fatalf("expected 1 entry, got %d", len(entries))
-	}
-	if entries[0].Size != 8 {
-		t.Fatalf("expected recursive directory size 8, got %d", entries[0].Size)
+	if got != 5 {
+		t.Fatalf("expected immediate directory size 5, got %d", got)
 	}
 }
 
@@ -52,7 +92,7 @@ func TestListShowsHiddenFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard)
+	s := NewService(guard, testCache())
 
 	entries, err := s.List(root, false)
 	if err != nil {
@@ -77,7 +117,7 @@ func TestCreateFolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard)
+	s := NewService(guard, testCache())
 
 	entry, err := s.CreateFolder(root, "newdir")
 	if err != nil {
@@ -113,7 +153,7 @@ func TestRename(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard)
+	s := NewService(guard, testCache())
 
 	entry, err := s.Rename(filepath.Join(root, "old.txt"), "new.txt")
 	if err != nil {
@@ -149,7 +189,7 @@ func TestChmod(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard)
+	s := NewService(guard, testCache())
 
 	entry, err := s.Chmod(path, "rwx------")
 	if err != nil {
@@ -179,7 +219,7 @@ func TestTrashAndRestore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := NewService(guard)
+	service := NewService(guard, testCache())
 
 	trashEntry, err := service.Trash(path)
 	if err != nil {
@@ -223,7 +263,7 @@ func TestDeleteTrashPermanentlyRemovesEntry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := NewService(guard)
+	service := NewService(guard, testCache())
 
 	trashEntry, err := service.Trash(path)
 	if err != nil {
@@ -255,7 +295,7 @@ func TestDownloadPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard)
+	s := NewService(guard, testCache())
 
 	resolved, info, err := s.DownloadPath(path)
 	if err != nil {
@@ -290,7 +330,7 @@ func TestSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard)
+	s := NewService(guard, testCache())
 
 	results, err := s.Search("hello", 10)
 	if err != nil {
@@ -328,7 +368,7 @@ func TestEntryFromPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := NewService(guard)
+	service := NewService(guard, testCache())
 
 	entry, err := service.entryFromPath(path)
 	if err != nil {
@@ -372,7 +412,7 @@ func TestServiceUsesPublicPathsWithHostMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := NewService(guard)
+	service := NewService(guard, testCache())
 
 	entries, err := service.List("/mnt/disk", false)
 	if err != nil {

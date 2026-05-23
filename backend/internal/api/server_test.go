@@ -16,6 +16,7 @@ import (
 	"github.com/volum-app/volum/backend/internal/files"
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/security"
+	"github.com/volum-app/volum/backend/internal/shares"
 	"github.com/volum-app/volum/backend/internal/storage"
 	"github.com/volum-app/volum/backend/internal/worker"
 )
@@ -40,7 +41,7 @@ func setupTestServer(t *testing.T) (*testServer, func()) {
 		t.Fatal(err)
 	}
 
-	filesService := files.NewService(guard)
+	filesService := files.NewService(guard, files.NewDirSizeCache(0))
 
 	db, err := storage.Open(filepath.Join(root, "volum.db"))
 	if err != nil {
@@ -48,13 +49,14 @@ func setupTestServer(t *testing.T) (*testServer, func()) {
 	}
 
 	jobStore := jobs.NewStore(db)
+	shareStore := shares.NewStore(db)
 
 	slogger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	workerService := worker.New(jobStore, guard, slogger)
 
 	_ = workerService
 
-	s := New(filesService, jobStore, guard, authService)
+	s := New(filesService, jobStore, guard, authService, shareStore)
 
 	ts := &testServer{Server: s, root: root}
 
