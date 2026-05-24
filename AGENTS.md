@@ -23,7 +23,7 @@
 
 ### Frontend (`frontend/`)
 - React 19 + Vite + TypeScript
-- Entry: `frontend/src/App.tsx` — main shell with sidebar, workspace, job drawer (~2023 lines)
+- Entry: `frontend/src/App.tsx` — thin routing shell (auth gate vs Home, ~30 lines)
 - API client: `frontend/src/api/client.ts` — typed request functions
 - CSS Modules: every component has `*.module.css`, Vite auto-hashes class names. Use `styles.className` (camelCase)
 - Shared styles: `frontend/src/styles/global.css` (utility classes), `tokens.css` (theme vars)
@@ -32,7 +32,12 @@
 ### Frontend Directory Structure
 ```
 frontend/src/
-├── App.tsx                          # Main shell (~2023 lines)
+├── App.tsx                          # Thin routing shell (~30 lines)
+├── screens/
+│   ├── Home.tsx                     # Workspace screen (state, effects, handlers, shell)
+│   └── LoginScreen.tsx
+├── hooks/                           # Custom hooks (NOT pure utils)
+│   ├── useJobs.ts, useDragDrop.ts, useRubberBand.ts
 ├── utils/                           # Shared utilities (NEVER define locally)
 │   ├── format.ts, path.ts, archive.ts, jobs.ts, view.ts
 ├── pages/                           # Full-page views in workspace
@@ -74,7 +79,8 @@ frontend/src/
 - `backend/internal/storage/sqlite.go` — DB open + schema migration
 
 #### Frontend
-- `frontend/src/App.tsx` — main app shell, state, handlers (~2023 lines)
+- `frontend/src/App.tsx` — thin routing shell (auth gate vs Home, ~30 lines)
+- `frontend/src/screens/Home.tsx` — workspace state, effects, handlers, shell rendering
 - `frontend/src/components/overlay/Dialogs.tsx` — ConfirmDialog, TextInputDialog, TransferDialog
 - `frontend/src/components/overlay/Toast.tsx` — Toast + ToastViewport (separate file)
 - `frontend/src/components/overlay/ShareDialog.tsx` — create share link dialog
@@ -145,6 +151,18 @@ frontend/src/
 - Extracted `FolderPicker.tsx` + `FolderPicker.module.css` from `Dialogs.tsx` (into `components/input/`)
 - Simplified `Dialogs.tsx` to only contain ConfirmDialog, TextInputDialog, TransferDialog
 - Simplified `Dialogs.module.css` by removing toast and folderPicker CSS classes
+
+### Home Screen Extraction — App.tsx slimming (2032→31 lines, -98%)
+- Created `screens/Home.tsx` — absorbs all workspace state, effects, handlers, shell JSX, and overlay rendering
+- Rewrote `App.tsx` as a thin routing shell: theme management, session/auth gate, LoginScreen vs Home
+- Created `hooks/useJobs.ts` — SSE job subscription + job control handlers (cancel/retry/pause/resume)
+- Created `hooks/useDragDrop.ts` — drag/drop state and handlers for file transfers
+- Created `hooks/useRubberBand.ts` — rubber-band selection logic
+- Created `components/layout/SelectionToolbar.tsx` — toolbar with conditional action buttons (Preview, Info, Copy, Move, Archive, Extract, Checksum, Paste, Delete)
+- Created `components/overlay/FileContextMenu.tsx` + `TrashContextMenu.tsx` — context menu components with `ContextMenu.module.css`
+- Removed orphaned CSS: `.topbar`, `.selectionBar`, `.selectionActions`, `.contextMenu` from App.module.css (now in SelectionToolbar/ContextMenu modules)
+- App.module.css reduced from 116→9 lines (.authShell only)
+- Home.module.css created with `.appShell` + `.workspace` grid layout
 
 ### Task 3 — Scrollbar Theming
 - Global scrollbar rules in `frontend/src/styles/global.css` (WebKit + Firefox via `*` selector)

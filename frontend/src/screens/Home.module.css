@@ -1,0 +1,16 @@
+.appShell {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-rows: 44px 1fr 28px;
+  height: 100vh;
+  position: relative;
+}
+
+.workspace {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
