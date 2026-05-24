@@ -32,12 +32,12 @@ type PanelHeaderProps = {
 
 export function PanelHeader({ title, subtitle, onClose, children }: PanelHeaderProps) {
   return (
-    <div className="panel-header">
+    <div className={styles.panelHeader}>
       <div>
         <h3>{title}</h3>
         {subtitle && <p>{subtitle}</p>}
       </div>
-      <div className="panel-header-actions">
+      <div className={styles.panelHeaderActions}>
         {children}
         {onClose && (
           <button className="icon-button" onClick={onClose} type="button" aria-label="Close">

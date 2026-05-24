@@ -2,7 +2,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-menu);
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -211,7 +211,7 @@
   flex-shrink: 0;
 }
 
-.fateNew { background: var(--color-brand-subtle); color: var(--color-brand); }
+.fateNew { background: var(--color-brand-bg); color: var(--color-brand); }
 .fateSkip { background: var(--color-hover); color: var(--color-text-muted); }
 .fateOverwrite { background: #fff3cd; color: #856404; }
 .fateRename { background: #d4edda; color: #155724; }

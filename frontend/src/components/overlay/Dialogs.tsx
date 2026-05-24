@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import { Overlay } from '../ui/shared';
+import { Overlay, PanelHeader } from '../ui/shared';
 import { Select } from '../input/Select';
 import { FolderPicker } from '../input/FolderPicker';
 import { folderIconUrl } from '../../api/icons';
@@ -57,13 +57,8 @@ export function ConfirmDialog({ dialog, onClose }: { dialog: NonNullable<Confirm
 
   return (
     <Overlay zIndex={110} onClose={onClose}>
-      <div className={`${styles.appDialog} ${styles.appDialogSm}`} role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
-        <div className="panel-header">
-          <h3 id="confirm-dialog-title">{dialog.title}</h3>
-          <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
-            <Icon name="window-close" size={18} />
-          </button>
-        </div>
+      <div className={`${styles.appDialog} ${styles.appDialogSm}`} role="dialog" aria-modal="true" aria-label={dialog.title}>
+        <PanelHeader title={dialog.title} onClose={onClose} />
         <p className={styles.dialogMessage}>{dialog.message}</p>
         <div className={styles.dialogActions}>
           <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
@@ -98,13 +93,8 @@ export function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextI
 
   return (
     <Overlay zIndex={110} onClose={onClose}>
-      <div className={styles.appDialog} role="dialog" aria-modal="true" aria-labelledby="text-dialog-title">
-        <div className="panel-header">
-          <h3 id="text-dialog-title">{dialog.title}</h3>
-          <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
-            <Icon name="window-close" size={18} />
-          </button>
-        </div>
+      <div className={styles.appDialog} role="dialog" aria-modal="true" aria-label={dialog.title}>
+        <PanelHeader title={dialog.title} onClose={onClose} />
         <label className={styles.dialogField}>
           <span>{dialog.label}</span>
           <input
@@ -226,15 +216,7 @@ export function TransferDialog({
     return (
       <Overlay zIndex={110} onClose={onClose}>
         <div className={`${styles.appDialog} ${styles.appDialogWide}`} role="dialog" aria-modal="true">
-          <div className="panel-header">
-            <div>
-              <h3>Preview {title}</h3>
-              <p>{itemLabel} → {destination}</p>
-            </div>
-            <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
-              <Icon name="window-close" size={18} />
-            </button>
-          </div>
+          <PanelHeader title={`Preview ${title}`} subtitle={`${itemLabel} → ${destination}`} onClose={onClose} />
           <div className={styles.previewSummary}>
             {previewSummary.newFiles > 0 && <span className={styles.previewStat}><strong>{previewSummary.newFiles}</strong> new</span>}
             {previewSummary.skipped > 0 && <span className={styles.previewStat}><strong>{previewSummary.skipped}</strong> skipped</span>}
@@ -278,16 +260,8 @@ export function TransferDialog({
 
   return (
     <Overlay zIndex={110} onClose={onClose}>
-      <form className={styles.appDialog} role="dialog" aria-modal="true" aria-labelledby="transfer-dialog-title" onSubmit={handleSubmit}>
-        <div className="panel-header">
-          <div>
-            <h3 id="transfer-dialog-title">{title}</h3>
-            <p>{itemLabel}</p>
-          </div>
-          <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
-            <Icon name="window-close" size={18} />
-          </button>
-        </div>
+      <form className={styles.appDialog} role="dialog" aria-modal="true" aria-label={title} onSubmit={handleSubmit}>
+        <PanelHeader title={title} subtitle={itemLabel} onClose={onClose} />
         <label className={styles.dialogField}>
           <span>Destination folder path</span>
           <div className={styles.dialogFieldRow}>

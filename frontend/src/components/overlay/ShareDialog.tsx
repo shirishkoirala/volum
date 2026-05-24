@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import { Overlay } from '../ui/shared';
+import { Overlay, PanelHeader } from '../ui/shared';
 import { createShare, type Share } from '../../api/client';
 import dStyles from './Dialogs.module.css';
 
@@ -64,12 +64,7 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
   return (
     <Overlay zIndex={110} onClose={onClose}>
       <div className={dStyles.appDialog} role="dialog" aria-modal="true">
-        <div className="panel-header">
-          <h3>{share ? 'Share Created' : 'Create Share Link'}</h3>
-          <button className="icon-button" onClick={onClose} type="button" aria-label="Close">
-            <Icon name="window-close" size={18} />
-          </button>
-        </div>
+        <PanelHeader title={share ? 'Share Created' : 'Create Share Link'} onClose={onClose} />
         {share ? (
           <>
             <p className={dStyles.dialogMessage}>

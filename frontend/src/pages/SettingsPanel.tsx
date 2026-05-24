@@ -152,7 +152,7 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay' }: Se
 
           {(activeCategory === 'storage' || filteredCategories.some((c) => c.id === 'storage')) && (
             <section className={styles.settingsSection}>
-              <h4>Roots{hasUnavailableRoot ? <span style={{ color: 'var(--color-danger-text)', marginLeft: 8, fontSize: 11, fontWeight: 700, textTransform: 'none' }}>⚠ Some unavailable</span> : ''}</h4>
+              <h4>Roots{hasUnavailableRoot ? <span className={styles.rootWarningBadge}>⚠ Some unavailable</span> : ''}</h4>
               <div className={styles.settingsRootList}>
                 {status.roots.map((root) => (
                   <div key={root.path} className={`${styles.settingsRootItem}${!root.available ? ` ${styles.rootUnavailable}` : ''}`}>
@@ -207,7 +207,7 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay' }: Se
                 <section className={styles.settingsSection}>
                   <h4>Shares</h4>
                   <p className="muted compact">Manage expiring share links for files and folders.</p>
-                  <div style={{ marginTop: 'var(--space-sm)' }}>
+                  <div className={styles.sharesActions}>
                     <button type="button" className={styles.maintenanceBtn} onClick={onOpenShares}>
                       Manage Shares
                     </button>

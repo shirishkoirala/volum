@@ -39,32 +39,6 @@
   color: var(--color-danger);
 }
 
-.panel-header {
-  align-items: flex-start;
-  display: flex;
-  gap: var(--space-md);
-  justify-content: space-between;
-}
-
-.panel-header h3 {
-  font-size: 17px;
-  line-height: 1.25;
-  margin: 0;
-}
-
-.panel-header p {
-  color: var(--color-text-muted);
-  font-size: 13px;
-  margin: 4px 0 0;
-}
-
-.panel-header-actions {
-  align-items: center;
-  display: flex;
-  flex-shrink: 0;
-  gap: var(--space-sm);
-}
-
 .icon-rotate-180 {
   display: inline-flex;
   transform: rotate(180deg);

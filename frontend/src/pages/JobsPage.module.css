@@ -30,8 +30,8 @@
 }
 
 .filterTab.active {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+  background: var(--color-brand);
+  border-color: var(--color-brand);
   color: #fff;
 }
 
@@ -103,7 +103,7 @@
 .jobCollapseToggle {
   background: none;
   border: none;
-  color: var(--color-accent);
+  color: var(--color-brand);
   cursor: pointer;
   font-size: 0.8rem;
   padding: var(--space-xs) 0;

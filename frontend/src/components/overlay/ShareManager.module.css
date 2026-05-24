@@ -105,6 +105,11 @@
   height: 10px;
 }
 
+.skelW60 { width: 60%; }
+.skelW50 { width: 50%; }
+.skelW40 { width: 40%; }
+.skelW30 { width: 30%; }
+
 .skeletonCell,
 .skeletonRow {
   animation: skeletonPulse 1.5s ease-in-out infinite;
@@ -119,7 +124,7 @@
 .retryBtn {
   background: none;
   border: none;
-  color: var(--color-accent);
+  color: var(--color-brand);
   cursor: pointer;
   text-decoration: underline;
   font-size: inherit;

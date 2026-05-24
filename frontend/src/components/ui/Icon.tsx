@@ -1,9 +1,9 @@
 import type { FileEntry } from '../../api/client';
 import {
   Archive, Bookmark, ChevronRight, CheckSquare, Clipboard, Copy, Download,
-  Eye, EyeOff, FileInput, FolderPlus, Grid3X3, Info,
+  Eye, EyeOff, FileInput, FolderPlus, Grid3X3, HelpCircle, Info,
   ListTree, LogOut, ListX, Moon, Pause, Pencil, Play, RefreshCw, RotateCcw,
-  Scissors, Search, Send, Settings, Square, Sun, Trash2, Upload, X, type LucideIcon,
+  Scissors, Search, Send, Settings, Square, Sun, Trash2, Upload, X, HardDrive, type LucideIcon,
 } from 'lucide-react';
 import { IconImg } from './shared';
 import { fileTypeIconUrl, folderIconUrl, driveIconUrl, trashIconUrl } from '../../api/icons';
@@ -39,6 +39,8 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'view-refresh': RefreshCw,
   'mail-send': Send,
   'edit-restore': RotateCcw,
+  'drive-harddisk': HardDrive,
+  'help-about': HelpCircle,
   'preferences-system': Settings,
   'weather-clear': Sun,
   'weather-clear-night': Moon,

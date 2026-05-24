@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Icon, FileIcon } from '../ui/Icon';
-import { Overlay } from '../ui/shared';
+import { Overlay, PanelHeader } from '../ui/shared';
 import { Select } from '../input/Select';
 import { batchRename } from '../../api/client';
 import type { FileEntry } from '../../api/client';
 import styles from './BatchRename.module.css';
+import dStyles from './Dialogs.module.css';
 
 type PatternType = 'replace' | 'prefix' | 'suffix' | 'case';
 
@@ -74,12 +75,7 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
   return (
     <Overlay onClose={onClose}>
       <div className={styles.renameModal}>
-        <div className="panel-header">
-          <h3>Batch Rename ({entries.length} items)</h3>
-          <button className="icon-button" onClick={onClose} type="button">
-            <Icon name="window-close" size={18} />
-          </button>
-        </div>
+        <PanelHeader title={`Batch Rename (${entries.length} items)`} onClose={onClose} />
 
         <div className={styles.renamePattern}>
           <Select value={patternType} onChange={(value) => setPatternType(value as PatternType)}>
@@ -132,10 +128,10 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
         {error && <p className={styles.renameError}>{error}</p>}
 
         <div className={styles.renameActions}>
-          <button type="button" className="dialog-button secondary" onClick={onClose}>Cancel</button>
+          <button type="button" className={`${dStyles.dialogButton} ${dStyles.secondary}`} onClick={onClose}>Cancel</button>
           <button
             type="button"
-            className="dialog-button primary"
+            className={`${dStyles.dialogButton} ${dStyles.primary}`}
             disabled={submitting || previews.every((p) => !p.changed)}
             onClick={handleSubmit}
           >

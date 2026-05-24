@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Icon, FileIcon } from '../ui/Icon';
-import { Overlay } from '../ui/shared';
+import { Overlay, PanelHeader } from '../ui/shared';
 import { chmodPath } from '../../api/client';
 import type { FileEntry } from '../../api/client';
 import styles from './InfoPanel.module.css';
@@ -75,12 +75,7 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
   return (
     <Overlay onClose={onClose}>
       <div className={styles.infoPanel}>
-        <div className="panel-header">
-          <h3>Info</h3>
-          <button className="icon-button" onClick={onClose} type="button">
-            <Icon name="window-close" size={18} />
-          </button>
-        </div>
+        <PanelHeader title="Info" onClose={onClose} />
 
         <div className={styles.infoPanelBody}>
           <div className={styles.infoIconRow}>

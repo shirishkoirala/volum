@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import { Overlay } from '../ui/shared';
+import { Overlay, PanelHeader } from '../ui/shared';
 import { EmptyState } from '../ui/EmptyState';
 import { getShares, deleteShare, type Share } from '../../api/client';
 import dStyles from './Dialogs.module.css';
@@ -55,12 +55,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
   return (
     <Overlay zIndex={110} onClose={onClose}>
       <div className={`${dStyles.appDialog} ${styles.shareManager}`} role="dialog" aria-modal="true">
-        <div className="panel-header">
-          <h3>Manage Shares</h3>
-          <button className="icon-button" onClick={onClose} type="button" aria-label="Close">
-            <Icon name="window-close" size={18} />
-          </button>
-        </div>
+        <PanelHeader title="Manage Shares" onClose={onClose} />
 
         {loading ? (
           <div className={styles.shareTable}>
@@ -74,12 +69,12 @@ export function ShareManager({ onClose }: ShareManagerProps) {
             </div>
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className={styles.skeletonRow}>
-                <div className={styles.skeletonCell} style={{ width: '60%' }} />
-                <div className={styles.skeletonCell} style={{ width: '40%' }} />
-                <div className={styles.skeletonCell} style={{ width: '50%' }} />
-                <div className={styles.skeletonCell} style={{ width: '30%' }} />
-                <div className={styles.skeletonCell} style={{ width: '40%' }} />
-                <div className={styles.skeletonCell} style={{ width: '50%' }} />
+                <div className={`${styles.skeletonCell} ${styles.skelW60}`} />
+                <div className={`${styles.skeletonCell} ${styles.skelW40}`} />
+                <div className={`${styles.skeletonCell} ${styles.skelW50}`} />
+                <div className={`${styles.skeletonCell} ${styles.skelW30}`} />
+                <div className={`${styles.skeletonCell} ${styles.skelW40}`} />
+                <div className={`${styles.skeletonCell} ${styles.skelW50}`} />
               </div>
             ))}
           </div>
