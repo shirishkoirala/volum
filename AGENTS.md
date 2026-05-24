@@ -87,6 +87,11 @@
 - Fixed Bug 1.4: Added `viewModeBeforeTrash` ref to save/restore `columns` view mode when entering/exiting trash
 - Updated `docs/roadmap.md` to mark Batch 1 as complete with per-item status
 
+### Task 6 — Batch 2 Sidebar Cleanup Audit
+- Reviewed all 4 Batch 2 items — all already implemented
+- "Storage" → "Removable" (done), USB filter (done), Jobs in Quick Access (done), roots state not in sidebar (done)
+- Updated docs to mark Batch 2 complete
+
 ## Docker
 
 - Use `docker-compose.server.yml` for production/home-server runs (host root access)

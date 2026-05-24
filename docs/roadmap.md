@@ -26,16 +26,16 @@ All items verified/fixed.
 | 1.5 | Column view drag-over — `styles.fileColumns.dragOver` CSS rule referenced but doesn't exist | ✅ Already present — no fix needed | `App.module.css:810` |
 | 1.6 | Breadcrumb overflow menu — no Escape or click-outside to dismiss | ✅ Already implemented — no fix needed | `BreadcrumbBar.tsx:24-41` |
 
-## Batch 2 — Sidebar Cleanup
+## Batch 2 — Sidebar Cleanup ✅ Done
 
-Goal: sidebar shows what matters, hides noise.
+All items verified — already implemented in prior work.
 
-| # | Change | Detail |
-|---|--------|--------|
-| 2.1 | Rename "Storage" → "Removable" | Section header label |
-| 2.2 | Filter to USB/removable only | `dev.transport === 'usb'` filter in sidebar render |
-| 2.3 | Add "Jobs" to sidebar Quick Access | Button below Trash with active count badge |
-| 2.4 | Remove unused `roots` state from sidebar rendering | Still fetched for folder picker, but no sidebar dead code |
+| # | Change | Status | Detail |
+|---|--------|--------|--------|
+| 2.1 | Rename "Storage" → "Removable" | ✅ Done | Line 1440: `<h2>Removable</h2>` |
+| 2.2 | Filter to USB/removable only | ✅ Done | Line 1444: `devices.filter((dev) => dev.transport === 'usb')` |
+| 2.3 | Add "Jobs" to sidebar Quick Access | ✅ Done | Lines 1403–1411: button with active count badge |
+| 2.4 | Remove unused `roots` state from sidebar | ✅ Done | Only used in `folderSuggestions` for FolderPicker, not sidebar |
 
 **Result sidebar:**
 ```
@@ -171,6 +171,7 @@ Batches 1–3 are structural (bugs, layout, new page). Batches 4–7 are code-le
 ## Completed
 
 - [x] Batch 1 — Critical bugs (all 6 items verified/fixed)
+- [x] Batch 2 — Sidebar Cleanup (all 4 items already done)
 - [x] Admin share management UI (ShareManager)
 - [x] Settings page (version, DB maintenance, root health, worker status)
 - [x] Desktop drive view (physical drives → partition contents)
