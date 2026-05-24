@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Children, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Icon } from './Icon';
 import styles from './BreadcrumbBar.module.css';
@@ -21,10 +21,17 @@ type BreadcrumbBarProps = {
 export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, locationMode, onToggleLocationMode, children }: BreadcrumbBarProps) {
   const navRef = useRef<HTMLDivElement>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const rightOverflowRef = useRef<HTMLDivElement>(null);
   const locationInputRef = useRef<HTMLInputElement>(null);
   const [overflowCount, setOverflowCount] = useState(0);
   const [showOverflow, setShowOverflow] = useState(false);
+  const [toolbarOverflowIdx, setToolbarOverflowIdx] = useState(-1);
+  const [showToolbarOverflow, setShowToolbarOverflow] = useState(false);
   const [locationValue, setLocationValue] = useState('');
+
+  const childrenArray = useMemo(() => Children.toArray(children), [children]);
 
   useEffect(() => {
     if (locationMode && locationInputRef.current) {
@@ -75,6 +82,67 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
     ro.observe(el);
     return () => ro.disconnect();
   }, [crumbs]);
+
+  useEffect(() => {
+    if (!showToolbarOverflow) return;
+    const handler = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent) {
+        if (e.key === 'Escape') setShowToolbarOverflow(false);
+        return;
+      }
+      if (rightOverflowRef.current && !rightOverflowRef.current.contains(e.target as Node)) {
+        setShowToolbarOverflow(false);
+      }
+    };
+    document.addEventListener('keydown', handler);
+    document.addEventListener('mousedown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+      document.removeEventListener('mousedown', handler);
+    };
+  }, [showToolbarOverflow]);
+
+  // Measure toolbar items using a hidden measure container
+  useEffect(() => {
+    const rightEl = rightRef.current;
+    const measureEl = measureRef.current;
+    if (!rightEl || !measureEl) return;
+
+    const check = () => {
+      const available = rightEl.clientWidth;
+      const measureItems = Array.from(measureEl.children) as HTMLElement[];
+      if (measureItems.length === 0) return;
+
+      let total = 0;
+      let overflowIdx = -1;
+      const moreBtnW = 34;
+
+      for (let i = 0; i < measureItems.length; i++) {
+        const w = measureItems[i].offsetWidth;
+        const needsMore = i < measureItems.length - 1;
+        if (total + w + (needsMore ? moreBtnW : 0) > available && i > 0) {
+          overflowIdx = i;
+          break;
+        }
+        total += w;
+      }
+      setToolbarOverflowIdx(overflowIdx);
+    };
+
+    // Flush layout before first measure
+    requestAnimationFrame(check);
+    const ro = new ResizeObserver(check);
+    ro.observe(rightEl);
+    return () => ro.disconnect();
+  }, [childrenArray]);
+
+  const visibleToolbarItems = toolbarOverflowIdx > 0
+    ? childrenArray.slice(0, toolbarOverflowIdx)
+    : childrenArray;
+
+  const hiddenToolbarItems = toolbarOverflowIdx > 0
+    ? childrenArray.slice(toolbarOverflowIdx)
+    : [];
 
   const overflowCrumbs = overflowCount > 0
     ? crumbs.slice(1, -overflowCount - 1 > 0 ? -overflowCount : undefined)
@@ -201,7 +269,32 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
           </div>
         </nav>
       </div>
-      {children && <div className={styles.right}>{children}</div>}
+      {childrenArray.length > 0 && (
+        <div className={styles.right} ref={rightRef}>
+          {visibleToolbarItems}
+          {toolbarOverflowIdx > 0 && (
+            <div className={styles.moreWrap}>
+              <button
+                type="button"
+                className={styles.moreBtn}
+                onClick={() => setShowToolbarOverflow(!showToolbarOverflow)}
+                title="More actions"
+              >
+                <Icon name="view-more" size={18} />
+              </button>
+              {showToolbarOverflow && (
+                <div ref={rightOverflowRef} className={styles.moreMenu}>
+                  {hiddenToolbarItems}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      {/* Hidden measure container — always has all items for accurate sizing */}
+      <div ref={measureRef} className={styles.measureContainer} aria-hidden="true">
+        {childrenArray}
+      </div>
       {onToggleLocationMode && (
         <button className={styles.locationToggle} onClick={onToggleLocationMode} title="Enter path (Ctrl+L)" type="button">
           <Icon name="edit-find" size={16} />
