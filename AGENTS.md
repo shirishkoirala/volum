@@ -1,4 +1,4 @@
-# Volum — Agent Memory
+# Volum Desktop — Agent Memory
 
 ## Build & Run
 

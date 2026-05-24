@@ -1,0 +1,46 @@
+.statusBar {
+  align-items: center;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border-light);
+  display: flex;
+  font-size: 11px;
+  gap: var(--space-md);
+  height: 28px;
+  overflow: hidden;
+  padding: 0 var(--space-md);
+  user-select: none;
+  white-space: nowrap;
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.statusLeft {
+  color: var(--color-text-secondary);
+  flex: 0 0 auto;
+}
+
+.statusCenter {
+  color: var(--color-text-muted);
+  flex: 1;
+  text-align: center;
+}
+
+.statusRight {
+  color: var(--color-text-muted);
+  flex: 0 0 auto;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 760px) {
+  .statusBar {
+    font-size: 10px;
+    height: 24px;
+    padding: 0 var(--space-sm);
+  }
+
+  .statusCenter {
+    display: none;
+  }
+}

@@ -1,5 +1,5 @@
 import { DragEvent, FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Icon, FileIcon, FolderIcon, DeviceIcon, TrashIcon } from './components/Icon';
+import { Icon } from './components/Icon';
 import {
   ConflictPolicy,
   FileEntry,
@@ -29,7 +29,6 @@ import {
   login,
   logout,
   pauseJob,
-  rawUrl,
   renamePath,
   RootEntry,
   Session,
@@ -50,17 +49,21 @@ import appIcon from './assets/icon-light.png';
 import { PreviewModal } from './components/PreviewModal';
 import { BatchRenameModal } from './components/BatchRenameModal';
 import { Select } from './components/Select';
-import { ProgressBar } from './components/ProgressBar';
-import { EmptyState } from './components/EmptyState';
 import { InfoPanel } from './components/InfoPanel';
-import { BreadcrumbBar } from './components/BreadcrumbBar';
 import { ShareDialog } from './components/ShareDialog';
 import { ShareManager } from './components/ShareManager';
 import { SettingsPanel } from './components/SettingsPanel';
-import { Overlay, IconImg } from './components/shared';
+import { TopBar } from './components/TopBar';
+import { Dock } from './components/Dock';
+import { FilesSidebar } from './components/FilesSidebar';
+import { StatusBar } from './components/StatusBar';
+import { Overlay } from './components/shared';
 import { folderIconUrl, preferencesIconUrl, jobsIconUrl, computerIconUrl, trashIconUrl } from './api/icons';
 import { ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport } from './components/Dialogs';
 import { JobsPage } from './components/JobsPage';
+import { DesktopView } from './components/DesktopView';
+import { TrashView } from './components/TrashView';
+import { FilesView } from './components/FilesView';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState, Toast } from './components/Dialogs';
 import styles from './App.module.css';
 
@@ -145,6 +148,7 @@ export function App() {
   const searchRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [locationMode, setLocationMode] = useState(false);
   const [sseConnected, setSseConnected] = useState(true);
   const [showingTrash, setShowingTrash] = useState(false);
   const [showingSettings, setShowingSettings] = useState(false);
@@ -157,9 +161,6 @@ export function App() {
   const [sectionCollapsed, setSectionCollapsed] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem('volum_sectionCollapsed') ?? '{}'); } catch { return {}; }
   });
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() =>
-    localStorage.getItem('volum_sidebarCollapsed') === 'true'
-  );
   const [trashContextMenu, setTrashContextMenu] = useState<{
     x: number; y: number; entry: TrashEntry;
   } | null>(null);
@@ -171,6 +172,95 @@ export function App() {
   const viewModeBeforeTrash = useRef<ViewMode | null>(null);
 
   const canWrite = session?.role === 'admin';
+
+  const activeView = useMemo(() => {
+    if (showingSettings) return 'settings';
+    if (showingJobs) return 'jobs';
+    if (showingTrash) return 'trash';
+    if (currentPath) return 'files';
+    return 'desktop';
+  }, [currentPath, showingTrash, showingSettings, showingJobs]);
+
+  const activeJobCount = useMemo(
+    () => jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length,
+    [jobs]
+  );
+
+  const dockItems = useMemo(() => [
+    {
+      id: 'desktop',
+      label: 'Desktop',
+      icon: computerIconUrl(),
+      active: activeView === 'desktop',
+    },
+    {
+      id: 'files',
+      label: 'Files',
+      icon: folderIconUrl('64'),
+      active: activeView === 'files',
+    },
+    {
+      id: 'trash',
+      label: 'Trash',
+      icon: trashIconUrl(trashEntries.length > 0, '64'),
+      badge: trashEntries.length > 0 ? trashEntries.length : undefined,
+      active: activeView === 'trash',
+    },
+    {
+      id: 'jobs',
+      label: 'Jobs',
+      icon: jobsIconUrl(),
+      badge: activeJobCount > 0 ? activeJobCount : undefined,
+      active: activeView === 'jobs',
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: preferencesIconUrl(),
+      active: activeView === 'settings',
+    },
+  ], [activeView, trashEntries.length, activeJobCount]);
+
+  const handleDockActivate = (id: string) => {
+    switch (id) {
+      case 'desktop':
+        setCurrentPath('');
+        setShowingTrash(false);
+        setShowingSettings(false);
+        setShowingJobs(false);
+        setSelectedDriveName(null);
+        break;
+      case 'files':
+        setShowingTrash(false);
+        setShowingSettings(false);
+        setShowingJobs(false);
+        setSelectedDriveName(null);
+        if (!currentPath) {
+          const target = favorites.length > 0 ? favorites[0] : roots.find(r => r.available)?.path;
+          if (target) navigateTo(target);
+        }
+        break;
+      case 'trash':
+        setCurrentPath('');
+        setShowingTrash(true);
+        setShowingSettings(false);
+        setShowingJobs(false);
+        setViewMode((prev) => prev === 'columns' ? 'list' : prev);
+        break;
+      case 'jobs':
+        setShowingJobs(true);
+        setShowingSettings(false);
+        setShowingTrash(false);
+        setSelectedDriveName(null);
+        break;
+      case 'settings':
+        setShowingSettings(true);
+        setShowingTrash(false);
+        setShowingJobs(false);
+        setSelectedDriveName(null);
+        break;
+    }
+  };
 
   useEffect(() => {
     getSession()
@@ -347,6 +437,12 @@ export function App() {
         searchRef.current?.focus();
         setSearchOpen(true);
       }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        if (activeView === 'files') {
+          setLocationMode((v) => !v);
+        }
+      }
       if (e.key === 'Escape' && searchOpen) {
         setSearchOpen(false);
         setSearchResults(null);
@@ -358,7 +454,7 @@ export function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [searchOpen, shortcutsOpen]);
+  }, [searchOpen, shortcutsOpen, activeView]);
 
   const navigateTo = (path: string) => {
     pushRecent(path);
@@ -779,6 +875,21 @@ export function App() {
   const canChecksum = canWrite && selectedEntries.length === 1;
   const canSelect = filteredEntries.length > 0;
   const canPaste = canWrite && !!fileClipboard && fileClipboard.entries.length > 0;
+
+  const currentRoot = useMemo(() => {
+    if (!currentPath) return null;
+    return roots.find((r) => currentPath.startsWith(r.path)) ?? null;
+  }, [currentPath, roots]);
+
+  const selectedFileBytes = useMemo(() => {
+    let total = 0;
+    selectedEntries.forEach((entry) => {
+      if (entry.size) total += entry.size;
+    });
+    return total;
+  }, [selectedEntries]);
+
+  const showStatusBar = activeView !== 'settings' && activeView !== 'jobs';
 
   const handleSelectAll = () => {
     const nextPaths = filteredEntries.map((entry) => entry.path);
@@ -1365,150 +1476,56 @@ export function App() {
     return <LoginScreen onLoggedIn={handleLoggedIn} />;
   }
 
+  const handleEntryTouchStart = (entry: FileEntry, event: React.TouchEvent<HTMLElement>) => {
+    const touch = event.touches[0];
+    longPressEntry.current = { entry, x: touch.clientX, y: touch.clientY };
+    const timer = window.setTimeout(() => {
+      const lp = longPressEntry.current;
+      if (lp) {
+        setContextMenu({ x: lp.x, y: lp.y, entry: lp.entry });
+        longPressEntry.current = null;
+      }
+    }, 500);
+    longPressTimerRef.current = timer;
+  };
+
+  const handleEntryTouchMove = () => {
+    longPressEntry.current = null;
+    if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
+  };
+
+  const handleEntryTouchEnd = () => {
+    if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
+  };
+
+  const handleDesktopNavigateToTrash = () => {
+    setCurrentPath('');
+    setShowingTrash(true);
+    setShowingSettings(false);
+    setShowingJobs(false);
+    setSelectedPaths([]);
+    setSelectedDriveName(null);
+    if (viewMode === 'columns') { viewModeBeforeTrash.current = viewMode; }
+    setViewMode((prev) => prev === 'columns' ? 'list' : prev);
+  };
+
   const shell = (
     <>
-      <main className={`${styles.appShell}${sidebarCollapsed ? ` ${styles.sidebarHidden}` : ''}`}>
-        <button className={`${styles.sidebarToggle}${sidebarCollapsed ? ` ${styles.sidebarToggleCollapsed}` : ''}`} onClick={() => { setSidebarCollapsed(v => { const next = !v; localStorage.setItem('volum_sidebarCollapsed', String(next)); return next; }); }} type="button" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-          <Icon name="go-next" size={16} className={sidebarCollapsed ? '' : styles.sidebarToggleOpen} />
-        </button>
-        <aside className={styles.sidebar}>
-          <div className={styles.sidebarHeader}>
-            <button className={styles.brand} onClick={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); }} type="button" title="Go to desktop" aria-label="Go to desktop">
-              <img className={styles.brandMark} src={appIcon} alt="" />
-              <div>
-                <strong>Volum</strong>
-                <span>File manager</span>
-                {session?.authEnabled && <span>{session.role}</span>}
-              </div>
-            </button>
-          </div>
-
-          <section className={`${styles.navSection}${sectionCollapsed.quick ? ` ${styles.sectionCollapsed}` : ''}`}>
-            <div className={styles.sectionHeader} onClick={() => toggleSection('quick')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') toggleSection('quick'); }}>
-              <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.quick ? ` ${styles.chevronCollapsed}` : ''}`} aria-hidden="true" />
-              <h2>Quick Access</h2>
-            </div>
-            <div className={styles.sectionBody}>
-              <button className={!currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); }} type="button" title="Go to desktop">
-                <IconImg src={computerIconUrl()} alt="" width={18} height={18} />
-                <span className={styles.favDetails}>
-                  <span>This PC</span>
-                  <small>Desktop</small>
-                </span>
-              </button>
-              <button className={trashEntries.length > 0 ? `${styles.rootItem} ${styles.trashItem}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setSelectedPaths([]); if (viewMode === 'columns') { viewModeBeforeTrash.current = viewMode; } setViewMode((prev) => prev === 'columns' ? 'list' : prev); }} type="button">
-                <IconImg src={trashIconUrl(trashEntries.length > 0, '64')} alt="" width={18} height={18} />
-                <span className={styles.favDetails}>
-                  <span>Trash</span>
-                  <small>{trashEntries.length === 0 ? 'Empty' : `${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'}`}</small>
-                </span>
-                {trashEntries.length > 0 && <span className={styles.trashBadge}>{trashEntries.length}</span>}
-              </button>
-              <button className={styles.rootItem} onClick={() => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setSelectedDriveName(null); }} type="button">
-                <IconImg src={jobsIconUrl()} alt="" width={18} height={18} />
-                <span className={styles.favDetails}>
-                  <span>Jobs</span>
-                  <small>{jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length} active</small>
-                </span>
-                {jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length > 0 && (
-                  <span className={styles.trashBadge}>{jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length}</span>
-                )}
-              </button>
-              {favorites.map((path) => (
-                <div className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} key={path} onClick={() => navigateTo(path)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigateTo(path); }}>
-                  <Icon name="bookmark-new" size={18} />
-                  <span className={styles.favDetails}>
-                    <span>{path.split('/').pop() || path}</span>
-                    <small>{path}</small>
-                  </span>
-                  <button className={styles.favRemove} onClick={(e) => { e.stopPropagation(); removeFavorite(path); }} title="Remove from favorites" type="button">
-                    <Icon name="edit-delete" size={12} />
-                  </button>
-                </div>
-              ))}
-              {recentPaths.slice(0, 5).map((path) => (
-                <button className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} key={path} onClick={() => navigateTo(path)} type="button">
-                  <Icon name="document-open" size={18} />
-                  <span className={styles.favDetails}>
-                    <span>{path.split('/').pop() || path}</span>
-                    <small>{path}</small>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className={`${styles.navSection}${sectionCollapsed.storage ? ` ${styles.sectionCollapsed}` : ''}`}>
-            <div className={styles.sectionHeader} onClick={() => toggleSection('storage')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') toggleSection('storage'); }}>
-              <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.storage ? ` ${styles.chevronCollapsed}` : ''}`} aria-hidden="true" />
-              <h2>Removable</h2>
-            </div>
-            <div className={styles.sectionBody}>
-              <div className={styles.rootList}>
-                {devices.filter((dev) => dev.transport === 'usb').map((dev) => (
-                  <div key={dev.name} className={styles.deviceGroup}>
-                    <div className={styles.deviceHeader}>
-                      <DeviceIcon name="drive-harddisk" size={18} />
-                      <span className={styles.rootDetails}>
-                        <span>{dev.model || dev.name}</span>
-                        <small>{dev.size}{dev.transport ? ` · ${dev.transport.toUpperCase()}` : ''}{dev.rotational ? ' · HDD' : ' · SSD'}</small>
-                      </span>
-                    </div>
-                    {dev.partitions?.map((part) => (
-                      part.volumPath ? (
-                        <button className={part.volumPath === currentPath ? `${styles.partitionItem} ${styles.active}` : styles.partitionItem} key={part.name} onClick={() => navigateTo(part.volumPath!)} type="button">
-                          <FolderIcon size={18} />
-                          <span className={styles.rootDetails}>
-                            <span>{part.label || part.name}</span>
-                            <small>{part.volumPath}</small>
-                            <small>{formatDeviceUsage(part)}</small>
-                            {part.totalBytes != null && part.totalBytes > 0 && (
-                              <ProgressBar value={(part.usedBytes! / part.totalBytes!) * 100} className={styles.rootMeter} />
-                            )}
-                          </span>
-                        </button>
-                      ) : (
-                        <div className={`${styles.partitionItem} ${styles.partitionUnmounted}`} key={part.name}>
-                          <Icon name="media-removable" size={18} />
-                          <span className={styles.rootDetails}>
-                            <span>{part.name}</span>
-                            <small>{part.size || 'Unknown'}</small>
-                            <small>Not mounted</small>
-                          </span>
-                        </div>
-                      )
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {currentPath && subdirs.length > 0 && (
-            <section className={`${styles.navSection}${sectionCollapsed.folder ? ` ${styles.sectionCollapsed}` : ''}`}>
-              <div className={styles.sectionHeader} onClick={() => toggleSection('folder')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') toggleSection('folder'); }}>
-              <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.folder ? ` ${styles.chevronCollapsed}` : ''}`} aria-hidden="true" />
-              <h2>Current Folder</h2>
-              </div>
-              <div className={styles.sectionBody}>
-                <div className={styles.rootList}>
-                  {subdirs.map((entry) => (
-                    <button className={entry.path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} key={entry.path} onClick={() => navigateTo(entry.path)} type="button">
-                      <FolderIcon size={18} />
-                      <span className={styles.favDetails}>
-                        <span>{entry.name}</span>
-                        <small>{entry.path}</small>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </section>
-          )}
-        </aside>
+      <main className={styles.appShell}>
+        <TopBar
+          activeView={activeView}
+          onGoDesktop={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setSelectedDriveName(null); }}
+          theme={theme}
+          onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+          onOpenSettings={() => setShowingSettings(true)}
+          onLogout={handleLogout}
+          onOpenShortcuts={() => setShortcutsOpen(true)}
+          session={session}
+        />
+        <Dock items={dockItems} onActivate={handleDockActivate} />
 
         <section className={styles.workspace} onClick={handleWorkspaceClick}>
-        {selectedEntries.length > 0 ? (
+        {activeView === 'files' && selectedEntries.length > 0 ? (
             <header className={styles.topbar}>
             <div className={styles.selectionBar}>
               <span>{selectedEntries.length} selected</span>
@@ -1599,698 +1616,184 @@ export function App() {
               </button>
             </div>
             </header>
-          ) : !currentPath ? (
-            <header className={styles.topbar}>
-              <div className={styles.desktopHeader}>
-                <DeviceIcon name="drive-harddisk" size={22} />
-                <h1>This PC</h1>
-              </div>
-              <div className={styles.toolbar}>
-<button className="icon-button" onClick={() => setViewMode(cycleViewMode)} title="Change view" type="button">
-                  {viewMode === 'list' ? (
-                    <Icon name="view-grid" size={18} />
-                  ) : viewMode === 'grid' ? (
-                    <Icon name="view-list-column" size={18} />
-                  ) : (
-                    <Icon name="view-list-tree" size={18} />
-                  )}
-                </button>
-                <button className="icon-button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} title={theme === 'light' ? 'Dark mode' : 'Light mode'} type="button">
-                  {theme === 'light' ? (
-                    <Icon name="weather-clear-night" size={18} />
-                  ) : (
-                    <Icon name="weather-clear" size={18} />
-                  )}
-                </button>
-                {session?.authEnabled && (
-                  <button className="icon-button" onClick={handleLogout} title="Log out" type="button">
-                    <Icon name="system-log-out" size={18} />
-                  </button>
-                )}
-              </div>
-            </header>
-          ) : (
-            <BreadcrumbBar crumbs={breadcrumbs} onBack={handleBreadcrumbBack} onNavigate={navigateTo}>
-              <div className={styles.toolbar}>
-                <button
-                  className="icon-button"
-                  disabled={!canWrite}
-                  onClick={handleCreateFolder}
-                  title="Create folder"
-                  type="button"
-                >
-                  <Icon name="folder-new" size={18} />
-                </button>
-                <button
-                  className="icon-button"
-                  disabled={!canWrite}
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Upload files"
-                  type="button"
-                >
-                  <Icon name="document-import" size={18} />
-                </button>
-                <input
-                  ref={fileInputRef}
-                  className={styles.hiddenFileInput}
-                  multiple
-                  type="file"
-                  onChange={(event) => {
-                    if (event.currentTarget.files) {
-                      handleUploadFiles(event.currentTarget.files);
-                      event.currentTarget.value = '';
-                    }
-                  }}
-                />
-                <button
-                  className="icon-button"
-                  disabled={!canSelect}
-                  onClick={handleSelectAll}
-                  title="Select all"
-                  type="button"
-                >
-                  <Icon name="selection-select-all" size={18} />
-                </button>
-                <button
-                  className="icon-button"
-                  disabled={!canSelect}
-                  onClick={handleInvertSelection}
-                  title="Invert selection"
-                  type="button"
-                >
-                  <Icon name="selection-invert" size={18} />
-                </button>
-                <label className={styles.searchBox}>
-                  <Icon name="edit-find" size={16} />
-                  <input
-                    ref={searchRef}
-                    placeholder="Search files (Ctrl+K)"
-                    value={query}
-                    onFocus={() => setSearchOpen(true)}
-                    onChange={(event) => {
-                      setQuery(event.target.value);
-                      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
-                      searchTimerRef.current = setTimeout(() => handleGlobalSearch(event.target.value), 200);
-                      setSearchOpen(true);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Escape') {
-                        setSearchOpen(false);
-                        setSearchResults(null);
-                        setQuery('');
-                      }
-                    }}
-                  />
-                  {query.length > 0 && (
-                    <button type="button" className={styles.searchClear} onClick={() => { setQuery(''); setSearchResults(null); setSearchOpen(false); }}>
-                      <Icon name="window-close" size={14} />
-                    </button>
-                  )}
-                </label>
-                {searchOpen && searchResults && searchResults.length > 0 && (
-                  <div className={styles.searchResultsDropdown}>
-                    {searchResults.map((result) => (
-                      <button
-                        key={result.path}
-                        type="button"
-                        className={styles.searchResultItem}
-                        onClick={() => {
-                          if (result.type === 'directory') {
-                            navigateTo(result.path);
-                          } else {
-                            const idx = result.path.lastIndexOf('/');
-                            const parentDir = idx < 0 ? '/' : result.path.substring(0, idx) || '/';
-                            navigateTo(parentDir || '/');
-                          }
-                        }}
-                      >
-                        <FileIcon entry={{ ...result, hidden: false, permissions: '', owner: '', group: '' }} size={22} />
-                        <span className={styles.searchResultName}>{result.name}</span>
-                        <span className={styles.searchResultPath}>{result.root}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <Select
-                  className={styles.sortSelect}
-                  value={`${sortField}:${sortDirection}`}
-                  onChange={(value) => {
-                    const [field, direction] = value.split(':') as [SortField, SortDirection];
-                    setSortField(field);
-                    setSortDirection(direction);
-                  }}
-                  ariaLabel="Sort files"
-                >
-                  <option value="name:asc">Name A-Z</option>
-                  <option value="name:desc">Name Z-A</option>
-                  <option value="size:asc">Size small first</option>
-                  <option value="size:desc">Size large first</option>
-                  <option value="type:asc">Type A-Z</option>
-                  <option value="type:desc">Type Z-A</option>
-                  <option value="modifiedAt:desc">Newest first</option>
-                  <option value="modifiedAt:asc">Oldest first</option>
-                </Select>
-                <button
-                  className="icon-button"
-                  onClick={() => setShowHidden((value) => !value)}
-                  title="Toggle hidden files"
-                  type="button"
-                >
-                  <Icon name="view-hidden" size={18} />
-                </button>
-                <button
-                  className="icon-button"
-                  onClick={refresh}
-                  title="Refresh"
-                  type="button"
-                >
-                  <Icon name="view-refresh" size={18} />
-                </button>
-                <button
-                  className={`icon-button${isFavorited ? ' active' : ''}`}
-                  onClick={() => isFavorited ? removeFavorite(currentPath) : addFavorite(currentPath)}
-                  title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-                  type="button"
-                >
-                  <Icon name="bookmark-new" size={18} />
-                </button>
-                <button
-                  className="icon-button"
-                  onClick={() => setViewMode(cycleViewMode)}
-                  title="Change view"
-                  type="button"
-                >
-                  {viewMode === 'list' ? (
-                    <Icon name="view-grid" size={18} />
-                  ) : viewMode === 'grid' ? (
-                    <Icon name="view-list-column" size={18} />
-                  ) : (
-                    <Icon name="view-list-tree" size={18} />
-                  )}
-                </button>
-                <button
-                  className="icon-button"
-                  onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                  title={theme === 'light' ? 'Dark mode' : 'Light mode'}
-                  type="button"
-                >
-                  {theme === 'light' ? (
-                    <Icon name="weather-clear-night" size={18} />
-                  ) : (
-                    <Icon name="weather-clear" size={18} />
-                  )}
-                </button>
-                {session?.authEnabled && (
-                  <button
-                    className="icon-button"
-                    onClick={handleLogout}
-                    title="Log out"
-                    type="button"
-                  >
-                    <Icon name="system-log-out" size={18} />
-                  </button>
-                )}
-                </div>
-              </BreadcrumbBar>
-            )}
+          ) : null}
 
-          {error && <div className={styles.errorBanner}>{error} <button type="button" className={styles.errorDismiss} onClick={() => setError(null)} aria-label="Dismiss error">×</button></div>}
-          {!sseConnected && <div className={styles.sseWarning}>Connection lost — reconnecting...</div>}
-
-          {showingJobs ? (
-            <JobsPage
-              jobs={jobs}
-              jobFilter={jobFilter}
-              setJobFilter={setJobFilter}
-              completedCollapsed={completedCollapsed}
-              setCompletedCollapsed={setCompletedCollapsed}
-              onCancel={handleCancelJob}
-              onPause={handlePauseJob}
-              onResume={handleResumeJob}
-              onRetry={handleRetryJob}
-              onClearCompleted={handleClearCompleted}
-              onClearFailed={handleClearFailed}
-              onClose={() => setShowingJobs(false)}
-            />
-          ) : showingSettings ? (
-            <SettingsPanel variant="page" onClose={() => setShowingSettings(false)} onOpenShares={() => { setShowingSettings(false); setSharesOpen(true); }} />
-          ) : showingTrash ? (
-            <>
-              {selectedTrashIds.length > 0 ? (
-                <header className={styles.topbar}>
-                  <div className={styles.selectionBar}>
-                    <span>{selectedTrashIds.length} selected</span>
-                    <div className={styles.selectionActions}>
-                      {canWrite && (
-                        <button type="button" onClick={handleBulkRestoreTrash}>
-                          <Icon name="edit-restore" size={16} />
-                          Restore
-                        </button>
-                      )}
-                      {canWrite && (
-                        <button type="button" className={styles.danger} onClick={handleBulkDeleteTrash}>
-                          <Icon name="edit-delete" size={16} />
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                    <button type="button" onClick={() => setSelectedTrashIds([])}>
-                      Clear
-                    </button>
-                  </div>
-                </header>
-              ) : (
-                <BreadcrumbBar
-                  crumbs={[{ label: 'Desktop' }, { label: 'Trash' }]}
-                  onBack={() => setShowingTrash(false)}
-                  onNavigate={() => {}}
-                >
-                  <button
-                    className="icon-button"
-                    disabled={trashEntries.length === 0}
-                    onClick={() => {
-                      setSelectedTrashIds(trashEntries.map((e) => e.id));
-                      setLastSelectedTrashId(trashEntries.length > 0 ? trashEntries[trashEntries.length - 1].id : null);
-                    }}
-                    title="Select all"
-                    type="button"
-                  >
-                    <Icon name="selection-select-all" size={18} />
-                  </button>
-                  <button
-                    className="icon-button"
-                    disabled={trashEntries.length === 0}
-                    onClick={() => {
-                      const allIds = trashEntries.map((e) => e.id);
-                      setSelectedTrashIds(allIds.filter((id) => !selectedTrashIds.includes(id)));
-                      setLastSelectedTrashId(null);
-                    }}
-                    title="Invert selection"
-                    type="button"
-                  >
-                    <Icon name="selection-invert" size={18} />
-                  </button>
-                  <Select
-                    className={styles.sortSelect}
-                    value={`${sortField}:${sortDirection}`}
-                    onChange={(value) => {
-                      const [field, direction] = value.split(':') as [SortField, SortDirection];
-                      setSortField(field);
-                      setSortDirection(direction);
-                    }}
-                    ariaLabel="Sort trash"
-                  >
-                    <option value="name:asc">Name A-Z</option>
-                    <option value="name:desc">Name Z-A</option>
-                    <option value="size:asc">Size small first</option>
-                    <option value="size:desc">Size large first</option>
-                    <option value="type:asc">Type A-Z</option>
-                    <option value="type:desc">Type Z-A</option>
-                    <option value="modifiedAt:desc">Deleted newest first</option>
-                    <option value="modifiedAt:asc">Deleted oldest first</option>
-                </Select>
-                <button
-                  className="icon-button"
-                  onClick={() => setViewMode(cycleViewMode)}
-                  title="Change view"
-                  type="button"
-                >
-                  {viewMode === 'list' ? (
-                    <Icon name="view-grid" size={18} />
-                  ) : viewMode === 'grid' ? (
-                    <Icon name="view-list-column" size={18} />
-                  ) : (
-                    <Icon name="view-list-tree" size={18} />
-                  )}
-                </button>
-                  <button className="icon-button" onClick={() => { getTrash().then(r => setTrashEntries(r.entries ?? [])); }} title="Refresh" type="button">
-                    <Icon name="view-refresh" size={18} />
-                  </button>
-                </BreadcrumbBar>
-              )}
-              <section
-                className={`${viewMode === 'grid' ? styles.fileGrid : styles.fileList}`}
-                onClick={(event) => {
-                  if (event.target === event.currentTarget) {
-                    setSelectedTrashIds([]);
-                    setLastSelectedTrashId(null);
-                    setTrashContextMenu(null);
-                  }
-                }}
-                onContextMenu={(event) => event.preventDefault()}
-                tabIndex={0}
-              >
-              {trashEntries.length === 0 ? (
-                <div className={styles.emptyState}>Trash is empty</div>
-              ) : (
-                sortedTrashEntries.map((entry) => {
-                  const isSelected = selectedTrashIds.includes(entry.id);
-                  return viewMode === 'grid' ? (
-                    <div
-                      className={`${styles.fileRow}${isSelected ? ` ${styles.selected}` : ''}`}
-                      key={entry.id}
-                      onClick={(event) => handleSelectTrashItem(entry, event)}
-                      onContextMenu={(event) => handleTrashContextMenu(entry, event)}
-                      role="button"
-                    >
-                      {entry.type === 'directory' ? (
-                        <FolderIcon size={84} />
-                      ) : (
-                        <FileIcon entry={{
-                          name: entry.name,
-                          type: entry.type,
-                          path: entry.originalPath,
-                          size: entry.size,
-                          modifiedAt: entry.deletedAt,
-                          permissions: '',
-                          owner: '',
-                          group: '',
-                          hidden: false,
-                        }} size={84} />
-                      )}
-                      <span className={styles.fileName}>{entry.name}</span>
-                      <span className={styles.fileMeta}>
-                        {formatBytes(entry.size)}
-                        <span>{formatGridDate(entry.deletedAt)}</span>
-                      </span>
-                    </div>
-                  ) : (
-                    <div
-                      className={`${styles.fileRow}${isSelected ? ` ${styles.selected}` : ''}`}
-                      key={entry.id}
-                      onClick={(event) => handleSelectTrashItem(entry, event)}
-                      onContextMenu={(event) => handleTrashContextMenu(entry, event)}
-                      role="button"
-                    >
-                      {entry.type === 'directory' ? (
-                        <FolderIcon size={28} />
-                      ) : (
-                        <FileIcon entry={{
-                          name: entry.name,
-                          type: entry.type,
-                          path: entry.originalPath,
-                          size: entry.size,
-                          modifiedAt: entry.deletedAt,
-                          permissions: '',
-                          owner: '',
-                          group: '',
-                          hidden: false,
-                        }} size={28} />
-                      )}
-                      <span className={styles.fileName}>{entry.name}</span>
-                      <span>{entry.type}</span>
-                      <span>{formatBytes(entry.size)}</span>
-                      <span>{new Date(entry.deletedAt).toLocaleString()}</span>
-                      <span>{formatTrashPath(entry.originalPath)}</span>
-                      <span>{entry.id}</span>
-                      <span>{''}</span>
-                    </div>
-                  );
-                })
-              )}
-              </section>
-          </>
-        ) : !currentPath ? (
-          selectedDriveName ? (
-            <>
-              {(() => { const d = devices.find(dd => dd.name === selectedDriveName); const driveLabel = d?.model || d?.name || selectedDriveName; return (
-              <BreadcrumbBar
-                crumbs={[{ label: 'Desktop' }, { label: driveLabel }]}
-                onBack={() => setSelectedDriveName(null)}
-                onNavigate={() => {}}
-              />); })()}
-              <div className={styles.driveContents}>
-                {(devices.find((d) => d.name === selectedDriveName))?.partitions?.map((part) =>
-                  part.volumPath ? (
-                    <button key={part.name} className={styles.drivePartitionItem} onClick={() => navigateTo(part.volumPath!)} type="button">
-                      <DeviceIcon name="drive-harddisk" size={32} />
-                      <span className={styles.drivePartitionInfo}>
-                        <span>{part.label || part.name}</span>
-                        <small>{part.volumPath}</small>
-                        <small>{formatDeviceUsage(part)}</small>
-                        {part.totalBytes != null && part.totalBytes > 0 && (
-                          <ProgressBar value={(part.usedBytes! / part.totalBytes!) * 100} className={styles.drivePartitionMeter} />
-                        )}
-                      </span>
-                    </button>
-                    ) : (
-                      <div key={part.name} className={`${styles.drivePartitionItem} ${styles.partitionUnmounted}`}>
-                      <Icon name="media-removable" size={32} />
-                      <span className={styles.drivePartitionInfo}>
-                        <span>{part.name}</span>
-                        <small>{part.size || 'Unknown'}</small>
-                        <small>Not mounted</small>
-                      </span>
-                    </div>
-                  )
-                )}
-                {(!devices.find((d) => d.name === selectedDriveName)?.partitions?.length) && (
-                  <div className={styles.emptyState}>No partitions found</div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className={styles.desktop}>
-              {devices.map((dev) => (
-                <button
-                  key={dev.name}
-                  className={styles.desktopIcon}
-                  onClick={() => setSelectedDriveName(dev.name)}
-                  type="button"
-                  aria-label={`Open ${dev.model || dev.name}`}
-                >
-                  <DeviceIcon name="drive-harddisk" size={64} />
-                  <span className={styles.desktopIconLabel}>{dev.model || dev.name}</span>
-                  <small className={styles.desktopIconUsage}>{dev.size}{dev.transport ? ` · ${dev.transport.toUpperCase()}` : ''}{dev.rotational ? ' · HDD' : ' · SSD'}</small>
-                  <small className={styles.desktopIconUsage}>{(() => { const c = dev.partitions?.filter(p => p.volumPath).length ?? 0; return `${c} volume${c !== 1 ? 's' : ''} mounted`; })()}</small>
-                </button>
-              ))}
-              <button
-                className={styles.desktopIcon}
-                onClick={() => {
-                  setCurrentPath('');
-                  setShowingTrash(true);
-                  setShowingSettings(false);
-                  setSelectedPaths([]);
-                  setSelectedDriveName(null);
-                  if (viewMode === 'columns') { viewModeBeforeTrash.current = viewMode; }
-                  setViewMode((prev) => prev === 'columns' ? 'list' : prev);
-                }}
-                type="button"
-                aria-label="Open Trash"
-              >
-                <div className={styles.desktopIconWrapper}>
-                  <TrashIcon full={trashEntries.length > 0} size={64} />
-                  {trashEntries.length > 0 && <span className={styles.desktopTrashBadge}>{trashEntries.length}</span>}
-                </div>
-                <span className={styles.desktopIconLabel}>Trash</span>
-                <small className={styles.desktopIconUsage}>{trashEntries.length === 0 ? 'Empty' : `${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'}`}</small>
-              </button>
-              <button
-                className={styles.desktopIcon}
-                onClick={() => { setShowingSettings(true); setShowingTrash(false); setSelectedDriveName(null); }}
-                type="button"
-                aria-label="Open Settings"
-              >
-                <div className={styles.desktopIconWrapper}>
-                  <IconImg src={preferencesIconUrl()} alt="" width={64} height={64} />
-                </div>
-                <span className={styles.desktopIconLabel}>Settings</span>
-                <small className={styles.desktopIconUsage}>System info &amp; maintenance</small>
-              </button>
-              <button
-                className={styles.desktopIcon}
-                onClick={() => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setSelectedDriveName(null); }}
-                type="button"
-                aria-label="Open Jobs"
-              >
-                <div className={styles.desktopIconWrapper}>
-                  <IconImg src={jobsIconUrl()} alt="" width={64} height={64} />
-                  {jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length > 0 && (
-                    <span className={styles.desktopTrashBadge}>{jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length}</span>
-                  )}
-                </div>
-                <span className={styles.desktopIconLabel}>Jobs</span>
-                <small className={styles.desktopIconUsage}>{jobs.length === 0 ? 'No jobs' : `${jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length} active`}</small>
-              </button>
-            </div>
-          )
-        ) : loading ? (
-            <div className={viewMode === 'columns' ? styles.columnSkeleton : styles.skeletonGrid}>
-              {Array.from({ length: viewMode === 'columns' ? 4 : 12 }).map((_, i) => (
-                <div key={i} className={styles.skeletonCard}>
-                  <div className={styles.skeletonIcon} />
-                  <div className={styles.skeletonLine} />
-                  <div className={`${styles.skeletonLine} ${styles.short}`} />
-                </div>
-              ))}
-            </div>
-          ) : filteredEntries.length === 0 ? (
-            <EmptyState icon={folderIconUrl('64')} title="This folder is empty" subtitle={currentPath} />
-          ) : (
-            <section
-              className={`${viewMode === 'grid' ? styles.fileGrid : viewMode === 'columns' ? styles.fileColumns : styles.fileList}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
-              ref={fileGridRef}
-              onDragLeave={handleFileAreaDragLeave}
-              onDragOver={handleFileAreaDragOver}
-              onDrop={handleFileAreaDrop}
-              onClick={handleFileAreaClick}
-              onMouseDown={handleFileAreaMouseDown}
-              onKeyDown={handleFileAreaKeyDown}
-              tabIndex={0}
-            >
-              {viewMode === 'columns' ? (
-                <div className={styles.columnBrowser}>
-              {buildColumnPath(currentPath).map((col, colIdx) => (
-                <div key={col} className={styles.columnPane}>
-                  {col === currentPath ? (
-                    filteredEntries.map((entry, index) => (
-                      <div
-                        className={`${styles.columnItem}${selectedPaths.includes(entry.path) ? ` ${styles.selected}` : ''}`}
-                        key={entry.path}
-                        data-index={index}
-                        onClick={(event) => handleSelectEntry(entry, event)}
-                        onContextMenu={(event) => handleContextMenu(entry, event)}
-                        onDoubleClick={() => {
-                          if (renaming) return;
-                          if (entry.type === 'directory') {
-                            navigateTo(entry.path);
-                          } else {
-                            const ext = entry.name.toLowerCase();
-                            if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext) || ext.endsWith('.pdf')) {
-                              setPreviewEntry(entry);
-                            } else {
-                              window.open(downloadUrl(entry.path), '_blank');
-                            }
-                          }
-                        }}
-                      >
-                        {entry.type === 'directory' ? <FolderIcon size={18} /> : <FileIcon entry={entry} size={18} />}
-                        <span className={styles.columnItemName}>{entry.name}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div
-                      className={styles.columnItem}
-                      onClick={() => navigateTo(col)}
-                    >
-                      <FolderIcon size={18} />
-                      <span className={styles.columnItemName}>{col === '/' ? '/' : col.split('/').pop() || col}</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            filteredEntries.map((entry, index) => {
-              const fileIconSize = viewMode === 'grid' ? 84 : 28;
-              return (
-                <div
-                  className={`${selectedPaths.includes(entry.path) ? `${styles.fileRow} ${styles.selected}` : styles.fileRow}${dragOverPath === entry.path ? ` ${styles.dragOver}` : ''}`}
-                  key={entry.path}
-                  data-index={index}
-                  draggable={canWrite}
-                  onDragStart={(event) => handleFileDragStart(event, entry)}
-                  onDragOver={(event) => entry.type === 'directory' ? handleFolderDragOver(event, entry.path) : undefined}
-                  onDragLeave={entry.type === 'directory' ? () => handleFolderDragLeave() : undefined}
-                  onDrop={(event) => entry.type === 'directory' ? handleDropOnFolder(event, entry.path) : undefined}
-                  onClick={(event) => handleSelectEntry(entry, event)}
-                  onContextMenu={(event) => handleContextMenu(entry, event)}
-                  onTouchStart={(event) => {
-                    const touch = event.touches[0];
-                    longPressEntry.current = { entry, x: touch.clientX, y: touch.clientY };
-                    const timer = window.setTimeout(() => {
-                      const lp = longPressEntry.current;
-                      if (lp) {
-                        setContextMenu({ x: lp.x, y: lp.y, entry: lp.entry });
-                        longPressEntry.current = null;
-                      }
-                    }, 500);
-                    longPressTimerRef.current = timer;
-                  }}
-                  onTouchMove={() => {
-                    longPressEntry.current = null;
-                    if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
-                  }}
-                  onTouchEnd={() => {
-                    if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
-                  }}
-                  onDoubleClick={() => {
-                    if (renaming) {
-                      return;
-                    }
-                    if (entry.type === 'directory') {
-                      navigateTo(entry.path);
-                      return;
-                    }
-                    const ext = entry.name.toLowerCase();
-                    if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext) || ext.endsWith('.pdf')) {
-                      setPreviewEntry(entry);
-                    } else {
-                      window.open(downloadUrl(entry.path), '_blank');
-                    }
-                  }}
-                  role="button"
-                >
-                  {entry.type === 'directory' ? (
-                    <FolderIcon size={fileIconSize} />
-                  ) : isImageExtension(entry.name.toLowerCase()) ? (
-                    <img
-                      className={styles.fileThumb}
-                      src={rawUrl(entry.path)}
-                      alt={entry.name}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <FileIcon entry={entry} size={fileIconSize} />
-                  )}
-                  {renaming?.path === entry.path ? (
-                    <input
-                      ref={renameInputRef}
-                      className="rename-input"
-                      value={renaming.value}
-                      onBlur={() => commitRename(entry)}
-                      onChange={(event) => setRenaming({ path: entry.path, value: event.target.value })}
-                      onClick={(event) => event.stopPropagation()}
-                      onContextMenu={(event) => event.stopPropagation()}
-                      onDoubleClick={(event) => event.stopPropagation()}
-                      onKeyDown={(event) => {
-                        event.stopPropagation();
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          commitRename(entry);
-                        }
-                        if (event.key === 'Escape') {
-                          event.preventDefault();
-                          cancelRename();
-                        }
-                      }}
-                    />
-                  ) : (
-                    <span className={styles.fileName}>{entry.name}</span>
-                  )}
-                  {viewMode === 'grid' && (
-                    <span className={styles.fileMeta}>
-                      {formatBytes(entry.size)}
-                      <span>{formatGridDate(entry.modifiedAt)}</span>
-                    </span>
-                  )}
-                  {viewMode === 'list' && (
-                    <>
-                      <span>{entry.type}</span>
-                      <span>{formatBytes(entry.size)}</span>
-                      <span>{new Date(entry.modifiedAt).toLocaleString()}</span>
-                      <span>{entry.permissions}</span>
-                      <span>{entry.owner}</span>
-                      <span>{entry.group}</span>
-                    </>
-                  )}
-                </div>
-              );
-            })
-          )}
-          {rubberBandStyle && <div className={styles.rubberBand} style={rubberBandStyle} />}
-        </section>
+        {activeView === 'desktop' && (
+          <DesktopView
+            devices={devices}
+            trashEntries={trashEntries}
+            jobs={jobs}
+            selectedDriveName={selectedDriveName}
+            onNavigateTo={navigateTo}
+            onNavigateToTrash={handleDesktopNavigateToTrash}
+            onOpenSettings={() => { setShowingSettings(true); setShowingTrash(false); setSelectedDriveName(null); }}
+            onOpenJobs={() => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setSelectedDriveName(null); }}
+            onSelectDrive={setSelectedDriveName}
+            viewMode={viewMode}
+            onSetViewMode={setViewMode}
+            theme={theme}
+            onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            session={session}
+            onLogout={handleLogout}
+          />
+        )}
+        {activeView === 'trash' && (
+          <TrashView
+            trashEntries={trashEntries}
+            selectedTrashIds={selectedTrashIds}
+            onSelectTrash={handleSelectTrashItem}
+            onSelectAllTrash={() => {
+              setSelectedTrashIds(trashEntries.map((e) => e.id));
+              setLastSelectedTrashId(trashEntries.length > 0 ? trashEntries[trashEntries.length - 1].id : null);
+            }}
+            onInvertSelectionTrash={() => {
+              const allIds = trashEntries.map((e) => e.id);
+              setSelectedTrashIds(allIds.filter((id) => !selectedTrashIds.includes(id)));
+              setLastSelectedTrashId(null);
+            }}
+            onClearSelectionTrash={() => setSelectedTrashIds([])}
+            onBulkRestoreTrash={handleBulkRestoreTrash}
+            onBulkDeleteTrash={handleBulkDeleteTrash}
+            onCloseTrash={() => setShowingTrash(false)}
+            onRefreshTrash={() => { getTrash().then(r => setTrashEntries(r.entries ?? [])); }}
+            viewMode={viewMode}
+            onCycleViewMode={() => setViewMode(cycleViewMode)}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSortChange={(value) => {
+              const [field, direction] = value.split(':') as [SortField, SortDirection];
+              setSortField(field);
+              setSortDirection(direction);
+            }}
+            canWrite={canWrite}
+            sortedTrashEntries={sortedTrashEntries}
+            onTrashContextMenu={handleTrashContextMenu}
+          />
+        )}
+        {activeView === 'files' && (
+          <FilesView
+            currentPath={currentPath}
+            breadcrumbs={breadcrumbs}
+            onNavigate={navigateTo}
+            onGoUp={() => setCurrentPath('')}
+            onRefresh={refresh}
+            entries={entries}
+            filteredEntries={filteredEntries}
+            selectedPaths={selectedPaths}
+            onSelectEntry={handleSelectEntry}
+            onSelectAll={handleSelectAll}
+            onInvertSelection={handleInvertSelection}
+            viewMode={viewMode}
+            onSetViewMode={setViewMode}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSortChange={(value) => {
+              const [field, direction] = value.split(':') as [SortField, SortDirection];
+              setSortField(field);
+              setSortDirection(direction);
+            }}
+            showHidden={showHidden}
+            onToggleHidden={() => setShowHidden((v) => !v)}
+            loading={loading}
+            error={error}
+            sseConnected={sseConnected}
+            onDismissError={() => setError(null)}
+            canWrite={canWrite}
+            isFavorited={isFavorited}
+            onToggleFavorite={() => isFavorited ? removeFavorite(currentPath) : addFavorite(currentPath)}
+            theme={theme}
+            onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            session={session}
+            onLogout={handleLogout}
+            query={query}
+            searchOpen={searchOpen}
+            searchResults={searchResults}
+            onSearch={(q) => {
+              setQuery(q);
+              if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+              searchTimerRef.current = setTimeout(() => handleGlobalSearch(q), 200);
+              setSearchOpen(true);
+            }}
+            onClearSearch={() => { setQuery(''); setSearchResults(null); setSearchOpen(false); }}
+            onSearchResultClick={(result) => {
+              if (result.type === 'directory') {
+                navigateTo(result.path);
+              } else {
+                const idx = result.path.lastIndexOf('/');
+                const parentDir = idx < 0 ? '/' : result.path.substring(0, idx) || '/';
+                navigateTo(parentDir || '/');
+              }
+            }}
+            searchRef={searchRef as React.RefObject<HTMLInputElement>}
+            fileInputRef={fileInputRef as React.RefObject<HTMLInputElement>}
+            onCreateFolder={handleCreateFolder}
+            onUpload={handleUploadFiles}
+            fileClick={handleFileAreaClick}
+            contextMenu={contextMenu}
+            onContextMenu={handleContextMenu}
+            onCloseContextMenu={() => setContextMenu(null)}
+            draggingUpload={draggingUpload}
+            onFileAreaDragOver={handleFileAreaDragOver}
+            onFileAreaDragLeave={handleFileAreaDragLeave}
+            onFileAreaDrop={handleFileAreaDrop}
+            onFileAreaMouseDown={handleFileAreaMouseDown}
+            onFileAreaKeyDown={handleFileAreaKeyDown}
+            onFileDragStart={handleFileDragStart}
+            onFolderDragOver={handleFolderDragOver}
+            onFolderDragLeave={handleFolderDragLeave}
+            onDropOnFolder={handleDropOnFolder}
+            dragOverPath={dragOverPath}
+            renameState={renaming}
+            renameInputRef={renameInputRef as React.RefObject<HTMLInputElement>}
+            onSubmitRename={commitRename}
+            onCancelRename={cancelRename}
+            onRenameChange={(value) => setRenaming({ path: renaming?.path ?? '', value })}
+            rubberBandStyle={rubberBandStyle}
+            onPreview={(entry) => {
+              const ext = entry.name.toLowerCase();
+              if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext)) {
+                setPreviewEntry(entry);
+              } else {
+                window.open(downloadUrl(entry.path), '_blank');
+              }
+            }}
+            fileGridRef={fileGridRef as React.RefObject<HTMLDivElement>}
+            onEntryTouchStart={handleEntryTouchStart}
+            onEntryTouchMove={handleEntryTouchMove}
+            onEntryTouchEnd={handleEntryTouchEnd}
+            devices={devices}
+            favorites={favorites}
+            recentPaths={recentPaths}
+            subdirs={subdirs}
+            sectionCollapsed={sectionCollapsed}
+            onToggleSection={toggleSection}
+            onRemoveFavorite={removeFavorite}
+            locationMode={locationMode}
+            onLocationNavigate={(path: string) => {
+              const clean = path.startsWith('/') ? path : `/${path}`;
+              navigateTo(clean);
+            }}
+            onToggleLocationMode={() => setLocationMode((v) => !v)}
+          />
+        )}
+        {activeView === 'jobs' && (
+          <JobsPage
+            jobs={jobs}
+            jobFilter={jobFilter}
+            setJobFilter={setJobFilter}
+            completedCollapsed={completedCollapsed}
+            setCompletedCollapsed={setCompletedCollapsed}
+            onCancel={handleCancelJob}
+            onPause={handlePauseJob}
+            onResume={handleResumeJob}
+            onRetry={handleRetryJob}
+            onClearCompleted={handleClearCompleted}
+            onClearFailed={handleClearFailed}
+            onClose={() => setShowingJobs(false)}
+          />
+        )}
+        {activeView === 'settings' && (
+          <SettingsPanel variant="page" onClose={() => setShowingSettings(false)} onOpenShares={() => { setShowingSettings(false); setSharesOpen(true); }} />
         )}
 
         {contextMenu && (
@@ -2393,6 +1896,18 @@ export function App() {
         )}
       </section>
 
+        <StatusBar
+          visible={showStatusBar}
+          totalItems={activeView === 'trash' ? trashEntries.length : entries.length}
+          selectedCount={activeView === 'trash' ? selectedTrashIds.length : selectedPaths.length}
+          totalBytes={selectedFileBytes}
+          rootAvail={currentRoot?.freeBytes ?? null}
+          rootSize={currentRoot?.totalBytes ?? null}
+          rootLabel={currentRoot?.label || currentRoot?.path || ''}
+          currentPath={currentPath}
+          viewContext={activeView}
+          trashCount={trashEntries.length}
+        />
       </main>
       <ToastViewport toasts={toasts} onDismiss={dismissToast} />
     </>
@@ -2530,7 +2045,7 @@ function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void })
     <main className={styles.authShell}>
       <form className={styles.loginPanel} onSubmit={handleSubmit}>
         <img className={styles.brandMark} src={appIcon} alt="" />
-        <h1>Volum</h1>
+        <h1>Volum Desktop</h1>
         <Select value={role} onChange={(value) => setRole(value as 'admin' | 'readonly')}>
           <option value="admin">Admin</option>
           <option value="readonly">Readonly</option>

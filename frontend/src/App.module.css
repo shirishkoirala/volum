@@ -1,8 +1,23 @@
 .appShell {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-rows: 44px 1fr 28px;
   height: 100vh;
   position: relative;
+}
+
+.workspace {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.topbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
 }
 
 .sidebar {
@@ -578,16 +593,6 @@
   color: var(--color-text-muted);
   font-size: 11px;
   flex-shrink: 0;
-}
-
-.workspace {
-  display: flex;
-  flex-direction: column;
-  grid-column: 2;
-  grid-row: 1;
-  min-width: 0;
-  padding: var(--space-xl) var(--space-2xl);
-  overflow: hidden;
 }
 
 .topbar {

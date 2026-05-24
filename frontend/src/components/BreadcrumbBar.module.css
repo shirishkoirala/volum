@@ -132,6 +132,48 @@
   background: var(--color-hover);
 }
 
+.locationInputWrap {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+.locationInput {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 13px;
+  min-height: 32px;
+  outline: none;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.locationInput:focus {
+  border-color: var(--color-brand);
+}
+
+.locationToggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  transition: background var(--transition-fast);
+  width: 32px;
+}
+
+.locationToggle:hover {
+  background: var(--color-hover);
+  color: var(--color-text);
+}
+
 @media (max-width: 760px) {
   .header {
     align-items: stretch;

@@ -1,0 +1,277 @@
+.topbar {
+  align-items: center;
+  display: flex;
+  gap: var(--space-md);
+  justify-content: space-between;
+  margin-bottom: var(--space-xl);
+  min-height: 46px;
+}
+
+.sortSelect {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  height: 38px;
+  font-size: 13px;
+  max-width: 150px;
+  padding: 0 10px;
+}
+
+.fileGrid,
+.fileList {
+  min-height: 0;
+}
+
+.fileList {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  outline: 0;
+}
+
+.fileList:focus-visible,
+.fileGrid:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+}
+
+.fileGrid {
+  display: grid;
+  gap: 34px;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  outline: 0;
+}
+
+.fileRow {
+  align-items: center;
+  background: var(--color-surface);
+  border: 0;
+  border-bottom: 1px solid var(--color-border-row);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: grid;
+  font-size: 13px;
+  gap: 12px;
+  grid-template-columns: 28px minmax(160px, 1fr) 72px 90px 160px 80px 80px 80px;
+  min-height: 44px;
+  padding: 0 14px;
+  text-align: left;
+  transition: background var(--transition-fast);
+  user-select: none;
+  width: 100%;
+}
+
+.fileRow:hover {
+  background: var(--color-hover);
+}
+
+.fileRow.selected {
+  background: var(--color-selected);
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
+}
+
+.fileGrid .fileRow {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  justify-content: flex-start;
+  justify-self: center;
+  min-height: 158px;
+  max-width: 172px;
+  padding: var(--space-sm);
+  width: 100%;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.fileGrid .fileRow:hover {
+  background: var(--color-hover);
+  border-color: var(--color-text-muted);
+}
+
+.fileGrid .fileRow.selected {
+  background: transparent;
+  border-color: var(--color-brand);
+  box-shadow: inset 0 0 0 1px var(--color-brand);
+  outline: none;
+}
+
+.fileGrid .fileRow.selected .fileName {
+  color: var(--color-brand);
+}
+
+.fileGrid .fileRow span:not(.fileName):not(.fileMeta) {
+  display: none;
+}
+
+.fileName {
+  color: var(--color-text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileGrid .fileName {
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: normal;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fileMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.2;
+  text-align: center;
+}
+
+.emptyState {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  font-size: 14px;
+  justify-content: center;
+  min-height: 240px;
+  width: 100%;
+}
+
+.trashGrid {
+  display: grid;
+  gap: var(--space-sm);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.trashItemRow {
+  align-items: center;
+  display: flex;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.trashItemInfo {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.trashItemInfo strong {
+  color: var(--color-text);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trashItemInfo span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trashItemInfo small {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.trashActionBtn {
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  transition: border-color var(--transition-fast);
+  width: auto;
+}
+
+.trashActionBtn span {
+  display: inline;
+}
+
+.trashActionBtn:hover {
+  border-color: var(--color-text-muted);
+}
+
+.selectionBar {
+  align-items: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card-hover);
+  display: flex;
+  font-size: 13px;
+  gap: var(--space-sm);
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 var(--space-md);
+  width: 100%;
+}
+
+.selectionActions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.selectionActionBtn {
+  background: transparent;
+  border: 0;
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.selectionActionBtn:hover {
+  background: var(--color-brand-bg);
+}
+
+.dangerBtn {
+  background: transparent;
+  border: 0;
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  color: var(--color-danger);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.dangerBtn:hover {
+  background: var(--color-brand-bg);
+}

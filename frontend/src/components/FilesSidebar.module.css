@@ -1,0 +1,231 @@
+.filesSidebar {
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--space-xl);
+  width: 240px;
+  z-index: 10;
+}
+
+.navSection h2 {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin: 0 0 var(--space-md);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.sectionHeader {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  user-select: none;
+}
+
+.sectionHeader h2 {
+  cursor: pointer;
+  flex: 1;
+  margin: 0;
+}
+
+.chevron {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+  transform: rotate(90deg);
+}
+
+.chevronCollapsed {
+  transform: rotate(0deg);
+}
+
+.sectionBody {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.sectionCollapsed .sectionBody {
+  display: none;
+}
+
+.rootList {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.rootItem {
+  align-items: center;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-md);
+  min-height: 52px;
+  min-width: 0;
+  padding: var(--space-md);
+  text-align: left;
+  transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  width: 100%;
+}
+
+.rootDetails {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  width: 100%;
+}
+
+.rootDetails > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.rootDetails small {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.rootMeter {
+  background: var(--color-border-light);
+  border-radius: var(--radius-pill);
+  display: block;
+  height: 4px;
+  overflow: hidden;
+}
+
+.rootMeter span {
+  background: var(--color-brand);
+  display: block;
+  height: 100%;
+  width: var(--meter-width, 0%);
+}
+
+.rootItem.active,
+.rootItem:hover {
+  background: var(--color-surface);
+  border-color: var(--color-brand);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.deviceGroup {
+  display: grid;
+  gap: 4px;
+}
+
+.deviceHeader {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-sm);
+}
+
+.deviceHeader .rootDetails span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.partitionItem {
+  align-items: center;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-sm);
+  margin-left: calc(var(--space-xl) + 4px);
+  min-height: 40px;
+  padding: var(--space-sm);
+  text-align: left;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+  width: auto;
+}
+
+.partitionItem.partitionUnmounted {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.partitionItem.active,
+.partitionItem:hover {
+  background: var(--color-surface);
+  border-color: var(--color-brand);
+}
+
+.partitionItem .rootDetails {
+  gap: 2px;
+}
+
+.partitionItem .rootDetails > span:first-child {
+  font-size: 12px;
+}
+
+.partitionItem .rootDetails small {
+  font-size: 10px;
+}
+
+.favDetails {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.favDetails > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.favDetails small {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.favRemove {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--color-text-muted);
+  display: inline-flex;
+  padding: 2px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.rootItem:hover .favRemove,
+.favRemove:focus-visible,
+.favRemove:hover {
+  opacity: 1;
+  color: var(--color-danger);
+}
+
+@media (max-width: 760px) {
+  .filesSidebar {
+    width: 180px;
+    padding: var(--space-md);
+    font-size: 12px;
+  }
+}

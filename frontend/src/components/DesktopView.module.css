@@ -1,0 +1,181 @@
+.topbar {
+  align-items: center;
+  display: flex;
+  gap: var(--space-md);
+  justify-content: space-between;
+  margin-bottom: var(--space-xl);
+  min-height: 46px;
+}
+
+.toolbar {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-sm);
+}
+
+.toolbar img[src*="/assets/"] {
+  filter: brightness(0) saturate(100%);
+}
+
+:global([data-theme="dark"]) .toolbar img[src*="/assets/"] {
+  filter: brightness(0) invert(1);
+}
+
+.desktopHeader {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.desktopHeader h1 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.desktop {
+  align-content: start;
+  display: grid;
+  gap: var(--space-xl);
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  padding: var(--space-2xl);
+  flex: 1;
+}
+
+.desktopIcon {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-lg);
+  text-align: center;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.desktopIcon:hover {
+  background: var(--color-bg);
+  border-color: var(--color-border-light);
+}
+
+.desktopIconLabel {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  color: var(--color-text);
+}
+
+.desktopIconUsage {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.desktopIconWrapper {
+  position: relative;
+}
+
+.desktopTrashBadge {
+  align-items: center;
+  background: var(--color-danger);
+  border-radius: var(--radius-pill);
+  color: #fff;
+  display: flex;
+  font-size: 11px;
+  font-weight: 700;
+  height: 22px;
+  justify-content: center;
+  min-width: 22px;
+  padding: 0 5px;
+  position: absolute;
+  right: -8px;
+  top: -8px;
+}
+
+.driveContents {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  padding: var(--space-2xl);
+  flex: 1;
+  align-content: start;
+}
+
+.drivePartitionItem {
+  align-items: center;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  text-align: left;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.drivePartitionItem:hover {
+  background: var(--color-surface);
+  border-color: var(--color-brand);
+}
+
+.drivePartitionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.drivePartitionInfo > span:first-child {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.drivePartitionInfo small {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.drivePartitionMeter {
+  background: var(--color-border-subtle);
+  border-radius: var(--radius-pill);
+  height: 4px;
+  margin-top: 4px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.drivePartitionMeter span {
+  background: var(--color-brand);
+  border-radius: var(--radius-pill);
+  display: block;
+  height: 100%;
+  transition: width var(--transition-fast);
+  width: var(--meter-width, 0%);
+}
+
+.partitionUnmounted {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.emptyState {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  font-size: 14px;
+  justify-content: center;
+  min-height: 240px;
+  width: 100%;
+}

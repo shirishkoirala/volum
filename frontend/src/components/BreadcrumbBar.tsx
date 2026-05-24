@@ -12,14 +12,27 @@ type BreadcrumbBarProps = {
   crumbs: Crumb[];
   onBack: () => void;
   onNavigate: (path: string) => void;
+  onLocationNavigate?: (path: string) => void;
+  locationMode?: boolean;
+  onToggleLocationMode?: () => void;
   children?: ReactNode;
 };
 
-export function BreadcrumbBar({ crumbs, onBack, onNavigate, children }: BreadcrumbBarProps) {
+export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, locationMode, onToggleLocationMode, children }: BreadcrumbBarProps) {
   const navRef = useRef<HTMLDivElement>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
+  const locationInputRef = useRef<HTMLInputElement>(null);
   const [overflowCount, setOverflowCount] = useState(0);
   const [showOverflow, setShowOverflow] = useState(false);
+  const [locationValue, setLocationValue] = useState('');
+
+  useEffect(() => {
+    if (locationMode && locationInputRef.current) {
+      setLocationValue(crumbs.map((c) => c.path || c.label).filter(Boolean).join('/') || '/');
+      locationInputRef.current.focus();
+      locationInputRef.current.select();
+    }
+  }, [locationMode]);
 
   useEffect(() => {
     if (!showOverflow) return;
@@ -71,8 +84,41 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, children }: Breadcru
     ? [crumbs[0], crumbs[crumbs.length - 1]]
     : crumbs;
 
+  const handleLocationKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      onLocationNavigate?.(locationValue);
+      onToggleLocationMode?.();
+    } else if (e.key === 'Escape') {
+      onToggleLocationMode?.();
+    }
+  };
+
   if (crumbs.length === 0) {
     return null;
+  }
+
+  if (locationMode) {
+    return (
+      <header className={styles.header}>
+        <div className={styles.left}>
+          <button className="icon-button" onClick={onToggleLocationMode} title="Cancel" type="button">
+            <Icon name="window-close" size={18} />
+          </button>
+          <div className={styles.locationInputWrap}>
+            <input
+              ref={locationInputRef}
+              type="text"
+              className={styles.locationInput}
+              value={locationValue}
+              onChange={(e) => setLocationValue(e.target.value)}
+              onKeyDown={handleLocationKeyDown}
+              placeholder="Enter path..."
+              spellCheck={false}
+            />
+          </div>
+        </div>
+      </header>
+    );
   }
 
   return (
@@ -156,6 +202,11 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, children }: Breadcru
         </nav>
       </div>
       {children && <div className={styles.right}>{children}</div>}
+      {onToggleLocationMode && (
+        <button className={styles.locationToggle} onClick={onToggleLocationMode} title="Enter path (Ctrl+L)" type="button">
+          <Icon name="edit-find" size={16} />
+        </button>
+      )}
     </header>
   );
 }
