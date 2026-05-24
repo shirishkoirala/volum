@@ -1,8 +1,8 @@
-import { Icon, DeviceIcon, TrashIcon } from './Icon';
-import { IconImg } from './shared';
-import { BreadcrumbBar } from './BreadcrumbBar';
-import { ProgressBar } from './ProgressBar';
-import { EmptyState } from './EmptyState';
+import { Icon, DeviceIcon, TrashIcon } from '../components/ui/Icon';
+import { IconImg } from '../components/ui/shared';
+import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
+import { ProgressBar } from '../components/ui/ProgressBar';
+import { EmptyState } from '../components/ui/EmptyState';
 import { preferencesIconUrl, jobsIconUrl, driveIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
 import { formatBytes, formatDeviceUsage } from '../utils/format';

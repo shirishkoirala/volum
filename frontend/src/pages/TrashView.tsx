@@ -1,7 +1,7 @@
-import { Icon, FolderIcon, FileIcon } from './Icon';
-import { BreadcrumbBar } from './BreadcrumbBar';
-import { EmptyState } from './EmptyState';
-import { SortSelect } from './SortSelect';
+import { Icon, FolderIcon, FileIcon } from '../components/ui/Icon';
+import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
+import { EmptyState } from '../components/ui/EmptyState';
+import { SortSelect } from '../components/input/SortSelect';
 import { trashIconUrl } from '../api/icons';
 import type { TrashEntry } from '../api/client';
 import { formatBytes, formatGridDate, formatTrashPath } from '../utils/format';

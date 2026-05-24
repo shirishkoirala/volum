@@ -1,4 +1,4 @@
-import { formatBytes } from '../utils/format';
+import { formatBytes } from '../../utils/format';
 import styles from './StatusBar.module.css';
 
 type StatusBarProps = {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Icon } from './Icon';
-import { Overlay } from './shared';
-import { BreadcrumbBar } from './BreadcrumbBar';
+import { Icon } from '../components/ui/Icon';
+import { Overlay } from '../components/ui/shared';
+import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { formatBytes, formatUptime } from '../utils/format';
 import {
   getStatus,
@@ -12,7 +12,7 @@ import {
   type RootEntry,
 } from '../api/client';
 import styles from './SettingsPanel.module.css';
-import bStyles from './BreadcrumbBar.module.css';
+import bStyles from '../components/layout/BreadcrumbBar.module.css';
 
 type SettingsPanelProps = {
   onClose: () => void;

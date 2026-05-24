@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { FolderPicker } from '../components/Dialogs';
+import { FolderPicker } from '../components/input/FolderPicker';
 
 const mockFetch = vi.fn();
 

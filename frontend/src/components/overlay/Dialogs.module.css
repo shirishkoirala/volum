@@ -1,0 +1,232 @@
+.appDialog {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-width: 480px;
+  min-width: 360px;
+  padding: var(--space-lg);
+  width: 100%;
+}
+
+.appDialogSm {
+  max-width: 400px;
+  min-width: 300px;
+}
+
+.appDialogWide {
+  max-width: 600px;
+  min-width: 420px;
+}
+
+.dialogMessage {
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.dialogField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.dialogField > span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.dialogFieldRow {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.dialogFieldRow input {
+  flex: 1;
+}
+
+.dialogField input,
+.dialogField textarea {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 14px;
+  min-height: 38px;
+  padding: 0 var(--space-md);
+}
+
+.dialogField textarea {
+  font-family: inherit;
+  line-height: 1.4;
+  min-height: 80px;
+  padding: var(--space-sm) var(--space-md);
+  resize: vertical;
+}
+
+.dialogField input:focus,
+.dialogField textarea:focus {
+  border-color: var(--color-brand);
+  outline: 0;
+}
+
+.dialogHelp {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  margin: 0;
+}
+
+.dialogSuggestions {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.dialogSuggestions > span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dialogSuggestions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  max-height: 92px;
+  overflow-y: auto;
+}
+
+.dialogSuggestions button {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  min-height: 30px;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialogSuggestions button:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand-text);
+}
+
+.dialogError {
+  color: var(--color-danger-text);
+  font-size: 12px;
+  margin: 0;
+}
+
+.dialogActions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+.dialogButton {
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  min-height: 38px;
+  padding: 0 var(--space-lg);
+}
+
+.dialogButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.secondary {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.primary {
+  background: var(--color-brand);
+  color: #ffffff;
+}
+
+.danger {
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
+.previewSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding: var(--space-sm) 0;
+  font-size: 12px;
+}
+
+.previewStatWarn {
+  color: #b8860b;
+}
+
+.previewStatDanger {
+  color: var(--color-danger-text);
+}
+
+.previewStatMuted {
+  color: var(--color-text-muted);
+}
+
+.previewItemList {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.previewItem {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+  min-height: 30px;
+  padding: 0 var(--space-sm);
+  font-size: 12px;
+}
+
+.previewItem:nth-child(even) {
+  background: var(--color-hover);
+}
+
+.fateBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.fateNew { background: var(--color-brand-subtle); color: var(--color-brand); }
+.fateSkip { background: var(--color-hover); color: var(--color-text-muted); }
+.fateOverwrite { background: #fff3cd; color: #856404; }
+.fateRename { background: #d4edda; color: #155724; }
+.fateCancel { background: #f8d7da; color: #721c24; }
+.fateAsk { background: var(--color-hover); color: var(--color-text-muted); }
+
+.previewItemName {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previewItemFate {
+  color: var(--color-text-muted);
+  margin-left: auto;
+  white-space: nowrap;
+}

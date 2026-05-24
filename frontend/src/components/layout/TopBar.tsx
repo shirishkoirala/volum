@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Icon } from './Icon';
-import { ThemeToggle } from './ThemeToggle';
-import { LogoutButton } from './LogoutButton';
-import type { Session } from '../api/client';
-import appIcon from '../assets/icon-light.png';
+import { Icon } from '../ui/Icon';
+import { ThemeToggle } from '../ui/ThemeToggle';
+import { LogoutButton } from '../ui/LogoutButton';
+import type { Session } from '../../api/client';
+import appIcon from '../../assets/icon-light.png';
 import styles from './TopBar.module.css';
 
 type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs';

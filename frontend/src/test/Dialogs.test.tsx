@@ -1,8 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ConfirmDialog, TextInputDialog, ToastViewport, FolderSuggestions } from '../components/Dialogs';
-import type { ConfirmDialogState, TextInputDialogState, Toast } from '../components/Dialogs';
+import { ConfirmDialog, TextInputDialog } from '../components/overlay/Dialogs';
+import { ToastViewport } from '../components/overlay/Toast';
+import { FolderSuggestions } from '../components/input/FolderPicker';
+import type { ConfirmDialogState, TextInputDialogState } from '../components/overlay/Dialogs';
+import type { Toast } from '../components/overlay/Toast';
 
 describe('ConfirmDialog', () => {
   const baseDialog: NonNullable<ConfirmDialogState> = {

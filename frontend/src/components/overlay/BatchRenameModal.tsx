@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Icon, FileIcon } from './Icon';
-import { Overlay } from './shared';
-import { Select } from './Select';
-import { batchRename } from '../api/client';
-import type { FileEntry } from '../api/client';
+import { Icon, FileIcon } from '../ui/Icon';
+import { Overlay } from '../ui/shared';
+import { Select } from '../input/Select';
+import { batchRename } from '../../api/client';
+import type { FileEntry } from '../../api/client';
 import styles from './BatchRename.module.css';
 
 type PatternType = 'replace' | 'prefix' | 'suffix' | 'case';

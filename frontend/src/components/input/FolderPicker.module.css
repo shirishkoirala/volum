@@ -1,0 +1,208 @@
+.folderPicker {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  max-height: 300px;
+  min-height: 200px;
+}
+
+.folderPickerHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.folderPickerTitle {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.folderPickerNav {
+  display: flex;
+  gap: 2px;
+}
+
+.folderPickerNav :global(.icon-button) {
+  height: 28px;
+  width: 28px;
+}
+
+.folderPickerBreadcrumb {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: var(--space-xs) var(--space-md);
+  border-bottom: 1px solid var(--color-border-subtle);
+  min-height: 30px;
+  font-size: 12px;
+}
+
+.folderPickerCrumbRow {
+  align-items: center;
+  display: inline-flex;
+  gap: 2px;
+}
+
+.folderPickerCrumb {
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
+.folderPickerCrumb:hover {
+  background: var(--color-hover);
+  color: var(--color-text-secondary);
+}
+
+.folderPickerCrumbActive {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.folderPickerBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-xs) 0;
+}
+
+.folderPickerLoading,
+.folderPickerError {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  font-size: 12px;
+  justify-content: center;
+  min-height: 80px;
+}
+
+.folderPickerError {
+  color: var(--color-danger-text);
+}
+
+.folderPickerItem {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  gap: var(--space-sm);
+  min-height: 32px;
+  padding: 0 var(--space-md);
+  text-align: left;
+  width: 100%;
+}
+
+.folderPickerItem:hover {
+  background: var(--color-hover);
+  color: var(--color-text);
+}
+
+.folderPickerItemName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folderPickerFooter {
+  align-items: center;
+  border-top: 1px solid var(--color-border-light);
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+}
+
+.folderPickerPath {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.folderPickerActions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.folderPickerActions :global(.dialog-button) {
+  min-height: 30px;
+  font-size: 12px;
+  padding: 0 var(--space-md);
+}
+
+.dialogButton {
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  min-height: 38px;
+  padding: 0 var(--space-lg);
+}
+
+.dialogButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.secondary {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.primary {
+  background: var(--color-brand);
+  color: #ffffff;
+}
+
+.dialogSuggestions {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.dialogSuggestions > span {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dialogSuggestions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  max-height: 92px;
+  overflow-y: auto;
+}
+
+.dialogSuggestions button {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  min-height: 30px;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialogSuggestions button:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand-text);
+}

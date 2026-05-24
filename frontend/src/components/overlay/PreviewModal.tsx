@@ -7,9 +7,9 @@ import {
   isVideoExtension,
   rawUrl,
   type FileEntry
-} from '../api/client';
-import { Icon } from './Icon';
-import { Overlay } from './shared';
+} from '../../api/client';
+import { Icon } from '../ui/Icon';
+import { Overlay } from '../ui/shared';
 import styles from './Preview.module.css';
 
 type PreviewModalProps = {

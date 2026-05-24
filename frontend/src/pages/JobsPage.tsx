@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import type { Job } from '../api/client';
-import { BreadcrumbBar } from './BreadcrumbBar';
-import { Icon } from './Icon';
-import { EmptyState } from './EmptyState';
+import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
+import { Icon } from '../components/ui/Icon';
+import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';
-import { ProgressBar } from './ProgressBar';
+import { ProgressBar } from '../components/ui/ProgressBar';
 import { formatBytes } from '../utils/format';
 import styles from './JobsPage.module.css';
 

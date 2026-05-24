@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Icon } from './Icon';
-import { Overlay } from './shared';
-import { createShare, type Share } from '../api/client';
+import { Icon } from '../ui/Icon';
+import { Overlay } from '../ui/shared';
+import { createShare, type Share } from '../../api/client';
 import dStyles from './Dialogs.module.css';
 
 type ShareDialogProps = {

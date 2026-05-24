@@ -1,12 +1,12 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Icon } from './Icon';
-import { Overlay } from './shared';
-import { Select } from './Select';
-import { EmptyState } from './EmptyState';
-import { folderIconUrl } from '../api/icons';
-import type { FileEntry } from '../api/client';
-import type { ConflictPolicy } from '../api/client';
-import { getFiles } from '../api/client';
+import { Icon } from '../ui/Icon';
+import { Overlay } from '../ui/shared';
+import { Select } from '../input/Select';
+import { FolderPicker } from '../input/FolderPicker';
+import { folderIconUrl } from '../../api/icons';
+import type { FileEntry } from '../../api/client';
+import type { ConflictPolicy } from '../../api/client';
+import { getFiles } from '../../api/client';
 import styles from './Dialogs.module.css';
 
 export type ConfirmDialogState = {
@@ -34,14 +34,6 @@ export type TransferDialogState = {
   entries: FileEntry[];
   initialDestination: string;
 } | null;
-
-export type Toast = {
-  id: number;
-  title: string;
-  message?: string;
-  variant: 'success' | 'error';
-  action?: { label: string; onClick: () => void };
-};
 
 function useDialogEscape(onClose: () => void) {
   useEffect(() => {
@@ -95,25 +87,18 @@ export function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextI
 
   useDialogEscape(onClose);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-    inputRef.current?.select();
-  }, []);
-
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    const trimmed = value.trim();
-    if (!trimmed) {
-      setError(`${dialog.label} is required.`);
+  const handleSubmit = () => {
+    if (!value.trim()) {
+      setError('Value is required.');
       return;
     }
-    dialog.onSubmit(trimmed);
     onClose();
+    dialog.onSubmit(value);
   };
 
   return (
     <Overlay zIndex={110} onClose={onClose}>
-      <form className={`${styles.appDialog} ${styles.appDialogSm}`} role="dialog" aria-modal="true" aria-labelledby="text-dialog-title" onSubmit={handleSubmit}>
+      <div className={styles.appDialog} role="dialog" aria-modal="true" aria-labelledby="text-dialog-title">
         <div className="panel-header">
           <h3 id="text-dialog-title">{dialog.title}</h3>
           <button className="icon-button" onClick={onClose} type="button" aria-label="Close dialog">
@@ -125,185 +110,22 @@ export function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextI
           <input
             ref={inputRef}
             value={value}
-            placeholder={dialog.placeholder}
             onChange={(event) => {
               setValue(event.target.value);
               setError(null);
             }}
+            placeholder={dialog.placeholder}
+            autoFocus
+            onKeyDown={(event) => { if (event.key === 'Enter') handleSubmit(); }}
           />
         </label>
-        {dialog.folderSuggestions && dialog.folderSuggestions.length > 0 && (
-          <FolderSuggestions
-            label={dialog.suggestionLabel ?? 'Folders'}
-            paths={dialog.folderSuggestions}
-            onSelect={(path) => {
-              setValue(dialog.applyFolderSuggestion ? dialog.applyFolderSuggestion(path) : path.replace(/\/+$/, '') || '/');
-              setError(null);
-            }}
-          />
-        )}
         {error && <p className={styles.dialogError}>{error}</p>}
         <div className={styles.dialogActions}>
           <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
-          <button type="submit" className={`${styles.dialogButton} ${styles.primary}`}>{dialog.confirmLabel}</button>
+          <button type="button" className={`${styles.dialogButton} ${styles.primary}`} onClick={handleSubmit}>{dialog.confirmLabel}</button>
         </div>
-      </form>
+      </div>
     </Overlay>
-  );
-}
-
-export function FolderPicker({
-  initialPath,
-  onSelect,
-  onClose,
-}: {
-  initialPath: string;
-  onSelect: (path: string) => void;
-  onClose: () => void;
-}) {
-  const [currentDir, setCurrentDir] = useState(initialPath);
-  const [subdirs, setSubdirs] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [history, setHistory] = useState<string[]>([]);
-
-  const pathParts = currentDir.split('/').filter(Boolean);
-
-  const loadSubdirs = async (path: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({ path, hidden: 'false' });
-      const response = await fetch(`/api/files?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error(`Failed to load folder (${response.status})`);
-      }
-      const data = await response.json();
-      const dirs: string[] = (data.entries ?? [])
-        .filter((e: { type: string }) => e.type === 'directory')
-        .map((e: { path: string }) => e.path);
-      setSubdirs(dirs);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load folder');
-      setSubdirs([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadSubdirs(currentDir);
-  }, [currentDir]);
-
-  const navigateTo = (path: string) => {
-    setHistory((prev) => [...prev, currentDir]);
-    setCurrentDir(path);
-  };
-
-  const goUp = () => {
-    if (pathParts.length <= 1) {
-      const rootPath = currentDir.startsWith('/') ? '/' : '';
-      setCurrentDir(rootPath);
-      return;
-    }
-    const parent = '/' + pathParts.slice(0, -1).join('/');
-    setCurrentDir(parent);
-  };
-
-  const goBack = () => {
-    if (history.length === 0) return;
-    const prev = history[history.length - 1];
-    setHistory((prev) => prev.slice(0, -1));
-    setCurrentDir(prev);
-  };
-
-  return (
-    <div className={styles.folderPicker}>
-      <div className={styles.folderPickerHeader}>
-        <span className={styles.folderPickerTitle}>Select destination</span>
-        <div className={styles.folderPickerNav}>
-          <button type="button" className="icon-button" onClick={goBack} disabled={history.length === 0} title="Back">
-            <span className="icon-rotate-180"><Icon name="go-next" size={16} /></span>
-          </button>
-          <button type="button" className="icon-button" onClick={goUp} disabled={currentDir === '/'} title="Up">
-            <span className="icon-rotate-90"><Icon name="go-next" size={16} /></span>
-          </button>
-          <button type="button" className="icon-button" onClick={() => loadSubdirs(currentDir)} title="Refresh">
-            <Icon name="view-refresh" size={16} />
-          </button>
-        </div>
-      </div>
-      <div className={styles.folderPickerBreadcrumb}>
-        {pathParts.length === 0 ? (
-          <span className={`${styles.folderPickerCrumb} ${styles.folderPickerCrumbActive}`}>/</span>
-        ) : (
-          <>
-            <button
-              type="button"
-              className={styles.folderPickerCrumb}
-              onClick={() => setCurrentDir('/')}
-            >
-              /
-            </button>
-            {pathParts.map((part, index) => {
-              const path = '/' + pathParts.slice(0, index + 1).join('/');
-              const isLast = index === pathParts.length - 1;
-              return (
-                <span key={path} className={styles.folderPickerCrumbRow}>
-                  <Icon name="go-next" size={12} />
-                  <button
-                    type="button"
-                    className={`${styles.folderPickerCrumb}${isLast ? ` ${styles.folderPickerCrumbActive}` : ''}`}
-                    onClick={() => isLast ? null : setCurrentDir(path)}
-                  >
-                    {part}
-                  </button>
-                </span>
-              );
-            })}
-          </>
-        )}
-      </div>
-      <div className={styles.folderPickerBody}>
-        {loading ? (
-          <div className={styles.folderPickerLoading}>Loading...</div>
-        ) : error ? (
-          <div className={styles.folderPickerError}>{error} <button type="button" onClick={() => loadSubdirs(currentDir)}>Retry</button></div>
-        ) : subdirs.length === 0 ? (
-          <EmptyState compact icon={folderIconUrl('64')} title="No subdirectories" />
-        ) : (
-          subdirs.map((dir) => {
-            const dirName = dir.split('/').filter(Boolean).pop() || dir;
-            return (
-              <button
-                key={dir}
-                type="button"
-                className={styles.folderPickerItem}
-                onDoubleClick={() => navigateTo(dir)}
-                onClick={() => onSelect(dir)}
-                title={dir}
-              >
-                <Icon name="folder-new" size={18} />
-                <span className={styles.folderPickerItemName}>{dirName}</span>
-              </button>
-            );
-          })
-        )}
-      </div>
-      <div className={styles.folderPickerFooter}>
-        <span className={styles.folderPickerPath}>{currentDir}</span>
-        <div className={styles.folderPickerActions}>
-          <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
-          <button
-            type="button"
-            className={`${styles.dialogButton} ${styles.primary}`}
-            onClick={() => onSelect(currentDir)}
-          >
-            Choose
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -496,14 +318,19 @@ export function TransferDialog({
           />
         )}
         {!pickerOpen && folderSuggestions.length > 0 && (
-          <FolderSuggestions
-            label="Choose destination"
-            paths={folderSuggestions}
-            onSelect={(path) => {
-              setDestination(path.replace(/\/+$/, '') || '/');
-              setError(null);
-            }}
-          />
+          <div className={styles.dialogSuggestions}>
+            <span>Choose destination</span>
+            <div>
+              {folderSuggestions.map((path) => (
+                <button key={path} type="button" onClick={() => {
+                  setDestination(path.replace(/\/+$/, '') || '/');
+                  setError(null);
+                }} title={path}>
+                  {path === '/' ? '/' : (path.split('/').filter(Boolean).pop() || path)}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         <label className={styles.dialogField}>
           <span>If a file already exists</span>
@@ -526,67 +353,5 @@ export function TransferDialog({
         </div>
       </form>
     </Overlay>
-  );
-}
-
-export function FolderSuggestions({
-  label,
-  paths,
-  onSelect
-}: {
-  label: string;
-  paths: string[];
-  onSelect: (path: string) => void;
-}) {
-  return (
-    <div className={styles.dialogSuggestions}>
-      <span>{label}</span>
-      <div>
-        {paths.map((path) => (
-          <button key={path} type="button" onClick={() => onSelect(path)} title={path}>
-            {path === '/' ? '/' : (path.split('/').filter(Boolean).pop() || path)}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export function ToastViewport({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
-  const [exitingIds, setExitingIds] = useState(new Set<number>());
-
-  const handleDismiss = (id: number) => {
-    setExitingIds((prev) => new Set(prev).add(id));
-    setTimeout(() => {
-      setExitingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
-      onDismiss(id);
-    }, 300);
-  };
-
-  if (toasts.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className={styles.toastViewport} aria-live="polite" aria-atomic="true">
-      {toasts.map((toast) => (
-        <div className={`${styles.toast} ${toast.variant === 'success' ? styles.toastSuccess : styles.toastError}${exitingIds.has(toast.id) ? ` ${styles.toastExiting}` : ''}`} key={toast.id}>
-          <div className={styles.toastContent}>
-            <strong>{toast.title}</strong>
-            {toast.message && <span>{toast.message}</span>}
-          </div>
-          <div className={styles.toastActions}>
-            {toast.action && (
-              <button type="button" className={styles.toastActionBtn} onClick={() => { toast.action!.onClick(); handleDismiss(toast.id); }}>
-                {toast.action.label}
-              </button>
-            )}
-            <button type="button" onClick={() => handleDismiss(toast.id)} aria-label="Dismiss notification">
-              <Icon name="window-close" size={16} />
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
   );
 }

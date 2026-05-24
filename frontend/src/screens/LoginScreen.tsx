@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
-import { Icon } from './Icon';
-import { Select } from './Select';
+import { Icon } from '../components/ui/Icon';
+import { Select } from '../components/input/Select';
 import { login } from '../api/client';
 import type { Session } from '../api/client';
 import appIcon from '../assets/icon-light.png';

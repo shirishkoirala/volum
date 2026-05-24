@@ -1,4 +1,4 @@
-import { IconImg } from './shared';
+import { IconImg } from '../ui/shared';
 import styles from './Dock.module.css';
 
 type DockItem = {

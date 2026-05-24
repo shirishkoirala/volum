@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { IconImg } from './shared';
-import { emptyIconUrl } from '../api/icons';
+import { emptyIconUrl } from '../../api/icons';
 import styles from './EmptyState.module.css';
 
 type EmptyStateProps = {

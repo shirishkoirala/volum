@@ -23,14 +23,48 @@
 
 ### Frontend (`frontend/`)
 - React 19 + Vite + TypeScript
-- Entry: `frontend/src/App.tsx` — main shell with sidebar, workspace, job drawer
+- Entry: `frontend/src/App.tsx` — main shell with sidebar, workspace, job drawer (~2023 lines)
 - API client: `frontend/src/api/client.ts` — typed request functions
-- CSS Modules: every component has `*.module.css`, Vite auto-hashes class names
+- CSS Modules: every component has `*.module.css`, Vite auto-hashes class names. Use `styles.className` (camelCase)
 - Shared styles: `frontend/src/styles/global.css` (utility classes), `tokens.css` (theme vars)
+- See `frontend/src/` directory structure below
 
-## Key Files
+### Frontend Directory Structure
+```
+frontend/src/
+├── App.tsx                          # Main shell (~2023 lines)
+├── utils/                           # Shared utilities (NEVER define locally)
+│   ├── format.ts, path.ts, archive.ts, jobs.ts, view.ts
+├── pages/                           # Full-page views in workspace
+│   ├── DesktopView.tsx, FilesView.tsx, TrashView.tsx
+│   ├── JobsPage.tsx, SettingsPanel.tsx
+├── screens/                         # Full-screen views (outside workspace shell)
+│   └── LoginScreen.tsx
+├── components/
+│   ├── input/                       # Form controls, pickers
+│   │   ├── Select.tsx, SortSelect.tsx
+│   │   ├── FolderPicker.tsx, BatchRenameModal.tsx
+│   ├── overlay/                     # Modals, dialogs, overlays
+│   │   ├── Dialogs.tsx              (ConfirmDialog, TextInputDialog, TransferDialog)
+│   │   ├── Toast.tsx                (Toast, ToastViewport — extracted from Dialogs)
+│   │   ├── InfoPanel.tsx, PreviewModal.tsx
+│   │   ├── ShareDialog.tsx, ShareManager.tsx
+│   │   └── KeyboardShortcuts.tsx
+│   ├── layout/                      # Shell components
+│   │   ├── TopBar.tsx, Dock.tsx, StatusBar.tsx
+│   │   ├── BreadcrumbBar.tsx, FilesSidebar.tsx
+│   └── ui/                          # Generic/reusable UI primitives
+│       ├── Icon.tsx, shared.tsx (Overlay, ToolbarButton)
+│       ├── EmptyState.tsx, ProgressBar.tsx
+│       ├── ThemeToggle.tsx, LogoutButton.tsx
+├── styles/       (global.css, tokens.css)
+├── api/          (client.ts, icons.ts)
+├── assets/       (SVG icons)
+```
 
-### Backend
+### Key Files
+
+#### Backend
 - `backend/internal/api/server.go` — HTTP routes and handlers
 - `backend/internal/jobs/store.go` — SQLite job store + audit logs
 - `backend/internal/worker/worker.go` — background job orchestrator
@@ -39,28 +73,17 @@
 - `backend/internal/shares/service.go` — share link CRUD
 - `backend/internal/storage/sqlite.go` — DB open + schema migration
 
-### Frontend
-- `frontend/src/App.tsx` — main app shell, state, handlers (~2000 lines)
-- `frontend/src/components/Dialogs.tsx` — ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport
-- `frontend/src/components/ShareDialog.tsx` — create share link dialog
-- `frontend/src/components/ShareManager.tsx` — list/revoke share links
-- `frontend/src/components/SettingsPanel.tsx` — settings page/overlay with DB maintenance
-- `frontend/src/components/BreadcrumbBar.tsx` — breadcrumb nav with overflow
-- `frontend/src/components/FolderPicker.tsx` — destination folder browser
-
-### Frontend Utilities (`frontend/src/utils/`)
-- `utils/format.ts` — `formatBytes`, `formatUptime`, `formatGridDate`, `formatTrashPath`, `formatDeviceUsage`
-- `utils/path.ts` — `buildColumnPath`, `joinPath`, `normalizeFolderPath`, `uniquePaths`
-- `utils/archive.ts` — `isArchiveFile`, `archiveBaseName`, `archiveFileName`
-- `utils/jobs.ts` — `refreshesFiles`
-- `utils/view.ts` — `cycleViewMode`, `ViewMode` type
-
-### Frontend Shared Components
-- `components/SortSelect.tsx` — sort dropdown (props: `view`, `sortField`, `sortDirection`, `onChange`, `className`)
-- `components/ThemeToggle.tsx` — theme toggle button (props: `theme`, `onClick`, `className`, `size`)
-- `components/LogoutButton.tsx` — logout button (props: `onClick`, `className`, `size`)
-- `components/LoginScreen.tsx` — login form with spinner
-- `components/KeyboardShortcuts.tsx` — keyboard shortcuts overlay panel
+#### Frontend
+- `frontend/src/App.tsx` — main app shell, state, handlers (~2023 lines)
+- `frontend/src/components/overlay/Dialogs.tsx` — ConfirmDialog, TextInputDialog, TransferDialog
+- `frontend/src/components/overlay/Toast.tsx` — Toast + ToastViewport (separate file)
+- `frontend/src/components/overlay/ShareDialog.tsx` — create share link dialog
+- `frontend/src/components/overlay/ShareManager.tsx` — list/revoke share links
+- `frontend/src/pages/SettingsPanel.tsx` — settings page/overlay with DB maintenance
+- `frontend/src/components/layout/BreadcrumbBar.tsx` — breadcrumb nav with overflow
+- `frontend/src/components/input/FolderPicker.tsx` — destination folder browser
+- `frontend/src/components/ui/EmptyState.tsx` — standardized empty/error state
+- `frontend/src/utils/format.ts` — `formatBytes`, `formatUptime`, `formatGridDate`, `formatTrashPath`, `formatDeviceUsage`
 
 ## UI Patterns
 
@@ -71,6 +94,7 @@
 - **Dialogs**: use `Dialogs.module.css` classes (`dialogButton`, `dialogActions`, etc.)
 - **State naming**: `showingTrash`, `showingSettings` for workspace flags; `settingsOpen` for the settings overlay state (used before page conversion but now replaced by `showingSettings`)
 - **Shared utils** — formatting (`formatBytes`, `formatUptime`, etc.), path ops (`joinPath`, `normalizeFolderPath`), archive helpers, job predicates, and view utilities (`cycleViewMode`, `ViewMode` type) all live in `frontend/src/utils/`. Never define these locally.
+- **CSS Modules**: every component has `*.module.css`, Vite auto-hashes class names. Use `styles.className` (camelCase) in components.
 
 ## Recent Changes (this session)
 
@@ -112,6 +136,15 @@
   - `ShareManager` (was `<p>`) → `EmptyState` compact variant (uses default empty.svg icon)
   - `FolderPicker` in `Dialogs.tsx` (was `<div>`) → `EmptyState` compact variant with folder icon
 - Removed 8 orphaned CSS blocks: `.emptyState` from TrashView/JobsPage/DesktopView CSS, `.folderPickerEmpty` from Dialogs, `.emptyState` + `.folderEmpty*` from FilesView and App.module.css
+
+### Component Reorganization — Directory Categorization
+- Created categorized subdirectories: `pages/`, `screens/`, `components/input/`, `components/overlay/`, `components/layout/`, `components/ui/`
+- Moved all 47 component files to their new locations
+- Updated App.tsx imports and all test file imports
+- Extracted `Toast.tsx` + `Toast.module.css` from `Dialogs.tsx`
+- Extracted `FolderPicker.tsx` + `FolderPicker.module.css` from `Dialogs.tsx` (into `components/input/`)
+- Simplified `Dialogs.tsx` to only contain ConfirmDialog, TextInputDialog, TransferDialog
+- Simplified `Dialogs.module.css` by removing toast and folderPicker CSS classes
 
 ### Task 3 — Scrollbar Theming
 - Global scrollbar rules in `frontend/src/styles/global.css` (WebKit + Firefox via `*` selector)

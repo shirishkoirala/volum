@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Icon, FileIcon } from './Icon';
-import { Overlay } from './shared';
-import { chmodPath } from '../api/client';
-import type { FileEntry } from '../api/client';
+import { Icon, FileIcon } from '../ui/Icon';
+import { Overlay } from '../ui/shared';
+import { chmodPath } from '../../api/client';
+import type { FileEntry } from '../../api/client';
 import styles from './InfoPanel.module.css';
 
 type InfoPanelProps = {

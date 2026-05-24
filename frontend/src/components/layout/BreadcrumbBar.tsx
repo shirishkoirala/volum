@@ -1,6 +1,6 @@
 import { Children, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Icon } from './Icon';
+import { Icon } from '../ui/Icon';
 import styles from './BreadcrumbBar.module.css';
 
 export type Crumb = {

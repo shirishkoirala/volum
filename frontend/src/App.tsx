@@ -1,5 +1,5 @@
 import { DragEvent, FormEvent, KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Icon } from './components/Icon';
+import { Icon } from './components/ui/Icon';
 import {
   ConflictPolicy,
   FileEntry,
@@ -46,27 +46,29 @@ import {
   createShare
 } from './api/client';
 import appIcon from './assets/icon-light.png';
-import { LoginScreen } from './components/LoginScreen';
-import { KeyboardShortcuts } from './components/KeyboardShortcuts';
-import { PreviewModal } from './components/PreviewModal';
-import { BatchRenameModal } from './components/BatchRenameModal';
-import { Select } from './components/Select';
-import { InfoPanel } from './components/InfoPanel';
-import { ShareDialog } from './components/ShareDialog';
-import { ShareManager } from './components/ShareManager';
-import { SettingsPanel } from './components/SettingsPanel';
-import { TopBar } from './components/TopBar';
-import { Dock } from './components/Dock';
-import { FilesSidebar } from './components/FilesSidebar';
-import { StatusBar } from './components/StatusBar';
-import { Overlay } from './components/shared';
+import { LoginScreen } from './screens/LoginScreen';
+import { KeyboardShortcuts } from './components/overlay/KeyboardShortcuts';
+import { PreviewModal } from './components/overlay/PreviewModal';
+import { BatchRenameModal } from './components/overlay/BatchRenameModal';
+import { Select } from './components/input/Select';
+import { InfoPanel } from './components/overlay/InfoPanel';
+import { ShareDialog } from './components/overlay/ShareDialog';
+import { ShareManager } from './components/overlay/ShareManager';
+import { SettingsPanel } from './pages/SettingsPanel';
+import { TopBar } from './components/layout/TopBar';
+import { Dock } from './components/layout/Dock';
+import { FilesSidebar } from './components/layout/FilesSidebar';
+import { StatusBar } from './components/layout/StatusBar';
+import { Overlay } from './components/ui/shared';
 import { folderIconUrl, preferencesIconUrl, jobsIconUrl, computerIconUrl, trashIconUrl } from './api/icons';
-import { ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport } from './components/Dialogs';
-import { JobsPage } from './components/JobsPage';
-import { DesktopView } from './components/DesktopView';
-import { TrashView } from './components/TrashView';
-import { FilesView } from './components/FilesView';
-import type { ConfirmDialogState, TextInputDialogState, TransferDialogState, Toast } from './components/Dialogs';
+import { ConfirmDialog, TextInputDialog, TransferDialog } from './components/overlay/Dialogs';
+import { JobsPage } from './pages/JobsPage';
+import { DesktopView } from './pages/DesktopView';
+import { TrashView } from './pages/TrashView';
+import { FilesView } from './pages/FilesView';
+import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } from './components/overlay/Dialogs';
+import type { Toast } from './components/overlay/Toast';
+import { ToastViewport } from './components/overlay/Toast';
 import { cycleViewMode, type ViewMode } from './utils/view';
 import { joinPath, normalizeFolderPath, uniquePaths } from './utils/path';
 import { isArchiveFile, archiveBaseName, archiveFileName } from './utils/archive';

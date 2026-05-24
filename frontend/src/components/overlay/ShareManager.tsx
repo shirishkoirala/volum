@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Icon } from './Icon';
-import { Overlay } from './shared';
-import { EmptyState } from './EmptyState';
-import { getShares, deleteShare, type Share } from '../api/client';
+import { Icon } from '../ui/Icon';
+import { Overlay } from '../ui/shared';
+import { EmptyState } from '../ui/EmptyState';
+import { getShares, deleteShare, type Share } from '../../api/client';
 import dStyles from './Dialogs.module.css';
 import styles from './ShareManager.module.css';
 

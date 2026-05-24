@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { InfoPanel } from '../components/InfoPanel';
+import { InfoPanel } from '../components/overlay/InfoPanel';
 import type { FileEntry } from '../api/client';
 
 const mockEntry: FileEntry = {

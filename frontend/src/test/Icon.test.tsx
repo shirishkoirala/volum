@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { Icon, FileIcon, FolderIcon, DeviceIcon, TrashIcon } from '../components/Icon';
+import { Icon, FileIcon, FolderIcon, DeviceIcon, TrashIcon } from '../components/ui/Icon';
 import type { FileEntry } from '../api/client';
 
 const mockEntry: FileEntry = {

@@ -1,4 +1,4 @@
-import type { FileEntry } from '../api/client';
+import type { FileEntry } from '../../api/client';
 import {
   Archive, Bookmark, ChevronRight, CheckSquare, Clipboard, Copy, Download,
   Eye, EyeOff, FileInput, FolderPlus, Grid3X3, Info,
@@ -6,7 +6,7 @@ import {
   Scissors, Search, Send, Settings, Square, Sun, Trash2, Upload, X, type LucideIcon,
 } from 'lucide-react';
 import { IconImg } from './shared';
-import { fileTypeIconUrl, folderIconUrl, driveIconUrl, trashIconUrl } from '../api/icons';
+import { fileTypeIconUrl, folderIconUrl, driveIconUrl, trashIconUrl } from '../../api/icons';
 
 type IconProps = { name: string; size?: number; className?: string };
 

@@ -1,4 +1,4 @@
-import { Overlay } from './shared';
+import { Overlay } from '../ui/shared';
 import styles from './KeyboardShortcuts.module.css';
 
 type KeyboardShortcutsProps = {
