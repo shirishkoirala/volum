@@ -46,6 +46,8 @@ import {
   createShare
 } from './api/client';
 import appIcon from './assets/icon-light.png';
+import { LoginScreen } from './components/LoginScreen';
+import { KeyboardShortcuts } from './components/KeyboardShortcuts';
 import { PreviewModal } from './components/PreviewModal';
 import { BatchRenameModal } from './components/BatchRenameModal';
 import { Select } from './components/Select';
@@ -65,9 +67,12 @@ import { DesktopView } from './components/DesktopView';
 import { TrashView } from './components/TrashView';
 import { FilesView } from './components/FilesView';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState, Toast } from './components/Dialogs';
+import { cycleViewMode, type ViewMode } from './utils/view';
+import { joinPath, normalizeFolderPath, uniquePaths } from './utils/path';
+import { isArchiveFile, archiveBaseName, archiveFileName } from './utils/archive';
+import { refreshesFiles } from './utils/jobs';
 import styles from './App.module.css';
 
-type ViewMode = 'list' | 'grid' | 'columns';
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
 type SortDirection = 'asc' | 'desc';
 type ContextMenuState = {
@@ -1665,7 +1670,7 @@ export function App() {
             onCloseTrash={() => setShowingTrash(false)}
             onRefreshTrash={() => { getTrash().then(r => setTrashEntries(r.entries ?? [])); }}
             viewMode={viewMode}
-            onCycleViewMode={() => setViewMode(cycleViewMode)}
+            onCycleViewMode={() => setViewMode(prev => cycleViewMode(prev))}
             sortField={sortField}
             sortDirection={sortDirection}
             onSortChange={(value) => {
@@ -1997,32 +2002,8 @@ export function App() {
   }
 
   if (shortcutsOpen) {
-    return (
-      <>
-        {shell}
-        <Overlay onClose={() => setShortcutsOpen(false)}>
-          <div className={styles.shortcutsPanel}>
-            <h3>Keyboard Shortcuts</h3>
-            <div className={styles.shortcutRow}><span>Navigate into folder / Open file</span><span className={styles.shortcutKey}>Enter</span></div>
-            <div className={styles.shortcutRow}><span>Deselect all</span><span className={styles.shortcutKey}>Esc</span></div>
-            <div className={styles.shortcutRow}><span>Select all</span><span className={styles.shortcutKey}>⌘A</span></div>
-            <div className={styles.shortcutRow}><span>Copy selected items</span><span className={styles.shortcutKey}>⌘C</span></div>
-            <div className={styles.shortcutRow}><span>Cut selected items</span><span className={styles.shortcutKey}>⌘X</span></div>
-            <div className={styles.shortcutRow}><span>Paste clipboard items</span><span className={styles.shortcutKey}>⌘V</span></div>
-            <div className={styles.shortcutRow}><span>Invert selection</span><span className={styles.shortcutKey}>⌘I</span></div>
-            <div className={styles.shortcutRow}><span>Global search</span><span className={styles.shortcutKey}>⌘K</span></div>
-            <div className={styles.shortcutRow}><span>Toggle shortcuts</span><span className={styles.shortcutKey}>?</span></div>
-            <div className={styles.shortcutRow}><span>Rename selected item</span><span className={styles.shortcutKey}>F2</span></div>
-            <div className={styles.shortcutRow}><span>Move selected items to trash</span><span className={styles.shortcutKey}>Delete</span></div>
-            <div className={styles.shortcutRow}><span>Shift-range select</span><span className={styles.shortcutKey}>⇧+click</span></div>
-            <div className={styles.shortcutRow}><span>Multi-select toggle</span><span className={styles.shortcutKey}>⌘+click</span></div>
-            <hr />
-            <div className={styles.shortcutRow}><span>Close preview / Clear search</span><span className={styles.shortcutKey}>Esc</span></div>
-            <div className={styles.shortcutRow}><span>Context menu</span><span className={styles.shortcutKey}>Right click</span></div>
-          </div>
-    </Overlay>
-  </>);
-}
+    return (<>{shell}<KeyboardShortcuts onClose={() => setShortcutsOpen(false)} /></>);
+  }
 
 if (sharesOpen) {
   return (<>
@@ -2034,156 +2015,7 @@ if (sharesOpen) {
 return shell;
 }
 
-function LoginScreen({ onLoggedIn }: { onLoggedIn: (session: Session) => void }) {
-  const [role, setRole] = useState<'admin' | 'readonly'>('admin');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    setSubmitting(true);
-    login(role, password)
-      .then(onLoggedIn)
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setSubmitting(false));
-  };
-
-  return (
-    <main className={styles.authShell}>
-      <form className={styles.loginPanel} onSubmit={handleSubmit}>
-        <img className={styles.brandMark} src={appIcon} alt="" />
-        <h1>Volum Desktop</h1>
-        <Select value={role} onChange={(value) => setRole(value as 'admin' | 'readonly')}>
-          <option value="admin">Admin</option>
-          <option value="readonly">Readonly</option>
-        </Select>
-        <input
-          autoFocus
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
-        {error && <p className={styles.loginError}>{error}</p>}
-        <button disabled={submitting || password.length === 0} type="submit">
-          Log in
-        </button>
-      </form>
-    </main>
-  );
-}
 
 
 
 
-
-function formatBytes(value: number) {
-  if (value == null || Number.isNaN(value) || value === 0) {
-    return '0 B';
-  }
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-  return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
-}
-
-function formatUptime(seconds: number) {
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const parts: string[] = [];
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0) parts.push(`${minutes}m`);
-  return parts.join(' ') || '< 1m';
-}
-
-function formatDeviceUsage(part: BlockDevice) {
-  if (part.totalBytes != null && part.totalBytes > 0) {
-    const fsType = part.fsType ? ` · ${part.fsType}` : '';
-    return `${formatBytes(part.usedBytes!)} used of ${formatBytes(part.totalBytes)} | ${formatBytes(part.freeBytes!)} free${fsType}`;
-  }
-  if (part.mountPoint) {
-    return 'Usage unavailable';
-  }
-  return 'Not mounted';
-}
-
-function cycleViewMode(current: ViewMode): ViewMode {
-  return current === 'list' ? 'grid' : current === 'grid' ? 'columns' : 'list';
-}
-
-function formatGridDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  return new Intl.DateTimeFormat(undefined, {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-}
-
-function formatTrashPath(path: string) {
-  const parts = path.split('/').filter(Boolean);
-  if (parts.length <= 2) {
-    return path;
-  }
-  return `.../${parts.slice(-2).join('/')}`;
-}
-
-function isArchiveFile(name: string) {
-  return /\.(zip|tar|tar\.gz|tgz)$/i.test(name);
-}
-
-function archiveBaseName(name: string) {
-  return name
-    .replace(/\.tar\.gz$/i, '')
-    .replace(/\.tgz$/i, '')
-    .replace(/\.tar$/i, '')
-    .replace(/\.zip$/i, '') || 'archive';
-}
-
-function archiveFileName(name: string) {
-  return `${archiveBaseName(name)}.zip`;
-}
-
-function refreshesFiles(job: Job) {
-  return job.type === 'copy' || job.type === 'move' || job.type === 'upload' || job.type === 'archive' || job.type === 'extract';
-}
-
-function normalizeFolderPath(path: string) {
-  return path.replace(/\/+$/, '') || '/';
-}
-
-function joinPath(parent: string, name: string) {
-  return `${normalizeFolderPath(parent).replace(/\/$/, '')}/${name}`.replace(/^\/\//, '/');
-}
-
-function uniquePaths(paths: string[]) {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const path of paths) {
-    const normalized = normalizeFolderPath(path.trim());
-    if (!normalized || seen.has(normalized)) {
-      continue;
-    }
-    seen.add(normalized);
-    out.push(normalized);
-  }
-  return out;
-}
-
-function buildColumnPath(currentPath: string): string[] {
-  if (!currentPath || currentPath === '/') {
-    return ['/'];
-  }
-  const parts = currentPath.split('/').filter(Boolean);
-  const cols: string[] = [];
-  for (let i = 0; i <= parts.length; i++) {
-    cols.push('/' + parts.slice(0, i).join('/'));
-  }
-  return cols;
-}

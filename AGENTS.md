@@ -40,13 +40,27 @@
 - `backend/internal/storage/sqlite.go` — DB open + schema migration
 
 ### Frontend
-- `frontend/src/App.tsx` — main app component (2780+ lines)
+- `frontend/src/App.tsx` — main app shell, state, handlers (~2000 lines)
 - `frontend/src/components/Dialogs.tsx` — ConfirmDialog, TextInputDialog, TransferDialog, ToastViewport
 - `frontend/src/components/ShareDialog.tsx` — create share link dialog
 - `frontend/src/components/ShareManager.tsx` — list/revoke share links
 - `frontend/src/components/SettingsPanel.tsx` — settings page/overlay with DB maintenance
 - `frontend/src/components/BreadcrumbBar.tsx` — breadcrumb nav with overflow
 - `frontend/src/components/FolderPicker.tsx` — destination folder browser
+
+### Frontend Utilities (`frontend/src/utils/`)
+- `utils/format.ts` — `formatBytes`, `formatUptime`, `formatGridDate`, `formatTrashPath`, `formatDeviceUsage`
+- `utils/path.ts` — `buildColumnPath`, `joinPath`, `normalizeFolderPath`, `uniquePaths`
+- `utils/archive.ts` — `isArchiveFile`, `archiveBaseName`, `archiveFileName`
+- `utils/jobs.ts` — `refreshesFiles`
+- `utils/view.ts` — `cycleViewMode`, `ViewMode` type
+
+### Frontend Shared Components
+- `components/SortSelect.tsx` — sort dropdown (props: `view`, `sortField`, `sortDirection`, `onChange`, `className`)
+- `components/ThemeToggle.tsx` — theme toggle button (props: `theme`, `onClick`, `className`, `size`)
+- `components/LogoutButton.tsx` — logout button (props: `onClick`, `className`, `size`)
+- `components/LoginScreen.tsx` — login form with spinner
+- `components/KeyboardShortcuts.tsx` — keyboard shortcuts overlay panel
 
 ## UI Patterns
 
@@ -56,7 +70,7 @@
 - **Share links**: backend CRUD exists; ShareDialog creates; ShareManager lists/revokes
 - **Dialogs**: use `Dialogs.module.css` classes (`dialogButton`, `dialogActions`, etc.)
 - **State naming**: `showingTrash`, `showingSettings` for workspace flags; `settingsOpen` for the settings overlay state (used before page conversion but now replaced by `showingSettings`)
-- **No shared utils file** — formatting functions (`formatBytes`, `formatUptime`, etc.) are defined locally where needed
+- **Shared utils** — formatting (`formatBytes`, `formatUptime`, etc.), path ops (`joinPath`, `normalizeFolderPath`), archive helpers, job predicates, and view utilities (`cycleViewMode`, `ViewMode` type) all live in `frontend/src/utils/`. Never define these locally.
 
 ## Recent Changes (this session)
 

@@ -5,18 +5,14 @@ import { Icon } from './Icon';
 import { EmptyState } from './EmptyState';
 import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from './ProgressBar';
+import { formatBytes } from '../utils/format';
 import styles from './JobsPage.module.css';
 
 function isActiveStatus(status: string) {
   return status === 'queued' || status === 'running' || status === 'paused';
 }
 
-function formatBytes(value: number) {
-  if (value === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-  return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
-}
+
 
 function formatDuration(seconds: number) {
   if (seconds < 0) return '';

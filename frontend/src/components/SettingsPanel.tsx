@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon } from './Icon';
 import { Overlay } from './shared';
 import { BreadcrumbBar } from './BreadcrumbBar';
+import { formatBytes, formatUptime } from '../utils/format';
 import {
   getStatus,
   dbVacuum,
@@ -299,23 +300,7 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay' }: Se
   );
 }
 
-function formatBytes(value: number) {
-  if (value === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-  return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
-}
 
-function formatUptime(seconds: number) {
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const parts: string[] = [];
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0) parts.push(`${minutes}m`);
-  return parts.join(' ') || '< 1m';
-}
 
 function formatRootUsage(root: RootEntry) {
   if (!root.available) return 'Unavailable';

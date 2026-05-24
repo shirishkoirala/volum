@@ -5,27 +5,9 @@ import { ProgressBar } from './ProgressBar';
 import { EmptyState } from './EmptyState';
 import { preferencesIconUrl, jobsIconUrl, driveIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
+import { formatBytes, formatDeviceUsage } from '../utils/format';
+import { cycleViewMode, type ViewMode } from '../utils/view';
 import styles from './DesktopView.module.css';
-
-function formatBytes(value: number) {
-  if (value == null || Number.isNaN(value) || value === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-  return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
-}
-
-function formatDeviceUsage(part: BlockDevice) {
-  if (part.totalBytes != null && part.totalBytes > 0) {
-    const fsType = part.fsType ? ` · ${part.fsType}` : '';
-    return `${formatBytes(part.usedBytes!)} used of ${formatBytes(part.totalBytes)} | ${formatBytes(part.freeBytes!)} free${fsType}`;
-  }
-  if (part.mountPoint) return 'Usage unavailable';
-  return 'Not mounted';
-}
-
-function cycleViewMode(current: 'list' | 'grid' | 'columns'): 'list' | 'grid' | 'columns' {
-  return current === 'list' ? 'grid' : current === 'grid' ? 'columns' : 'list';
-}
 
 type DesktopViewProps = {
   devices: BlockDevice[];

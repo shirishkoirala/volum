@@ -80,22 +80,22 @@ grid-template-rows: 44px 1fr 28px
 
 | # | Fix |
 |---|-----|
-| B.1 | `part.size` null guard — fallback to `'Unknown'` |
-| B.2 | `entry.size` null guard in `formatBytes` — avoid NaN |
-| B.3 | `dev.name` / `dev.model` fallback — "Unknown device" |
-| B.4 | Extract `formatBytes` + `formatUptime` to `utils/format.ts` |
-| B.5 | Extract duplicated sort-select JSX to `<SortSelect>` |
-| B.6 | Extract duplicated theme toggle to `<ThemeToggle>` |
-| B.7 | Extract duplicated logout button to `<LogoutButton>` |
-| B.8 | Fix `(document as any).__longPressTimer` → `useRef` |
-| B.9 | Rename `.desktopTrashIcon` → `.desktopIconWrapper` (used by both trash and settings) |
-| B.10 | Fix "Share" icon: `edit-download` → `mail-send` |
-| B.11 | Fix "Clear completed" label when failed/cancelled present |
-| B.12 | Fix trash empty `<span>` column — fill or remove |
-| B.13 | Fix `buildColumnPath` unused `roots` parameter |
-| B.14 | Fix desktop drive mounted-count computed twice |
-| B.15 | Fix BreadcrumbBar drive label IIFE — extract to variable |
-| B.16 | Fix `cycleViewMode` nested ternary — extract to function |
+| B.1 | `part.size` null guard — fallback to `'Unknown'` | ✅ |
+| B.2 | `entry.size` null guard in `formatBytes` — avoid NaN | ✅ unified in shared `utils/format.ts` |
+| B.3 | `dev.name` / `dev.model` fallback — "Unknown device" | ✅ |
+| B.4 | Extract `formatBytes` + `formatUptime` to `utils/format.ts` | ✅ (+ `formatGridDate`, `formatTrashPath`, `formatDeviceUsage`) |
+| B.5 | Extract duplicated sort-select JSX to `<SortSelect>` | ✅ |
+| B.6 | Extract duplicated theme toggle to `<ThemeToggle>` | ✅ |
+| B.7 | Extract duplicated logout button to `<LogoutButton>` | ✅ |
+| B.8 | Fix `(document as any).__longPressTimer` → `useRef` | ✅ |
+| B.9 | Rename `.desktopTrashIcon` → `.desktopIconWrapper` (used by both trash and settings) | ✅ |
+| B.10 | Fix "Share" icon: `edit-download` → `mail-send` | ✅ |
+| B.11 | Fix "Clear completed" label when failed/cancelled present | ✅ |
+| B.12 | Fix trash empty `<span>` column — fill or remove | ✅ |
+| B.13 | Fix `buildColumnPath` unused `roots` parameter | ✅ extracted to `utils/path.ts` |
+| B.14 | Fix desktop drive mounted-count computed twice | ✅ |
+| B.15 | Fix BreadcrumbBar drive label IIFE — extract to variable | ✅ |
+| B.16 | Fix `cycleViewMode` nested ternary — extract to function | ✅ extracted to `utils/view.ts` |
 
 ### Batch C — Accessibility (12 items)
 
@@ -155,8 +155,8 @@ Batch A (error states) → Batch B (cleanup) → Batch C (a11y)
 |-------|--------|
 | Shell Transformation (Phases 0-6) | ✅ Complete |
 | Batch A — Loading & Error States | ✅ 11/11 |
-| Batch B — Edge Cases & Cleanup | 🔄 4/16 (B.8-B.10,B.13 done) |
+| Batch B — Edge Cases & Cleanup | ✅ 16/16 |
 | Batch B.0 — Standard EmptyState Component | ✅ Done |
-| Batch C — Accessibility | ⬜ 0/12 |
-| Batch D — Inline Styles → CSS | ⬜ 0/11 |
+| Batch C — Accessibility | 🔄 7/12 + 1 partial |
+| Batch D — Inline Styles → CSS | 🔄 4/11 + 1 partial |
 | Batch E — Future Features | ⬜ 0/7 |

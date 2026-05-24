@@ -37,6 +37,7 @@
   .statusBar {
     font-size: 10px;
     height: 24px;
+    grid-column: 1;
     padding: 0 var(--space-sm);
   }
 

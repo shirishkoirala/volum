@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from './Icon';
+import { ThemeToggle } from './ThemeToggle';
+import { LogoutButton } from './LogoutButton';
 import type { Session } from '../api/client';
 import appIcon from '../assets/icon-light.png';
 import styles from './TopBar.module.css';
@@ -59,9 +61,7 @@ export function TopBar({ activeView, onGoDesktop, theme, onToggleTheme, onOpenSe
         <span className={styles.clock}>{clock}</span>
       </div>
       <div className={styles.right}>
-        <button className={styles.systemBtn} onClick={onToggleTheme} type="button" title={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'} aria-label="Toggle theme">
-          <Icon name={theme === 'light' ? 'weather-clear-night' : 'weather-clear'} size={16} />
-        </button>
+        <ThemeToggle theme={theme} onClick={onToggleTheme} className={styles.systemBtn} size={16} />
         <button className={styles.systemBtn} onClick={() => setShowSystemMenu(v => !v)} type="button" title="System menu" aria-label="System menu">
           <Icon name="preferences-system" size={16} />
         </button>

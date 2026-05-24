@@ -1,41 +1,24 @@
-import { DragEvent, KeyboardEvent, MouseEvent, RefObject, TouchEvent } from 'react';
+import { DragEvent, KeyboardEvent, MouseEvent, RefObject, TouchEvent, useState, useEffect, useCallback } from 'react';
 import { Icon, FileIcon, FolderIcon } from './Icon';
 import { BreadcrumbBar } from './BreadcrumbBar';
 import { Select } from './Select';
 import { FilesSidebar } from './FilesSidebar';
 import { EmptyState } from './EmptyState';
+import { SortSelect } from './SortSelect';
+import { ThemeToggle } from './ThemeToggle';
+import { LogoutButton } from './LogoutButton';
 import { folderIconUrl } from '../api/icons';
 import { rawUrl, downloadUrl, isImageExtension, isVideoExtension, isAudioExtension, isTextExtension } from '../api/client';
 import type { FileEntry, SearchResult, BlockDevice } from '../api/client';
+import { formatBytes, formatGridDate } from '../utils/format';
+import { buildColumnPath } from '../utils/path';
+import { cycleViewMode, type ViewMode } from '../utils/view';
 import styles from './FilesView.module.css';
 
-type ViewMode = 'list' | 'grid' | 'columns';
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
 type SortDirection = 'asc' | 'desc';
 type RenameState = { path: string; value: string } | null;
 type ContextMenuState = { x: number; y: number; entry: FileEntry } | null;
-
-function formatBytes(value: number) {
-  if (value == null || Number.isNaN(value) || value === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-  return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
-}
-
-function formatGridDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(undefined, {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-}
-
-function cycleViewMode(current: ViewMode): ViewMode {
-  return current === 'list' ? 'grid' : current === 'grid' ? 'columns' : 'list';
-}
 
 type FilesViewProps = {
   currentPath: string;
@@ -138,6 +121,29 @@ export function FilesView({
   locationMode, onLocationNavigate, onToggleLocationMode,
 }: FilesViewProps) {
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 760);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 760);
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile || !sidebarOpen) return;
+    const handler = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') setSidebarOpen(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isMobile, sidebarOpen]);
+
+  const handleSidebarNavigate = useCallback((path: string) => {
+    if (isMobile) setSidebarOpen(false);
+    onNavigate(path);
+  }, [isMobile, onNavigate]);
+
   function handleBreadcrumbBack() {
     const parts = currentPath.split('/').filter(Boolean);
     if (parts.length <= 1) {
@@ -161,32 +167,63 @@ export function FilesView({
     }
   }
 
-  function buildColumnPath(path: string): string[] {
-    if (!path || path === '/') return ['/'];
-    const parts = path.split('/').filter(Boolean);
-    const cols: string[] = [];
-    for (let i = 0; i <= parts.length; i++) {
-      cols.push('/' + parts.slice(0, i).join('/'));
-    }
-    return cols;
-  }
-
   return (
     <div className={styles.filesViewContainer}>
-      <FilesSidebar
-        devices={devices}
-        favorites={favorites}
-        recentPaths={recentPaths}
-        currentPath={currentPath}
-        subdirs={subdirs}
-        sectionCollapsed={sectionCollapsed}
-        onToggleSection={onToggleSection}
-        onNavigate={onNavigate}
-        onRemoveFavorite={onRemoveFavorite}
-      />
+      {isMobile && sidebarOpen && (
+        <div className={styles.sidebarBackdrop} onClick={() => setSidebarOpen(false)} />
+      )}
+      {isMobile && sidebarOpen && (
+        <aside className={styles.sidebarOverlay}>
+          <div className={styles.sidebarOverlayHeader}>
+            <span className={styles.sidebarOverlayTitle}>Places</span>
+            <button
+              className="icon-button"
+              onClick={() => setSidebarOpen(false)}
+              title="Close sidebar"
+              type="button"
+            >
+              <Icon name="window-close" size={16} />
+            </button>
+          </div>
+          <FilesSidebar
+            devices={devices}
+            favorites={favorites}
+            recentPaths={recentPaths}
+            currentPath={currentPath}
+            subdirs={subdirs}
+            sectionCollapsed={sectionCollapsed}
+            onToggleSection={onToggleSection}
+            onNavigate={handleSidebarNavigate}
+            onRemoveFavorite={onRemoveFavorite}
+          />
+        </aside>
+      )}
+      <div className={styles.sidebarNormal}>
+        <FilesSidebar
+          devices={devices}
+          favorites={favorites}
+          recentPaths={recentPaths}
+          currentPath={currentPath}
+          subdirs={subdirs}
+          sectionCollapsed={sectionCollapsed}
+          onToggleSection={onToggleSection}
+          onNavigate={onNavigate}
+          onRemoveFavorite={onRemoveFavorite}
+        />
+      </div>
       <div className={styles.fileContent}>
         <BreadcrumbBar crumbs={breadcrumbs} onBack={handleBreadcrumbBack} onNavigate={onNavigate} locationMode={locationMode} onLocationNavigate={onLocationNavigate} onToggleLocationMode={onToggleLocationMode}>
           <div className={styles.toolbar}>
+            {isMobile && (
+              <button
+                className="icon-button"
+                onClick={() => setSidebarOpen(true)}
+                title="Show sidebar"
+                type="button"
+              >
+                <Icon name="view-list" size={18} />
+              </button>
+            )}
             {canWrite && (
               <button
                 className="icon-button"
@@ -273,21 +310,7 @@ export function FilesView({
                 ))}
               </div>
             )}
-            <Select
-              className={styles.sortSelect}
-              value={`${sortField}:${sortDirection}`}
-              onChange={onSortChange}
-              ariaLabel="Sort files"
-            >
-              <option value="name:asc">Name A-Z</option>
-              <option value="name:desc">Name Z-A</option>
-              <option value="size:asc">Size small first</option>
-              <option value="size:desc">Size large first</option>
-              <option value="type:asc">Type A-Z</option>
-              <option value="type:desc">Type Z-A</option>
-              <option value="modifiedAt:desc">Newest first</option>
-              <option value="modifiedAt:asc">Oldest first</option>
-            </Select>
+            <SortSelect view="files" sortField={sortField} sortDirection={sortDirection} onChange={onSortChange} className={styles.sortSelect} />
             <button
               className="icon-button"
               onClick={onToggleHidden}
@@ -326,28 +349,8 @@ export function FilesView({
                 <Icon name="view-list-tree" size={18} />
               )}
             </button>
-            <button
-              className="icon-button"
-              onClick={onToggleTheme}
-              title={theme === 'light' ? 'Dark mode' : 'Light mode'}
-              type="button"
-            >
-              {theme === 'light' ? (
-                <Icon name="weather-clear-night" size={18} />
-              ) : (
-                <Icon name="weather-clear" size={18} />
-              )}
-            </button>
-            {session?.authEnabled && (
-              <button
-                className="icon-button"
-                onClick={onLogout}
-                title="Log out"
-                type="button"
-              >
-                <Icon name="system-log-out" size={18} />
-              </button>
-            )}
+            <ThemeToggle theme={theme} onClick={onToggleTheme} />
+            {session?.authEnabled && <LogoutButton onClick={onLogout} />}
           </div>
         </BreadcrumbBar>
 

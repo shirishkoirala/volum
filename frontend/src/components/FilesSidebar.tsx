@@ -1,23 +1,8 @@
 import { Icon, FolderIcon, DeviceIcon } from './Icon';
 import { ProgressBar } from './ProgressBar';
 import type { BlockDevice, FileEntry } from '../api/client';
+import { formatBytes, formatDeviceUsage } from '../utils/format';
 import styles from './FilesSidebar.module.css';
-
-function formatBytes(value: number) {
-  if (value == null || Number.isNaN(value) || value === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-  return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
-}
-
-function formatDeviceUsage(part: BlockDevice) {
-  if (part.totalBytes != null && part.totalBytes > 0) {
-    const fsType = part.fsType ? ` · ${part.fsType}` : '';
-    return `${formatBytes(part.usedBytes!)} used of ${formatBytes(part.totalBytes)} | ${formatBytes(part.freeBytes!)} free${fsType}`;
-  }
-  if (part.mountPoint) return 'Usage unavailable';
-  return 'Not mounted';
-}
 
 type FilesSidebarProps = {
   devices: BlockDevice[];

@@ -108,6 +108,13 @@
   z-index: 30;
 }
 
+@media (max-width: 760px) {
+  .searchResultsDropdown {
+    min-width: 0;
+    width: calc(100vw - 2rem);
+  }
+}
+
 .searchResultItem {
   align-items: center;
   background: transparent;
@@ -182,13 +189,15 @@
 .fileList,
 .fileGrid {
   min-height: 0;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .fileList {
   background: var(--color-surface);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow-x: hidden;
   outline: 0;
 }
 
@@ -260,6 +269,7 @@
   gap: 34px;
   grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
   outline: 0;
+  overflow-y: auto;
 }
 
 .fileGrid .fileRow {
@@ -446,6 +456,54 @@
 .skeletonIcon,
 .skeletonLine {
   animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+.sidebarOverlay {
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  z-index: 100;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border-light);
+  overflow-y: auto;
+  animation: sidebarSlideIn 0.2s ease;
+}
+
+.sidebarOverlayHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--color-border-light);
+  flex-shrink: 0;
+}
+
+.sidebarOverlayTitle {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+.sidebarBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 99;
+}
+
+@keyframes sidebarSlideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@media (max-width: 760px) {
+  .sidebarNormal {
+    display: none;
+  }
 }
 
 @keyframes skeletonPulse {

@@ -1,0 +1,71 @@
+.authShell {
+  align-items: center;
+  background: var(--color-bg);
+  color: var(--color-text);
+  display: flex;
+  min-height: 100vh;
+  justify-content: center;
+  padding: var(--space-2xl);
+}
+
+.loginPanel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  display: grid;
+  gap: 14px;
+  max-width: 380px;
+  padding: var(--space-3xl);
+  width: 100%;
+}
+
+.loginPanel h1 {
+  font-size: 26px;
+  margin: 0 0 4px;
+}
+
+.loginPanel input,
+.loginPanel select {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  min-height: 44px;
+  padding: 0 var(--space-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.loginPanel button {
+  background: var(--color-brand);
+  border: 0;
+  border-radius: var(--radius-md);
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  transition: opacity var(--transition-fast);
+}
+
+.loginPanel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.brandMark {
+  display: block;
+  margin: 0 auto 4px;
+  width: 48px;
+}
+
+.loginError {
+  color: var(--color-danger);
+  font-size: 13px;
+  margin: 0;
+  text-align: center;
+}

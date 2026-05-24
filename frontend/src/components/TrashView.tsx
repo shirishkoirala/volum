@@ -1,38 +1,15 @@
 import { Icon, FolderIcon, FileIcon } from './Icon';
 import { BreadcrumbBar } from './BreadcrumbBar';
-import { Select } from './Select';
 import { EmptyState } from './EmptyState';
+import { SortSelect } from './SortSelect';
 import { trashIconUrl } from '../api/icons';
 import type { TrashEntry } from '../api/client';
+import { formatBytes, formatGridDate, formatTrashPath } from '../utils/format';
+import { type ViewMode } from '../utils/view';
 import styles from './TrashView.module.css';
 
-type ViewMode = 'list' | 'grid' | 'columns';
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
 type SortDirection = 'asc' | 'desc';
-
-function formatBytes(value: number) {
-  if (value == null || Number.isNaN(value) || value === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
-  return `${(value / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
-}
-
-function formatGridDate(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(undefined, {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-}
-
-function formatTrashPath(path: string) {
-  const parts = path.split('/').filter(Boolean);
-  if (parts.length <= 2) return path;
-  return `.../${parts.slice(-2).join('/')}`;
-}
 
 type TrashViewProps = {
   trashEntries: TrashEntry[];
@@ -115,21 +92,7 @@ export function TrashView({
           >
             <Icon name="selection-invert" size={18} />
           </button>
-          <Select
-            className={styles.sortSelect}
-            value={`${sortField}:${sortDirection}`}
-            onChange={onSortChange}
-            ariaLabel="Sort trash"
-          >
-            <option value="name:asc">Name A-Z</option>
-            <option value="name:desc">Name Z-A</option>
-            <option value="size:asc">Size small first</option>
-            <option value="size:desc">Size large first</option>
-            <option value="type:asc">Type A-Z</option>
-            <option value="type:desc">Type Z-A</option>
-            <option value="modifiedAt:desc">Deleted newest first</option>
-            <option value="modifiedAt:asc">Deleted oldest first</option>
-          </Select>
+          <SortSelect view="trash" sortField={sortField} sortDirection={sortDirection} onChange={onSortChange} className={styles.sortSelect} />
           <button
             className="icon-button"
             onClick={onCycleViewMode}
