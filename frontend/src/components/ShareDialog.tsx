@@ -130,7 +130,7 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
             <div className={dStyles.dialogActions}>
               <button type="button" className={`${dStyles.dialogButton} ${dStyles.secondary}`} onClick={onClose}>Cancel</button>
               <button type="submit" className={`${dStyles.dialogButton} ${dStyles.primary}`} disabled={submitting}>
-                {submitting ? 'Creating...' : 'Create Share Link'}
+                {submitting ? <><Icon name="view-refresh" size={15} /> Creating...</> : 'Create Share Link'}
               </button>
             </div>
           </form>

@@ -294,6 +294,16 @@
   width: 60%;
 }
 
+.retryBtn {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
 @keyframes skeletonPulse {
   0% { opacity: 0.4; }
   50% { opacity: 0.8; }

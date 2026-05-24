@@ -1,6 +1,8 @@
 import { Icon, FolderIcon, FileIcon } from './Icon';
 import { BreadcrumbBar } from './BreadcrumbBar';
 import { Select } from './Select';
+import { EmptyState } from './EmptyState';
+import { trashIconUrl } from '../api/icons';
 import type { TrashEntry } from '../api/client';
 import styles from './TrashView.module.css';
 
@@ -147,15 +149,17 @@ export function TrashView({
           </button>
         </BreadcrumbBar>
       )}
-      <section
-        className={`${viewMode === 'grid' ? styles.fileGrid : styles.fileList}`}
-        onContextMenu={(event) => event.preventDefault()}
-        tabIndex={0}
-      >
-        {trashEntries.length === 0 ? (
-          <div className={styles.emptyState}>Trash is empty</div>
-        ) : (
-          sortedTrashEntries.map((entry) => {
+      {trashEntries.length === 0 ? (
+        <div className={styles.emptyWrapper}>
+          <EmptyState icon={trashIconUrl(false, '64')} title="Trash is empty" />
+        </div>
+      ) : (
+        <section
+          className={`${viewMode === 'grid' ? styles.fileGrid : styles.fileList}`}
+          onContextMenu={(event) => event.preventDefault()}
+          tabIndex={0}
+        >
+          {sortedTrashEntries.map((entry) => {
             const isSelected = selectedTrashIds.includes(entry.id);
             return viewMode === 'grid' ? (
               <div
@@ -219,8 +223,9 @@ export function TrashView({
               </div>
             );
           })
-        )}
-      </section>
+          }
+        </section>
+      )}
     </>
   );
 }

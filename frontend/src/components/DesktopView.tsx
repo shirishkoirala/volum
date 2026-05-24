@@ -2,7 +2,8 @@ import { Icon, DeviceIcon, TrashIcon } from './Icon';
 import { IconImg } from './shared';
 import { BreadcrumbBar } from './BreadcrumbBar';
 import { ProgressBar } from './ProgressBar';
-import { preferencesIconUrl, jobsIconUrl } from '../api/icons';
+import { EmptyState } from './EmptyState';
+import { preferencesIconUrl, jobsIconUrl, driveIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
 import styles from './DesktopView.module.css';
 
@@ -42,12 +43,15 @@ type DesktopViewProps = {
   onToggleTheme: () => void;
   session?: { authEnabled: boolean } | null;
   onLogout: () => void;
+  deviceError?: string | null;
+  onRetryDevices?: () => void;
 };
 
 export function DesktopView({
   devices, trashEntries, jobs, selectedDriveName,
   onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onSelectDrive,
   viewMode, onSetViewMode, theme, onToggleTheme, session, onLogout,
+  deviceError, onRetryDevices,
 }: DesktopViewProps) {
   const activeJobCount = jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length;
 
@@ -87,7 +91,7 @@ export function DesktopView({
             )
           )}
           {(!d?.partitions?.length) && (
-            <div className={styles.emptyState}>No partitions found</div>
+            <EmptyState icon={driveIconUrl('64')} title="No partitions found" />
           )}
         </div>
       </>
@@ -126,6 +130,15 @@ export function DesktopView({
         </div>
       </header>
       <div className={styles.desktop}>
+        {deviceError && (
+          <div className={styles.desktopError}>
+            <Icon name="dialog-warning" size={18} />
+            <span>{deviceError}</span>
+            {onRetryDevices && (
+              <button type="button" className={styles.retryBtn} onClick={onRetryDevices}>Retry</button>
+            )}
+          </div>
+        )}
         {devices.map((dev) => (
           <button
             key={dev.name}

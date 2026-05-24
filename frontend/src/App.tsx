@@ -1,4 +1,4 @@
-import { DragEvent, FormEvent, KeyboardEvent, MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { DragEvent, FormEvent, KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from './components/Icon';
 import {
   ConflictPolicy,
@@ -92,6 +92,7 @@ export function App() {
   });
   const [roots, setRoots] = useState<RootEntry[]>([]);
   const [devices, setDevices] = useState<BlockDevice[]>([]);
+  const [deviceError, setDeviceError] = useState<string | null>(null);
   const [currentPath, setCurrentPath] = useState(
     () => localStorage.getItem('volum_currentPath') ?? ''
   );
@@ -280,16 +281,21 @@ export function App() {
       .catch((err: Error) => setError(err.message));
   }, [session, sessionLoading]);
 
-  useEffect(() => {
-    if (sessionLoading || (session?.authEnabled && !session.authenticated)) {
-      return;
-    }
+  const loadDevices = useCallback(() => {
+    setDeviceError(null);
     getDevices()
       .then((response) => {
         setDevices(response.devices ?? []);
       })
-      .catch((err: Error) => setError(err.message));
-  }, [session, sessionLoading]);
+      .catch((err: Error) => setDeviceError(err.message));
+  }, []);
+
+  useEffect(() => {
+    if (sessionLoading || (session?.authEnabled && !session.authenticated)) {
+      return;
+    }
+    loadDevices();
+  }, [session, sessionLoading, loadDevices]);
 
   useEffect(() => {
     if (!currentPath) {
@@ -1635,6 +1641,8 @@ export function App() {
             onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
             session={session}
             onLogout={handleLogout}
+            deviceError={deviceError}
+            onRetryDevices={loadDevices}
           />
         )}
         {activeView === 'trash' && (

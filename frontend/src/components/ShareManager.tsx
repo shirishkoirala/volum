@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Icon } from './Icon';
 import { Overlay } from './shared';
+import { EmptyState } from './EmptyState';
 import { getShares, deleteShare, type Share } from '../api/client';
 import dStyles from './Dialogs.module.css';
 import styles from './ShareManager.module.css';
@@ -83,9 +84,9 @@ export function ShareManager({ onClose }: ShareManagerProps) {
             ))}
           </div>
         ) : error ? (
-          <p className={dStyles.dialogError}>{error} <button type="button" onClick={loadShares} style={{ color: 'var(--color-accent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Retry</button></p>
+          <p className={dStyles.dialogError}>{error} <button type="button" className={styles.retryBtn} onClick={loadShares}>Retry</button></p>
         ) : shares.length === 0 ? (
-          <p className={dStyles.dialogMessage}>No shares created yet. Right-click a file or folder and select Share to create one.</p>
+          <EmptyState compact title="No shares yet" subtitle="Right-click a file or folder and select Share to create one." />
         ) : (
           <div className={styles.shareTable}>
             <div className={styles.shareHeader}>

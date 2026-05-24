@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Job } from '../api/client';
 import { BreadcrumbBar } from './BreadcrumbBar';
 import { Icon } from './Icon';
-import { IconImg } from './shared';
+import { EmptyState } from './EmptyState';
 import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from './ProgressBar';
 import styles from './JobsPage.module.css';
@@ -193,13 +193,9 @@ export function JobsPage({
       </BreadcrumbBar>
       <main className={styles.jobsPage}>
         <div className={styles.jobList}>
-          {jobs.length === 0 ? (
-            <div className={styles.emptyState}>
-              <IconImg src={jobsIconUrl()} alt="" width={48} height={48} />
-              <h3>No jobs yet</h3>
-              <p>File operations like copy, move, and archive will appear here.</p>
-            </div>
-          ) : (
+      {jobs.length === 0 ? (
+        <EmptyState icon={jobsIconUrl()} title="No jobs yet" subtitle="File operations like copy, move, and archive will appear here." />
+      ) : (
             <>
               {renderJobGroup(jobs, jobFilter, completedCollapsed, setCompletedCollapsed, onCancel, onPause, onResume, onRetry)}
               {jobs.some((j) => j.status === 'completed' || j.status === 'cancelled') && (

@@ -343,8 +343,7 @@
 }
 
 .folderPickerLoading,
-.folderPickerError,
-.folderPickerEmpty {
+.folderPickerError {
   align-items: center;
   color: var(--color-text-muted);
   display: flex;

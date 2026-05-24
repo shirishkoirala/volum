@@ -139,7 +139,7 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
             disabled={submitting || previews.every((p) => !p.changed)}
             onClick={handleSubmit}
           >
-            {submitting ? 'Renaming...' : `Rename ${previews.filter((p) => p.changed).length} items`}
+            {submitting ? <><Icon name="view-refresh" size={15} /> Renaming...</> : `Rename ${previews.filter((p) => p.changed).length} items`}
           </button>
         </div>
       </div>

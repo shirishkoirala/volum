@@ -157,7 +157,7 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
               disabled={changing || saved || permString === entry.permissions}
               onClick={handleSave}
             >
-              {changing ? 'Saving...' : 'Apply Permissions'}
+              {changing ? <><Icon name="view-refresh" size={15} /> Saving...</> : 'Apply Permissions'}
             </button>
           </div>
         </div>

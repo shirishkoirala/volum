@@ -116,6 +116,16 @@
   100% { opacity: 0.4; }
 }
 
+.retryBtn {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: inherit;
+  padding: 0;
+}
+
 .statusDisabled {
   background: var(--color-badge);
   color: var(--color-text-muted);

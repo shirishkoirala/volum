@@ -2,6 +2,8 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from './Icon';
 import { Overlay } from './shared';
 import { Select } from './Select';
+import { EmptyState } from './EmptyState';
+import { folderIconUrl } from '../api/icons';
 import type { FileEntry } from '../api/client';
 import type { ConflictPolicy } from '../api/client';
 import { getFiles } from '../api/client';
@@ -268,7 +270,7 @@ export function FolderPicker({
         ) : error ? (
           <div className={styles.folderPickerError}>{error} <button type="button" onClick={() => loadSubdirs(currentDir)}>Retry</button></div>
         ) : subdirs.length === 0 ? (
-          <div className={styles.folderPickerEmpty}>No subdirectories</div>
+          <EmptyState compact icon={folderIconUrl('64')} title="No subdirectories" />
         ) : (
           subdirs.map((dir) => {
             const dirName = dir.split('/').filter(Boolean).pop() || dir;

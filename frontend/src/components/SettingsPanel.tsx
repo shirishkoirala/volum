@@ -111,7 +111,7 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay' }: Se
           <div className={`${styles.skeletonBlock} ${styles.short}`} />
         </div>
       ) : !status ? (
-        <p className="muted">Failed to load status. <button type="button" onClick={() => window.location.reload()} style={{ color: 'var(--color-accent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Retry</button></p>
+        <p className="muted">Failed to load status. <button type="button" className={styles.retryBtn} onClick={() => window.location.reload()}>Retry</button></p>
       ) : (
         <>
           {(activeCategory === 'server' || filteredCategories.some((c) => c.id === 'server')) && (

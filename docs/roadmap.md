@@ -154,8 +154,9 @@ Batch A (error states) → Batch B (cleanup) → Batch C (a11y)
 | Batch | Status |
 |-------|--------|
 | Shell Transformation (Phases 0-6) | ✅ Complete |
-| Batch A — Loading & Error States | ⬜ 0/11 |
-| Batch B — Edge Cases & Cleanup | ⬜ 0/16 |
+| Batch A — Loading & Error States | ✅ 11/11 |
+| Batch B — Edge Cases & Cleanup | 🔄 4/16 (B.8-B.10,B.13 done) |
+| Batch B.0 — Standard EmptyState Component | ✅ Done |
 | Batch C — Accessibility | ⬜ 0/12 |
 | Batch D — Inline Styles → CSS | ⬜ 0/11 |
 | Batch E — Future Features | ⬜ 0/7 |

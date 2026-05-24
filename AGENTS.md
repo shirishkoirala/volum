@@ -77,6 +77,28 @@
 - Added settings icon to desktop view (This PC) using SVG from assets (`preferences/22/preferences-system.svg`) via `IconImg` + `preferencesIconUrl()` — not Lucide React
 - Removed settings gear icon from sidebar header
 
+### Task 7 — Batch A Loading/Error States (all 11 items)
+- A.1–A.3 (skeleton/empty states) already implemented
+- A.4 (InfoPanel chmod spinner): added `view-refresh` spin animation to "Saving..." button
+- A.5 (ShareDialog spinner): added spinning icon to "Creating..." button
+- A.6 (BatchRename spinner): added spinning icon to "Renaming..." button
+- A.7 (Error banner dismiss) already had `&times;` button
+- A.8 (ShareManager error Retry): converted inline style to `styles.retryBtn` CSS class
+- A.9 (FolderPicker error Retry) already implemented
+- A.10 (Settings error Retry): converted inline style to `styles.retryBtn` CSS class
+- A.11 (Desktop error state): added `deviceError` state in App.tsx, error banner + Retry button in DesktopView; extracted `loadDevices` to stable `useCallback`
+
+### Task 8 — Standard EmptyState Component (Batch B prep)
+- Added `emptyIconUrl()` to `frontend/src/api/icons.ts` — imports unused `empty.svg` asset
+- Enhanced `EmptyState` component: `icon` now optional (defaults to `emptyIconUrl()`), added `compact` prop (48px icon), added `children` slot for extensibility
+- Migrated 5 consumers to shared `EmptyState`:
+  - `TrashView` (was plain `<div>`) → `EmptyState` with trash icon
+  - `DesktopView` partitions (was plain `<div>`) → `EmptyState` with drive icon
+  - `JobsPage` (was inline `IconImg` + `h3` + `p`) → `EmptyState` with jobs icon + subtitle
+  - `ShareManager` (was `<p>`) → `EmptyState` compact variant (uses default empty.svg icon)
+  - `FolderPicker` in `Dialogs.tsx` (was `<div>`) → `EmptyState` compact variant with folder icon
+- Removed 8 orphaned CSS blocks: `.emptyState` from TrashView/JobsPage/DesktopView CSS, `.folderPickerEmpty` from Dialogs, `.emptyState` + `.folderEmpty*` from FilesView and App.module.css
+
 ### Task 3 — Scrollbar Theming
 - Global scrollbar rules in `frontend/src/styles/global.css` (WebKit + Firefox via `*` selector)
 - Removed per-component scrollbar rules from `App.module.css`

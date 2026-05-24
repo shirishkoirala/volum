@@ -43,6 +43,7 @@ import officePresentation22 from '../assets/mimetypes/22/x-office-presentation.s
 import officePresentation64 from '../assets/mimetypes/64/x-office-presentation.svg?url';
 import officeSpreadsheet22 from '../assets/mimetypes/22/x-office-spreadsheet.svg?url';
 import officeSpreadsheet64 from '../assets/mimetypes/64/x-office-spreadsheet.svg?url';
+import emptyIconSvg from '../assets/applets/256/empty.svg?url';
 import unknown22 from '../assets/mimetypes/22/unknown.svg?url';
 import unknown64 from '../assets/mimetypes/64/unknown.svg?url';
 
@@ -102,6 +103,10 @@ export function preferencesIconUrl() {
 
 export function jobsIconUrl() {
   return jobIconSvg;
+}
+
+export function emptyIconUrl() {
+  return emptyIconSvg;
 }
 
 export function fileTypeIconUrl(entry: FileEntry, size = '22') {
