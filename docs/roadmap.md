@@ -13,16 +13,18 @@ Target:  [ Sidebar 300px ] [ Workspace flex:1 (full width) ]
 - `roots` state is fetched but never displayed — dead data
 - 81 UI audit issues (6 critical bugs, missing states, a11y gaps, edge cases, inline styles)
 
-## Batch 1 — Critical Bugs (6 items)
+## Batch 1 — Critical Bugs (6 items) ✅ Done
 
-| # | Problem | Fix | File |
-|---|---------|-----|------|
-| 1.1 | Rubber band selection — `querySelectorAll('.file-row')` bare string won't match CSS Modules hashed class | Use `[data-index]` attribute selector | `App.tsx:1184` |
-| 1.2 | Danger buttons use bare `className="danger"` — not CSS Modules hashed, so no red styling | `className={styles.danger}` | `App.tsx:1561,1799` |
-| 1.3 | Search result click — `path.lastIndexOf('/')` returns -1 for root-level items (no `/`) | Change `|| 1` to check `lastIndexOf` < 0 | `App.tsx:1688` |
-| 1.4 | Trash view toggle only cycles list↔grid — if user was in columns mode, preference is lost | Reset to `list` when entering trash if `columns` | `App.tsx:1377` (trash entry handler) |
-| 1.5 | Column view drag-over — `styles.fileColumns.dragOver` CSS rule referenced but doesn't exist | Add `.fileColumns.dragOver` style | `App.module.css` |
-| 1.6 | Breadcrumb overflow menu — no Escape or click-outside to dismiss | Add useEffect for keydown + outside-click | `BreadcrumbBar.tsx` |
+All items verified/fixed.
+
+| # | Problem | Status | File |
+|---|---------|--------|------|
+| 1.1 | Rubber band selection — `querySelectorAll('.file-row')` bare string won't match CSS Modules hashed class | ✅ Already used `[data-index]` — no fix needed | `App.tsx:1194` |
+| 1.2 | Danger buttons use bare `className="danger"` — not CSS Modules hashed, so no red styling | ✅ Already used `styles.danger` — no fix needed | `App.tsx:1579,1838,2348` |
+| 1.3 | Search result click — `path.lastIndexOf('/')` returns -1 for root-level items (no `/`) | ✅ Already guarded with `idx < 0` — no fix needed | `App.tsx:1710` |
+| 1.4 | Trash view toggle only cycles list↔grid — if user was in columns mode, preference is lost | ✅ Fixed — save/restore via `viewModeBeforeTrash` ref | `App.tsx:170,1334,1395,2071` |
+| 1.5 | Column view drag-over — `styles.fileColumns.dragOver` CSS rule referenced but doesn't exist | ✅ Already present — no fix needed | `App.module.css:810` |
+| 1.6 | Breadcrumb overflow menu — no Escape or click-outside to dismiss | ✅ Already implemented — no fix needed | `BreadcrumbBar.tsx:24-41` |
 
 ## Batch 2 — Sidebar Cleanup
 
@@ -168,6 +170,7 @@ Batches 1–3 are structural (bugs, layout, new page). Batches 4–7 are code-le
 
 ## Completed
 
+- [x] Batch 1 — Critical bugs (all 6 items verified/fixed)
 - [x] Admin share management UI (ShareManager)
 - [x] Settings page (version, DB maintenance, root health, worker status)
 - [x] Desktop drive view (physical drives → partition contents)

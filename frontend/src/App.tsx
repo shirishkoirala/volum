@@ -167,6 +167,7 @@ export function App() {
   const longPressTimerRef = useRef<number | null>(null);
   const longPressEntry = useRef<{ entry: FileEntry; x: number; y: number } | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const viewModeBeforeTrash = useRef<ViewMode | null>(null);
 
   const canWrite = session?.role === 'admin';
 
@@ -1331,6 +1332,13 @@ export function App() {
   }, [viewMode]);
 
   useEffect(() => {
+    if (!showingTrash && viewModeBeforeTrash.current) {
+      setViewMode(viewModeBeforeTrash.current);
+      viewModeBeforeTrash.current = null;
+    }
+  }, [showingTrash]);
+
+  useEffect(() => {
     localStorage.setItem('volum_sortField', sortField);
     localStorage.setItem('volum_sortDirection', sortDirection);
   }, [sortField, sortDirection]);
@@ -1384,7 +1392,7 @@ export function App() {
                   <small>Desktop</small>
                 </span>
               </button>
-              <button className={trashEntries.length > 0 ? `${styles.rootItem} ${styles.trashItem}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setSelectedPaths([]); setViewMode((prev) => prev === 'columns' ? 'list' : prev); }} type="button">
+              <button className={trashEntries.length > 0 ? `${styles.rootItem} ${styles.trashItem}` : styles.rootItem} onClick={() => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setSelectedPaths([]); if (viewMode === 'columns') { viewModeBeforeTrash.current = viewMode; } setViewMode((prev) => prev === 'columns' ? 'list' : prev); }} type="button">
                 <IconImg src={trashIconUrl(trashEntries.length > 0, '64')} alt="" width={18} height={18} />
                 <span className={styles.favDetails}>
                   <span>Trash</span>
@@ -2060,6 +2068,8 @@ export function App() {
                   setShowingSettings(false);
                   setSelectedPaths([]);
                   setSelectedDriveName(null);
+                  if (viewMode === 'columns') { viewModeBeforeTrash.current = viewMode; }
+                  setViewMode((prev) => prev === 'columns' ? 'list' : prev);
                 }}
                 type="button"
                 aria-label="Open Trash"

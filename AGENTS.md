@@ -81,6 +81,12 @@
 - Global scrollbar rules in `frontend/src/styles/global.css` (WebKit + Firefox via `*` selector)
 - Removed per-component scrollbar rules from `App.module.css`
 
+### Task 5 — Batch 1 Bug Audit
+- Reviewed all 6 Batch 1 critical bugs in current code
+- 5 of 6 were already fixed in prior work; only Bug 1.4 remained
+- Fixed Bug 1.4: Added `viewModeBeforeTrash` ref to save/restore `columns` view mode when entering/exiting trash
+- Updated `docs/roadmap.md` to mark Batch 1 as complete with per-item status
+
 ## Docker
 
 - Use `docker-compose.server.yml` for production/home-server runs (host root access)
