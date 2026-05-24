@@ -62,7 +62,26 @@ export function ShareManager({ onClose }: ShareManagerProps) {
         </div>
 
         {loading ? (
-          <p className={dStyles.dialogMessage}>Loading shares...</p>
+          <div className={styles.shareTable}>
+            <div className={styles.shareHeader}>
+              <span>Path</span>
+              <span>Token</span>
+              <span>Expires</span>
+              <span>Downloads</span>
+              <span>Status</span>
+              <span>Actions</span>
+            </div>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className={styles.skeletonRow}>
+                <div className={styles.skeletonCell} style={{ width: '60%' }} />
+                <div className={styles.skeletonCell} style={{ width: '40%' }} />
+                <div className={styles.skeletonCell} style={{ width: '50%' }} />
+                <div className={styles.skeletonCell} style={{ width: '30%' }} />
+                <div className={styles.skeletonCell} style={{ width: '40%' }} />
+                <div className={styles.skeletonCell} style={{ width: '50%' }} />
+              </div>
+            ))}
+          </div>
         ) : error ? (
           <p className={dStyles.dialogError}>{error} <button type="button" onClick={loadShares} style={{ color: 'var(--color-accent)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Retry</button></p>
         ) : shares.length === 0 ? (

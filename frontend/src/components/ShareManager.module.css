@@ -86,6 +86,36 @@
   padding: 2px 8px;
 }
 
+.skeletonRow {
+  align-items: center;
+  column-gap: var(--space-sm);
+  display: grid;
+  grid-template-columns: 1fr 120px 100px 80px 70px 80px;
+  min-height: 42px;
+  padding: var(--space-xs) var(--space-md);
+}
+
+.skeletonRow:not(:last-child) {
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.skeletonCell {
+  background: var(--color-border-row);
+  border-radius: var(--radius-pill);
+  height: 10px;
+}
+
+.skeletonCell,
+.skeletonRow {
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.4; }
+}
+
 .statusDisabled {
   background: var(--color-badge);
   color: var(--color-text-muted);

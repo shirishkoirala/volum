@@ -174,8 +174,23 @@
   }
 }
 
+.toastExiting {
+  animation: toastFadeOut 0.3s ease-in forwards;
+}
+
 .toastSuccess {
   border-left-color: var(--color-brand);
+}
+
+@keyframes toastFadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
 }
 
 .toastError {

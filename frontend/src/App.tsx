@@ -145,6 +145,7 @@ export function App() {
   const searchRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [sseConnected, setSseConnected] = useState(true);
   const [showingTrash, setShowingTrash] = useState(false);
   const [showingSettings, setShowingSettings] = useState(false);
   const [showingJobs, setShowingJobs] = useState(false);
@@ -271,8 +272,8 @@ export function App() {
           }
           return next;
         });
-      } catch {
-        // retry next tick
+      } catch (e) {
+        console.error('Dir sizes polling failed:', e);
       }
     }, 500);
 
@@ -694,7 +695,9 @@ export function App() {
       .catch((err) => console.error('Failed to fetch jobs:', err));
 
     const events = new EventSource('/api/jobs/events');
+    setSseConnected(true);
     events.addEventListener('jobs', (event) => {
+      setSseConnected(true);
       const response = JSON.parse((event as MessageEvent).data) as { jobs: Job[] | null };
       const nextJobs = response.jobs ?? [];
 
@@ -717,6 +720,7 @@ export function App() {
       setJobs(nextJobs);
     });
     events.onerror = () => {
+      setSseConnected(false);
       console.warn('SSE connection lost, will auto-reconnect');
     };
     return () => events.close();
@@ -1811,6 +1815,7 @@ export function App() {
             )}
 
           {error && <div className={styles.errorBanner}>{error} <button type="button" className={styles.errorDismiss} onClick={() => setError(null)} aria-label="Dismiss error">×</button></div>}
+          {!sseConnected && <div className={styles.sseWarning}>Connection lost — reconnecting...</div>}
 
           {showingJobs ? (
             <JobsPage

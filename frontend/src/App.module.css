@@ -736,6 +736,19 @@
   font-size: 13px;
 }
 
+.sseWarning {
+  align-items: center;
+  background: var(--color-warning-bg, #fff3cd);
+  border: 1px solid var(--color-warning-border, #ffc107);
+  border-radius: var(--radius-md);
+  color: var(--color-warning-text, #856404);
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  padding: var(--space-md) 14px;
+  font-size: 13px;
+}
+
 .errorBanner button,
 .errorDismiss {
   align-items: center;
