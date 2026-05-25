@@ -29,7 +29,6 @@ import { JobsPage } from '../pages/JobsPage';
 import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } from '../components/overlay/Dialogs';
 import { ToastViewport, type Toast } from '../components/overlay/Toast';
-import { SelectionToolbar } from '../components/layout/SelectionToolbar';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
 import { Select } from '../components/input/Select';
@@ -777,7 +776,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const canExtract = selectedEntries.length === 1 && selectedEntries[0]?.type === 'file' && isArchiveFile(selectedEntries[0]?.name ?? '');
   const canAnalyze = selectedEntries.length === 1 && selectedEntries[0]?.type === 'directory';
   const canChecksum = canWrite && selectedEntries.length === 1;
-  const canSelect = filteredEntries.length > 0;
   const canPaste = canWrite && !!fileClipboard && fileClipboard.entries.length > 0;
 
   const currentRoot = useMemo(() => {
@@ -901,39 +899,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         <Dock items={dockItems} onActivate={handleDockActivate} />
 
         <section className={styles.workspace} onClick={handleWorkspaceClick}>
-          {activeView === 'files' && selectedEntries.length > 0 && (
-            <SelectionToolbar
-              selectedCount={selectedEntries.length}
-              canSelect={canSelect}
-              canPreview={canPreview}
-              canInfo={canInfo}
-              canDownload={canDownload}
-              canRename={canRename}
-              canArchive={canArchive}
-              canExtract={canExtract}
-              canChecksum={canChecksum}
-              canCopy={canCopy}
-              canMove={canMove}
-              canPaste={canPaste}
-              canDelete={canDelete}
-              canWrite={canWrite}
-              onSelectAll={handleSelectAll}
-              onInvertSelection={handleInvertSelection}
-              onPreview={handlePreview}
-              onShowInfo={handleShowInfo}
-              onDownload={handleDownload}
-              onRename={handleRename}
-              onBatchRename={handleBatchRename}
-              onCopy={handleCopy}
-              onMove={handleMove}
-              onArchive={handleCreateArchive}
-              onExtract={handleExtractArchive}
-              onChecksum={handleCreateChecksum}
-              onPaste={handlePaste}
-              onDelete={handleDelete}
-              onClearSelection={() => setSelectedPaths([])}
-            />
-          )}
           {activeView === 'desktop' && (
             <DesktopView
               devices={devices} trashEntries={trashEntries} jobs={jobs}

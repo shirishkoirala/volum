@@ -34,6 +34,13 @@ export type AppMenuHandlers = {
 
 type MenuId = 'file' | 'edit' | 'view' | 'go';
 
+type MenuItem = {
+  label: string;
+  icon?: string;
+  disabled?: boolean;
+  onClick: () => void;
+};
+
 const MENUS: { id: MenuId; label: string }[] = [
   { id: 'file', label: 'File' },
   { id: 'edit', label: 'Edit' },
@@ -86,7 +93,7 @@ export function AppMenuBar({ handlers }: AppMenuBarProps) {
     }
   };
 
-  const handleItemKeyDown = (e: React.KeyboardEvent, items: { label: string; disabled?: boolean; onClick: () => void }[], currentIdx: number) => {
+  const handleItemKeyDown = (e: React.KeyboardEvent, items: MenuItem[], currentIdx: number) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       const nextIdx = items.findIndex((item, i) => i > currentIdx && !item.disabled);
@@ -98,7 +105,7 @@ export function AppMenuBar({ handlers }: AppMenuBarProps) {
     }
   };
 
-  const focusMenuItem = (_items: { label: string }[], idx: number) => {
+  const focusMenuItem = (_items: MenuItem[], idx: number) => {
     const el = menuRef.current?.querySelector(`[data-menu-index="${idx}"]`) as HTMLElement | null;
     el?.focus();
   };
@@ -108,61 +115,65 @@ export function AppMenuBar({ handlers }: AppMenuBarProps) {
     setOpenMenu(null);
   };
 
-  const fileItems = [
-    { label: 'New Folder', disabled: !handlers.canWrite, onClick: handlers.onCreateFolder },
-    { label: 'Upload', disabled: !handlers.canWrite, onClick: handlers.onUpload },
+  const fileItems: MenuItem[] = [
+    { label: 'New Folder', icon: 'folder-new', disabled: !handlers.canWrite, onClick: handlers.onCreateFolder },
+    { label: 'Upload', icon: 'document-import', disabled: !handlers.canWrite, onClick: handlers.onUpload },
     { label: '---', disabled: true, onClick: () => {} },
-    { label: 'Close', onClick: handlers.onGoDesktop },
+    { label: 'Close', icon: 'window-close', onClick: handlers.onGoDesktop },
   ];
 
-  const editItems = [
-    { label: 'Cut', disabled: !handlers.canWrite, onClick: handlers.onCut },
-    { label: 'Copy', onClick: handlers.onCopy },
-    { label: 'Paste', disabled: !handlers.canWrite, onClick: handlers.onPaste },
+  const editItems: MenuItem[] = [
+    { label: 'Cut', icon: 'edit-cut', disabled: !handlers.canWrite, onClick: handlers.onCut },
+    { label: 'Copy', icon: 'edit-copy', onClick: handlers.onCopy },
+    { label: 'Paste', icon: 'edit-paste', disabled: !handlers.canWrite, onClick: handlers.onPaste },
     { label: '---', disabled: true, onClick: () => {} },
-    { label: 'Select All', onClick: handlers.onSelectAll },
-    { label: 'Invert Selection', onClick: handlers.onInvertSelection },
+    { label: 'Select All', icon: 'selection-select-all', onClick: handlers.onSelectAll },
+    { label: 'Invert Selection', icon: 'selection-invert', onClick: handlers.onInvertSelection },
     { label: '---', disabled: true, onClick: () => {} },
-    { label: 'Rename', disabled: !handlers.canWrite, onClick: handlers.onRename },
-    { label: 'Delete', disabled: !handlers.canWrite, onClick: handlers.onDelete },
+    { label: 'Rename', icon: 'edit-rename', disabled: !handlers.canWrite, onClick: handlers.onRename },
+    { label: 'Delete', icon: 'edit-delete', disabled: !handlers.canWrite, onClick: handlers.onDelete },
   ];
 
-  const viewItems = [
+  const viewItems: MenuItem[] = [
     {
       label: `Grid${handlers.viewMode === 'grid' ? ' ✓' : ''}`,
+      icon: 'view-grid',
       onClick: () => handlers.onSetViewMode('grid'),
     },
     {
       label: `List${handlers.viewMode === 'list' ? ' ✓' : ''}`,
+      icon: 'view-list-tree',
       onClick: () => handlers.onSetViewMode('list'),
     },
     {
       label: `Columns${handlers.viewMode === 'columns' ? ' ✓' : ''}`,
+      icon: 'view-columns',
       onClick: () => handlers.onSetViewMode('columns'),
     },
     { label: '---', disabled: true, onClick: () => {} },
     {
       label: `${handlers.showHidden ? 'Hide' : 'Show'} Hidden Files`,
+      icon: 'view-hidden',
       onClick: handlers.onToggleHidden,
     },
     { label: '---', disabled: true, onClick: () => {} },
-    { label: 'Sort by Name', onClick: () => handlers.onSortChange('name:asc') },
-    { label: 'Sort by Size', onClick: () => handlers.onSortChange('size:desc') },
-    { label: 'Sort by Type', onClick: () => handlers.onSortChange('type:asc') },
-    { label: 'Sort by Date', onClick: () => handlers.onSortChange('modifiedAt:desc') },
+    { label: 'Sort by Name', icon: 'sort-desc', onClick: () => handlers.onSortChange('name:asc') },
+    { label: 'Sort by Size', icon: 'sort-desc', onClick: () => handlers.onSortChange('size:desc') },
+    { label: 'Sort by Type', icon: 'sort-desc', onClick: () => handlers.onSortChange('type:asc') },
+    { label: 'Sort by Date', icon: 'sort-desc', onClick: () => handlers.onSortChange('modifiedAt:desc') },
   ];
 
-  const goItems = [
-    { label: 'Desktop', onClick: handlers.onGoDesktop },
-    { label: 'Files', onClick: handlers.onGoFiles },
-    { label: 'Trash', onClick: handlers.onGoTrash },
-    { label: 'Jobs', onClick: handlers.onGoJobs },
-    { label: 'Settings', onClick: handlers.onGoSettings },
+  const goItems: MenuItem[] = [
+    { label: 'Desktop', icon: 'go-home', onClick: handlers.onGoDesktop },
+    { label: 'Files', icon: 'folder', onClick: handlers.onGoFiles },
+    { label: 'Trash', icon: 'edit-delete', onClick: handlers.onGoTrash },
+    { label: 'Jobs', icon: 'document-properties', onClick: handlers.onGoJobs },
+    { label: 'Settings', icon: 'preferences-system', onClick: handlers.onGoSettings },
     { label: '---', disabled: true, onClick: () => {} },
-    { label: 'Go to Location...', onClick: handlers.onToggleLocation },
+    { label: 'Go to Location...', icon: 'go-jump', onClick: handlers.onToggleLocation },
   ];
 
-  const menuItems: Record<MenuId, { label: string; disabled?: boolean; onClick: () => void }[]> = {
+  const menuItems: Record<MenuId, MenuItem[]> = {
     file: fileItems,
     edit: editItems,
     view: viewItems,
@@ -202,6 +213,7 @@ export function AppMenuBar({ handlers }: AppMenuBarProps) {
                     tabIndex={-1}
                     type="button"
                   >
+                    {item.icon && <Icon name={item.icon} size={16} className={styles.menuIcon} />}
                     {item.label}
                   </button>
                 )
