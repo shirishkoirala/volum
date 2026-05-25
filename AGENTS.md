@@ -23,7 +23,7 @@
 
 ### Frontend (`frontend/`)
 - React 19 + Vite + TypeScript
-- Entry: `frontend/src/App.tsx` — thin routing shell (auth gate vs Home, ~30 lines)
+- Entry: `frontend/src/App.tsx` — thin routing shell (auth gate vs Home, ~50 lines)
 - API client: `frontend/src/api/client.ts` — typed request functions
 - CSS Modules: every component has `*.module.css`, Vite auto-hashes class names. Use `styles.className` (camelCase)
 - Shared styles: `frontend/src/styles/global.css` (utility classes), `tokens.css` (theme vars)
@@ -79,7 +79,7 @@ frontend/src/
 - `backend/internal/storage/sqlite.go` — DB open + schema migration
 
 #### Frontend
-- `frontend/src/App.tsx` — thin routing shell (auth gate vs Home, ~30 lines)
+- `frontend/src/App.tsx` — thin routing shell (auth gate vs Home, ~50 lines)
 - `frontend/src/screens/Home.tsx` — workspace state, effects, handlers, shell rendering
 - `frontend/src/components/overlay/Dialogs.tsx` — ConfirmDialog, TextInputDialog, TransferDialog
 - `frontend/src/components/overlay/Toast.tsx` — Toast + ToastViewport (separate file)
@@ -93,7 +93,7 @@ frontend/src/
 
 ## UI Patterns
 
-- **Views**: `showingTrash`, `showingSettings` flags in App.tsx toggle workspace content (not overlays for page views)
+- **Views**: `showingTrash`, `showingSettings` flags in Home.tsx toggle workspace content (not overlays for page views)
 - **Overlays**: ShareDialog, ShareManager, InfoPanel, PreviewModal use `return (<>{shell}<Overlay>...</Overlay></>)` pattern
 - **Settings**: renders as a page in the workspace (not overlay) with BreadcrumbBar back navigation
 - **Share links**: backend CRUD exists; ShareDialog creates; ShareManager lists/revokes
@@ -130,7 +130,7 @@ frontend/src/
 - A.8 (ShareManager error Retry): converted inline style to `styles.retryBtn` CSS class
 - A.9 (FolderPicker error Retry) already implemented
 - A.10 (Settings error Retry): converted inline style to `styles.retryBtn` CSS class
-- A.11 (Desktop error state): added `deviceError` state in App.tsx, error banner + Retry button in DesktopView; extracted `loadDevices` to stable `useCallback`
+- A.11 (Desktop error state): added `deviceError` state in Home.tsx, error banner + Retry button in DesktopView; extracted `loadDevices` to stable `useCallback`
 
 ### Task 8 — Standard EmptyState Component (Batch B prep)
 - Added `emptyIconUrl()` to `frontend/src/api/icons.ts` — imports unused `empty.svg` asset

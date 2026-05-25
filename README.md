@@ -7,16 +7,16 @@ Volum Desktop is a self-hosted web file manager for Ubuntu and Docker home serve
 
 ## Features
 
-- **File browsing** — Grid, list, and column (macOS Finder-style) views with sorting, hidden file toggle, favorites, and recents
+- **File browsing** — Grid, list, and column (macOS Finder-style) views with sorting, hidden file toggle, favorites, recents, dual-pane mode, per-folder view preferences
 - **File actions** — Create folder, rename, batch rename, copy, move, trash with restore, permanent delete
 - **Background jobs** — Persistent SQLite-backed jobs with real-time SSE progress, cancel, retry (including per-item retry), pause/resume
 - **Upload & download** — Upload with size verification, single-file download, streamed directory zip download
 - **Archives** — Create and extract zip, tar, tar.gz
 - **Metadata** — Info panel, permissions editor (chmod rwx toggles), checksums (md5/sha256), folder size and disk usage
 - **Search** — Global search across all roots with content grep
-- **Desktop view** — Drive icons (like "My Computer"), trash icon with badge count, desktop-style navigation
+- **Desktop view** — Drive icons (like "My Computer"), trash icon with badge count, desktop-style navigation, customizable wallpaper/background, draggable icon arrangement
 - **Sharing** — Create expiring share links with optional password and download limits
-- **UX** — Context menus, keyboard shortcuts, rubber-band drag select, touch long-press on mobile, dark mode, loading skeletons, action toasts, browser notifications, undo for rename/restore
+- **UX** — Context menus, keyboard shortcuts, rubber-band drag select, touch long-press on mobile, dark mode, loading skeletons, action toasts, browser notifications, undo for rename/restore, app menu bar (File/Edit/View/Go)
 - **Auth** — Admin and readonly session-cookie auth with HMAC-signed cookies
 - **Safety** — Copy via `.partial` temp files with size verification, safe move (copy+verify+delete), per-root `.volum-trash/` recycle bin, configurable conflict policies (ask, skip, overwrite, rename, cancel)
 

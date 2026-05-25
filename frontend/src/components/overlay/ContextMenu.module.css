@@ -6,7 +6,9 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-height: min(400px, 80vh);
   min-width: 180px;
+  overflow-y: auto;
   padding: 4px;
   position: fixed;
   z-index: 100;

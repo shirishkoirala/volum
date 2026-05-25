@@ -113,7 +113,7 @@
   background: var(--color-brand);
   display: block;
   height: 100%;
-  width: var(--meter-width, 0%);
+  width: var(--progress, 0%);
 }
 
 .rootItem.active,

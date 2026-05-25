@@ -207,7 +207,6 @@ export function TrashView({
                 <span>{new Date(entry.deletedAt).toLocaleString()}</span>
                 <span>{formatTrashPath(entry.originalPath)}</span>
                 <span>{entry.id}</span>
-                <span>{''}</span>
               </div>
             );
           })
