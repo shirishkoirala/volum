@@ -14,5 +14,10 @@ export default defineConfig({
       '/api': apiProxyTarget,
       '/healthz': apiProxyTarget
     }
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: [],
   }
 });

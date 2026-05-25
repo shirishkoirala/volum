@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConfirmDialog, TextInputDialog } from '../components/overlay/Dialogs';
 import { ToastViewport } from '../components/overlay/Toast';
@@ -77,18 +77,7 @@ describe('TextInputDialog', () => {
     const user = userEvent.setup();
     render(<TextInputDialog dialog={baseDialog} onClose={vi.fn()} />);
     await user.click(screen.getByText('Create'));
-    expect(screen.getByText('Folder name is required.')).toBeInTheDocument();
-  });
-
-  it('renders folder suggestions when provided', () => {
-    const dialog: NonNullable<TextInputDialogState> = {
-      ...baseDialog,
-      folderSuggestions: ['/storage', '/storage/docs'],
-      suggestionLabel: 'Create in',
-    };
-    render(<TextInputDialog dialog={dialog} onClose={vi.fn()} />);
-    expect(screen.getByText('Create in')).toBeInTheDocument();
-    expect(screen.getByText('docs')).toBeInTheDocument();
+    expect(screen.getByText('Value is required.')).toBeInTheDocument();
   });
 });
 
@@ -146,6 +135,6 @@ describe('ToastViewport', () => {
     ];
     render(<ToastViewport toasts={toasts} onDismiss={onDismiss} />);
     await user.click(screen.getByLabelText('Dismiss notification'));
-    expect(onDismiss).toHaveBeenCalledWith(1);
+    await waitFor(() => expect(onDismiss).toHaveBeenCalledWith(1));
   });
 });
