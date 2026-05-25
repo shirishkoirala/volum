@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon, DeviceIcon, TrashIcon } from '../components/ui/Icon';
-import { IconImg } from '../components/ui/shared';
+import { Button, IconButton, IconImg, Notice } from '../components/ui/shared';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -8,7 +8,6 @@ import { preferencesIconUrl, jobsIconUrl, driveIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
 import { formatDeviceUsage } from '../utils/format';
 import { cycleViewMode } from '../utils/view';
-import uiStyles from '../components/ui/shared.module.css';
 import styles from './DesktopView.module.css';
 
 type DesktopViewProps = {
@@ -237,7 +236,7 @@ export function DesktopView({
           <h1>This PC</h1>
         </div>
         <div className={styles.toolbar}>
-          <button className="icon-button" onClick={() => onSetViewMode(cycleViewMode(viewMode))} title="Change view" type="button">
+          <IconButton onClick={() => onSetViewMode(cycleViewMode(viewMode))} title="Change view">
             {viewMode === 'list' ? (
               <Icon name="view-grid" size={18} />
             ) : viewMode === 'grid' ? (
@@ -245,30 +244,30 @@ export function DesktopView({
             ) : (
               <Icon name="view-list-tree" size={18} />
             )}
-          </button>
-          <button className="icon-button" onClick={onToggleTheme} title={theme === 'light' ? 'Dark mode' : 'Light mode'} type="button">
+          </IconButton>
+          <IconButton onClick={onToggleTheme} title={theme === 'light' ? 'Dark mode' : 'Light mode'}>
             {theme === 'light' ? (
               <Icon name="weather-clear-night" size={18} />
             ) : (
               <Icon name="weather-clear" size={18} />
             )}
-          </button>
+          </IconButton>
           {session?.authEnabled && (
-            <button className="icon-button" onClick={onLogout} title="Log out" type="button">
+            <IconButton onClick={onLogout} title="Log out">
               <Icon name="system-log-out" size={18} />
-            </button>
+            </IconButton>
           )}
         </div>
       </header>
       <div className={styles.desktop}>
         {deviceError && (
-          <div className={`${styles.desktopError} ${uiStyles.notice} ${uiStyles.error}`}>
+          <Notice variant="error" className={styles.desktopError}>
             <Icon name="dialog-warning" size={18} />
             <span>{deviceError}</span>
             {onRetryDevices && (
-              <button type="button" className={`${uiStyles.button} ${uiStyles.compact} ${uiStyles.danger}`} onClick={onRetryDevices}>Retry</button>
+              <Button variant="danger" size="compact" onClick={onRetryDevices}>Retry</Button>
             )}
-          </div>
+          </Notice>
         )}
         {iconItems.map((item) => (
           <button

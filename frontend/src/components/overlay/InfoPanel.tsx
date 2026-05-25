@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Icon, FileIcon } from '../ui/Icon';
-import { Overlay, PanelHeader } from '../ui/shared';
+import { Button, MutedText, Overlay, PanelHeader } from '../ui/shared';
 import { chmodPath } from '../../api/client';
 import type { FileEntry } from '../../api/client';
 import uiStyles from '../ui/shared.module.css';
@@ -83,7 +83,7 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
             <FileIcon entry={entry} size={48} />
             <div>
               <strong>{entry.name}</strong>
-              <span className="muted">{entry.type === 'directory' ? 'Directory' : 'File'}</span>
+              <MutedText>{entry.type === 'directory' ? 'Directory' : 'File'}</MutedText>
             </div>
           </div>
 
@@ -146,15 +146,14 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
           {saved && <p className={styles.infoSaved}>Permissions updated</p>}
 
           <div className={styles.infoActions}>
-            <button type="button" className={uiStyles.button} onClick={onClose}>Close</button>
-            <button
-              type="button"
-              className={`${uiStyles.button} ${uiStyles.primary}`}
+            <Button onClick={onClose}>Close</Button>
+            <Button
+              variant="primary"
               disabled={changing || saved || permString === entry.permissions}
               onClick={handleSave}
             >
               {changing ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Saving...</> : 'Apply Permissions'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

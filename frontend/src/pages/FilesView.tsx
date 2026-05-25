@@ -6,13 +6,13 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { SortSelect } from '../components/input/SortSelect';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { LogoutButton } from '../components/ui/LogoutButton';
+import { IconButton, Notice } from '../components/ui/shared';
 import { folderIconUrl } from '../api/icons';
 import { rawUrl, downloadUrl, isImageExtension, isVideoExtension, isAudioExtension, isTextExtension } from '../api/client';
 import type { FileEntry, SearchResult, BlockDevice } from '../api/client';
 import { formatBytes, formatGridDate } from '../utils/format';
 import { buildColumnPath } from '../utils/path';
 import { cycleViewMode, type ViewMode } from '../utils/view';
-import uiStyles from '../components/ui/shared.module.css';
 import styles from './FilesView.module.css';
 
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
@@ -176,14 +176,12 @@ export function FilesView({
         <aside className={styles.sidebarOverlay}>
           <div className={styles.sidebarOverlayHeader}>
             <span className={styles.sidebarOverlayTitle}>Places</span>
-            <button
-              className="icon-button"
+            <IconButton
               onClick={() => setSidebarOpen(false)}
               title="Close sidebar"
-              type="button"
             >
               <Icon name="window-close" size={16} />
-            </button>
+            </IconButton>
           </div>
           <FilesSidebar
             devices={devices}
@@ -215,34 +213,28 @@ export function FilesView({
         <BreadcrumbBar crumbs={breadcrumbs} onBack={handleBreadcrumbBack} onNavigate={onNavigate} locationMode={locationMode} onLocationNavigate={onLocationNavigate} onToggleLocationMode={onToggleLocationMode}>
           <div className={styles.toolbar}>
             {isMobile && (
-              <button
-                className="icon-button"
+              <IconButton
                 onClick={() => setSidebarOpen(true)}
                 title="Show sidebar"
-                type="button"
               >
                 <Icon name="view-list" size={18} />
-              </button>
+              </IconButton>
             )}
             {canWrite && (
-              <button
-                className="icon-button"
+              <IconButton
                 onClick={onCreateFolder}
                 title="Create folder"
-                type="button"
               >
                 <Icon name="folder-new" size={18} />
-              </button>
+              </IconButton>
             )}
             {canWrite && (
-              <button
-                className="icon-button"
+              <IconButton
                 onClick={handleUploadClick}
                 title="Upload files"
-                type="button"
               >
                 <Icon name="document-import" size={18} />
-              </button>
+              </IconButton>
             )}
             <input
               ref={fileInputRef as React.RefObject<HTMLInputElement>}
@@ -256,24 +248,20 @@ export function FilesView({
                 }
               }}
             />
-            <button
-              className="icon-button"
+            <IconButton
               disabled={filteredEntries.length === 0}
               onClick={onSelectAll}
               title="Select all"
-              type="button"
             >
               <Icon name="selection-select-all" size={18} />
-            </button>
-            <button
-              className="icon-button"
+            </IconButton>
+            <IconButton
               disabled={filteredEntries.length === 0}
               onClick={onInvertSelection}
               title="Invert selection"
-              type="button"
             >
               <Icon name="selection-invert" size={18} />
-            </button>
+            </IconButton>
             <label className={styles.searchBox}>
               <Icon name="edit-find" size={16} />
               <input
@@ -312,35 +300,28 @@ export function FilesView({
               </div>
             )}
             <SortSelect view="files" sortField={sortField} sortDirection={sortDirection} onChange={onSortChange} className={styles.sortSelect} />
-            <button
-              className="icon-button"
+            <IconButton
               onClick={onToggleHidden}
               title="Toggle hidden files"
-              type="button"
             >
               <Icon name="view-hidden" size={18} />
-            </button>
-            <button
-              className="icon-button"
+            </IconButton>
+            <IconButton
               onClick={onRefresh}
               title="Refresh"
-              type="button"
             >
               <Icon name="view-refresh" size={18} />
-            </button>
-            <button
-              className={`icon-button${isFavorited ? ' active' : ''}`}
+            </IconButton>
+            <IconButton
+              active={isFavorited}
               onClick={onToggleFavorite}
               title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-              type="button"
             >
               <Icon name="bookmark-new" size={18} />
-            </button>
-            <button
-              className="icon-button"
+            </IconButton>
+            <IconButton
               onClick={() => onSetViewMode(cycleViewMode(viewMode))}
               title="Change view"
-              type="button"
             >
               {viewMode === 'list' ? (
                 <Icon name="view-grid" size={18} />
@@ -349,7 +330,7 @@ export function FilesView({
               ) : (
                 <Icon name="view-list-tree" size={18} />
               )}
-            </button>
+            </IconButton>
             <ThemeToggle theme={theme} onClick={onToggleTheme} />
             {session?.authEnabled && <LogoutButton onClick={onLogout} />}
           </div>
@@ -362,7 +343,7 @@ export function FilesView({
           </div>
         )}
         {!sseConnected && (
-          <div className={`${styles.sseWarning} ${uiStyles.notice} ${uiStyles.warning}`}>Connection lost &mdash; reconnecting...</div>
+          <Notice variant="warning" className={styles.sseWarning}>Connection lost &mdash; reconnecting...</Notice>
         )}
 
         {loading ? (

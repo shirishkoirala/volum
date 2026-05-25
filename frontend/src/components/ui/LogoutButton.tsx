@@ -1,4 +1,5 @@
 import { Icon } from './Icon';
+import { IconButton } from './shared';
 
 type LogoutButtonProps = {
   onClick: () => void;
@@ -6,10 +7,10 @@ type LogoutButtonProps = {
   size?: number;
 };
 
-export function LogoutButton({ onClick, className = 'icon-button', size = 18 }: LogoutButtonProps) {
+export function LogoutButton({ onClick, className, size = 18 }: LogoutButtonProps) {
   return (
-    <button className={className} onClick={onClick} title="Log out" type="button">
+    <IconButton className={className} onClick={onClick} title="Log out">
       <Icon name="system-log-out" size={size} />
-    </button>
+    </IconButton>
   );
 }

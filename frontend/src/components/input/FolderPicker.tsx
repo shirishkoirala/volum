@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Icon } from '../ui/Icon';
 import { EmptyState } from '../ui/EmptyState';
 import { folderIconUrl } from '../../api/icons';
-import uiStyles from '../ui/shared.module.css';
+import { Button, IconButton, RotatedIcon } from '../ui/shared';
 import styles from './FolderPicker.module.css';
 
 export function FolderPicker({
@@ -75,15 +75,15 @@ export function FolderPicker({
       <div className={styles.folderPickerHeader}>
         <span className={styles.folderPickerTitle}>Select destination</span>
         <div className={styles.folderPickerNav}>
-          <button type="button" className="icon-button" onClick={goBack} disabled={history.length === 0} title="Back">
-            <span className="icon-rotate-180"><Icon name="go-next" size={16} /></span>
-          </button>
-          <button type="button" className="icon-button" onClick={goUp} disabled={currentDir === '/'} title="Up">
-            <span className="icon-rotate-90"><Icon name="go-next" size={16} /></span>
-          </button>
-          <button type="button" className="icon-button" onClick={() => loadSubdirs(currentDir)} title="Refresh">
+          <IconButton className={styles.folderPickerNavButton} onClick={goBack} disabled={history.length === 0} title="Back">
+            <RotatedIcon><Icon name="go-next" size={16} /></RotatedIcon>
+          </IconButton>
+          <IconButton className={styles.folderPickerNavButton} onClick={goUp} disabled={currentDir === '/'} title="Up">
+            <RotatedIcon quarterTurns={1}><Icon name="go-next" size={16} /></RotatedIcon>
+          </IconButton>
+          <IconButton className={styles.folderPickerNavButton} onClick={() => loadSubdirs(currentDir)} title="Refresh">
             <Icon name="view-refresh" size={16} />
-          </button>
+          </IconButton>
         </div>
       </div>
       <div className={styles.folderPickerBreadcrumb}>
@@ -121,7 +121,7 @@ export function FolderPicker({
         {loading ? (
           <div className={styles.folderPickerLoading}>Loading...</div>
         ) : error ? (
-          <div className={styles.folderPickerError}>{error} <button type="button" className={`${uiStyles.button} ${uiStyles.linkButton}`} onClick={() => loadSubdirs(currentDir)}>Retry</button></div>
+          <div className={styles.folderPickerError}>{error} <Button variant="link" onClick={() => loadSubdirs(currentDir)}>Retry</Button></div>
         ) : subdirs.length === 0 ? (
           <EmptyState compact icon={folderIconUrl('64')} title="No subdirectories" />
         ) : (

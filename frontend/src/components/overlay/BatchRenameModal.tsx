@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Icon, FileIcon } from '../ui/Icon';
-import { Overlay, PanelHeader } from '../ui/shared';
+import { MutedText, Overlay, PanelHeader } from '../ui/shared';
 import { Select } from '../input/Select';
 import { batchRename } from '../../api/client';
 import type { FileEntry } from '../../api/client';
@@ -123,7 +123,7 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
               <span className={styles.renameNew}>{newName}</span>
             </div>
           ))}
-          {previews.length > 100 && <p className="muted compact">+{previews.length - 100} more items</p>}
+          {previews.length > 100 && <p><MutedText compact>+{previews.length - 100} more items</MutedText></p>}
         </div>
 
         {error && <p className={styles.renameError}>{error}</p>}

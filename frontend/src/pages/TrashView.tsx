@@ -5,7 +5,7 @@ import { SortSelect } from '../components/input/SortSelect';
 import { trashIconUrl } from '../api/icons';
 import type { TrashEntry } from '../api/client';
 import { formatBytes, formatGridDate, formatTrashPath } from '../utils/format';
-import uiStyles from '../components/ui/shared.module.css';
+import { Button, IconButton } from '../components/ui/shared';
 import styles from './TrashView.module.css';
 
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
@@ -51,21 +51,21 @@ export function TrashView({
             <span>{selectedTrashIds.length} selected</span>
             <div className={styles.selectionActions}>
               {canWrite && (
-                <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={onBulkRestoreTrash}>
+                <Button size="compact" onClick={onBulkRestoreTrash}>
                   <Icon name="edit-restore" size={16} />
                   Restore
-                </button>
+                </Button>
               )}
               {canWrite && (
-                <button type="button" className={`${uiStyles.button} ${uiStyles.compact} ${uiStyles.danger}`} onClick={onBulkDeleteTrash}>
+                <Button variant="danger" size="compact" onClick={onBulkDeleteTrash}>
                   <Icon name="edit-delete" size={16} />
                   Delete
-                </button>
+                </Button>
               )}
             </div>
-            <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={onClearSelectionTrash}>
+            <Button size="compact" onClick={onClearSelectionTrash}>
               Clear
-            </button>
+            </Button>
           </div>
         </header>
       ) : (
@@ -74,30 +74,24 @@ export function TrashView({
           onBack={onCloseTrash}
           onNavigate={() => {}}
         >
-          <button
-            className="icon-button"
+          <IconButton
             disabled={trashEntries.length === 0}
             onClick={onSelectAllTrash}
             title="Select all"
-            type="button"
           >
             <Icon name="selection-select-all" size={18} />
-          </button>
-          <button
-            className="icon-button"
+          </IconButton>
+          <IconButton
             disabled={trashEntries.length === 0}
             onClick={onInvertSelectionTrash}
             title="Invert selection"
-            type="button"
           >
             <Icon name="selection-invert" size={18} />
-          </button>
+          </IconButton>
           <SortSelect view="trash" sortField={sortField} sortDirection={sortDirection} onChange={onSortChange} className={styles.sortSelect} />
-          <button
-            className="icon-button"
+          <IconButton
             onClick={onCycleViewMode}
             title="Change view"
-            type="button"
           >
             {viewMode === 'list' ? (
               <Icon name="view-grid" size={18} />
@@ -106,10 +100,10 @@ export function TrashView({
             ) : (
               <Icon name="view-list-tree" size={18} />
             )}
-          </button>
-          <button className="icon-button" onClick={onRefreshTrash} title="Refresh" type="button">
+          </IconButton>
+          <IconButton onClick={onRefreshTrash} title="Refresh">
             <Icon name="view-refresh" size={18} />
-          </button>
+          </IconButton>
         </BreadcrumbBar>
       )}
       {trashEntries.length === 0 ? (

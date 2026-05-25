@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import { Overlay, PanelHeader } from '../ui/shared';
+import { Button, IconButton, Overlay, PanelHeader, StatusBadge } from '../ui/shared';
 import { EmptyState } from '../ui/EmptyState';
 import { getShares, deleteShare, type Share } from '../../api/client';
 import dStyles from './Dialogs.module.css';
-import uiStyles from '../ui/shared.module.css';
 import styles from './ShareManager.module.css';
 
 type ShareManagerProps = {
@@ -80,7 +79,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
             ))}
           </div>
         ) : error ? (
-          <p className={dStyles.dialogError}>{error} <button type="button" className={`${uiStyles.button} ${uiStyles.linkButton}`} onClick={loadShares}>Retry</button></p>
+          <p className={dStyles.dialogError}>{error} <Button variant="link" onClick={loadShares}>Retry</Button></p>
         ) : shares.length === 0 ? (
           <EmptyState compact title="No shares yet" subtitle="Right-click a file or folder and select Share to create one." />
         ) : (
@@ -104,28 +103,26 @@ export function ShareManager({ onClose }: ShareManagerProps) {
                   {share.downloadCount}{share.maxDownloads ? ` / ${share.maxDownloads}` : ''}
                 </span>
                 <span className={styles.shareColEnabled}>
-                  <span className={`${uiStyles.statusBadge} ${share.enabled ? uiStyles.active : uiStyles.disabled}`}>
+                  <StatusBadge variant={share.enabled ? 'active' : 'disabled'}>
                     {share.enabled ? 'Active' : 'Disabled'}
-                  </span>
+                  </StatusBadge>
                 </span>
                 <span className={styles.shareColActions}>
-                  <button
-                    type="button"
-                    className="icon-button"
+                  <IconButton
+                    className={styles.shareActionButton}
                     onClick={() => handleCopyLink(share.token)}
                     title="Copy share link"
                   >
                     <Icon name="edit-copy" size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    className="icon-button"
+                  </IconButton>
+                  <IconButton
+                    className={styles.shareActionButton}
                     onClick={() => handleDelete(share.id)}
                     disabled={deleting === share.id}
                     title="Delete share"
                   >
                     <Icon name="edit-delete" size={14} />
-                  </button>
+                  </IconButton>
                 </span>
               </div>
             ))}

@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import { Overlay, PanelHeader } from '../ui/shared';
+import { IconButton, Overlay, PanelHeader } from '../ui/shared';
 import { Select } from '../input/Select';
 import { FolderPicker } from '../input/FolderPicker';
 import type { FileEntry } from '../../api/client';
@@ -273,9 +273,9 @@ export function TransferDialog({
               }}
               placeholder="/path/to/folder"
             />
-            <button type="button" className="icon-button" onClick={() => setPickerOpen(true)} title="Browse folders">
+            <IconButton onClick={() => setPickerOpen(true)} title="Browse folders">
               <Icon name="folder-new" size={16} />
-            </button>
+            </IconButton>
           </div>
         </label>
         <p className={styles.dialogHelp}>Use | to send items to multiple destinations.</p>

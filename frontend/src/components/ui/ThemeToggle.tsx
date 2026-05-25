@@ -1,4 +1,5 @@
 import { Icon } from './Icon';
+import { IconButton } from './shared';
 
 type ThemeToggleProps = {
   theme: string;
@@ -7,15 +8,14 @@ type ThemeToggleProps = {
   size?: number;
 };
 
-export function ThemeToggle({ theme, onClick, className = 'icon-button', size = 18 }: ThemeToggleProps) {
+export function ThemeToggle({ theme, onClick, className, size = 18 }: ThemeToggleProps) {
   return (
-    <button
+    <IconButton
       className={className}
       onClick={onClick}
       title={theme === 'light' ? 'Dark mode' : 'Light mode'}
-      type="button"
     >
       <Icon name={theme === 'light' ? 'weather-clear-night' : 'weather-clear'} size={size} />
-    </button>
+    </IconButton>
   );
 }

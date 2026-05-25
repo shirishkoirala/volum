@@ -9,7 +9,7 @@ import {
   type FileEntry
 } from '../../api/client';
 import { Icon } from '../ui/Icon';
-import { Overlay } from '../ui/shared';
+import { IconButton, Overlay } from '../ui/shared';
 import styles from './Preview.module.css';
 
 type PreviewModalProps = {
@@ -59,30 +59,24 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
         <div className={styles.previewHeader}>
           <span className={styles.previewTitle}>{entry.name}</span>
           <div className={styles.previewActions}>
-            <button
-              className="icon-button"
+            <IconButton
               onClick={() => window.open(downloadUrl(entry.path), '_blank')}
               title="Download"
-              type="button"
             >
               <Icon name="edit-download" size={18} />
-            </button>
-            <button
-              className="icon-button"
+            </IconButton>
+            <IconButton
               onClick={() => window.open(fileUrl, '_blank')}
               title="Open raw"
-              type="button"
             >
               <Icon name="document-open" size={18} />
-            </button>
-            <button
-              className="icon-button"
+            </IconButton>
+            <IconButton
               onClick={onClose}
               title="Close"
-              type="button"
             >
               <Icon name="window-close" size={18} />
-            </button>
+            </IconButton>
           </div>
         </div>
 

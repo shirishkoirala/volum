@@ -197,7 +197,7 @@
   z-index: 30;
 }
 
-.moreMenu :global(.icon-button) {
+.moreMenu button {
   justify-content: flex-start;
   padding: 6px 10px;
   width: 100%;

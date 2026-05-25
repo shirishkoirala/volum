@@ -1,6 +1,7 @@
 import { Children, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Icon } from '../ui/Icon';
+import { IconButton, RotatedIcon } from '../ui/shared';
 import styles from './BreadcrumbBar.module.css';
 
 export type Crumb = {
@@ -169,9 +170,9 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
     return (
       <header className={styles.header}>
         <div className={styles.left}>
-          <button className="icon-button" onClick={onToggleLocationMode} title="Cancel" type="button">
+          <IconButton onClick={onToggleLocationMode} title="Cancel">
             <Icon name="window-close" size={18} />
-          </button>
+          </IconButton>
           <div className={styles.locationInputWrap}>
             <input
               ref={locationInputRef}
@@ -192,14 +193,12 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
   return (
     <header className={styles.header}>
       <div className={styles.left}>
-        <button
-          className="icon-button"
+        <IconButton
           onClick={onBack}
           title="Go back"
-          type="button"
         >
-          <span className="icon-rotate-180"><Icon name="go-next" size={18} /></span>
-        </button>
+          <RotatedIcon><Icon name="go-next" size={18} /></RotatedIcon>
+        </IconButton>
         <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
           <div ref={navRef} className={styles.breadcrumbsInner}>
             {visibleCrumbs.map((crumb, rawIndex) => {

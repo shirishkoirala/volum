@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
-import { Overlay } from '../components/ui/shared';
+import { Button, IconButton, MutedText, Overlay } from '../components/ui/shared';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { formatBytes, formatUptime } from '../utils/format';
 import {
@@ -13,7 +13,6 @@ import {
 } from '../api/client';
 import { PRESET_COLORS, PRESET_GRADIENTS, type WallpaperConfig } from '../utils/wallpaper';
 import bStyles from '../components/layout/BreadcrumbBar.module.css';
-import uiStyles from '../components/ui/shared.module.css';
 import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
@@ -117,7 +116,7 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay', wall
           <div className={`${styles.skeletonBlock} ${styles.short}`} />
         </div>
       ) : !status ? (
-        <p className="muted">Failed to load status. <button type="button" className={`${uiStyles.button} ${uiStyles.linkButton}`} onClick={() => window.location.reload()}>Retry</button></p>
+        <p><MutedText>Failed to load status. <Button variant="link" onClick={() => window.location.reload()}>Retry</Button></MutedText></p>
       ) : (
         <>
           {(activeCategory === 'server' || filteredCategories.some((c) => c.id === 'server')) && (
@@ -247,15 +246,15 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay', wall
               <section className={styles.settingsSection}>
                 <h4>Maintenance</h4>
                 <div className={styles.maintenanceActions}>
-                  <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={handleVacuum} disabled={maintenanceBusy}>
+                  <Button size="compact" onClick={handleVacuum} disabled={maintenanceBusy}>
                     Vacuum DB
-                  </button>
-                  <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={handlePruneJobs} disabled={maintenanceBusy}>
+                  </Button>
+                  <Button size="compact" onClick={handlePruneJobs} disabled={maintenanceBusy}>
                     Prune Old Jobs
-                  </button>
-                  <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={handlePruneAuditLogs} disabled={maintenanceBusy}>
+                  </Button>
+                  <Button size="compact" onClick={handlePruneAuditLogs} disabled={maintenanceBusy}>
                     Prune Audit Logs
-                  </button>
+                  </Button>
                 </div>
                 {maintenanceMsg && <p className={styles.maintenanceMsg}>{maintenanceMsg}</p>}
                 {maintenanceError && <p className={styles.maintenanceError}>{maintenanceError}</p>}
@@ -276,11 +275,11 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay', wall
               {onOpenShares && (
                 <section className={styles.settingsSection}>
                   <h4>Shares</h4>
-                  <p className="muted compact">Manage expiring share links for files and folders.</p>
+                  <p><MutedText compact>Manage expiring share links for files and folders.</MutedText></p>
                   <div className={styles.sharesActions}>
-                    <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={onOpenShares}>
+                    <Button size="compact" onClick={onOpenShares}>
                       Manage Shares
-                    </button>
+                    </Button>
                   </div>
                 </section>
               )}
@@ -335,9 +334,9 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay', wall
     return (<>
       <BreadcrumbBar crumbs={[{ label: 'Desktop' }, { label: 'Settings' }]} onBack={onClose} onNavigate={() => {}}>
         <div className={bStyles.toolbar}>
-          <button className="icon-button" onClick={loadStatus} title="Refresh" type="button">
+          <IconButton onClick={loadStatus} title="Refresh">
             <Icon name="view-refresh" size={18} />
-          </button>
+          </IconButton>
         </div>
       </BreadcrumbBar>
       <div className={styles.settingsBodyPage}>

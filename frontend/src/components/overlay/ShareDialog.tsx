@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import { Overlay, PanelHeader } from '../ui/shared';
+import { IconButton, Overlay, PanelHeader } from '../ui/shared';
 import { createShare, type Share } from '../../api/client';
 import dStyles from './Dialogs.module.css';
 import uiStyles from '../ui/shared.module.css';
@@ -75,9 +75,9 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
               <span>Share URL</span>
               <div className={dStyles.dialogFieldRow}>
                 <input ref={copyRef} value={shareUrl} readOnly onClick={(e) => (e.target as HTMLInputElement).select()} />
-                <button type="button" className="icon-button" onClick={handleCopy} title="Copy to clipboard">
+                <IconButton onClick={handleCopy} title="Copy to clipboard">
                   <Icon name="edit-copy" size={16} />
-                </button>
+                </IconButton>
               </div>
             </label>
             {share.expiresAt && <p className={dStyles.dialogHelp}>Expires: {new Date(share.expiresAt).toLocaleString()}</p>}
