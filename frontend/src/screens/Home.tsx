@@ -21,7 +21,6 @@ import { Dock } from '../components/layout/Dock';
 import { StatusBar } from '../components/layout/StatusBar';
 import { FilesView } from '../pages/FilesView';
 import { DesktopView } from '../pages/DesktopView';
-import { DualPaneView } from '../pages/DualPaneView';
 import { TrashView } from '../pages/TrashView';
 import { JobsPage } from '../pages/JobsPage';
 import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
@@ -102,7 +101,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [showingTrash, setShowingTrash] = useState(false);
   const [showingSettings, setShowingSettings] = useState(false);
   const [showingJobs, setShowingJobs] = useState(false);
-  const [showDualPane, setShowDualPane] = useState(false);
   const [wallpaper, setWallpaper] = useState<WallpaperConfig>(loadWallpaper);
   const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
@@ -129,10 +127,9 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     if (showingSettings) return 'settings';
     if (showingJobs) return 'jobs';
     if (showingTrash) return 'trash';
-    if (showDualPane) return 'dualPane';
     if (currentPath) return 'files';
     return 'desktop';
-  }, [currentPath, showingTrash, showingSettings, showingJobs, showDualPane]);
+  }, [currentPath, showingTrash, showingSettings, showingJobs]);
 
   const activeJobCount = useMemo(
     () => jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length,
@@ -141,8 +138,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const dockItems = useMemo(() => [
     { id: 'desktop', label: 'Desktop', icon: computerIconUrl(), active: activeView === 'desktop' },
-    { id: 'files', label: 'Files', icon: folderIconUrl('64'), active: activeView === 'files' || activeView === 'dualPane' },
-    { id: 'dualPane', label: 'Dual Pane', icon: preferencesIconUrl(), active: activeView === 'dualPane' },
+    { id: 'files', label: 'Files', icon: folderIconUrl('64'), active: activeView === 'files' },
     { id: 'trash', label: 'Trash', icon: trashIconUrl(trashEntries.length > 0, '64'), badge: trashEntries.length > 0 ? trashEntries.length : undefined, active: activeView === 'trash' },
     { id: 'jobs', label: 'Jobs', icon: jobsIconUrl(), badge: activeJobCount > 0 ? activeJobCount : undefined, active: activeView === 'jobs' },
     { id: 'settings', label: 'Settings', icon: preferencesIconUrl(), active: activeView === 'settings' },
@@ -244,7 +240,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       if (e.key === '?' && !(e.target instanceof HTMLInputElement)) { e.preventDefault(); setShortcutsOpen((p) => !p); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); searchRef.current?.focus(); setSearchOpen(true); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') { e.preventDefault(); if (activeView === 'files') setLocationMode((v) => !v); }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'e') { e.preventDefault(); setShowDualPane((v) => !v); }
       if (e.key === 'Escape' && searchOpen) { setSearchOpen(false); setSearchResults(null); setQuery(''); }
       if (e.key === 'Escape' && shortcutsOpen) { setShortcutsOpen(false); }
     };
@@ -696,18 +691,14 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const handleDockActivate = (id: string) => {
     switch (id) {
-      case 'desktop': setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowDualPane(false); setSelectedDriveName(null); break;
+      case 'desktop': setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setSelectedDriveName(null); break;
       case 'files':
-        setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowDualPane(false); setSelectedDriveName(null);
+        setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setSelectedDriveName(null);
         if (!currentPath) { const target = favorites.length > 0 ? favorites[0] : roots.find((r) => r.available)?.path; if (target) navigateTo(target); }
         break;
-      case 'dualPane':
-        setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowDualPane(true); setSelectedDriveName(null);
-        if (!currentPath && roots.length > 0) { const first = roots.find((r) => r.available); if (first) navigateTo(first.path); }
-        break;
-      case 'trash': setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setShowingJobs(false); setShowDualPane(false); setViewMode((prev) => prev === 'columns' ? 'list' : prev); break;
-      case 'jobs': setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setShowDualPane(false); setSelectedDriveName(null); break;
-      case 'settings': setShowingSettings(true); setShowingTrash(false); setShowingJobs(false); setShowDualPane(false); setSelectedDriveName(null); break;
+      case 'trash': setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setShowingJobs(false); setViewMode((prev) => prev === 'columns' ? 'list' : prev); break;
+      case 'jobs': setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setSelectedDriveName(null); break;
+      case 'settings': setShowingSettings(true); setShowingTrash(false); setShowingJobs(false); setSelectedDriveName(null); break;
     }
   };
 
@@ -927,18 +918,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               entries={entries} filteredEntries={filteredEntries}
               selectedPaths={selectedPaths}
               onSelectEntry={handleSelectEntry}
-              onSelectAll={handleSelectAll}
-              onInvertSelection={handleInvertSelection}
-              viewMode={viewMode} onSetViewMode={setViewMode}
-              sortField={sortField} sortDirection={sortDirection}
-              onSortChange={(value) => { const [f, d] = value.split(':') as [SortField, SortDirection]; setSortField(f); setSortDirection(d); }}
-              showHidden={showHidden} onToggleHidden={() => setShowHidden((v) => !v)}
+              viewMode={viewMode}
               loading={loading} error={error} sseConnected={sseConnected}
               onDismissError={() => setError(null)}
               canWrite={canWrite} isFavorited={isFavorited}
               onToggleFavorite={() => isFavorited ? removeFavorite(currentPath) : addFavorite(currentPath)}
-              theme={theme} onToggleTheme={onToggleTheme}
-              session={session} onLogout={onLogout}
               query={query} searchOpen={searchOpen} searchResults={searchResults}
               onSearch={(q) => { setQuery(q); if (searchTimerRef.current) clearTimeout(searchTimerRef.current); searchTimerRef.current = setTimeout(() => handleGlobalSearch(q), 200); setSearchOpen(true); }}
               onClearSearch={() => { setQuery(''); setSearchResults(null); setSearchOpen(false); }}
@@ -948,7 +932,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               }}
               searchRef={searchRef as React.RefObject<HTMLInputElement>}
               fileInputRef={fileInputRef as React.RefObject<HTMLInputElement>}
-              onCreateFolder={handleCreateFolder} onUpload={handleUploadFiles}
+              onUpload={handleUploadFiles}
               fileClick={handleFileAreaClick}
               contextMenu={contextMenu} onContextMenu={handleContextMenuEvent} onCloseContextMenu={() => setContextMenu(null)}
               draggingUpload={dragDrop.draggingUpload}
@@ -982,14 +966,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               locationMode={locationMode}
               onLocationNavigate={(path: string) => navigateTo(path.startsWith('/') ? path : `/${path}`)}
               onToggleLocationMode={() => setLocationMode((v) => !v)}
-            />
-          )}
-          {activeView === 'dualPane' && (
-            <DualPaneView
-              roots={roots}
-              canWrite={canWrite}
-              onCopyJobCreated={() => { showToastObj({ title: 'Copy job started', variant: 'success' }); refresh(); }}
-              onMoveJobCreated={() => { showToastObj({ title: 'Move job started', variant: 'success' }); refresh(); }}
             />
           )}
           {activeView === 'jobs' && (

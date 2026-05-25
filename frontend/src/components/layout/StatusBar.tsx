@@ -10,7 +10,7 @@ type StatusBarProps = {
   rootSize: number | null;
   rootLabel: string;
   currentPath: string;
-  viewContext: 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'dualPane';
+  viewContext: 'desktop' | 'files' | 'trash' | 'settings' | 'jobs';
   trashCount?: number;
 };
 

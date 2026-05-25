@@ -3,20 +3,15 @@ import { Icon, FileIcon, FolderIcon } from '../components/ui/Icon';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { FilesSidebar } from '../components/layout/FilesSidebar';
 import { EmptyState } from '../components/ui/EmptyState';
-import { SortSelect } from '../components/input/SortSelect';
-import { ThemeToggle } from '../components/ui/ThemeToggle';
-import { LogoutButton } from '../components/ui/LogoutButton';
 import { IconButton, Notice } from '../components/ui/shared';
 import { folderIconUrl } from '../api/icons';
 import { rawUrl, downloadUrl, isImageExtension, isVideoExtension, isAudioExtension, isTextExtension } from '../api/client';
 import type { FileEntry, SearchResult, BlockDevice } from '../api/client';
 import { formatBytes, formatGridDate } from '../utils/format';
 import { buildColumnPath } from '../utils/path';
-import { cycleViewMode, type ViewMode } from '../utils/view';
+import type { ViewMode } from '../utils/view';
 import styles from './FilesView.module.css';
 
-type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
-type SortDirection = 'asc' | 'desc';
 type RenameState = { path: string; value: string } | null;
 type ContextMenuState = { x: number; y: number; entry: FileEntry } | null;
 
@@ -30,15 +25,7 @@ type FilesViewProps = {
   filteredEntries: FileEntry[];
   selectedPaths: string[];
   onSelectEntry: (entry: FileEntry, event: MouseEvent<HTMLElement>) => void;
-  onSelectAll: () => void;
-  onInvertSelection: () => void;
   viewMode: ViewMode;
-  onSetViewMode: (mode: ViewMode) => void;
-  sortField: SortField;
-  sortDirection: SortDirection;
-  onSortChange: (value: string) => void;
-  showHidden: boolean;
-  onToggleHidden: () => void;
   loading: boolean;
   error: string | null;
   sseConnected: boolean;
@@ -46,10 +33,6 @@ type FilesViewProps = {
   canWrite: boolean;
   isFavorited: boolean;
   onToggleFavorite: () => void;
-  theme: string;
-  onToggleTheme: () => void;
-  session?: { authEnabled: boolean } | null;
-  onLogout: () => void;
   query: string;
   searchOpen: boolean;
   searchResults: SearchResult[] | null;
@@ -58,7 +41,6 @@ type FilesViewProps = {
   onSearchResultClick: (result: SearchResult) => void;
   searchRef?: React.RefObject<HTMLInputElement | null>;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
-  onCreateFolder: () => void;
   onUpload: (files: FileList | File[]) => void;
   fileClick: (event: MouseEvent<HTMLElement>) => void;
   contextMenu: ContextMenuState;
@@ -102,14 +84,12 @@ type FilesViewProps = {
 export function FilesView({
   currentPath, breadcrumbs, onNavigate, onGoUp, onRefresh,
   filteredEntries, selectedPaths,
-  onSelectEntry, onSelectAll, onInvertSelection,
-  viewMode, onSetViewMode, sortField, sortDirection, onSortChange,
-  onToggleHidden,
+  onSelectEntry,
+  viewMode,
   loading, error, sseConnected, onDismissError,
   canWrite, isFavorited, onToggleFavorite,
-  theme, onToggleTheme, session, onLogout,
   query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
-  searchRef, fileInputRef, onCreateFolder, onUpload,
+  searchRef, fileInputRef, onUpload,
   fileClick, onContextMenu,
   draggingUpload,
   onFileAreaDragOver, onFileAreaDragLeave, onFileAreaDrop, onFileAreaMouseDown, onFileAreaKeyDown,
@@ -159,12 +139,6 @@ export function FilesView({
 
   function cancelRename() {
     onCancelRename();
-  }
-
-  function handleUploadClick() {
-    if (fileInputRef?.current) {
-      fileInputRef.current.click();
-    }
   }
 
   return (
@@ -220,22 +194,6 @@ export function FilesView({
                 <Icon name="view-list" size={18} />
               </IconButton>
             )}
-            {canWrite && (
-              <IconButton
-                onClick={onCreateFolder}
-                title="Create folder"
-              >
-                <Icon name="folder-new" size={18} />
-              </IconButton>
-            )}
-            {canWrite && (
-              <IconButton
-                onClick={handleUploadClick}
-                title="Upload files"
-              >
-                <Icon name="document-import" size={18} />
-              </IconButton>
-            )}
             <input
               ref={fileInputRef as React.RefObject<HTMLInputElement>}
               className={styles.hiddenFileInput}
@@ -248,20 +206,6 @@ export function FilesView({
                 }
               }}
             />
-            <IconButton
-              disabled={filteredEntries.length === 0}
-              onClick={onSelectAll}
-              title="Select all"
-            >
-              <Icon name="selection-select-all" size={18} />
-            </IconButton>
-            <IconButton
-              disabled={filteredEntries.length === 0}
-              onClick={onInvertSelection}
-              title="Invert selection"
-            >
-              <Icon name="selection-invert" size={18} />
-            </IconButton>
             <label className={styles.searchBox}>
               <Icon name="edit-find" size={16} />
               <input
@@ -299,13 +243,6 @@ export function FilesView({
                 ))}
               </div>
             )}
-            <SortSelect view="files" sortField={sortField} sortDirection={sortDirection} onChange={onSortChange} className={styles.sortSelect} />
-            <IconButton
-              onClick={onToggleHidden}
-              title="Toggle hidden files"
-            >
-              <Icon name="view-hidden" size={18} />
-            </IconButton>
             <IconButton
               onClick={onRefresh}
               title="Refresh"
@@ -319,20 +256,6 @@ export function FilesView({
             >
               <Icon name="bookmark-new" size={18} />
             </IconButton>
-            <IconButton
-              onClick={() => onSetViewMode(cycleViewMode(viewMode))}
-              title="Change view"
-            >
-              {viewMode === 'list' ? (
-                <Icon name="view-grid" size={18} />
-              ) : viewMode === 'grid' ? (
-                <Icon name="view-list-column" size={18} />
-              ) : (
-                <Icon name="view-list-tree" size={18} />
-              )}
-            </IconButton>
-            <ThemeToggle theme={theme} onClick={onToggleTheme} />
-            {session?.authEnabled && <LogoutButton onClick={onLogout} />}
           </div>
         </BreadcrumbBar>
 
