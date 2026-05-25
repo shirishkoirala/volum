@@ -22,12 +22,15 @@ export function FilesSidebar({
 }: FilesSidebarProps) {
   return (
     <aside className={styles.filesSidebar}>
-      <section className={`${styles.navSection}${sectionCollapsed.quick ? ` ${styles.sectionCollapsed}` : ''}`}>
-        <div className={styles.sectionHeader} onClick={() => onToggleSection('quick')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') onToggleSection('quick'); }}>
-          <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.quick ? ` ${styles.chevronCollapsed}` : ''}`} aria-hidden="true" />
-          <h2>Places</h2>
+      <section className={`${styles.navSection}${sectionCollapsed.bookmarks ? ` ${styles.sectionCollapsed}` : ''}`}>
+        <div className={styles.sectionHeader} onClick={() => onToggleSection('bookmarks')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') onToggleSection('bookmarks'); }}>
+          <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.bookmarks ? ` ${styles.chevronCollapsed}` : ''}`} aria-hidden="true" />
+          <h2>Bookmarks</h2>
         </div>
         <div className={styles.sectionBody}>
+          {favorites.length === 0 && (
+            <span className={styles.sectionEmpty}>No bookmarked folders</span>
+          )}
           {favorites.map((path) => (
             <div className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} key={path} onClick={() => onNavigate(path)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') onNavigate(path); }}>
               <Icon name="bookmark-new" size={18} />
@@ -40,17 +43,28 @@ export function FilesSidebar({
               </button>
             </div>
           ))}
-          {recentPaths.slice(0, 5).map((path) => (
-            <button className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} key={path} onClick={() => onNavigate(path)} type="button">
-              <Icon name="document-open" size={18} />
-              <span className={styles.favDetails}>
-                <span>{path.split('/').pop() || path}</span>
-                <small>{path}</small>
-              </span>
-            </button>
-          ))}
         </div>
       </section>
+
+      {recentPaths.length > 0 && (
+        <section className={`${styles.navSection}${sectionCollapsed.recent ? ` ${styles.sectionCollapsed}` : ''}`}>
+          <div className={styles.sectionHeader} onClick={() => onToggleSection('recent')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') onToggleSection('recent'); }}>
+            <Icon name="go-next" size={14} className={`${styles.chevron}${sectionCollapsed.recent ? ` ${styles.chevronCollapsed}` : ''}`} aria-hidden="true" />
+            <h2>Recent</h2>
+          </div>
+          <div className={styles.sectionBody}>
+            {recentPaths.slice(0, 5).map((path) => (
+              <button className={path === currentPath ? `${styles.rootItem} ${styles.active}` : styles.rootItem} key={path} onClick={() => onNavigate(path)} type="button">
+                <Icon name="document-open" size={18} />
+                <span className={styles.favDetails}>
+                  <span>{path.split('/').pop() || path}</span>
+                  <small>{path}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className={`${styles.navSection}${sectionCollapsed.storage ? ` ${styles.sectionCollapsed}` : ''}`}>
         <div className={styles.sectionHeader} onClick={() => onToggleSection('storage')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') onToggleSection('storage'); }}>

@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { LogoutButton } from '../ui/LogoutButton';
+import { AppMenuBar, type AppMenuHandlers } from './AppMenuBar';
 import type { Session } from '../../api/client';
 import appIcon from '../../assets/icon-light.png';
 import styles from './TopBar.module.css';
 
-type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs';
+type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'dualPane';
 
 type TopBarProps = {
   activeView: ActiveView;
@@ -17,9 +18,10 @@ type TopBarProps = {
   onLogout: () => void;
   onOpenShortcuts: () => void;
   session: Session | null;
+  menuHandlers?: AppMenuHandlers;
 };
 
-export function TopBar({ activeView, onGoDesktop, theme, onToggleTheme, onOpenSettings, onLogout, onOpenShortcuts, session }: TopBarProps) {
+export function TopBar({ activeView, onGoDesktop, theme, onToggleTheme, onOpenSettings, onLogout, onOpenShortcuts, session, menuHandlers }: TopBarProps) {
   const [clock, setClock] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const [showSystemMenu, setShowSystemMenu] = useState(false);
   const systemMenuRef = useRef<HTMLDivElement>(null);
@@ -56,6 +58,7 @@ export function TopBar({ activeView, onGoDesktop, theme, onToggleTheme, onOpenSe
           <img className={styles.brandIcon} src={appIcon} alt="" />
           <span className={styles.brandName}>Volum Desktop</span>
         </button>
+        {activeView === 'files' && menuHandlers && <AppMenuBar handlers={menuHandlers} />}
       </div>
       <div className={styles.center}>
         <span className={styles.clock}>{clock}</span>

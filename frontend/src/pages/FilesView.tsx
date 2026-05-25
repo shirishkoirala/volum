@@ -302,6 +302,7 @@ export function FilesView({
                     type="button"
                     className={styles.searchResultItem}
                     onClick={() => onSearchResultClick(result)}
+                    aria-label={result.name}
                   >
                     <FileIcon entry={{ ...result, hidden: false, permissions: '', owner: '', group: '' }} size={20} />
                     <span className={styles.searchResultName}>{result.name}</span>
@@ -462,7 +463,14 @@ export function FilesView({
                     role="button"
                   >
                     {entry.type === 'directory' ? (
-                      <FolderIcon size={fileIconSize} />
+                      <span style={{ position: 'relative', display: 'inline-flex' }}>
+                        <FolderIcon size={fileIconSize} />
+                        {favorites.includes(entry.path) && (
+                          <span className={styles.pinBadge}>
+                            <Icon name="bookmark-new" size={10} />
+                          </span>
+                        )}
+                      </span>
                     ) : isImageExtension(entry.name.toLowerCase()) ? (
                       <img
                         className={styles.fileThumb}
@@ -476,7 +484,7 @@ export function FilesView({
                     {renameState?.path === entry.path ? (
                       <input
                         ref={renameInputRef as React.RefObject<HTMLInputElement>}
-                        className="rename-input"
+                        className={styles.renameInput}
                         value={renameState.value}
                         onBlur={() => commitRename(entry)}
                         onChange={(event) => onRenameChange(event.target.value)}

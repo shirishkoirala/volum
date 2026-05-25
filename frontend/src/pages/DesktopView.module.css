@@ -1,3 +1,10 @@
+.desktopWrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .topbar {
   align-items: center;
   display: flex;

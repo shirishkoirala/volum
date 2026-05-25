@@ -120,17 +120,39 @@ export function TrashView({
         <section
           className={`${viewMode === 'grid' ? styles.fileGrid : styles.fileList}`}
           onContextMenu={(event) => event.preventDefault()}
-          tabIndex={0}
+          tabIndex={-1}
+          role="list"
         >
-          {sortedTrashEntries.map((entry) => {
+          {sortedTrashEntries.map((entry, idx) => {
             const isSelected = selectedTrashIds.includes(entry.id);
+
+            function handleTrashKeyDown(e: React.KeyboardEvent) {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onSelectTrash(entry, e as unknown as React.MouseEvent<HTMLElement>);
+                return;
+              }
+              if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const items = document.querySelectorAll<HTMLElement>(`[data-trash-id]`);
+                const currentIdx = Array.from(items).indexOf(e.currentTarget as HTMLElement);
+                const next = e.key === 'ArrowDown'
+                  ? Math.min(currentIdx + 1, items.length - 1)
+                  : Math.max(currentIdx - 1, 0);
+                items[next]?.focus();
+              }
+            }
+
             return viewMode === 'grid' ? (
               <div
                 className={`${styles.fileRow}${isSelected ? ` ${styles.selected}` : ''}`}
                 key={entry.id}
                 onClick={(event) => onSelectTrash(entry, event)}
                 onContextMenu={(event) => onTrashContextMenu(entry, event)}
-                role="button"
+                onKeyDown={handleTrashKeyDown}
+                role="listitem"
+                tabIndex={idx === 0 ? 0 : -1}
+                data-trash-id={entry.id}
               >
                 {entry.type === 'directory' ? (
                   <FolderIcon size={84} />
@@ -159,7 +181,10 @@ export function TrashView({
                 key={entry.id}
                 onClick={(event) => onSelectTrash(entry, event)}
                 onContextMenu={(event) => onTrashContextMenu(entry, event)}
-                role="button"
+                onKeyDown={handleTrashKeyDown}
+                role="listitem"
+                tabIndex={idx === 0 ? 0 : -1}
+                data-trash-id={entry.id}
               >
                 {entry.type === 'directory' ? (
                   <FolderIcon size={28} />

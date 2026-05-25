@@ -11,6 +11,7 @@ import {
   type StatusResponse,
   type RootEntry,
 } from '../api/client';
+import { PRESET_COLORS, PRESET_GRADIENTS, type WallpaperConfig } from '../utils/wallpaper';
 import styles from './SettingsPanel.module.css';
 import bStyles from '../components/layout/BreadcrumbBar.module.css';
 
@@ -18,18 +19,21 @@ type SettingsPanelProps = {
   onClose: () => void;
   onOpenShares?: () => void;
   variant?: 'overlay' | 'page';
+  wallpaper?: WallpaperConfig;
+  onWallpaperChange?: (config: WallpaperConfig) => void;
 };
 
-type CategoryId = 'server' | 'storage' | 'admin' | 'about';
+type CategoryId = 'server' | 'storage' | 'desktop' | 'admin' | 'about';
 
 const CATEGORIES: { id: CategoryId; label: string; icon: string }[] = [
   { id: 'server', label: 'Server', icon: 'dialog-information' },
   { id: 'storage', label: 'Storage', icon: 'drive-harddisk' },
+  { id: 'desktop', label: 'Desktop', icon: 'monitor' },
   { id: 'admin', label: 'Administration', icon: 'preferences-system' },
   { id: 'about', label: 'About', icon: 'help-about' },
 ];
 
-export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay' }: SettingsPanelProps) {
+export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay', wallpaper, onWallpaperChange }: SettingsPanelProps) {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [maintenanceMsg, setMaintenanceMsg] = useState<string | null>(null);
@@ -167,6 +171,63 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay' }: Se
                     )}
                     <small>{root.available ? formatRootUsage(root) : 'Unavailable — check mount or configuration'}</small>
                   </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {(activeCategory === 'desktop' || filteredCategories.some((c) => c.id === 'desktop')) && wallpaper && onWallpaperChange && (
+            <section className={styles.settingsSection}>
+              <h4>Desktop Background</h4>
+              <div className={styles.wallpaperOptionRow}>
+                <button
+                  type="button"
+                  className={`${styles.wallpaperOption}${wallpaper.type === 'default' ? ` ${styles.wallpaperOptionActive}` : ''}`}
+                  onClick={() => onWallpaperChange({ type: 'default' })}
+                >
+                  <div className={styles.wallpaperPreview} style={{ background: 'var(--color-bg)' }} />
+                  <span>Default</span>
+                </button>
+                {PRESET_COLORS.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`${styles.wallpaperOption}${wallpaper.type === 'color' && wallpaper.value === color ? ` ${styles.wallpaperOptionActive}` : ''}`}
+                    onClick={() => onWallpaperChange({ type: 'color', value: color })}
+                  >
+                    <div className={styles.wallpaperPreview} style={{ backgroundColor: color }} />
+                    <span>{color}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className={styles.wallpaperOptionRow}>
+                <small className={styles.wallpaperSectionLabel}>Custom Color</small>
+                <div className={styles.wallpaperCustomColor}>
+                  <input
+                    type="color"
+                    className={styles.wallpaperColorInput}
+                    value={wallpaper.type === 'color' && wallpaper.value ? wallpaper.value : '#1a1a2e'}
+                    onChange={(e) => onWallpaperChange({ type: 'color', value: e.target.value })}
+                  />
+                  <span className={styles.wallpaperColorHex}>
+                    {wallpaper.type === 'color' ? wallpaper.value : '#1a1a2e'}
+                  </span>
+                </div>
+              </div>
+
+              <h4>Gradients</h4>
+              <div className={styles.wallpaperOptionRow}>
+                {PRESET_GRADIENTS.map((g) => (
+                  <button
+                    key={g.label}
+                    type="button"
+                    className={`${styles.wallpaperOption}${wallpaper.type === 'gradient' && wallpaper.value === g.value ? ` ${styles.wallpaperOptionActive}` : ''}`}
+                    onClick={() => onWallpaperChange({ type: 'gradient', value: g.value, value2: g.value2 })}
+                  >
+                    <div className={styles.wallpaperPreview} style={{ background: `linear-gradient(135deg, ${g.value}, ${g.value2})` }} />
+                    <span>{g.label}</span>
+                  </button>
                 ))}
               </div>
             </section>

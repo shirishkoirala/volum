@@ -27,13 +27,14 @@ type DesktopViewProps = {
   onLogout: () => void;
   deviceError?: string | null;
   onRetryDevices?: () => void;
+  wallpaperStyle?: React.CSSProperties;
 };
 
 export function DesktopView({
   devices, trashEntries, jobs, selectedDriveName,
   onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onSelectDrive,
   viewMode, onSetViewMode, theme, onToggleTheme, session, onLogout,
-  deviceError, onRetryDevices,
+  deviceError, onRetryDevices, wallpaperStyle,
 }: DesktopViewProps) {
   const activeJobCount = jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length;
 
@@ -41,7 +42,7 @@ export function DesktopView({
     const d = devices.find(dd => dd.name === selectedDriveName);
     const driveLabel = d?.model || d?.name || selectedDriveName;
     return (
-      <>
+      <div className={styles.desktopWrapper} style={wallpaperStyle}>
         <BreadcrumbBar
           crumbs={[{ label: 'Desktop' }, { label: driveLabel }]}
           onBack={() => onSelectDrive(null)}
@@ -76,12 +77,12 @@ export function DesktopView({
             <EmptyState icon={driveIconUrl('64')} title="No partitions found" />
           )}
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className={styles.desktopWrapper} style={wallpaperStyle}>
       <header className={styles.topbar}>
         <div className={styles.desktopHeader}>
           <DeviceIcon name="drive-harddisk" size={22} />
@@ -127,7 +128,7 @@ export function DesktopView({
             className={styles.desktopIcon}
             onClick={() => onSelectDrive(dev.name)}
             type="button"
-            aria-label={`Open ${dev.model || dev.name}`}
+            aria-label={`Open ${dev.model || dev.name}${dev.size ? `, ${dev.size}` : ''}${dev.transport ? `, ${dev.transport.toUpperCase()}` : ''}${dev.rotational ? ', HDD' : ', SSD'}`}
           >
             <DeviceIcon name="drive-harddisk" size={64} />
             <span className={styles.desktopIconLabel}>{dev.model || dev.name}</span>
@@ -139,7 +140,7 @@ export function DesktopView({
           className={styles.desktopIcon}
           onClick={onNavigateToTrash}
           type="button"
-          aria-label="Open Trash"
+          aria-label={`Open Trash${trashEntries.length > 0 ? `, ${trashEntries.length} items` : ', empty'}`}
         >
           <div className={styles.desktopIconWrapper}>
             <TrashIcon full={trashEntries.length > 0} size={64} />
@@ -164,7 +165,7 @@ export function DesktopView({
           className={styles.desktopIcon}
           onClick={onOpenJobs}
           type="button"
-          aria-label="Open Jobs"
+          aria-label={`Open Jobs${activeJobCount > 0 ? `, ${activeJobCount} active` : ', no active jobs'}`}
         >
           <div className={styles.desktopIconWrapper}>
             <IconImg src={jobsIconUrl()} alt="" width={64} height={64} />
@@ -176,6 +177,6 @@ export function DesktopView({
           <small className={styles.desktopIconUsage}>{jobs.length === 0 ? 'No jobs' : `${activeJobCount} active`}</small>
         </button>
       </div>
-    </>
+    </div>
   );
 }

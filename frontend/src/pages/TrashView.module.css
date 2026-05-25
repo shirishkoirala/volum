@@ -40,10 +40,11 @@
 }
 
 .fileGrid {
+  --grid-min-column: 128px;
   display: grid;
   flex: 1;
-  gap: 34px;
-  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: var(--space-3xl);
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-column), 1fr));
   outline: 0;
   overflow-y: auto;
 }

@@ -180,6 +180,13 @@
   font-size: 10px;
 }
 
+.sectionEmpty {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  padding: var(--space-sm) 0;
+  text-align: center;
+}
+
 .favDetails {
   display: flex;
   flex-direction: column;

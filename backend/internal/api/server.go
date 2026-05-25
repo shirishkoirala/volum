@@ -86,6 +86,7 @@ func (s *Server) routes() {
 			r.Get("/files/raw", s.handleRaw)
 			r.Get("/files/search", s.handleSearch)
 			r.Get("/files/sizes", s.handleDirSizes)
+			r.Get("/files/analyze", s.handleAnalyzeDiskUsage)
 			r.Get("/trash", s.handleTrash)
 			r.Get("/jobs", s.handleJobs)
 			r.Get("/jobs/events", s.handleJobEvents)
@@ -498,6 +499,20 @@ func (s *Server) handleDirSizes(w http.ResponseWriter, r *http.Request) {
 
 	sizes := s.files.GetDirSizes(publicPaths)
 	writeJSON(w, http.StatusOK, map[string]any{"sizes": sizes})
+}
+
+func (s *Server) handleAnalyzeDiskUsage(w http.ResponseWriter, r *http.Request) {
+	path := r.URL.Query().Get("path")
+	if path == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "path is required"})
+		return
+	}
+	node, err := s.files.AnalyzeDiskUsage(path)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, node)
 }
 
 func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {

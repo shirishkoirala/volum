@@ -132,15 +132,15 @@ grid-template-rows: 44px 1fr 28px
 
 ### Batch E — Future Features
 
-| # | Feature |
-|---|---------|
-| E.1 | Disk usage analyzer — recursive folder size scanning + tree UI |
-| E.2 | Bookmarks / pinned paths — sidebar section in FilesSidebar, localStorage |
-| E.3 | Per-folder view preferences — persist view mode/sort per directory |
-| E.4 | Dual-pane view — side-by-side browser for copy/move |
-| E.5 | Desktop wallpaper / background customization |
-| E.6 | App menu bar (File/Edit/View/Go) in TopBar when Files view active |
-| E.7 | Desktop icon arrangement persistence |
+| # | Feature | Status |
+|---|---------|--------|
+| E.1 | Disk usage analyzer — recursive folder size scanning + tree UI | ✅ Done |
+| E.2 | Bookmarks / pinned paths — sidebar section in FilesSidebar, localStorage | ✅ Done |
+| E.3 | Per-folder view preferences — persist view mode/sort per directory | ✅ Done |
+| E.4 | Dual-pane view — side-by-side browser for copy/move | ⬜ |
+| E.5 | Desktop wallpaper / background customization | ✅ Done |
+| E.6 | App menu bar (File/Edit/View/Go) in TopBar when Files view active | ✅ Done |
+| E.7 | Desktop icon arrangement persistence | ⬜ |
 
 ## Execution Order
 
@@ -157,6 +157,6 @@ Batch A (error states) → Batch B (cleanup) → Batch C (a11y)
 | Batch A — Loading & Error States | ✅ 11/11 |
 | Batch B — Edge Cases & Cleanup | ✅ 16/16 |
 | Batch B.0 — Standard EmptyState Component | ✅ Done |
-| Batch C — Accessibility | 🔄 7/12 + 1 partial |
-| Batch D — Inline Styles → CSS | 🔄 4/11 + 1 partial |
-| Batch E — Future Features | ⬜ 0/7 |
+| Batch C — Accessibility | ✅ 12/12 |
+| Batch D — Inline Styles → CSS | ✅ 11/11 |
+| Batch E — Future Features | ✅ 5/7 |

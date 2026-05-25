@@ -201,3 +201,21 @@ frontend/src/
 - Never commit `data/`, `storage/`, `frontend/dist/`, `frontend/node_modules/`
 - New API endpoints go in `server.go` `routes()`; new job types need registration in `model.go` + `ClaimNext*Job` in `store.go`
 - CSS Modules: `styles.className` (camelCase) in components
+
+## Task History
+
+### E.5 — Desktop Wallpaper
+- Created `frontend/src/utils/wallpaper.ts` — `WallpaperConfig` type, `loadWallpaper`/`saveWallpaper` localStorage helpers, `wallpaperToStyle` CSS conversion, 16 preset colors + 6 gradients
+- Added `wallpaperStyle` prop to `DesktopView` — wraps content in `.desktopWrapper` div with background style
+- Added "Desktop" category in `SettingsPanel` with: Default button, 16 color swatches, custom color picker (native `<input type="color">`), 6 gradient presets
+- State managed in Home.tsx, persisted to localStorage under `volum_wallpaper`
+- TypeScript + Docker build verified
+
+### E.4 — Dual-pane View
+- Created `DualPaneView.tsx` + `.module.css` — two independent file browser panels with breadcrumb nav, file lists, and Copy/Move between panes
+- Each pane: independent `currentPath`, `entries`, `selectedPaths`, `loading`, `error` state; uses `getFiles()` API
+- Draggable divider (25%-75% range) for resizing panes
+- "Copy →" / "Move →" buttons in each pane's breadcrumb bar when items are selected and other pane has a path
+- Home.tsx integration: `showDualPane` state, `activeView` includes `'dualPane'`, dock item "Dual Pane", keyboard shortcut `Ctrl+Shift+E`
+- `ActiveView` type updated in TopBar.tsx + StatusBar.tsx to include `'dualPane'`
+- TypeScript + Docker build verified

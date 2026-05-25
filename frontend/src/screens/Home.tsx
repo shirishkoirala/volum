@@ -15,6 +15,7 @@ import { BatchRenameModal } from '../components/overlay/BatchRenameModal';
 import { InfoPanel } from '../components/overlay/InfoPanel';
 import { ShareDialog } from '../components/overlay/ShareDialog';
 import { ShareManager } from '../components/overlay/ShareManager';
+import { DiskUsageAnalyzer } from '../components/overlay/DiskUsageAnalyzer';
 import { SettingsPanel } from '../pages/SettingsPanel';
 import { TopBar } from '../components/layout/TopBar';
 import { Dock } from '../components/layout/Dock';
@@ -22,6 +23,7 @@ import { FilesSidebar } from '../components/layout/FilesSidebar';
 import { StatusBar } from '../components/layout/StatusBar';
 import { FilesView } from '../pages/FilesView';
 import { DesktopView } from '../pages/DesktopView';
+import { DualPaneView } from '../pages/DualPaneView';
 import { TrashView } from '../pages/TrashView';
 import { JobsPage } from '../pages/JobsPage';
 import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
@@ -35,6 +37,7 @@ import { Overlay } from '../components/ui/shared';
 import { folderIconUrl, preferencesIconUrl, jobsIconUrl, computerIconUrl, trashIconUrl } from '../api/icons';
 import { cycleViewMode, type ViewMode } from '../utils/view';
 import { joinPath, normalizeFolderPath, uniquePaths } from '../utils/path';
+import { loadWallpaper, saveWallpaper, wallpaperToStyle, type WallpaperConfig } from '../utils/wallpaper';
 import { isArchiveFile, archiveBaseName, archiveFileName } from '../utils/archive';
 import { refreshesFiles } from '../utils/jobs';
 import { useJobs } from '../hooks/useJobs';
@@ -65,6 +68,9 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobFilter, setJobFilter] = useState<string>('all');
   const [completedCollapsed, setCompletedCollapsed] = useState(true);
+  const [folderPrefs, setFolderPrefs] = useState<Record<string, { viewMode?: ViewMode; sortField?: SortField; sortDirection?: SortDirection }>>(() => {
+    try { return JSON.parse(localStorage.getItem('volum_folderPrefs') ?? '{}'); } catch { return {}; }
+  });
   const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem('volum_viewMode') as ViewMode) || 'grid');
   const [showHidden, setShowHidden] = useState(() => localStorage.getItem('volum_showHidden') === 'true');
   const [query, setQuery] = useState('');
@@ -87,6 +93,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [recentPaths, setRecentPaths] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('volum_recent') ?? '[]'); } catch { return []; }
   });
+  const [analyzePath, setAnalyzePath] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [batchRenameOpen, setBatchRenameOpen] = useState(false);
@@ -104,6 +111,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [showingTrash, setShowingTrash] = useState(false);
   const [showingSettings, setShowingSettings] = useState(false);
   const [showingJobs, setShowingJobs] = useState(false);
+  const [showDualPane, setShowDualPane] = useState(false);
+  const [wallpaper, setWallpaper] = useState<WallpaperConfig>(loadWallpaper);
   const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
   const [lastSelectedTrashId, setLastSelectedTrashId] = useState<string | null>(null);
@@ -122,13 +131,19 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const canWrite = session.role === 'admin';
 
+  const currentPathRef = useRef(currentPath);
+  currentPathRef.current = currentPath;
+
+  const currentFolderPrefs = currentPath ? folderPrefs[currentPath] : undefined;
+
   const activeView = useMemo(() => {
     if (showingSettings) return 'settings';
     if (showingJobs) return 'jobs';
     if (showingTrash) return 'trash';
+    if (showDualPane) return 'dualPane';
     if (currentPath) return 'files';
     return 'desktop';
-  }, [currentPath, showingTrash, showingSettings, showingJobs]);
+  }, [currentPath, showingTrash, showingSettings, showingJobs, showDualPane]);
 
   const activeJobCount = useMemo(
     () => jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length,
@@ -137,7 +152,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const dockItems = useMemo(() => [
     { id: 'desktop', label: 'Desktop', icon: computerIconUrl(), active: activeView === 'desktop' },
-    { id: 'files', label: 'Files', icon: folderIconUrl('64'), active: activeView === 'files' },
+    { id: 'files', label: 'Files', icon: folderIconUrl('64'), active: activeView === 'files' || activeView === 'dualPane' },
+    { id: 'dualPane', label: 'Dual Pane', icon: preferencesIconUrl(), active: activeView === 'dualPane' },
     { id: 'trash', label: 'Trash', icon: trashIconUrl(trashEntries.length > 0, '64'), badge: trashEntries.length > 0 ? trashEntries.length : undefined, active: activeView === 'trash' },
     { id: 'jobs', label: 'Jobs', icon: jobsIconUrl(), badge: activeJobCount > 0 ? activeJobCount : undefined, active: activeView === 'jobs' },
     { id: 'settings', label: 'Settings', icon: preferencesIconUrl(), active: activeView === 'settings' },
@@ -239,6 +255,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       if (e.key === '?' && !(e.target instanceof HTMLInputElement)) { e.preventDefault(); setShortcutsOpen((p) => !p); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); searchRef.current?.focus(); setSearchOpen(true); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') { e.preventDefault(); if (activeView === 'files') setLocationMode((v) => !v); }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'e') { e.preventDefault(); setShowDualPane((v) => !v); }
       if (e.key === 'Escape' && searchOpen) { setSearchOpen(false); setSearchResults(null); setQuery(''); }
       if (e.key === 'Escape' && shortcutsOpen) { setShortcutsOpen(false); }
     };
@@ -270,6 +287,16 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   // ── Navigation ───────────────────────────────────────────
 
   const navigateTo = (path: string) => {
+    const prevPath = currentPathRef.current;
+    if (prevPath && prevPath !== path) {
+      setFolderPrefs((prev) => ({ ...prev, [prevPath]: { viewMode, sortField, sortDirection } }));
+    }
+    const prefs = folderPrefs[path];
+    if (prefs) {
+      if (prefs.viewMode) setViewMode(prefs.viewMode);
+      if (prefs.sortField) setSortField(prefs.sortField);
+      if (prefs.sortDirection) setSortDirection(prefs.sortDirection);
+    }
     pushRecent(path);
     setCurrentPath(path);
     setShowingJobs(false);
@@ -564,6 +591,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     });
   };
 
+  const handleAnalyze = () => {
+    const entry = selectedEntries[0];
+    if (!entry || entry.type !== 'directory') return;
+    setContextMenu(null);
+    setAnalyzePath(entry.path);
+  };
+
   const handleCreateChecksum = () => {
     const entry = selectedEntries[0];
     if (!entry || selectedEntries.length !== 1) return;
@@ -673,14 +707,18 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const handleDockActivate = (id: string) => {
     switch (id) {
-      case 'desktop': setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setSelectedDriveName(null); break;
+      case 'desktop': setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowDualPane(false); setSelectedDriveName(null); break;
       case 'files':
-        setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setSelectedDriveName(null);
+        setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowDualPane(false); setSelectedDriveName(null);
         if (!currentPath) { const target = favorites.length > 0 ? favorites[0] : roots.find((r) => r.available)?.path; if (target) navigateTo(target); }
         break;
-      case 'trash': setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setShowingJobs(false); setViewMode((prev) => prev === 'columns' ? 'list' : prev); break;
-      case 'jobs': setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setSelectedDriveName(null); break;
-      case 'settings': setShowingSettings(true); setShowingTrash(false); setShowingJobs(false); setSelectedDriveName(null); break;
+      case 'dualPane':
+        setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowDualPane(true); setSelectedDriveName(null);
+        if (!currentPath && roots.length > 0) { const first = roots.find((r) => r.available); if (first) navigateTo(first.path); }
+        break;
+      case 'trash': setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setShowingJobs(false); setShowDualPane(false); setViewMode((prev) => prev === 'columns' ? 'list' : prev); break;
+      case 'jobs': setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setShowDualPane(false); setSelectedDriveName(null); break;
+      case 'settings': setShowingSettings(true); setShowingTrash(false); setShowingJobs(false); setShowDualPane(false); setSelectedDriveName(null); break;
     }
   };
 
@@ -737,6 +775,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const canPreview = selectedEntries.length === 1 && selectedEntries[0]?.type === 'file';
   const canArchive = selectedEntries.length === 1;
   const canExtract = selectedEntries.length === 1 && selectedEntries[0]?.type === 'file' && isArchiveFile(selectedEntries[0]?.name ?? '');
+  const canAnalyze = selectedEntries.length === 1 && selectedEntries[0]?.type === 'directory';
   const canChecksum = canWrite && selectedEntries.length === 1;
   const canSelect = filteredEntries.length > 0;
   const canPaste = canWrite && !!fileClipboard && fileClipboard.entries.length > 0;
@@ -753,6 +792,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   }, [selectedEntries]);
 
   const isFavorited = favorites.includes(currentPath);
+  const selectedEntryIsFavorited = contextMenu?.entry ? favorites.includes(contextMenu.entry.path) : isFavorited;
   const showStatusBar = activeView !== 'settings' && activeView !== 'jobs';
 
   const folderSuggestions = useMemo(
@@ -785,12 +825,29 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── LocalStorage sync effects ────────────────────────────
 
+  useEffect(() => {
+    if (currentPath && folderPrefs[currentPath]) {
+      const prefs = folderPrefs[currentPath];
+      if (prefs.viewMode) setViewMode(prefs.viewMode);
+      if (prefs.sortField) setSortField(prefs.sortField);
+      if (prefs.sortDirection) setSortDirection(prefs.sortDirection);
+    }
+  }, []);
+
   useEffect(() => { localStorage.setItem('volum_viewMode', viewMode); }, [viewMode]);
   useEffect(() => {
     if (!showingTrash && viewModeBeforeTrash.current) { setViewMode(viewModeBeforeTrash.current); viewModeBeforeTrash.current = null; }
   }, [showingTrash]);
   useEffect(() => { localStorage.setItem('volum_sortField', sortField); localStorage.setItem('volum_sortDirection', sortDirection); }, [sortField, sortDirection]);
+  useEffect(() => {
+    const path = currentPath;
+    if (path) {
+      setFolderPrefs((prev) => ({ ...prev, [path]: { viewMode, sortField, sortDirection } }));
+    }
+  }, [viewMode, sortField, sortDirection]);
+  useEffect(() => { localStorage.setItem('volum_folderPrefs', JSON.stringify(folderPrefs)); }, [folderPrefs]);
   useEffect(() => { localStorage.setItem('volum_showHidden', String(showHidden)); }, [showHidden]);
+  useEffect(() => { saveWallpaper(wallpaper); }, [wallpaper]);
   useEffect(() => { if (Notification.permission === 'default') void Notification.requestPermission(); }, []);
 
   // ── Favorites / Quick Access persistence ─────────────────
@@ -815,6 +872,31 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           onLogout={onLogout}
           onOpenShortcuts={() => setShortcutsOpen(true)}
           session={session}
+          menuHandlers={{
+            onCreateFolder: handleCreateFolder,
+            onUpload: () => fileInputRef.current?.click(),
+            onCut: () => setClipboardFromSelection('move'),
+            onCopy: () => setClipboardFromSelection('copy'),
+            onPaste: handlePaste,
+            onSelectAll: handleSelectAll,
+            onInvertSelection: handleInvertSelection,
+            onRename: handleRename,
+            onDelete: handleDelete,
+            viewMode,
+            onSetViewMode: setViewMode,
+            showHidden,
+            onToggleHidden: () => setShowHidden((v) => !v),
+            sortField,
+            sortDirection,
+            onSortChange: (value) => { const [f, d] = value.split(':') as [SortField, SortDirection]; setSortField(f); setSortDirection(d); },
+            onGoDesktop: () => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setSelectedDriveName(null); },
+            onGoFiles: () => handleDockActivate('files'),
+            onGoTrash: () => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setShowingJobs(false); setViewMode((prev) => prev === 'columns' ? 'list' : prev); },
+            onGoJobs: () => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setSelectedDriveName(null); },
+            onGoSettings: () => { setShowingSettings(true); setShowingTrash(false); setShowingJobs(false); setSelectedDriveName(null); },
+            onToggleLocation: () => setLocationMode((v) => !v),
+            canWrite,
+          }}
         />
         <Dock items={dockItems} onActivate={handleDockActivate} />
 
@@ -865,6 +947,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               theme={theme} onToggleTheme={onToggleTheme}
               session={session} onLogout={onLogout}
               deviceError={deviceError} onRetryDevices={loadDevices}
+              wallpaperStyle={wallpaperToStyle(wallpaper)}
             />
           )}
           {activeView === 'trash' && (
@@ -952,6 +1035,14 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onToggleLocationMode={() => setLocationMode((v) => !v)}
             />
           )}
+          {activeView === 'dualPane' && (
+            <DualPaneView
+              roots={roots}
+              canWrite={canWrite}
+              onCopyJobCreated={() => { showToastObj({ title: 'Copy job started', variant: 'success' }); refresh(); }}
+              onMoveJobCreated={() => { showToastObj({ title: 'Move job started', variant: 'success' }); refresh(); }}
+            />
+          )}
           {activeView === 'jobs' && (
             <JobsPage
               jobs={jobs} jobFilter={jobFilter} setJobFilter={setJobFilter}
@@ -963,7 +1054,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             />
           )}
           {activeView === 'settings' && (
-            <SettingsPanel variant="page" onClose={() => setShowingSettings(false)} onOpenShares={() => { setShowingSettings(false); setSharesOpen(true); }} />
+            <SettingsPanel
+              variant="page"
+              onClose={() => setShowingSettings(false)}
+              onOpenShares={() => { setShowingSettings(false); setSharesOpen(true); }}
+              wallpaper={wallpaper}
+              onWallpaperChange={setWallpaper}
+            />
           )}
 
           {contextMenu && (
@@ -973,6 +1070,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               canRename={canRename} canArchive={canArchive} canExtract={canExtract}
               canChecksum={canChecksum} canCopy={canCopy} canMove={canMove}
               canPaste={canPaste} canDelete={canDelete} canWrite={canWrite}
+              canAnalyze={canAnalyze}
+              isFavorited={selectedEntryIsFavorited}
               selectedCount={selectedEntries.length}
               onPreview={handlePreview} onShowInfo={handleShowInfo} onDownload={handleDownload}
               onRename={handleRename} onBatchRename={handleBatchRename}
@@ -981,6 +1080,14 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onChecksum={handleCreateChecksum} onPaste={handlePaste}
               onQuickShare={handleQuickShare}
               onShare={() => { const e = contextMenu.entry; if (e) setShareDialogPath({ path: e.path, name: e.name }); }}
+              onAnalyze={handleAnalyze}
+              onToggleFavorite={() => {
+                const e = contextMenu.entry;
+                if (e) {
+                  if (favorites.includes(e.path)) removeFavorite(e.path);
+                  else addFavorite(e.path);
+                }
+              }}
               onDelete={handleDelete} onClose={() => setContextMenu(null)}
             />
           )}
@@ -1022,5 +1129,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   if (shareDialogPath) return <>{shell}<ShareDialog path={shareDialogPath.path} name={shareDialogPath.name} onClose={() => setShareDialogPath(null)} /></>;
   if (shortcutsOpen) return <>{shell}<KeyboardShortcuts onClose={() => setShortcutsOpen(false)} /></>;
   if (sharesOpen) return <>{shell}<ShareManager onClose={() => setSharesOpen(false)} /></>;
+  if (analyzePath) return <>{shell}<DiskUsageAnalyzer path={analyzePath} onClose={() => setAnalyzePath(null)} /></>;
   return shell;
 }

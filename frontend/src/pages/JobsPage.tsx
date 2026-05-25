@@ -48,7 +48,7 @@ function JobItem({
   const hasKnownTotal = job.totalBytes > 0;
 
   return (
-    <article className={styles.jobItem}>
+    <article className={styles.jobItem} role="listitem" tabIndex={0} data-job-id={job.id} onKeyDown={(e) => { if (e.key === 'Enter') e.stopPropagation(); }}>
       <div className={styles.jobTitleRow}>
         <strong>{job.type}</strong>
         <span className={styles.jobStatus}>{job.status}</span>
@@ -155,6 +155,19 @@ type JobsPageProps = {
   onClose: () => void;
 };
 
+function handleJobListKeyDown(e: React.KeyboardEvent) {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    const items = document.querySelectorAll<HTMLElement>('[data-job-id]');
+    const current = document.activeElement;
+    const idx = Array.from(items).indexOf(current as HTMLElement);
+    const next = e.key === 'ArrowDown'
+      ? Math.min(idx + 1, items.length - 1)
+      : Math.max(idx - 1, 0);
+    items[next]?.focus();
+  }
+}
+
 export function JobsPage({
   jobs,
   jobFilter,
@@ -188,7 +201,7 @@ export function JobsPage({
         ))}
       </BreadcrumbBar>
       <main className={styles.jobsPage}>
-        <div className={styles.jobList}>
+        <div className={styles.jobList} onKeyDown={handleJobListKeyDown} role="list">
       {jobs.length === 0 ? (
         <EmptyState icon={jobsIconUrl()} title="No jobs yet" subtitle="File operations like copy, move, and archive will appear here." />
       ) : (

@@ -373,6 +373,20 @@ export function getDirSizes(path: string) {
   return request<{ sizes: Record<string, number> }>(`/api/files/sizes?${params.toString()}`);
 }
 
+export type DiskUsageNode = {
+  name: string;
+  path: string;
+  size: number;
+  isDir: boolean;
+  percentage: number;
+  children: DiskUsageNode[];
+};
+
+export function analyzeDiskUsage(path: string) {
+  const params = new URLSearchParams({ path });
+  return request<DiskUsageNode>(`/api/files/analyze?${params.toString()}`);
+}
+
 export function searchFiles(query: string, limit = 50) {
   const params = new URLSearchParams({ q: query, limit: String(limit) });
   return request<SearchResponse>(`/api/files/search?${params.toString()}`);
