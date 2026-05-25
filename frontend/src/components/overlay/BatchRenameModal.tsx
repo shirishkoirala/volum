@@ -4,6 +4,7 @@ import { Overlay, PanelHeader } from '../ui/shared';
 import { Select } from '../input/Select';
 import { batchRename } from '../../api/client';
 import type { FileEntry } from '../../api/client';
+import uiStyles from '../ui/shared.module.css';
 import styles from './BatchRename.module.css';
 import dStyles from './Dialogs.module.css';
 
@@ -135,7 +136,7 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
             disabled={submitting || previews.every((p) => !p.changed)}
             onClick={handleSubmit}
           >
-            {submitting ? <><Icon name="view-refresh" size={15} /> Renaming...</> : `Rename ${previews.filter((p) => p.changed).length} items`}
+            {submitting ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Renaming...</> : `Rename ${previews.filter((p) => p.changed).length} items`}
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { Icon, FileIcon } from '../ui/Icon';
 import { Overlay, PanelHeader } from '../ui/shared';
 import { chmodPath } from '../../api/client';
 import type { FileEntry } from '../../api/client';
+import uiStyles from '../ui/shared.module.css';
 import styles from './InfoPanel.module.css';
 
 type InfoPanelProps = {
@@ -145,14 +146,14 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
           {saved && <p className={styles.infoSaved}>Permissions updated</p>}
 
           <div className={styles.infoActions}>
-            <button type="button" onClick={onClose}>Close</button>
+            <button type="button" className={uiStyles.button} onClick={onClose}>Close</button>
             <button
               type="button"
-              className={styles.infoApply}
+              className={`${uiStyles.button} ${uiStyles.primary}`}
               disabled={changing || saved || permString === entry.permissions}
               onClick={handleSave}
             >
-              {changing ? <><Icon name="view-refresh" size={15} /> Saving...</> : 'Apply Permissions'}
+              {changing ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Saving...</> : 'Apply Permissions'}
             </button>
           </div>
         </div>

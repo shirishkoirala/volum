@@ -220,29 +220,8 @@
   margin-top: var(--space-sm);
 }
 
-.maintenanceBtn {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: 12px;
-  font-weight: 600;
-  min-height: 32px;
-  padding: 0 var(--space-md);
-}
-
-.maintenanceBtn:hover {
-  border-color: var(--color-brand);
-  color: var(--color-brand-text);
-}
-
-.maintenanceBtn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
 .maintenanceMsg {
-  color: var(--color-brand);
+  color: var(--color-success-text);
   font-size: 12px;
   margin: var(--space-sm) 0 0;
 }
@@ -294,18 +273,11 @@
   width: 60%;
 }
 
-.retryBtn {
-  background: none;
-  border: none;
-  color: var(--color-brand);
-  cursor: pointer;
-  font-size: inherit;
-  padding: 0;
-  text-decoration: underline;
-}
-
 .rootWarningBadge {
+  align-items: center;
   color: var(--color-danger-text);
+  display: inline-flex;
+  gap: 3px;
   margin-left: 8px;
   font-size: 11px;
   font-weight: 700;

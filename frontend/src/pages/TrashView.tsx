@@ -5,6 +5,7 @@ import { SortSelect } from '../components/input/SortSelect';
 import { trashIconUrl } from '../api/icons';
 import type { TrashEntry } from '../api/client';
 import { formatBytes, formatGridDate, formatTrashPath } from '../utils/format';
+import uiStyles from '../components/ui/shared.module.css';
 import styles from './TrashView.module.css';
 
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
@@ -50,19 +51,19 @@ export function TrashView({
             <span>{selectedTrashIds.length} selected</span>
             <div className={styles.selectionActions}>
               {canWrite && (
-                <button type="button" className={styles.selectionActionBtn} onClick={onBulkRestoreTrash}>
+                <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={onBulkRestoreTrash}>
                   <Icon name="edit-restore" size={16} />
                   Restore
                 </button>
               )}
               {canWrite && (
-                <button type="button" className={styles.dangerBtn} onClick={onBulkDeleteTrash}>
+                <button type="button" className={`${uiStyles.button} ${uiStyles.compact} ${uiStyles.danger}`} onClick={onBulkDeleteTrash}>
                   <Icon name="edit-delete" size={16} />
                   Delete
                 </button>
               )}
             </div>
-            <button type="button" className={styles.selectionActionBtn} onClick={onClearSelectionTrash}>
+            <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={onClearSelectionTrash}>
               Clear
             </button>
           </div>

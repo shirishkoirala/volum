@@ -5,6 +5,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { formatBytes } from '../utils/format';
+import uiStyles from '../components/ui/shared.module.css';
 import styles from './JobsPage.module.css';
 
 function isActiveStatus(status: string) {
@@ -67,25 +68,25 @@ function JobItem({
       {(canPause || canResume || canCancel || canRetry) && (
         <div className={styles.jobActions}>
           {canPause && (
-            <button type="button" onClick={() => onPause(job.id)}>
+            <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={() => onPause(job.id)}>
               <Icon name="media-playback-pause" size={15} />
               Pause
             </button>
           )}
           {canResume && (
-            <button type="button" onClick={() => onResume(job.id)}>
+            <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={() => onResume(job.id)}>
               <Icon name="media-playback-start" size={15} />
               Resume
             </button>
           )}
           {canCancel && (
-            <button type="button" onClick={() => onCancel(job.id)}>
+            <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={() => onCancel(job.id)}>
               <Icon name="process-stop" size={15} />
               Cancel
             </button>
           )}
           {canRetry && (
-            <button type="button" onClick={() => onRetry(job.id)}>
+            <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={() => onRetry(job.id)}>
               <Icon name="view-refresh" size={15} />
               Retry
             </button>
@@ -207,12 +208,12 @@ export function JobsPage({
             <>
               {renderJobGroup(jobs, jobFilter, completedCollapsed, setCompletedCollapsed, onCancel, onPause, onResume, onRetry)}
               {jobs.some((j) => j.status === 'completed' || j.status === 'cancelled') && (
-                <button type="button" className={styles.clearBtn} onClick={onClearCompleted}>
+                <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={onClearCompleted}>
                   Clear completed
                 </button>
               )}
               {jobs.some((j) => j.status === 'failed') && (
-                <button type="button" className={styles.clearBtn} onClick={onClearFailed}>
+                <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={onClearFailed}>
                   Clear failed
                 </button>
               )}

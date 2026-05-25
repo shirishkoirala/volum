@@ -166,7 +166,7 @@
 
 .primary {
   background: var(--color-brand);
-  color: #ffffff;
+  color: var(--color-on-accent);
 }
 
 .dialogSuggestions {

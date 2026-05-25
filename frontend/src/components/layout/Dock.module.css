@@ -51,7 +51,7 @@
   align-items: center;
   background: var(--color-danger);
   border-radius: var(--radius-pill);
-  color: #fff;
+  color: var(--color-on-accent);
   display: flex;
   font-size: 9px;
   font-weight: 700;

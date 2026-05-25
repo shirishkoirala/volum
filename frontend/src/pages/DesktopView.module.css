@@ -51,27 +51,8 @@
 }
 
 .desktopError {
-  align-items: center;
-  background: var(--color-danger-bg, #fef2f2);
-  border: 1px solid var(--color-danger, #dc2626);
-  border-radius: var(--radius-md);
-  color: var(--color-danger, #dc2626);
-  display: flex;
-  font-size: 13px;
-  gap: var(--space-sm);
   grid-column: 1 / -1;
-  padding: var(--space-md) var(--space-lg);
-}
-
-.retryBtn {
-  background: var(--color-danger, #dc2626);
-  border: none;
-  border-radius: var(--radius-sm);
-  color: #fff;
-  cursor: pointer;
-  font-size: 12px;
   margin-left: auto;
-  padding: 4px 12px;
 }
 
 .desktopIcon {
@@ -128,7 +109,7 @@
   align-items: center;
   background: var(--color-danger);
   border-radius: var(--radius-pill);
-  color: #fff;
+  color: var(--color-on-accent);
   display: flex;
   font-size: 11px;
   font-weight: 700;

@@ -170,16 +170,7 @@
 }
 
 .sseWarning {
-  align-items: center;
-  background: var(--color-warning-bg, #fff3cd);
-  border: 1px solid var(--color-warning-border, #ffc107);
-  border-radius: var(--radius-md);
-  color: var(--color-warning-text, #856404);
-  display: flex;
-  gap: var(--space-sm);
   margin-bottom: var(--space-md);
-  padding: var(--space-md) 14px;
-  font-size: 13px;
 }
 
 .errorDismiss {
@@ -328,7 +319,7 @@
   align-items: center;
   background: var(--color-brand);
   border-radius: 50%;
-  color: #fff;
+  color: var(--color-on-accent);
   display: flex;
   height: 16px;
   justify-content: center;

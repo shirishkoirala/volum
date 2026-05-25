@@ -32,7 +32,7 @@
 .filterTab.active {
   background: var(--color-brand);
   border-color: var(--color-brand);
-  color: #fff;
+  color: var(--color-on-accent);
 }
 
 .jobItem {
@@ -83,23 +83,6 @@
   margin-top: var(--space-xs);
 }
 
-.jobActions button {
-  align-items: center;
-  background: none;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-  cursor: pointer;
-  display: flex;
-  font-size: 0.78rem;
-  gap: 4px;
-  padding: 3px 8px;
-}
-
-.jobActions button:hover {
-  background: var(--color-hover);
-}
-
 .jobCollapseToggle {
   background: none;
   border: none;
@@ -112,19 +95,4 @@
 
 .jobCollapseToggle:hover {
   text-decoration: underline;
-}
-
-.clearBtn {
-  background: none;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  font-size: 0.8rem;
-  padding: var(--space-xs) var(--space-md);
-}
-
-.clearBtn:hover {
-  background: var(--color-hover);
-  border-color: var(--color-border);
 }

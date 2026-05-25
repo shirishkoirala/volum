@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Icon } from '../ui/Icon';
 import { EmptyState } from '../ui/EmptyState';
 import { folderIconUrl } from '../../api/icons';
+import uiStyles from '../ui/shared.module.css';
 import styles from './FolderPicker.module.css';
 
 export function FolderPicker({
@@ -120,7 +121,7 @@ export function FolderPicker({
         {loading ? (
           <div className={styles.folderPickerLoading}>Loading...</div>
         ) : error ? (
-          <div className={styles.folderPickerError}>{error} <button type="button" onClick={() => loadSubdirs(currentDir)}>Retry</button></div>
+          <div className={styles.folderPickerError}>{error} <button type="button" className={`${uiStyles.button} ${uiStyles.linkButton}`} onClick={() => loadSubdirs(currentDir)}>Retry</button></div>
         ) : subdirs.length === 0 ? (
           <EmptyState compact icon={folderIconUrl('64')} title="No subdirectories" />
         ) : (

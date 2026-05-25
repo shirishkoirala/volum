@@ -12,8 +12,9 @@ import {
   type RootEntry,
 } from '../api/client';
 import { PRESET_COLORS, PRESET_GRADIENTS, type WallpaperConfig } from '../utils/wallpaper';
-import styles from './SettingsPanel.module.css';
 import bStyles from '../components/layout/BreadcrumbBar.module.css';
+import uiStyles from '../components/ui/shared.module.css';
+import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
   onClose: () => void;
@@ -116,7 +117,7 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay', wall
           <div className={`${styles.skeletonBlock} ${styles.short}`} />
         </div>
       ) : !status ? (
-        <p className="muted">Failed to load status. <button type="button" className={styles.retryBtn} onClick={() => window.location.reload()}>Retry</button></p>
+        <p className="muted">Failed to load status. <button type="button" className={`${uiStyles.button} ${uiStyles.linkButton}`} onClick={() => window.location.reload()}>Retry</button></p>
       ) : (
         <>
           {(activeCategory === 'server' || filteredCategories.some((c) => c.id === 'server')) && (
@@ -156,7 +157,15 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay', wall
 
           {(activeCategory === 'storage' || filteredCategories.some((c) => c.id === 'storage')) && (
             <section className={styles.settingsSection}>
-              <h4>Roots{hasUnavailableRoot ? <span className={styles.rootWarningBadge}>⚠ Some unavailable</span> : ''}</h4>
+              <h4>
+                Roots
+                {hasUnavailableRoot ? (
+                  <span className={styles.rootWarningBadge}>
+                    <Icon name="dialog-warning" size={13} />
+                    Some unavailable
+                  </span>
+                ) : null}
+              </h4>
               <div className={styles.settingsRootList}>
                 {status.roots.map((root) => (
                   <div key={root.path} className={`${styles.settingsRootItem}${!root.available ? ` ${styles.rootUnavailable}` : ''}`}>
@@ -238,13 +247,13 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay', wall
               <section className={styles.settingsSection}>
                 <h4>Maintenance</h4>
                 <div className={styles.maintenanceActions}>
-                  <button type="button" className={styles.maintenanceBtn} onClick={handleVacuum} disabled={maintenanceBusy}>
+                  <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={handleVacuum} disabled={maintenanceBusy}>
                     Vacuum DB
                   </button>
-                  <button type="button" className={styles.maintenanceBtn} onClick={handlePruneJobs} disabled={maintenanceBusy}>
+                  <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={handlePruneJobs} disabled={maintenanceBusy}>
                     Prune Old Jobs
                   </button>
-                  <button type="button" className={styles.maintenanceBtn} onClick={handlePruneAuditLogs} disabled={maintenanceBusy}>
+                  <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={handlePruneAuditLogs} disabled={maintenanceBusy}>
                     Prune Audit Logs
                   </button>
                 </div>
@@ -269,7 +278,7 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay', wall
                   <h4>Shares</h4>
                   <p className="muted compact">Manage expiring share links for files and folders.</p>
                   <div className={styles.sharesActions}>
-                    <button type="button" className={styles.maintenanceBtn} onClick={onOpenShares}>
+                    <button type="button" className={`${uiStyles.button} ${uiStyles.compact}`} onClick={onOpenShares}>
                       Manage Shares
                     </button>
                   </div>

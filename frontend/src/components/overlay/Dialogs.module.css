@@ -151,12 +151,12 @@
 
 .primary {
   background: var(--color-brand);
-  color: #ffffff;
+  color: var(--color-on-accent);
 }
 
 .danger {
   background: var(--color-danger);
-  color: #ffffff;
+  color: var(--color-on-accent);
 }
 
 .previewSummary {
@@ -168,7 +168,7 @@
 }
 
 .previewStatWarn {
-  color: #b8860b;
+  color: var(--color-warning-text);
 }
 
 .previewStatDanger {
@@ -213,9 +213,9 @@
 
 .fateNew { background: var(--color-brand-bg); color: var(--color-brand); }
 .fateSkip { background: var(--color-hover); color: var(--color-text-muted); }
-.fateOverwrite { background: #fff3cd; color: #856404; }
-.fateRename { background: #d4edda; color: #155724; }
-.fateCancel { background: #f8d7da; color: #721c24; }
+.fateOverwrite { background: var(--color-warning-bg); color: var(--color-warning-text); }
+.fateRename { background: var(--color-success-bg); color: var(--color-success-text); }
+.fateCancel { background: var(--color-danger-bg); color: var(--color-danger-text); }
 .fateAsk { background: var(--color-hover); color: var(--color-text-muted); }
 
 .previewItemName {

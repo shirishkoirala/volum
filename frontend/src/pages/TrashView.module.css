@@ -207,30 +207,6 @@
   font-size: 11px;
 }
 
-.trashActionBtn {
-  align-items: center;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 12px;
-  gap: 6px;
-  min-height: 34px;
-  padding: 0 12px;
-  transition: border-color var(--transition-fast);
-  width: auto;
-}
-
-.trashActionBtn span {
-  display: inline;
-}
-
-.trashActionBtn:hover {
-  border-color: var(--color-text-muted);
-}
-
 .selectionBar {
   align-items: center;
   background: var(--color-surface);
@@ -249,40 +225,4 @@
 .selectionActions {
   display: flex;
   gap: var(--space-xs);
-}
-
-.selectionActionBtn {
-  background: transparent;
-  border: 0;
-  align-items: center;
-  display: inline-flex;
-  gap: 6px;
-  color: var(--color-text-secondary);
-  border-radius: var(--radius-sm);
-  padding: 4px 8px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.selectionActionBtn:hover {
-  background: var(--color-brand-bg);
-}
-
-.dangerBtn {
-  background: transparent;
-  border: 0;
-  align-items: center;
-  display: inline-flex;
-  gap: 6px;
-  color: var(--color-danger);
-  border-radius: var(--radius-sm);
-  padding: 4px 8px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.dangerBtn:hover {
-  background: var(--color-brand-bg);
 }

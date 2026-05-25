@@ -1,10 +1,11 @@
 import type { FileEntry } from '../../api/client';
 import {
-  Archive, ArrowRight, ArrowUpDown, Bookmark, ChevronRight, CheckSquare,
+  AlertTriangle, Archive, ArrowRight, ArrowUpDown, Bookmark, ChevronRight, CheckSquare,
   Clipboard, Columns3, Copy, Download, Eye, EyeOff, FileInput, Folder,
   FolderPlus, Grid3X3, HelpCircle, Home, Info, ListChecks, ListTree, LogOut,
-  ListX, Moon, Pause, Pencil, Play, RefreshCw, RotateCcw, Scissors, Search,
-  Send, Settings, Square, Sun, Trash2, Upload, X, HardDrive, type LucideIcon,
+  List, ListX, Monitor, Moon, MoreHorizontal, Pause, Pencil, Play, RefreshCw, RotateCcw,
+  Scissors, Search, Send, Settings, Square, Sun, Trash2, Upload, Usb, X, HardDrive,
+  type LucideIcon,
 } from 'lucide-react';
 import { IconImg } from './shared';
 import { fileTypeIconUrl, folderIconUrl, driveIconUrl, trashIconUrl } from '../../api/icons';
@@ -16,6 +17,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'archive-extract': Archive,
   'bookmark-new': Bookmark,
   'dialog-information': Info,
+  'dialog-warning': AlertTriangle,
   'document-import': Upload,
   'document-open': FileInput,
   'edit-copy': Copy,
@@ -31,11 +33,16 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'selection-select-all': CheckSquare,
   'media-playback-pause': Pause,
   'media-playback-start': Play,
+  'media-removable': Usb,
+  monitor: Monitor,
   'process-stop': Square,
   'system-log-out': LogOut,
   'view-grid': Grid3X3,
   'view-hidden': EyeOff,
+  'view-list': List,
+  'view-list-column': Columns3,
   'view-list-tree': ListTree,
+  'view-more': MoreHorizontal,
   'view-preview': Eye,
   'view-refresh': RefreshCw,
   'mail-send': Send,

@@ -12,6 +12,7 @@ import type { FileEntry, SearchResult, BlockDevice } from '../api/client';
 import { formatBytes, formatGridDate } from '../utils/format';
 import { buildColumnPath } from '../utils/path';
 import { cycleViewMode, type ViewMode } from '../utils/view';
+import uiStyles from '../components/ui/shared.module.css';
 import styles from './FilesView.module.css';
 
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
@@ -361,7 +362,7 @@ export function FilesView({
           </div>
         )}
         {!sseConnected && (
-          <div className={styles.sseWarning}>Connection lost &mdash; reconnecting...</div>
+          <div className={`${styles.sseWarning} ${uiStyles.notice} ${uiStyles.warning}`}>Connection lost &mdash; reconnecting...</div>
         )}
 
         {loading ? (

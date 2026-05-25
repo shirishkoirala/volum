@@ -3,6 +3,7 @@ import { Icon } from '../ui/Icon';
 import { Overlay, PanelHeader } from '../ui/shared';
 import { createShare, type Share } from '../../api/client';
 import dStyles from './Dialogs.module.css';
+import uiStyles from '../ui/shared.module.css';
 
 type ShareDialogProps = {
   path: string;
@@ -125,7 +126,7 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
             <div className={dStyles.dialogActions}>
               <button type="button" className={`${dStyles.dialogButton} ${dStyles.secondary}`} onClick={onClose}>Cancel</button>
               <button type="submit" className={`${dStyles.dialogButton} ${dStyles.primary}`} disabled={submitting}>
-                {submitting ? <><Icon name="view-refresh" size={15} /> Creating...</> : 'Create Share Link'}
+                {submitting ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Creating...</> : 'Create Share Link'}
               </button>
             </div>
           </form>

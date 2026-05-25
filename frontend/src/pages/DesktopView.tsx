@@ -8,6 +8,7 @@ import { preferencesIconUrl, jobsIconUrl, driveIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
 import { formatDeviceUsage } from '../utils/format';
 import { cycleViewMode } from '../utils/view';
+import uiStyles from '../components/ui/shared.module.css';
 import styles from './DesktopView.module.css';
 
 type DesktopViewProps = {
@@ -261,11 +262,11 @@ export function DesktopView({
       </header>
       <div className={styles.desktop}>
         {deviceError && (
-          <div className={styles.desktopError}>
+          <div className={`${styles.desktopError} ${uiStyles.notice} ${uiStyles.error}`}>
             <Icon name="dialog-warning" size={18} />
             <span>{deviceError}</span>
             {onRetryDevices && (
-              <button type="button" className={styles.retryBtn} onClick={onRetryDevices}>Retry</button>
+              <button type="button" className={`${uiStyles.button} ${uiStyles.compact} ${uiStyles.danger}`} onClick={onRetryDevices}>Retry</button>
             )}
           </div>
         )}

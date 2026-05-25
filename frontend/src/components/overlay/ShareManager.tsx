@@ -4,6 +4,7 @@ import { Overlay, PanelHeader } from '../ui/shared';
 import { EmptyState } from '../ui/EmptyState';
 import { getShares, deleteShare, type Share } from '../../api/client';
 import dStyles from './Dialogs.module.css';
+import uiStyles from '../ui/shared.module.css';
 import styles from './ShareManager.module.css';
 
 type ShareManagerProps = {
@@ -79,7 +80,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
             ))}
           </div>
         ) : error ? (
-          <p className={dStyles.dialogError}>{error} <button type="button" className={styles.retryBtn} onClick={loadShares}>Retry</button></p>
+          <p className={dStyles.dialogError}>{error} <button type="button" className={`${uiStyles.button} ${uiStyles.linkButton}`} onClick={loadShares}>Retry</button></p>
         ) : shares.length === 0 ? (
           <EmptyState compact title="No shares yet" subtitle="Right-click a file or folder and select Share to create one." />
         ) : (
@@ -103,7 +104,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
                   {share.downloadCount}{share.maxDownloads ? ` / ${share.maxDownloads}` : ''}
                 </span>
                 <span className={styles.shareColEnabled}>
-                  <span className={share.enabled ? styles.statusActive : styles.statusDisabled}>
+                  <span className={`${uiStyles.statusBadge} ${share.enabled ? uiStyles.active : uiStyles.disabled}`}>
                     {share.enabled ? 'Active' : 'Disabled'}
                   </span>
                 </span>

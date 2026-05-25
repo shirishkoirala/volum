@@ -40,7 +40,7 @@
   background: var(--color-brand);
   border: 0;
   border-radius: var(--radius-md);
-  color: #fff;
+  color: var(--color-on-accent);
   cursor: pointer;
   font-size: 15px;
   font-weight: 600;
