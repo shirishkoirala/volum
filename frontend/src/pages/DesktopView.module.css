@@ -80,18 +80,28 @@
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
-  cursor: pointer;
+  cursor: grab;
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: var(--space-lg);
   text-align: center;
   transition: background var(--transition-fast), border-color var(--transition-fast);
+  user-select: none;
 }
 
 .desktopIcon:hover {
   background: var(--color-bg);
   border-color: var(--color-border-light);
+}
+
+.desktopDragging {
+  opacity: 0.4;
+}
+
+.desktopDropTarget {
+  border-color: var(--color-brand);
+  box-shadow: inset 0 0 0 2px var(--color-brand);
 }
 
 .desktopIconLabel {

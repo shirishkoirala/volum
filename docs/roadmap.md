@@ -137,10 +137,10 @@ grid-template-rows: 44px 1fr 28px
 | E.1 | Disk usage analyzer — recursive folder size scanning + tree UI | ✅ Done |
 | E.2 | Bookmarks / pinned paths — sidebar section in FilesSidebar, localStorage | ✅ Done |
 | E.3 | Per-folder view preferences — persist view mode/sort per directory | ✅ Done |
-| E.4 | Dual-pane view — side-by-side browser for copy/move | ⬜ |
+| E.4 | Dual-pane view — side-by-side browser for copy/move | ✅ Done |
 | E.5 | Desktop wallpaper / background customization | ✅ Done |
 | E.6 | App menu bar (File/Edit/View/Go) in TopBar when Files view active | ✅ Done |
-| E.7 | Desktop icon arrangement persistence | ⬜ |
+| E.7 | Desktop icon arrangement persistence | ✅ Done |
 
 ## Execution Order
 
@@ -159,4 +159,4 @@ Batch A (error states) → Batch B (cleanup) → Batch C (a11y)
 | Batch B.0 — Standard EmptyState Component | ✅ Done |
 | Batch C — Accessibility | ✅ 12/12 |
 | Batch D — Inline Styles → CSS | ✅ 11/11 |
-| Batch E — Future Features | ✅ 5/7 |
+| Batch E — Future Features | ✅ 7/7 |
