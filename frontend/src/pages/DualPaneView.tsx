@@ -135,8 +135,6 @@ export function DualPaneView({ roots, canWrite, onCopyJobCreated, onMoveJobCreat
 
   const handleDividerMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    const startX = e.clientX;
-    const startPos = dividerPos;
     const container = containerRef.current;
     if (!container) return;
     const onMove = (ev: globalThis.MouseEvent) => {

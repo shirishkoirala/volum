@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { loadWallpaper, saveWallpaper, wallpaperToStyle, PRESET_COLORS, PRESET_GRADIENTS } from '../utils/wallpaper';
 
 describe('wallpaper utils', () => {

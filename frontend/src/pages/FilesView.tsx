@@ -1,7 +1,6 @@
 import { DragEvent, KeyboardEvent, MouseEvent, RefObject, TouchEvent, useState, useEffect, useCallback } from 'react';
 import { Icon, FileIcon, FolderIcon } from '../components/ui/Icon';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
-import { Select } from '../components/input/Select';
 import { FilesSidebar } from '../components/layout/FilesSidebar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { SortSelect } from '../components/input/SortSelect';
@@ -101,16 +100,16 @@ type FilesViewProps = {
 
 export function FilesView({
   currentPath, breadcrumbs, onNavigate, onGoUp, onRefresh,
-  entries, filteredEntries, selectedPaths,
+  filteredEntries, selectedPaths,
   onSelectEntry, onSelectAll, onInvertSelection,
   viewMode, onSetViewMode, sortField, sortDirection, onSortChange,
-  showHidden, onToggleHidden,
+  onToggleHidden,
   loading, error, sseConnected, onDismissError,
   canWrite, isFavorited, onToggleFavorite,
   theme, onToggleTheme, session, onLogout,
   query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
   searchRef, fileInputRef, onCreateFolder, onUpload,
-  fileClick, contextMenu, onContextMenu,
+  fileClick, onContextMenu,
   draggingUpload,
   onFileAreaDragOver, onFileAreaDragLeave, onFileAreaDrop, onFileAreaMouseDown, onFileAreaKeyDown,
   onFileDragStart, onFolderDragOver, onFolderDragLeave, onDropOnFolder,
@@ -391,7 +390,7 @@ export function FilesView({
           >
             {viewMode === 'columns' ? (
               <div className={styles.columnBrowser}>
-                {buildColumnPath(currentPath).map((col, colIdx) => (
+                {buildColumnPath(currentPath).map((col) => (
                   <div key={col} className={styles.columnPane}>
                     {col === currentPath ? (
                       filteredEntries.map((entry) => (

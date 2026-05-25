@@ -39,7 +39,7 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
       locationInputRef.current.focus();
       locationInputRef.current.select();
     }
-  }, [locationMode]);
+  }, [crumbs, locationMode]);
 
   useEffect(() => {
     if (!showOverflow) return;

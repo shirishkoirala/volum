@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getSession, login, logout, Session } from './api/client';
-import appIcon from './assets/icon-light.png';
+import { getSession, logout, Session } from './api/client';
 import { LoginScreen } from './screens/LoginScreen';
 import { Home } from './screens/Home';
 import styles from './App.module.css';

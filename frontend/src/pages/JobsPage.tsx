@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { Job } from '../api/client';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { Icon } from '../components/ui/Icon';

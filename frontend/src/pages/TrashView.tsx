@@ -5,7 +5,6 @@ import { SortSelect } from '../components/input/SortSelect';
 import { trashIconUrl } from '../api/icons';
 import type { TrashEntry } from '../api/client';
 import { formatBytes, formatGridDate, formatTrashPath } from '../utils/format';
-import { type ViewMode } from '../utils/view';
 import styles from './TrashView.module.css';
 
 type SortField = 'name' | 'size' | 'type' | 'modifiedAt';

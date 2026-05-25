@@ -59,7 +59,7 @@ export function Icon({ name, size = 22, className }: IconProps) {
   return <Lucide aria-hidden="true" size={size} className={`icon-img ${className ?? ''}`} strokeWidth={1.8} />;
 }
 
-export function DeviceIcon({ name, size = 64, className }: { name?: string; size?: number; className?: string }) {
+export function DeviceIcon({ size = 64, className }: { name?: string; size?: number; className?: string }) {
   return <IconImg src={driveIconUrl()} alt="" width={size} height={size} className={className} />;
 }
 

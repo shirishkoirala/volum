@@ -1,8 +1,7 @@
-import { DragEvent, FormEvent, KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Icon } from '../components/ui/Icon';
+import { KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileEntry, Job, SearchResult, BlockDevice, RootEntry, Session, TrashEntry,
-  cancelJob, createArchiveJob, createChecksumJob, createCopyJob, createExtractJob,
+  createArchiveJob, createChecksumJob, createCopyJob, createExtractJob,
   createFolder, createMoveJob, deleteTrash, deletePath, downloadUrl, getDevices,
   getFiles, getJobs, getRoots, getTrash, isAudioExtension, isImageExtension,
   isTextExtension, isVideoExtension, renamePath, searchFiles, restoreTrash,
@@ -19,7 +18,6 @@ import { DiskUsageAnalyzer } from '../components/overlay/DiskUsageAnalyzer';
 import { SettingsPanel } from '../pages/SettingsPanel';
 import { TopBar } from '../components/layout/TopBar';
 import { Dock } from '../components/layout/Dock';
-import { FilesSidebar } from '../components/layout/FilesSidebar';
 import { StatusBar } from '../components/layout/StatusBar';
 import { FilesView } from '../pages/FilesView';
 import { DesktopView } from '../pages/DesktopView';
@@ -31,14 +29,11 @@ import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } fr
 import { ToastViewport, type Toast } from '../components/overlay/Toast';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
-import { Select } from '../components/input/Select';
-import { Overlay } from '../components/ui/shared';
 import { folderIconUrl, preferencesIconUrl, jobsIconUrl, computerIconUrl, trashIconUrl } from '../api/icons';
 import { cycleViewMode, type ViewMode } from '../utils/view';
 import { joinPath, normalizeFolderPath, uniquePaths } from '../utils/path';
 import { loadWallpaper, saveWallpaper, wallpaperToStyle, type WallpaperConfig } from '../utils/wallpaper';
 import { isArchiveFile, archiveBaseName, archiveFileName } from '../utils/archive';
-import { refreshesFiles } from '../utils/jobs';
 import { useJobs } from '../hooks/useJobs';
 import { useDragDrop } from '../hooks/useDragDrop';
 import { useRubberBand } from '../hooks/useRubberBand';
@@ -82,9 +77,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [sortField, setSortField] = useState<SortField>(() => (localStorage.getItem('volum_sortField') as SortField) || 'name');
   const [sortDirection, setSortDirection] = useState<SortDirection>(() => (localStorage.getItem('volum_sortDirection') as SortDirection) || 'asc');
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
-  const [sessionState, setSessionState] = useState<Session | null>(null);
-  const [draggingPaths, _setDraggingPaths] = useState<string[] | null>(null);
-  const [dragOverPath, setDragOverPath] = useState<string | null>(null);
   const [previewEntry, setPreviewEntry] = useState<FileEntry | null>(null);
   const [favorites, setFavorites] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('volum_favorites') ?? '[]'); } catch { return []; }
@@ -106,7 +98,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const renameInputRef = useRef<HTMLInputElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [locationMode, setLocationMode] = useState(false);
-  const [sseConnected, setSseConnected] = useState(true);
+  const sseConnected = true;
   const [showingTrash, setShowingTrash] = useState(false);
   const [showingSettings, setShowingSettings] = useState(false);
   const [showingJobs, setShowingJobs] = useState(false);
@@ -132,8 +124,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const currentPathRef = useRef(currentPath);
   currentPathRef.current = currentPath;
-
-  const currentFolderPrefs = currentPath ? folderPrefs[currentPath] : undefined;
 
   const activeView = useMemo(() => {
     if (showingSettings) return 'settings';
@@ -243,7 +233,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   });
 
   const {
-    handleCancelJob, handleRetryJob, handleRetryItem,
+    handleCancelJob, handleRetryJob,
     handlePauseJob, handleResumeJob, handleClearCompleted, handleClearFailed,
   } = jobHandlers;
 
@@ -830,6 +820,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       if (prefs.sortField) setSortField(prefs.sortField);
       if (prefs.sortDirection) setSortDirection(prefs.sortDirection);
     }
+    // This intentionally applies the persisted preference only on first mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { localStorage.setItem('volum_viewMode', viewMode); }, [viewMode]);
@@ -842,19 +834,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     if (path) {
       setFolderPrefs((prev) => ({ ...prev, [path]: { viewMode, sortField, sortDirection } }));
     }
-  }, [viewMode, sortField, sortDirection]);
+  }, [currentPath, viewMode, sortField, sortDirection]);
   useEffect(() => { localStorage.setItem('volum_folderPrefs', JSON.stringify(folderPrefs)); }, [folderPrefs]);
   useEffect(() => { localStorage.setItem('volum_showHidden', String(showHidden)); }, [showHidden]);
   useEffect(() => { saveWallpaper(wallpaper); }, [wallpaper]);
   useEffect(() => { if (Notification.permission === 'default') void Notification.requestPermission(); }, []);
-
-  // ── Favorites / Quick Access persistence ─────────────────
-
-  const handleBreadcrumbBack = () => {
-    const parts = currentPath.split('/').filter(Boolean);
-    if (parts.length <= 1) setCurrentPath('');
-    else setCurrentPath('/' + parts.slice(0, -1).join('/'));
-  };
 
   // ── Shell JSX ────────────────────────────────────────────
 

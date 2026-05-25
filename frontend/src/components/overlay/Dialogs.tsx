@@ -3,7 +3,6 @@ import { Icon } from '../ui/Icon';
 import { Overlay, PanelHeader } from '../ui/shared';
 import { Select } from '../input/Select';
 import { FolderPicker } from '../input/FolderPicker';
-import { folderIconUrl } from '../../api/icons';
 import type { FileEntry } from '../../api/client';
 import type { ConflictPolicy } from '../../api/client';
 import { getFiles } from '../../api/client';

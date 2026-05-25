@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon, DeviceIcon, TrashIcon } from '../components/ui/Icon';
 import { IconImg } from '../components/ui/shared';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
@@ -6,8 +6,8 @@ import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { preferencesIconUrl, jobsIconUrl, driveIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
-import { formatBytes, formatDeviceUsage } from '../utils/format';
-import { cycleViewMode, type ViewMode } from '../utils/view';
+import { formatDeviceUsage } from '../utils/format';
+import { cycleViewMode } from '../utils/view';
 import styles from './DesktopView.module.css';
 
 type DesktopViewProps = {
@@ -221,7 +221,7 @@ export function DesktopView({
             )
           )}
           {(!d?.partitions?.length) && (
-            <EmptyState icon={driveIconUrl('64')} title="No partitions found" />
+            <EmptyState icon={driveIconUrl()} title="No partitions found" />
           )}
         </div>
       </div>

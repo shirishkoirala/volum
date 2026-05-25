@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
 import { ThemeToggle } from '../ui/ThemeToggle';
-import { LogoutButton } from '../ui/LogoutButton';
 import { AppMenuBar, type AppMenuHandlers } from './AppMenuBar';
 import type { Session } from '../../api/client';
 import appIcon from '../../assets/icon-light.png';

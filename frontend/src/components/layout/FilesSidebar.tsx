@@ -1,7 +1,7 @@
 import { Icon, FolderIcon, DeviceIcon } from '../ui/Icon';
 import { ProgressBar } from '../ui/ProgressBar';
 import type { BlockDevice, FileEntry } from '../../api/client';
-import { formatBytes, formatDeviceUsage } from '../../utils/format';
+import { formatDeviceUsage } from '../../utils/format';
 import styles from './FilesSidebar.module.css';
 
 type FilesSidebarProps = {
