@@ -265,8 +265,10 @@
 
 .fileGrid {
   --grid-min-column: 128px;
+  align-content: start;
   display: grid;
   gap: var(--space-3xl);
+  grid-auto-rows: max-content;
   grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-column), 1fr));
   outline: 0;
   overflow-y: auto;
@@ -284,6 +286,7 @@
   gap: 7px;
   justify-content: flex-start;
   justify-self: center;
+  align-self: start;
   min-height: 158px;
   max-width: 172px;
   padding: var(--space-sm);
