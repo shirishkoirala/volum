@@ -608,7 +608,10 @@ func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, erro
 	}
 	archivePath := dest
 	if _, err := os.Stat(dest); err == nil {
-		archivePath, _ = nextAvailablePath(dest)
+		archivePath, err = nextAvailablePath(dest)
+		if err != nil {
+			return "", err
+		}
 	}
 	if err := os.MkdirAll(filepath.Dir(archivePath), 0o755); err != nil {
 		return "", err

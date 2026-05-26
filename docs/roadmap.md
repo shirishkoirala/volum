@@ -68,12 +68,12 @@
 
 | # | Task | Status |
 |---|---|---|
-| 7.1 | Fix `writeJSON()` swallowing all encoding errors — at minimum log them | |
-| 7.2 | Fix `archivePath, _ = nextAvailablePath(dest)` in worker — error is silently discarded | |
-| 7.3 | Check migration errors properly — only ignore "duplicate column", fail on others | |
-| 7.4 | Wrap `ClearCompleted`/`ClearFailed`/`PruneJobs` in transactions | |
-| 7.5 | Add pagination to `jobs.List()` — replace hardcoded `LIMIT 200` | |
-| 7.6 | Set `SetMaxOpenConns(1)` for SQLite — prevents "database is locked" | |
+| 7.1 | Fix `writeJSON()` swallowing all encoding errors — at minimum log them | ✓ |
+| 7.2 | Fix `archivePath, _ = nextAvailablePath(dest)` in worker — error is silently discarded | ✓ |
+| 7.3 | Check migration errors properly — only ignore "duplicate column", fail on others | ✓ |
+| 7.4 | Wrap `ClearCompleted`/`ClearFailed`/`PruneJobs` in transactions | ✓ |
+| 7.5 | Add pagination to `jobs.List()` — replace hardcoded `LIMIT 200` | ✓ |
+| 7.6 | Set `SetMaxOpenConns(1)` for SQLite — prevents "database is locked" | ✓ |
 
 ## Phase 8 — Testing
 

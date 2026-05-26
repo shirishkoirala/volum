@@ -59,7 +59,7 @@ func (s *Store) Create(ctx context.Context, req CreateRequest) (Job, error) {
 	return job, nil
 }
 
-func (s *Store) List(ctx context.Context) ([]Job, error) {
+func (s *Store) List(ctx context.Context, limit, offset int) ([]Job, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, type, status, source_path, destination_path,
 			total_bytes, processed_bytes, total_items, processed_items,
@@ -68,8 +68,8 @@ func (s *Store) List(ctx context.Context) ([]Job, error) {
 			created_at, updated_at, started_at, completed_at
 		FROM jobs
 		ORDER BY created_at DESC
-		LIMIT 200
-	`)
+		LIMIT ? OFFSET ?
+	`, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -287,38 +287,56 @@ func (s *Store) ResumeJob(ctx context.Context, id string) error {
 }
 
 func (s *Store) ClearCompleted(ctx context.Context) (int64, error) {
-	result, err := s.db.ExecContext(ctx, `
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.ExecContext(ctx, `
 		DELETE FROM job_items WHERE job_id IN (SELECT id FROM jobs WHERE status IN (?, ?))
 	`, StatusCompleted, StatusCancelled)
 	if err != nil {
 		return 0, err
 	}
 	itemsRemoved, _ := result.RowsAffected()
-	result, err = s.db.ExecContext(ctx, `
+	result, err = tx.ExecContext(ctx, `
 		DELETE FROM jobs WHERE status IN (?, ?)
 	`, StatusCompleted, StatusCancelled)
 	if err != nil {
 		return 0, err
 	}
 	jobsRemoved, _ := result.RowsAffected()
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
 	return jobsRemoved + itemsRemoved, nil
 }
 
 func (s *Store) ClearFailed(ctx context.Context) (int64, error) {
-	result, err := s.db.ExecContext(ctx, `
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.ExecContext(ctx, `
 		DELETE FROM job_items WHERE job_id IN (SELECT id FROM jobs WHERE status = ?)
 	`, StatusFailed)
 	if err != nil {
 		return 0, err
 	}
 	itemsRemoved, _ := result.RowsAffected()
-	result, err = s.db.ExecContext(ctx, `
+	result, err = tx.ExecContext(ctx, `
 		DELETE FROM jobs WHERE status = ?
 	`, StatusFailed)
 	if err != nil {
 		return 0, err
 	}
 	jobsRemoved, _ := result.RowsAffected()
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
 	return jobsRemoved + itemsRemoved, nil
 }
 

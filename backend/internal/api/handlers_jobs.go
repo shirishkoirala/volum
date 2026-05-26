@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -12,7 +13,16 @@ import (
 )
 
 func (s *Server) handleJobs(w http.ResponseWriter, r *http.Request) {
-	jobs, err := s.jobs.List(r.Context())
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	if offset < 0 {
+		offset = 0
+	}
+
+	jobs, err := s.jobs.List(r.Context(), limit, offset)
 	if err != nil {
 		writeError(w, err)
 		return
@@ -32,7 +42,7 @@ func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 
 	send := func() bool {
-		jobs, err := s.jobs.List(r.Context())
+		jobs, err := s.jobs.List(r.Context(), 200, 0)
 		if err != nil {
 			_, _ = fmt.Fprintf(w, "event: error\ndata: %q\n\n", err.Error())
 			flusher.Flush()

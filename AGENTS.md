@@ -255,4 +255,13 @@ frontend/src/
 - **6.5** Already done — `ArchiveFormat()` lives in `worker/tar.go`
 - All builds (Go + Docker) verified passing
 
+### Phase 7 — Backend: Error Handling & Quality
+- **7.1** `writeJSON()` now logs encoding errors via `slog.Error`
+- **7.2** `archivePath` error from `nextAvailablePath` is now properly returned instead of discarded
+- **7.3** Migration `ALTER TABLE` errors are now checked — only `"duplicate column"` is silently ignored
+- **7.4** `ClearCompleted`, `ClearFailed`, `PruneJobs` all wrapped in SQL transactions
+- **7.5** `jobs.List()` now accepts `(ctx, limit, offset)` — REST handler parses `?limit=&offset=`, SSE uses defaults (200, 0)
+- **7.6** SQLite connection pool limited to `SetMaxOpenConns(1)` — prevents "database is locked"
+- Docker build + server start verified
+
 

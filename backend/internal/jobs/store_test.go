@@ -53,7 +53,7 @@ func TestListJobs(t *testing.T) {
 	createTestJob(t, store, ctx, TypeCopy)
 	createTestJob(t, store, ctx, TypeArchive)
 
-	jobs, err := store.List(ctx)
+	jobs, err := store.List(ctx, 200, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

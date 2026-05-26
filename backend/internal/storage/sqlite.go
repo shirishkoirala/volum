@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -24,6 +25,8 @@ func Open(path string) (*sql.DB, error) {
 		return nil, err
 	}
 
+	db.SetMaxOpenConns(1)
+
 	if err := migrate(db); err != nil {
 		db.Close()
 		return nil, err
@@ -36,8 +39,12 @@ func migrate(db *sql.DB) error {
 	if _, err := db.Exec(initialSchema); err != nil {
 		return fmt.Errorf("apply initial schema: %w", err)
 	}
-	_, _ = db.Exec(`ALTER TABLE jobs ADD COLUMN scheduled_at DATETIME`)
-	_, _ = db.Exec(`ALTER TABLE jobs ADD COLUMN next_job_id TEXT`)
+	if err := addColumnIfMissing(db, "jobs", "scheduled_at", "DATETIME"); err != nil {
+		return err
+	}
+	if err := addColumnIfMissing(db, "jobs", "next_job_id", "TEXT"); err != nil {
+		return err
+	}
 	_, _ = db.Exec(`
 		CREATE TABLE IF NOT EXISTS shares (
 			id TEXT PRIMARY KEY,
@@ -52,6 +59,14 @@ func migrate(db *sql.DB) error {
 			created_at DATETIME NOT NULL
 		)`)
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_shares_token ON shares(token)`)
+	return nil
+}
+
+func addColumnIfMissing(db *sql.DB, table, column, colType string) error {
+	_, err := db.Exec(fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", table, column, colType))
+	if err != nil && !strings.Contains(err.Error(), "duplicate column") {
+		return err
+	}
 	return nil
 }
 
