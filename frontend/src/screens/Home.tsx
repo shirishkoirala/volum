@@ -860,6 +860,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onNavigateToTrash={handleDesktopNavigateToTrash}
               onOpenSettings={() => { setShowingSettings(true); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); }}
               onOpenJobs={() => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); }}
+              onOpenFiles={() => { setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); handleDockActivate('files'); }}
               onSelectDrive={setSelectedDriveName}
               showingMyPC={showingMyPC}
               onShowMyPC={setShowingMyPC}

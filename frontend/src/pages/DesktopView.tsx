@@ -4,7 +4,7 @@ import { Button, IconImg, Notice } from '../components/ui/shared';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
-import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderBookmarksIconUrl } from '../api/icons';
+import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderIconUrl, folderBookmarksIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
 import { formatBytes, formatDeviceUsage } from '../utils/format';
 import styles from './DesktopView.module.css';
@@ -19,6 +19,7 @@ type DesktopViewProps = {
   onNavigateToTrash: () => void;
   onOpenSettings: () => void;
   onOpenJobs: () => void;
+  onOpenFiles: () => void;
   onSelectDrive: (name: string | null) => void;
   showingMyPC: boolean;
   onShowMyPC: (v: boolean) => void;
@@ -29,7 +30,7 @@ type DesktopViewProps = {
 
 type DesktopIconItem = {
   id: string;
-  type: 'myPC' | 'trash' | 'settings' | 'jobs' | 'folderShortcut';
+  type: 'myPC' | 'trash' | 'settings' | 'jobs' | 'files' | 'folderShortcut';
   label: string;
   subtitle: string;
   ariaLabel: string;
@@ -54,7 +55,7 @@ function saveOrder(ids: string[]) {
 
 export function DesktopView({
   devices, trashEntries, jobs, favorites, selectedDriveName,
-  onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onSelectDrive,
+  onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onSelectDrive,
   showingMyPC, onShowMyPC,
   deviceError, onRetryDevices, wallpaperStyle,
 }: DesktopViewProps) {
@@ -146,6 +147,20 @@ export function DesktopView({
       ),
     });
 
+    items.push({
+      id: 'files',
+      type: 'files',
+      label: 'Files',
+      subtitle: 'Browse file system',
+      ariaLabel: 'Open Files',
+      onClick: onOpenFiles,
+      icon: (
+        <div className={styles.desktopIconWrapper}>
+          <IconImg src={folderIconUrl()} alt="" width={64} height={64} />
+        </div>
+      ),
+    });
+
     for (const path of favorites) {
       const name = path.split('/').filter(Boolean).pop() || path;
       items.push({
@@ -174,7 +189,7 @@ export function DesktopView({
       if (!used.has(item.id)) ordered.push(item);
     }
     return ordered;
-  }, [devices, trashEntries, jobs, favorites, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onNavigateTo]);
+  }, [devices, trashEntries, jobs, favorites, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onNavigateTo]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';
