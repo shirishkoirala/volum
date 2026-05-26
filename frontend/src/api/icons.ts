@@ -11,6 +11,7 @@ import trashIcon64 from '../assets/places/64/user-trash.svg?url';
 import trashFull64 from '../assets/places/64/user-trash-full.svg?url';
 import preferencesIconSvg from '../assets/preferences/22/preferences-system.svg?url';
 import jobIconSvg from '../assets/actions/22/system-run.svg?url';
+import dialogWarningSvg from '../assets/status/22/dialog-warning.svg?url';
 
 import textGeneric22 from '../assets/mimetypes/22/text-x-generic.svg?url';
 import textGeneric64 from '../assets/mimetypes/64/text-x-generic.svg?url';
@@ -108,6 +109,10 @@ export function preferencesIconUrl() {
 
 export function jobsIconUrl() {
   return jobIconSvg;
+}
+
+export function warningIconUrl() {
+  return dialogWarningSvg;
 }
 
 export function emptyIconUrl() {

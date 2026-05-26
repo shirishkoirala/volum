@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Icon, DeviceIcon, TrashIcon } from '../components/ui/Icon';
+import { DeviceIcon, TrashIcon } from '../components/ui/Icon';
 import { Button, IconImg, Notice } from '../components/ui/shared';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
-import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderIconUrl, folderBookmarksIconUrl } from '../api/icons';
+import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderIconUrl, folderBookmarksIconUrl, warningIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
 import { formatBytes, formatDeviceUsage } from '../utils/format';
 import styles from './DesktopView.module.css';
@@ -255,7 +255,7 @@ export function DesktopView({
               </button>
             ) : (
               <div key={part.name} className={`${styles.drivePartitionItem} ${styles.partitionUnmounted}`}>
-                <Icon name="media-removable" size={32} />
+                <IconImg src={driveIconUrl()} alt="" width={32} height={32} />
                 <span className={styles.drivePartitionInfo}>
                   <span>{part.name}</span>
                   <small>{part.size || 'Unknown'}</small>
@@ -283,7 +283,7 @@ export function DesktopView({
         <div className={styles.myPCContent}>
           {deviceError && (
             <Notice variant="error" className={styles.desktopError}>
-              <Icon name="dialog-warning" size={18} />
+              <IconImg src={warningIconUrl()} alt="" width={18} height={18} />
               <span>{deviceError}</span>
               {onRetryDevices && (
                 <Button variant="danger" size="compact" onClick={onRetryDevices}>Retry</Button>
@@ -389,7 +389,7 @@ export function DesktopView({
       <div className={styles.desktop}>
         {deviceError && (
           <Notice variant="error" className={styles.desktopError}>
-            <Icon name="dialog-warning" size={18} />
+            <IconImg src={warningIconUrl()} alt="" width={18} height={18} />
             <span>{deviceError}</span>
             {onRetryDevices && (
               <Button variant="danger" size="compact" onClick={onRetryDevices}>Retry</Button>
