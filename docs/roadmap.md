@@ -1,162 +1,104 @@
-# Volum Desktop Roadmap
+# Volum Desktop — Codebase Refactoring Roadmap
 
-## Architecture
+## Phase 1 — Quick Wins (Safe deletions, small fixes)
 
-```
-grid-template-columns: 56px minmax(0, 1fr)
-grid-template-rows: 44px 1fr 28px
+| # | Task | Status |
+|---|---|---|
+| 1.1 | Delete dead files: `SortSelect.tsx`, `LogoutButton.tsx` | |
+| 1.2 | Delete dead exports: `cycleViewMode()`, `formatTrashPath()` | |
+| 1.3 | Delete dead code: `sseConnected = true` constant in Home.tsx | |
+| 1.4 | Delete dead `migrations/001_init.sql` — out of sync with schema | |
+| 1.5 | Move `typescript` + `@vitejs/plugin-react` from `dependencies` → `devDependencies` | |
+| 1.6 | Add `"typecheck"` script to `package.json` (`tsc --noEmit`) | |
+| 1.7 | Fix `docker-compose.server.yml` — wire all env vars to `.env` instead of hardcoding | |
+| 1.8 | Fix 3 compose files — use shared `.env` reference pattern | |
+| 1.9 | Remove `SelectionToolbar.tsx` and `DualPaneView.tsx` from AGENTS.md | |
 
-┌──────────────────────────────────────────────────┐
-│ Top Bar (44px) [Volum Desktop]        🕐12:34 ⚙ │
-├────┬─────────────────────────────────────────────┤
-│Dock│ Workspace (flex:1)                          │
-│56px│                                             │
-│    │ DesktopView / FilesView / TrashView          │
-│ 🏠 │ SettingsView / JobsPage                     │
-│ 📁 │                                             │
-│ 🗑  │ ContextMenu / Overlays                     │
-│ ⚙  │                                             │
-│ 📊 │                                             │
-├────┴─────────────────────────────────────────────┤
-│ Status Bar (28px) 42 items · 2.4 GB free         │
-└──────────────────────────────────────────────────┘
-```
+## Phase 2 — Type & API Deduplication
 
-## Completed — Desktop Shell Transformation
+| # | Task | Status |
+|---|---|---|
+| 2.1 | Add `isPreviewableFile(name)` to `utils/` — dedup 5 identical checks | |
+| 2.2 | Extract shared types (`SortField`, `SortDirection`, `RenameState`, `ContextMenuState`) to `types/` | |
+| 2.3 | Remove `UploadResponse` alias — reuse `JobsResponse` | |
+| 2.4 | Extract `resetToDesktopView()` helper — dedup 5 identical state-reset blocks in Home.tsx | |
+| 2.5 | Extract `openFileExternally(path)` helper — dedup 5 `window.open(downloadUrl)` calls | |
+| 2.6 | Extract `useLocalStorage<T>(key, defaultValue)` generic hook — replaces 9 manual sync `useEffect` calls | |
 
-### Phase 0: Rename + Prep
-- [x] User-facing "Volum" → "Volum Desktop" (index.html, App.tsx brand/login, README.md, AGENTS.md)
-- [x] Stub components created: TopBar, Dock, DesktopView, FilesSidebar, StatusBar
+## Phase 3 — CSS Cleanup
 
-### Phase 1: Top Bar
-- [x] 44px persistent top bar with brand, clock, theme toggle
-- [x] System menu: theme toggle, keyboard shortcuts, settings, logout
-- [x] Grid layout updated: `grid-template-rows: 44px 1fr`
+| # | Task | Status |
+|---|---|---|
+| 3.1 | Move `@keyframes skeletonPulse` (3 duplicates) and `@keyframes spin` (2 duplicates) to `global.css` | |
+| 3.2 | Audit and remove unused CSS classes across all `.module.css` files | |
+| 3.3 | Consider utility classes for repeated patterns (112 `display:flex`, 87 `border-radius`, etc.) | |
 
-### Phase 2: Dock + Sidebar Split
-- [x] 56px dock rail with 5 items (Desktop/Files/Trash/Jobs/Settings)
-- [x] Active indicator, badge counts, keyboard-accessible buttons
-- [x] FilesSidebar extracted (Places, Removable, Current Folder)
-- [x] Grid: `grid-template-columns: 56px minmax(0, 1fr)`
+## Phase 4 — Custom Hooks Extraction (Home.tsx → 1021 → ~300 lines)
 
-### Phase 3: Extract Views
-- [x] DesktopView — drive icons, trash, settings, jobs desktop icons
-- [x] TrashView — trash item list/grid, bulk restore/delete
-- [x] FilesView — FilesSidebar + file area (BreadcrumbBar, toolbar, file list/grid/columns)
-- [x] `activeView` derived state replaces boolean flags
+| # | Task | Status |
+|---|---|---|
+| 4.1 | Extract `useViewPreferences()` — `viewMode`, `sortField`, `sortDirection`, `showHidden`, `folderPrefs`, `currentPath` + localStorage sync | |
+| 4.2 | Extract `useNavigation()` — `showingTrash`, `showingSettings`, `showingJobs`, `showingMyPC`, `selectedDriveName` | |
+| 4.3 | Extract `useFavorites()` — `favorites` + `addFavorite`/`removeFavorite`/`persistFavorites` + localStorage | |
+| 4.4 | Extract `useWallpaper()` — wallpaper state + localStorage | |
+| 4.5 | Extract `useFileActions()` — preview, info, rename, batch rename, analyze, search, context menu state | |
+| 4.6 | Add `useCallback` to 15 handlers passed as props to children | |
 
-### Phase 4: Settings Reorganization
-- [x] Sidebar nav with 4 categories: Server, Storage, Administration, About
-- [x] Filter/search input to find settings
-- [x] Keyboard navigation (up/down/enter)
+## Phase 5 — Component Decomposition (Monster Files)
 
-### Phase 5: Status Bar
-- [x] 28px footer with item counts, selection info, storage info, current path
-- [x] Per-view visibility (hidden for Settings, Jobs)
+| # | Task | Status |
+|---|---|---|
+| 5.1 | **FilesView** (360 lines, 57 props) — extract sub-components: `FileSearchBar`, `FileGridView`, `FileListView`, `FileColumnView` | |
+| 5.2 | **FileContextMenu** (37 props) — collapse 20 `can*` booleans into single `capabilities` object | |
+| 5.3 | **DesktopView** (421 lines) — extract `DriveCard` component (internal/external are copy-pasted) | |
+| 5.4 | **SettingsPanel** (352 lines) — extract `WallpaperPicker` sub-component, `ServerInfo` sub-component | |
+| 5.5 | Extract `useDialogStack()` — manages `confirmDialog`, `textInputDialog`, `transferDialog`, etc. | |
 
-### Phase 6: Ctrl+L Location Entry
-- [x] BreadcrumbBar location mode with input field
-- [x] Ctrl+L toggles, Enter navigates, Escape cancels
+## Phase 6 — Backend: Split Monolithic Files
 
-## Remaining Backlog
+| # | Task | Status |
+|---|---|---|
+| 6.1 | **`api/server.go`** (1329 lines) → split into `handlers_files.go`, `handlers_jobs.go`, `handlers_shares.go`, `handlers_trash.go`, `handlers_db.go`, `middleware.go` | |
+| 6.2 | **`files/service.go`** (789 lines) → split into `service_list.go`, `service_trash.go`, `service_disk.go` | |
+| 6.3 | **`jobs/store.go`** (770 lines) → split into `store_jobs.go`, `store_items.go`, `store_audit.go`, `store_claiming.go`, `store_maintenance.go` | |
+| 6.4 | **`config/config.go`** — extract mount discovery to `config/mounts.go` | |
+| 6.5 | Move `ArchiveFormat()` from `worker/worker.go` to `worker/format.go` — breaks api→worker import coupling | |
 
-### Batch A — Loading & Error States (11 items)
+## Phase 7 — Backend: Error Handling & Quality
 
-| # | Fix |
-|---|-----|
-| A.1 | Column view loading: skeleton cards |
-| A.2 | Jobs page empty: icon + "No jobs yet" layout |
-| A.3 | Settings loading: skeleton card (already has skeleton block — verify consistency) |
-| A.4 | InfoPanel saving: spinner during chmod submit |
-| A.5 | ShareDialog submit: spinner during "Creating..." |
-| A.6 | BatchRename submit: spinner during "Renaming..." |
-| A.7 | Error banner: add dismiss button |
-| A.8 | ShareManager error: add "Retry" button |
-| A.9 | FolderPicker error: add "Retry" button |
-| A.10 | Settings error: add "Retry" button |
-| A.11 | Desktop error state: add "Retry" when roots/load fails |
+| # | Task | Status |
+|---|---|---|
+| 7.1 | Fix `writeJSON()` swallowing all encoding errors — at minimum log them | |
+| 7.2 | Fix `archivePath, _ = nextAvailablePath(dest)` in worker — error is silently discarded | |
+| 7.3 | Check migration errors properly — only ignore "duplicate column", fail on others | |
+| 7.4 | Wrap `ClearCompleted`/`ClearFailed`/`PruneJobs` in transactions | |
+| 7.5 | Add pagination to `jobs.List()` — replace hardcoded `LIMIT 200` | |
+| 7.6 | Set `SetMaxOpenConns(1)` for SQLite — prevents "database is locked" | |
 
-### Batch B — Edge Cases & Code Cleanup (16 items)
+## Phase 8 — Testing
 
-| # | Fix |
-|---|-----|
-| B.1 | `part.size` null guard — fallback to `'Unknown'` | ✅ |
-| B.2 | `entry.size` null guard in `formatBytes` — avoid NaN | ✅ unified in shared `utils/format.ts` |
-| B.3 | `dev.name` / `dev.model` fallback — "Unknown device" | ✅ |
-| B.4 | Extract `formatBytes` + `formatUptime` to `utils/format.ts` | ✅ (+ `formatGridDate`, `formatTrashPath`, `formatDeviceUsage`) |
-| B.5 | Extract duplicated sort-select JSX to `<SortSelect>` | ✅ |
-| B.6 | Extract duplicated theme toggle to `<ThemeToggle>` | ✅ |
-| B.7 | Extract duplicated logout button to `<LogoutButton>` | ✅ |
-| B.8 | Fix `(document as any).__longPressTimer` → `useRef` | ✅ |
-| B.9 | Rename `.desktopTrashIcon` → `.desktopIconWrapper` (used by both trash and settings) | ✅ |
-| B.10 | Fix "Share" icon: `edit-download` → `mail-send` | ✅ |
-| B.11 | Fix "Clear completed" label when failed/cancelled present | ✅ |
-| B.12 | Fix trash empty `<span>` column — fill or remove | ✅ |
-| B.13 | Fix `buildColumnPath` unused `roots` parameter | ✅ extracted to `utils/path.ts` |
-| B.14 | Fix desktop drive mounted-count computed twice | ✅ |
-| B.15 | Fix BreadcrumbBar drive label IIFE — extract to variable | ✅ |
-| B.16 | Fix `cycleViewMode` nested ternary — extract to function | ✅ extracted to `utils/view.ts` |
+| # | Task | Status |
+|---|---|---|
+| 8.1 | Add tests for `auth` package — login, session verification, HMAC signing | |
+| 8.2 | Add tests for `shares` package — Create, List, GetByToken, Delete | |
+| 8.3 | Add tests for `storage` package — DB open, migration, schema validation | |
+| 8.4 | Add lint + test steps to Dockerfile | |
 
-### Batch C — Accessibility (12 items)
+## Phase 9 — Architecture (Future)
 
-| # | Fix |
-|---|-----|
-| C.1 | Context menu: `role="menu"`, `role="menuitem"`, Escape close, arrow-key nav |
-| C.2 | Hidden file input: `visually-hidden` class not `display: none` |
-| C.3 | Section chevrons: `aria-hidden="true"` |
-| C.4 | Brand button: `aria-label="Go to desktop"` |
-| C.5 | Sort select: wrap in `<label>` or add `aria-label` |
-| C.6 | Search results: `aria-label` on result buttons |
-| C.7 | Favorite remove button: keyboard-accessible (Tab, not hover-only) |
-| C.8 | Desktop icons: `aria-label` concatenating label + details |
-| C.9 | Trash items: keyboard navigation (arrow keys, Enter) |
-| C.10 | Jobs page items: keyboard-navigable list |
-| C.11 | Empty states: `role="status"` / `aria-live="polite"` |
-| C.12 | PDF preview: `target="_blank"` + `rel="noopener noreferrer"` |
+| # | Task | Status |
+|---|---|---|
+| 9.1 | Normalize API routes to RESTful conventions (RPC-style → resource-based) | |
+| 9.2 | Consider OpenAPI/Swagger spec for backend ↔ frontend type sync | |
+| 9.3 | Enable stricter TypeScript options (`noUncheckedIndexedAccess`, `noUnusedLocals`) | |
+| 9.4 | Add shared CSS utility classes to reduce `.module.css` duplication | |
 
-### Batch D — Inline Styles → CSS Modules (11 items)
-
-| # | Fix |
-|---|-----|
-| D.1 | Usage meter bars: CSS custom property `--meter-width` |
-| D.2 | Unmounted partition opacity: CSS class not `style={{ opacity }}` |
-| D.3 | Root warning label: CSS class |
-| D.4 | "Manage Shares" marginTop: CSS class |
-| D.5 | Progress bar width: CSS custom property `--progress` |
-| D.6 | `34px` gap in file grid → `var(--space-3xl)` |
-| D.7 | `128px` column width → CSS variable |
-| D.8 | `.rename-input` global → `.renameInput` CSS module |
-| D.9 | Context menu viewport clamping |
-| D.10 | "No jobs yet" → `.emptyState` CSS class |
-| D.11 | Search debounce: 200ms debounce to `handleGlobalSearch` |
-
-### Batch E — Future Features
-
-| # | Feature | Status |
-|---|---------|--------|
-| E.1 | Disk usage analyzer — recursive folder size scanning + tree UI | ✅ Done |
-| E.2 | Bookmarks / pinned paths — sidebar section in FilesSidebar, localStorage | ✅ Done |
-| E.3 | Per-folder view preferences — persist view mode/sort per directory | ✅ Done |
-| E.4 | Dual-pane view — side-by-side browser for copy/move | ✅ Done |
-| E.5 | Desktop wallpaper / background customization | ✅ Done |
-| E.6 | App menu bar (File/Edit/View/Go) in TopBar when Files view active | ✅ Done |
-| E.7 | Desktop icon arrangement persistence | ✅ Done |
+---
 
 ## Execution Order
 
 ```
-Batch A (error states) → Batch B (cleanup) → Batch C (a11y)
-→ Batch D (CSS) → Batch E (features)
+Phase 1 (Quick Wins) → Phase 2 (Dedup) → Phase 3 (CSS)
+→ Phase 4 (Hooks) → Phase 5 (Components) → Phase 6 (Backend)
+→ Phase 7 (Error Handling) → Phase 8 (Testing) → Phase 9 (Architecture)
 ```
-
-## Tracking
-
-| Batch | Status |
-|-------|--------|
-| Shell Transformation (Phases 0-6) | ✅ Complete |
-| Batch A — Loading & Error States | ✅ 11/11 |
-| Batch B — Edge Cases & Cleanup | ✅ 16/16 |
-| Batch B.0 — Standard EmptyState Component | ✅ Done |
-| Batch C — Accessibility | ✅ 12/12 |
-| Batch D — Inline Styles → CSS | ✅ 11/11 |
-| Batch E — Future Features | ✅ 7/7 |
