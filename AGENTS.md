@@ -59,7 +59,7 @@ frontend/src/
 │   │   └── KeyboardShortcuts.tsx
 │   ├── layout/                      # Shell components
 │   │   ├── TopBar.tsx, Dock.tsx, StatusBar.tsx
-│   │   ├── BreadcrumbBar.tsx, FilesSidebar.tsx
+│   │   ├── BreadcrumbBar.tsx
 │   └── ui/                          # Generic/reusable UI primitives
 │       ├── Icon.tsx, shared.tsx (Overlay, ToolbarButton)
 │       ├── EmptyState.tsx, ProgressBar.tsx
@@ -97,7 +97,7 @@ frontend/src/
 
 - **Views**: `showingTrash`, `showingSettings` flags in Home.tsx toggle workspace content (not overlays for page views)
 - **Overlays**: ShareDialog, ShareManager, InfoPanel, PreviewModal use `return (<>{shell}<Overlay>...</Overlay></>)` pattern
-- **Settings**: renders as a page in the workspace (not overlay) with BreadcrumbBar back navigation
+- **Settings**: renders as a page in the workspace (not overlay)
 - **Share links**: backend CRUD exists; ShareDialog creates; ShareManager lists/revokes
 - **Dialogs**: use `Dialogs.module.css` classes (`dialogButton`, `dialogActions`, etc.)
 - **State naming**: `showingTrash`, `showingSettings` for workspace flags; `settingsOpen` for the settings overlay state (used before page conversion but now replaced by `showingSettings`)

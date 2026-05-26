@@ -7,7 +7,7 @@ Volum Desktop is a self-hosted web file manager for Ubuntu and Docker home serve
 
 ## Features
 
-- **File browsing** — Grid, list, and column (macOS Finder-style) views with sorting, hidden file toggle, favorites, recents, dual-pane mode, per-folder view preferences
+- **File browsing** — Grid, list, and column (macOS Finder-style) views with sorting, hidden file toggle, favorites, recents, per-folder view preferences
 - **File actions** — Create folder, rename, batch rename, copy, move, trash with restore, permanent delete
 - **Background jobs** — Persistent SQLite-backed jobs with real-time SSE progress, cancel, retry (including per-item retry), pause/resume
 - **Upload & download** — Upload with size verification, single-file download, streamed directory zip download
