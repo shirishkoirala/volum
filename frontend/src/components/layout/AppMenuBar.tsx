@@ -28,6 +28,11 @@ export type AppMenuHandlers = {
   onGoSettings: () => void;
   onToggleLocation: () => void;
   canWrite: boolean;
+  selectedCount: number;
+};
+
+type AppMenuBarProps = {
+  handlers: AppMenuHandlers;
 };
 
 type MenuId = 'file' | 'edit' | 'view' | 'go';
@@ -45,10 +50,6 @@ const MENUS: { id: MenuId; label: string }[] = [
   { id: 'view', label: 'View' },
   { id: 'go', label: 'Go' },
 ];
-
-type AppMenuBarProps = {
-  handlers: AppMenuHandlers;
-};
 
 export function AppMenuBar({ handlers }: AppMenuBarProps) {
   const [openMenu, setOpenMenu] = useState<MenuId | null>(null);
@@ -113,24 +114,24 @@ export function AppMenuBar({ handlers }: AppMenuBarProps) {
     setOpenMenu(null);
   };
 
-  const fileItems: MenuItem[] = [
-    { label: 'New Folder', icon: 'folder-new', disabled: !handlers.canWrite, onClick: handlers.onCreateFolder },
-    { label: 'Upload', icon: 'document-import', disabled: !handlers.canWrite, onClick: handlers.onUpload },
-    { label: '---', disabled: true, onClick: () => {} },
-    { label: 'Close', icon: 'window-close', onClick: handlers.onGoDesktop },
-  ];
+   const fileItems: MenuItem[] = [
+     { label: 'New Folder', icon: 'folder-new', disabled: !handlers.canWrite, onClick: handlers.onCreateFolder },
+     { label: 'Upload', icon: 'document-import', disabled: !handlers.canWrite, onClick: handlers.onUpload },
+     { label: '---', disabled: true, onClick: () => {} },
+     { label: 'Close', icon: 'window-close', onClick: handlers.onGoDesktop },
+   ];
 
-  const editItems: MenuItem[] = [
-    { label: 'Cut', icon: 'edit-cut', disabled: !handlers.canWrite, onClick: handlers.onCut },
-    { label: 'Copy', icon: 'edit-copy', onClick: handlers.onCopy },
-    { label: 'Paste', icon: 'edit-paste', disabled: !handlers.canWrite, onClick: handlers.onPaste },
-    { label: '---', disabled: true, onClick: () => {} },
-    { label: 'Select All', icon: 'selection-select-all', onClick: handlers.onSelectAll },
-    { label: 'Invert Selection', icon: 'selection-invert', onClick: handlers.onInvertSelection },
-    { label: '---', disabled: true, onClick: () => {} },
-    { label: 'Rename', icon: 'edit-rename', disabled: !handlers.canWrite, onClick: handlers.onRename },
-    { label: 'Delete', icon: 'edit-delete', disabled: !handlers.canWrite, onClick: handlers.onDelete },
-  ];
+   const editItems: MenuItem[] = [
+     { label: 'Cut', icon: 'edit-cut', disabled: !handlers.canWrite || handlers.selectedCount === 0, onClick: handlers.onCut },
+     { label: 'Copy', icon: 'edit-copy', disabled: handlers.selectedCount === 0, onClick: handlers.onCopy },
+     { label: 'Paste', icon: 'edit-paste', disabled: !handlers.canWrite, onClick: handlers.onPaste },
+     { label: '---', disabled: true, onClick: () => {} },
+     { label: 'Select All', icon: 'selection-select-all', onClick: handlers.onSelectAll },
+     { label: 'Invert Selection', icon: 'selection-invert', onClick: handlers.onInvertSelection },
+     { label: '---', disabled: true, onClick: () => {} },
+     { label: 'Rename', icon: 'edit-rename', disabled: !handlers.canWrite || handlers.selectedCount === 0, onClick: handlers.onRename },
+     { label: 'Delete', icon: 'edit-delete', disabled: !handlers.canWrite || handlers.selectedCount === 0, onClick: handlers.onDelete },
+   ];
 
   const viewItems: MenuItem[] = [
     {

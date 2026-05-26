@@ -29,6 +29,7 @@ const baseHandlers: AppMenuHandlers = {
   onGoSettings: noop,
   onToggleLocation: noop,
   canWrite: true,
+  selectedCount: 0,
 };
 
 describe('AppMenuBar', () => {

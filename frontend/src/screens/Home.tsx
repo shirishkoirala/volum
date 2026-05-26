@@ -798,31 +798,32 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           onLogout={onLogout}
           onOpenShortcuts={() => setShortcutsOpen(true)}
           session={session}
-          menuHandlers={{
-            onCreateFolder: handleCreateFolder,
-            onUpload: () => fileInputRef.current?.click(),
-            onCut: () => setClipboardFromSelection('move'),
-            onCopy: () => setClipboardFromSelection('copy'),
-            onPaste: handlePaste,
-            onSelectAll: handleSelectAll,
-            onInvertSelection: handleInvertSelection,
-            onRename: handleRename,
-            onDelete: handleDelete,
-            viewMode,
-            onSetViewMode: setViewMode,
-            showHidden,
-            onToggleHidden: () => setShowHidden((v) => !v),
-            sortField,
-            sortDirection,
-            onSortChange: (value) => { const [f, d] = value.split(':') as [SortField, SortDirection]; setSortField(f); setSortDirection(d); },
-            onGoDesktop: resetToDesktopView,
-            onGoFiles: () => { setShowingMyPC(false); handleDockActivate('files'); },
-            onGoTrash: () => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setShowingJobs(false); setViewMode((prev) => prev === 'columns' ? 'list' : prev); },
-            onGoJobs: () => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); },
-            onGoSettings: () => { setShowingSettings(true); setShowingTrash(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); },
-            onToggleLocation: () => setLocationMode((v) => !v),
-            canWrite,
-          }}
+           menuHandlers={{
+             onCreateFolder: handleCreateFolder,
+             onUpload: () => fileInputRef.current?.click(),
+             onCut: () => setClipboardFromSelection('move'),
+             onCopy: () => setClipboardFromSelection('copy'),
+             onPaste: handlePaste,
+             onSelectAll: handleSelectAll,
+             onInvertSelection: handleInvertSelection,
+             onRename: handleRename,
+             onDelete: handleDelete,
+             viewMode,
+             onSetViewMode: setViewMode,
+             showHidden,
+             onToggleHidden: () => setShowHidden((v) => !v),
+             sortField,
+             sortDirection,
+             onSortChange: (value) => { const [f, d] = value.split(':') as [SortField, SortDirection]; setSortField(f); setSortDirection(d); },
+             onGoDesktop: resetToDesktopView,
+             onGoFiles: () => { setShowingMyPC(false); handleDockActivate('files'); },
+             onGoTrash: () => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setShowingJobs(false); setViewMode((prev) => prev === 'columns' ? 'list' : prev); },
+             onGoJobs: () => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); },
+             onGoSettings: () => { setShowingSettings(true); setShowingTrash(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); },
+             onToggleLocation: () => setLocationMode((v) => !v),
+             canWrite,
+             selectedCount: showingTrash ? selectedTrashIds.length : selectedPaths.length,
+           }}
         />
         <Dock items={dockItems} onActivate={handleDockActivate} />
 
