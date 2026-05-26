@@ -101,6 +101,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [showingTrash, setShowingTrash] = useState(false);
   const [showingSettings, setShowingSettings] = useState(false);
   const [showingJobs, setShowingJobs] = useState(false);
+  const [showingMyPC, setShowingMyPC] = useState(false);
   const [wallpaper, setWallpaper] = useState<WallpaperConfig>(loadWallpaper);
   const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
@@ -289,6 +290,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setSearchResults(null);
     setQuery('');
     setSelectedDriveName(null);
+    setShowingMyPC(false);
   };
 
   const pushRecent = (path: string) => {
@@ -683,6 +685,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setShowingTrash(true);
     setShowingSettings(false);
     setShowingJobs(false);
+    setShowingMyPC(false);
     setSelectedPaths([]);
     setSelectedDriveName(null);
     if (viewMode === 'columns') viewModeBeforeTrash.current = viewMode;
@@ -691,14 +694,14 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const handleDockActivate = (id: string) => {
     switch (id) {
-      case 'desktop': setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setSelectedDriveName(null); break;
+      case 'desktop': setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); break;
       case 'files':
-        setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setSelectedDriveName(null);
+        setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null);
         if (!currentPath) { const target = favorites.length > 0 ? favorites[0] : roots.find((r) => r.available)?.path; if (target) navigateTo(target); }
         break;
       case 'trash': setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setShowingJobs(false); setViewMode((prev) => prev === 'columns' ? 'list' : prev); break;
-      case 'jobs': setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setSelectedDriveName(null); break;
-      case 'settings': setShowingSettings(true); setShowingTrash(false); setShowingJobs(false); setSelectedDriveName(null); break;
+      case 'jobs': setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); break;
+      case 'settings': setShowingSettings(true); setShowingTrash(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); break;
     }
   };
 
@@ -838,7 +841,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       <main className={styles.appShell}>
         <TopBar
           activeView={activeView}
-          onGoDesktop={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setSelectedDriveName(null); }}
+          onGoDesktop={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); }}
           theme={theme}
           onToggleTheme={onToggleTheme}
           onOpenSettings={() => setShowingSettings(true)}
@@ -862,11 +865,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             sortField,
             sortDirection,
             onSortChange: (value) => { const [f, d] = value.split(':') as [SortField, SortDirection]; setSortField(f); setSortDirection(d); },
-            onGoDesktop: () => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setSelectedDriveName(null); },
-            onGoFiles: () => handleDockActivate('files'),
+            onGoDesktop: () => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); },
+            onGoFiles: () => { setShowingMyPC(false); handleDockActivate('files'); },
             onGoTrash: () => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setShowingJobs(false); setViewMode((prev) => prev === 'columns' ? 'list' : prev); },
-            onGoJobs: () => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setSelectedDriveName(null); },
-            onGoSettings: () => { setShowingSettings(true); setShowingTrash(false); setShowingJobs(false); setSelectedDriveName(null); },
+            onGoJobs: () => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); },
+            onGoSettings: () => { setShowingSettings(true); setShowingTrash(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); },
             onToggleLocation: () => setLocationMode((v) => !v),
             canWrite,
           }}
@@ -880,12 +883,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               selectedDriveName={selectedDriveName}
               onNavigateTo={navigateTo}
               onNavigateToTrash={handleDesktopNavigateToTrash}
-              onOpenSettings={() => { setShowingSettings(true); setShowingTrash(false); setSelectedDriveName(null); }}
-              onOpenJobs={() => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setSelectedDriveName(null); }}
+              onOpenSettings={() => { setShowingSettings(true); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); }}
+              onOpenJobs={() => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); }}
               onSelectDrive={setSelectedDriveName}
-              viewMode={viewMode} onSetViewMode={setViewMode}
-              theme={theme} onToggleTheme={onToggleTheme}
-              session={session} onLogout={onLogout}
+              showingMyPC={showingMyPC}
+              onShowMyPC={setShowingMyPC}
               deviceError={deviceError} onRetryDevices={loadDevices}
               wallpaperStyle={wallpaperToStyle(wallpaper)}
             />

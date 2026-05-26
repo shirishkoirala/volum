@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon, DeviceIcon, TrashIcon } from '../components/ui/Icon';
-import { Button, IconButton, IconImg, Notice } from '../components/ui/shared';
+import { Button, IconImg, Notice } from '../components/ui/shared';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
-import { preferencesIconUrl, jobsIconUrl, driveIconUrl } from '../api/icons';
+import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
-import { formatDeviceUsage } from '../utils/format';
-import { cycleViewMode } from '../utils/view';
+import { formatBytes, formatDeviceUsage } from '../utils/format';
 import styles from './DesktopView.module.css';
 
 type DesktopViewProps = {
@@ -20,12 +19,8 @@ type DesktopViewProps = {
   onOpenSettings: () => void;
   onOpenJobs: () => void;
   onSelectDrive: (name: string | null) => void;
-  viewMode: 'list' | 'grid' | 'columns';
-  onSetViewMode: (mode: 'list' | 'grid' | 'columns') => void;
-  theme: string;
-  onToggleTheme: () => void;
-  session?: { authEnabled: boolean } | null;
-  onLogout: () => void;
+  showingMyPC: boolean;
+  onShowMyPC: (v: boolean) => void;
   deviceError?: string | null;
   onRetryDevices?: () => void;
   wallpaperStyle?: React.CSSProperties;
@@ -33,7 +28,7 @@ type DesktopViewProps = {
 
 type DesktopIconItem = {
   id: string;
-  type: 'drive' | 'trash' | 'settings' | 'jobs';
+  type: 'myPC' | 'trash' | 'settings' | 'jobs';
   label: string;
   subtitle: string;
   ariaLabel: string;
@@ -59,7 +54,7 @@ function saveOrder(ids: string[]) {
 export function DesktopView({
   devices, trashEntries, jobs, selectedDriveName,
   onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onSelectDrive,
-  viewMode, onSetViewMode, theme, onToggleTheme, session, onLogout,
+  showingMyPC, onShowMyPC,
   deviceError, onRetryDevices, wallpaperStyle,
 }: DesktopViewProps) {
   const activeJobCount = jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length;
@@ -71,20 +66,36 @@ export function DesktopView({
     saveOrder(iconOrder);
   }, [iconOrder]);
 
+  const { internalDrives, externalDrives } = useMemo(() => {
+    const internal: BlockDevice[] = [];
+    const external: BlockDevice[] = [];
+    for (const dev of devices) {
+      const t = (dev.transport || '').toLowerCase();
+      if (t === 'usb' || t === 'firewire' || t === 'thunderbolt') {
+        external.push(dev);
+      } else {
+        internal.push(dev);
+      }
+    }
+    return { internalDrives: internal, externalDrives: external };
+  }, [devices]);
+
   const iconItems = useMemo(() => {
     const items: DesktopIconItem[] = [];
 
-    for (const dev of devices) {
-      items.push({
-        id: `drive-${dev.name}`,
-        type: 'drive',
-        label: dev.model || dev.name,
-        subtitle: `${dev.size || ''}${dev.transport ? ` · ${dev.transport.toUpperCase()}` : ''}${dev.rotational ? ' · HDD' : ' · SSD'} · ${(() => { const c = dev.partitions?.filter(p => p.volumPath).length ?? 0; return `${c} volume${c !== 1 ? 's' : ''} mounted`; })()}`,
-        ariaLabel: `Open ${dev.model || dev.name}${dev.size ? `, ${dev.size}` : ''}${dev.transport ? `, ${dev.transport.toUpperCase()}` : ''}${dev.rotational ? ', HDD' : ', SSD'}`,
-        onClick: () => onSelectDrive(dev.name),
-        icon: <DeviceIcon name="drive-harddisk" size={64} />,
-      });
-    }
+    items.push({
+      id: 'myPC',
+      type: 'myPC',
+      label: 'My PC',
+      subtitle: `${devices.length} drive${devices.length === 1 ? '' : 's'}`,
+      ariaLabel: `Show My PC, ${devices.length} drive${devices.length === 1 ? '' : 's'}`,
+      onClick: () => onShowMyPC(true),
+      icon: (
+        <div className={styles.desktopIconWrapper}>
+          <IconImg src={computerIconUrl()} alt="" width={64} height={64} />
+        </div>
+      ),
+    });
 
     items.push({
       id: 'trash',
@@ -145,7 +156,7 @@ export function DesktopView({
       if (!used.has(item.id)) ordered.push(item);
     }
     return ordered;
-  }, [devices, trashEntries, jobs, activeJobCount, iconOrder, onSelectDrive, onNavigateToTrash, onOpenSettings, onOpenJobs]);
+  }, [devices, trashEntries, jobs, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -191,7 +202,7 @@ export function DesktopView({
     return (
       <div className={styles.desktopWrapper} style={wallpaperStyle}>
         <BreadcrumbBar
-          crumbs={[{ label: 'Desktop' }, { label: driveLabel }]}
+          crumbs={[{ label: 'Desktop' }, { label: 'My PC' }, { label: driveLabel }]}
           onBack={() => onSelectDrive(null)}
           onNavigate={() => {}}
         />
@@ -228,37 +239,120 @@ export function DesktopView({
     );
   }
 
-  return (
-    <div className={styles.desktopWrapper} style={wallpaperStyle}>
-      <header className={styles.topbar}>
-        <div className={styles.desktopHeader}>
-          <DeviceIcon name="drive-harddisk" size={22} />
-          <h1>This PC</h1>
-        </div>
-        <div className={styles.toolbar}>
-          <IconButton onClick={() => onSetViewMode(cycleViewMode(viewMode))} title="Change view">
-            {viewMode === 'list' ? (
-              <Icon name="view-grid" size={18} />
-            ) : viewMode === 'grid' ? (
-              <Icon name="view-list-column" size={18} />
-            ) : (
-              <Icon name="view-list-tree" size={18} />
-            )}
-          </IconButton>
-          <IconButton onClick={onToggleTheme} title={theme === 'light' ? 'Dark mode' : 'Light mode'}>
-            {theme === 'light' ? (
-              <Icon name="weather-clear-night" size={18} />
-            ) : (
-              <Icon name="weather-clear" size={18} />
-            )}
-          </IconButton>
-          {session?.authEnabled && (
-            <IconButton onClick={onLogout} title="Log out">
-              <Icon name="system-log-out" size={18} />
-            </IconButton>
+  if (showingMyPC) {
+    return (
+      <div className={styles.desktopWrapper} style={wallpaperStyle}>
+        <BreadcrumbBar
+          crumbs={[{ label: 'Desktop' }, { label: 'My PC' }]}
+          onBack={() => onShowMyPC(false)}
+          onNavigate={() => {}}
+        />
+        <div className={styles.myPCContent}>
+          {deviceError && (
+            <Notice variant="error" className={styles.desktopError}>
+              <Icon name="dialog-warning" size={18} />
+              <span>{deviceError}</span>
+              {onRetryDevices && (
+                <Button variant="danger" size="compact" onClick={onRetryDevices}>Retry</Button>
+              )}
+            </Notice>
+          )}
+          {internalDrives.length > 0 && (
+            <section className={styles.myPCSection}>
+              <h2 className={styles.myPCSectionTitle}>Internal</h2>
+              <div className={styles.myPCDriveGrid}>
+                {internalDrives.map((dev) => {
+                  const mountedParts = dev.partitions?.filter(p => p.totalBytes != null && p.totalBytes > 0) ?? [];
+                  const aggTotal = mountedParts.reduce((sum, p) => sum + (p.totalBytes ?? 0), 0);
+                  const aggUsed = mountedParts.reduce((sum, p) => sum + (p.usedBytes ?? 0), 0);
+                  const aggFree = aggTotal - aggUsed;
+                  return (
+                    <button
+                      key={dev.name}
+                      className={styles.myPCDriveItem}
+                      onClick={() => onSelectDrive(dev.name)}
+                      type="button"
+                    >
+                      <DeviceIcon name="drive-harddisk" size={32} />
+                      <div className={styles.myPCDriveInfo}>
+                        <span>{dev.model || dev.name}</span>
+                        <small>
+                          {dev.size || ''}
+                          {dev.transport ? ` · ${dev.transport.toUpperCase()}` : ''}
+                          {dev.rotational ? ' · HDD' : ' · SSD'}
+                          {(() => {
+                            const c = dev.partitions?.filter(p => p.volumPath).length ?? 0;
+                            return c > 0 ? ` · ${c} volume${c !== 1 ? 's' : ''}` : '';
+                          })()}
+                        </small>
+                        {aggTotal > 0 && (
+                          <>
+                            <small className={styles.myPCUsageText}>
+                              {formatBytes(aggUsed)} used of {formatBytes(aggTotal)} · {formatBytes(aggFree)} free
+                            </small>
+                            <ProgressBar value={(aggUsed / aggTotal) * 100} className={styles.myPCDriveMeter} />
+                          </>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+          {externalDrives.length > 0 && (
+            <section className={styles.myPCSection}>
+              <h2 className={styles.myPCSectionTitle}>External</h2>
+              <div className={styles.myPCDriveGrid}>
+                {externalDrives.map((dev) => {
+                  const mountedParts = dev.partitions?.filter(p => p.totalBytes != null && p.totalBytes > 0) ?? [];
+                  const aggTotal = mountedParts.reduce((sum, p) => sum + (p.totalBytes ?? 0), 0);
+                  const aggUsed = mountedParts.reduce((sum, p) => sum + (p.usedBytes ?? 0), 0);
+                  const aggFree = aggTotal - aggUsed;
+                  return (
+                    <button
+                      key={dev.name}
+                      className={styles.myPCDriveItem}
+                      onClick={() => onSelectDrive(dev.name)}
+                      type="button"
+                    >
+                      <DeviceIcon name="drive-harddisk" size={32} />
+                      <div className={styles.myPCDriveInfo}>
+                        <span>{dev.model || dev.name}</span>
+                        <small>
+                          {dev.size || ''}
+                          {dev.transport ? ` · ${dev.transport.toUpperCase()}` : ''}
+                          {dev.rotational ? ' · HDD' : ' · SSD'}
+                          {(() => {
+                            const c = dev.partitions?.filter(p => p.volumPath).length ?? 0;
+                            return c > 0 ? ` · ${c} volume${c !== 1 ? 's' : ''}` : '';
+                          })()}
+                        </small>
+                        {aggTotal > 0 && (
+                          <>
+                            <small className={styles.myPCUsageText}>
+                              {formatBytes(aggUsed)} used of {formatBytes(aggTotal)} · {formatBytes(aggFree)} free
+                            </small>
+                            <ProgressBar value={(aggUsed / aggTotal) * 100} className={styles.myPCDriveMeter} />
+                          </>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+          {internalDrives.length === 0 && externalDrives.length === 0 && (
+            <EmptyState icon={driveIconUrl()} title="No drives found" />
           )}
         </div>
-      </header>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.desktopWrapper} style={wallpaperStyle}>
       <div className={styles.desktop}>
         {deviceError && (
           <Notice variant="error" className={styles.desktopError}>
