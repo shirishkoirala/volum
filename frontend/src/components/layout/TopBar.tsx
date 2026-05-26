@@ -18,9 +18,10 @@ type TopBarProps = {
   onOpenShortcuts: () => void;
   session: Session | null;
   menuHandlers?: AppMenuHandlers;
+  title?: string;
 };
 
-export function TopBar({ activeView, onGoDesktop, theme, onToggleTheme, onOpenSettings, onLogout, onOpenShortcuts, session, menuHandlers }: TopBarProps) {
+export function TopBar({ activeView, onGoDesktop, theme, onToggleTheme, onOpenSettings, onLogout, onOpenShortcuts, session, menuHandlers, title }: TopBarProps) {
   const [clock, setClock] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
   const [showSystemMenu, setShowSystemMenu] = useState(false);
   const systemMenuRef = useRef<HTMLDivElement>(null);
@@ -55,7 +56,7 @@ export function TopBar({ activeView, onGoDesktop, theme, onToggleTheme, onOpenSe
       <div className={styles.left}>
         <button className={styles.brand} onClick={onGoDesktop} type="button" title="Go to desktop" aria-label="Go to desktop">
           <img className={styles.brandIcon} src={appIcon} alt="" />
-          <span className={styles.brandName}>Volum Desktop</span>
+          <span className={styles.brandName}>{title ?? 'Volum Desktop'}</span>
         </button>
         {activeView === 'files' && menuHandlers && <AppMenuBar handlers={menuHandlers} />}
       </div>

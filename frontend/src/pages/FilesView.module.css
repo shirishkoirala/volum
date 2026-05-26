@@ -14,15 +14,6 @@
   overflow: hidden;
 }
 
-.topbar {
-  align-items: center;
-  display: flex;
-  gap: var(--space-md);
-  justify-content: space-between;
-  margin-bottom: var(--space-xl);
-  min-height: 46px;
-}
-
 .toolbar {
   align-items: center;
   display: flex;
@@ -74,17 +65,6 @@
   outline: 0;
   width: 100%;
   font-size: 13px;
-}
-
-.sortSelect {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  height: 38px;
-  font-size: 13px;
-  max-width: 150px;
-  padding: 0 10px;
 }
 
 .searchClear {
@@ -497,54 +477,6 @@
 .skeletonIcon,
 .skeletonLine {
   animation: skeletonPulse 1.5s ease-in-out infinite;
-}
-
-.sidebarOverlay {
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 280px;
-  z-index: 100;
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border-light);
-  overflow-y: auto;
-  animation: sidebarSlideIn 0.2s ease;
-}
-
-.sidebarOverlayHeader {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-md);
-  border-bottom: 1px solid var(--color-border-light);
-  flex-shrink: 0;
-}
-
-.sidebarOverlayTitle {
-  font-weight: 600;
-  font-size: 13px;
-  color: var(--color-text);
-}
-
-.sidebarBackdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: 99;
-}
-
-@keyframes sidebarSlideIn {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
-}
-
-@media (max-width: 760px) {
-  .sidebarNormal {
-    display: none;
-  }
 }
 
 @keyframes skeletonPulse {

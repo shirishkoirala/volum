@@ -4,7 +4,7 @@ import { Button, IconImg, Notice } from '../components/ui/shared';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
-import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl } from '../api/icons';
+import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderBookmarksIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
 import { formatBytes, formatDeviceUsage } from '../utils/format';
 import styles from './DesktopView.module.css';
@@ -13,6 +13,7 @@ type DesktopViewProps = {
   devices: BlockDevice[];
   trashEntries: TrashEntry[];
   jobs: Job[];
+  favorites: string[];
   selectedDriveName: string | null;
   onNavigateTo: (path: string) => void;
   onNavigateToTrash: () => void;
@@ -28,7 +29,7 @@ type DesktopViewProps = {
 
 type DesktopIconItem = {
   id: string;
-  type: 'myPC' | 'trash' | 'settings' | 'jobs';
+  type: 'myPC' | 'trash' | 'settings' | 'jobs' | 'folderShortcut';
   label: string;
   subtitle: string;
   ariaLabel: string;
@@ -52,7 +53,7 @@ function saveOrder(ids: string[]) {
 }
 
 export function DesktopView({
-  devices, trashEntries, jobs, selectedDriveName,
+  devices, trashEntries, jobs, favorites, selectedDriveName,
   onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onSelectDrive,
   showingMyPC, onShowMyPC,
   deviceError, onRetryDevices, wallpaperStyle,
@@ -145,6 +146,23 @@ export function DesktopView({
       ),
     });
 
+    for (const path of favorites) {
+      const name = path.split('/').filter(Boolean).pop() || path;
+      items.push({
+        id: `fav-${path}`,
+        type: 'folderShortcut',
+        label: name,
+        subtitle: path.length > 30 ? '...' + path.slice(-27) : path,
+        ariaLabel: `Open folder ${name}`,
+        onClick: () => onNavigateTo(path),
+        icon: (
+          <div className={styles.desktopIconWrapper}>
+            <IconImg src={folderBookmarksIconUrl()} alt="" width={64} height={64} />
+          </div>
+        ),
+      });
+    }
+
     const order = iconOrder.filter((id) => items.some((item) => item.id === id));
     const ordered: DesktopIconItem[] = [];
     const used = new Set<string>();
@@ -156,7 +174,7 @@ export function DesktopView({
       if (!used.has(item.id)) ordered.push(item);
     }
     return ordered;
-  }, [devices, trashEntries, jobs, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs]);
+  }, [devices, trashEntries, jobs, favorites, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onNavigateTo]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';

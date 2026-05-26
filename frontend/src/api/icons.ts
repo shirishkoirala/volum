@@ -4,6 +4,7 @@ import folderIcon22 from '../assets/places/22/folder.svg?url';
 import folderIcon64 from '../assets/places/64/folder.svg?url';
 import driveHarddisk64 from '../assets/devices/64/drive-harddisk.svg?url';
 import computerIconSvg from '../assets/devices/22/computer.svg?url';
+import folderBookmarks64 from '../assets/places/64/folder-bookmarks.svg?url';
 import trashIcon22 from '../assets/places/22/user-trash.svg?url';
 import trashFull22 from '../assets/places/22/user-trash-full.svg?url';
 import trashIcon64 from '../assets/places/64/user-trash.svg?url';
@@ -82,6 +83,10 @@ const FOLDER_ICONS: Record<string, string> = {
 
 export function folderIconUrl(size = '22') {
   return FOLDER_ICONS[size] ?? FOLDER_ICONS['64'] ?? folderIcon64;
+}
+
+export function folderBookmarksIconUrl() {
+  return folderBookmarks64;
 }
 
 export function driveIconUrl() {

@@ -1,52 +1,17 @@
-.topbar {
-  align-items: center;
-  display: flex;
-  gap: var(--space-md);
-  justify-content: space-between;
-  margin-bottom: var(--space-xl);
-  min-height: 46px;
-}
-
-.sortSelect {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  height: 38px;
-  font-size: 13px;
-  max-width: 150px;
-  padding: 0 10px;
-}
-
-.fileGrid,
-.fileList {
-  min-height: 0;
-}
-
-.fileList {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-md);
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  outline: 0;
-}
-
-.fileList:focus-visible,
-.fileGrid:focus-visible {
-  outline: 2px solid var(--color-brand);
-  outline-offset: 3px;
-}
-
 .fileGrid {
   --grid-min-column: 128px;
   display: grid;
   flex: 1;
   gap: var(--space-3xl);
   grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-column), 1fr));
+  min-height: 0;
   outline: 0;
   overflow-y: auto;
+}
+
+.fileGrid:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
 }
 
 .fileGrid::-webkit-scrollbar {
@@ -164,65 +129,4 @@
   color: var(--color-text-muted);
   line-height: 1.2;
   text-align: center;
-}
-
-.trashGrid {
-  display: grid;
-  gap: var(--space-sm);
-  flex: 1;
-  overflow-y: auto;
-}
-
-.trashItemRow {
-  align-items: center;
-  display: flex;
-  gap: var(--space-md);
-  min-width: 0;
-}
-
-.trashItemInfo {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.trashItemInfo strong {
-  color: var(--color-text);
-  font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.trashItemInfo span {
-  color: var(--color-text-muted);
-  font-size: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.trashItemInfo small {
-  color: var(--color-text-muted);
-  font-size: 11px;
-}
-
-.selectionBar {
-  align-items: center;
-  background: var(--color-surface);
-  border: 1px solid var(--color-brand);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card-hover);
-  display: flex;
-  font-size: 13px;
-  gap: var(--space-sm);
-  justify-content: space-between;
-  min-height: 44px;
-  padding: 0 var(--space-md);
-  width: 100%;
-}
-
-.selectionActions {
-  display: flex;
-  gap: var(--space-xs);
 }

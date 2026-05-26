@@ -1,5 +1,4 @@
 import type { Job } from '../api/client';
-import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';
@@ -99,7 +98,6 @@ function JobItem({
 
 function renderJobGroup(
   jobs: Job[],
-  jobFilter: string,
   completedCollapsed: boolean,
   setCompletedCollapsed: (v: boolean) => void,
   onCancel: (id: string) => void,
@@ -108,14 +106,8 @@ function renderJobGroup(
   onRetry: (id: string) => void,
 ) {
   const terminal = ['completed', 'failed', 'cancelled'];
-  const filtered = jobFilter === 'all'
-    ? jobs
-    : jobFilter === 'active'
-      ? jobs.filter((j) => isActiveStatus(j.status))
-      : jobs.filter((j) => j.status === jobFilter);
-
-  const active = filtered.filter((j) => isActiveStatus(j.status));
-  const terminalJobs = filtered.filter((j) => terminal.includes(j.status));
+  const active = jobs.filter((j) => isActiveStatus(j.status));
+  const terminalJobs = jobs.filter((j) => terminal.includes(j.status));
 
   return (
     <>
@@ -142,8 +134,6 @@ function renderJobGroup(
 
 type JobsPageProps = {
   jobs: Job[];
-  jobFilter: string;
-  setJobFilter: (f: string) => void;
   completedCollapsed: boolean;
   setCompletedCollapsed: (v: boolean) => void;
   onCancel: (id: string) => void;
@@ -152,7 +142,6 @@ type JobsPageProps = {
   onRetry: (id: string) => void;
   onClearCompleted: () => void;
   onClearFailed: () => void;
-  onClose: () => void;
 };
 
 function handleJobListKeyDown(e: React.KeyboardEvent) {
@@ -170,8 +159,6 @@ function handleJobListKeyDown(e: React.KeyboardEvent) {
 
 export function JobsPage({
   jobs,
-  jobFilter,
-  setJobFilter,
   completedCollapsed,
   setCompletedCollapsed,
   onCancel,
@@ -180,33 +167,16 @@ export function JobsPage({
   onRetry,
   onClearCompleted,
   onClearFailed,
-  onClose,
 }: JobsPageProps) {
   return (
     <>
-      <BreadcrumbBar
-        crumbs={[{ label: 'Desktop' }, { label: 'Jobs' }]}
-        onBack={onClose}
-        onNavigate={() => {}}
-      >
-        {(['all', 'active', 'completed', 'failed'] as const).map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            className={`${styles.filterTab}${jobFilter === tab ? ` ${styles.active}` : ''}`}
-            onClick={() => setJobFilter(tab)}
-          >
-            {tab === 'all' ? 'All' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </BreadcrumbBar>
       <main className={styles.jobsPage}>
         <div className={styles.jobList} onKeyDown={handleJobListKeyDown} role="list">
       {jobs.length === 0 ? (
         <EmptyState icon={jobsIconUrl()} title="No jobs yet" subtitle="File operations like copy, move, and archive will appear here." />
       ) : (
             <>
-              {renderJobGroup(jobs, jobFilter, completedCollapsed, setCompletedCollapsed, onCancel, onPause, onResume, onRetry)}
+              {renderJobGroup(jobs, completedCollapsed, setCompletedCollapsed, onCancel, onPause, onResume, onRetry)}
               {jobs.some((j) => j.status === 'completed' || j.status === 'cancelled') && (
                 <Button size="compact" onClick={onClearCompleted}>
                   Clear completed

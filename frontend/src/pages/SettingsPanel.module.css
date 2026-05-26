@@ -1,45 +1,3 @@
-.settingsPanel {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-menu);
-  display: flex;
-  flex-direction: column;
-  max-height: 80vh;
-  max-width: 720px;
-  width: 100%;
-}
-
-.settingsHeader {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-xl) var(--space-xl) 0;
-}
-
-.settingsHeader h3 {
-  font-size: 16px;
-  margin: 0;
-}
-
-.settingsClose {
-  background: none;
-  border: 0;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  padding: 4px;
-}
-
-.settingsClose:hover {
-  color: var(--color-text);
-}
-
-.settingsBody {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
 .settingsBodyPage {
   display: flex;
   flex: 1;
@@ -370,10 +328,6 @@
 }
 
 @media (max-width: 760px) {
-  .settingsBody {
-    flex-direction: column;
-  }
-
   .settingsBodyPage {
     flex-direction: column;
   }
@@ -399,7 +353,4 @@
     flex-wrap: wrap;
   }
 
-  .settingsPanel {
-    max-width: 100%;
-  }
 }

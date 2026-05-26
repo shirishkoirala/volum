@@ -29,7 +29,7 @@ import { ToastViewport, type Toast } from '../components/overlay/Toast';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
 import { folderIconUrl, preferencesIconUrl, jobsIconUrl, computerIconUrl, trashIconUrl } from '../api/icons';
-import { cycleViewMode, type ViewMode } from '../utils/view';
+import { type ViewMode } from '../utils/view';
 import { joinPath, normalizeFolderPath, uniquePaths } from '../utils/path';
 import { loadWallpaper, saveWallpaper, wallpaperToStyle, type WallpaperConfig } from '../utils/wallpaper';
 import { isArchiveFile, archiveBaseName, archiveFileName } from '../utils/archive';
@@ -59,7 +59,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [jobFilter, setJobFilter] = useState<string>('all');
   const [completedCollapsed, setCompletedCollapsed] = useState(true);
   const [folderPrefs, setFolderPrefs] = useState<Record<string, { viewMode?: ViewMode; sortField?: SortField; sortDirection?: SortDirection }>>(() => {
     try { return JSON.parse(localStorage.getItem('volum_folderPrefs') ?? '{}'); } catch { return {}; }
@@ -79,9 +78,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [previewEntry, setPreviewEntry] = useState<FileEntry | null>(null);
   const [favorites, setFavorites] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('volum_favorites') ?? '[]'); } catch { return []; }
-  });
-  const [recentPaths, setRecentPaths] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('volum_recent') ?? '[]'); } catch { return []; }
   });
   const [analyzePath, setAnalyzePath] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
@@ -108,9 +104,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [lastSelectedTrashId, setLastSelectedTrashId] = useState<string | null>(null);
   const [shareDialogPath, setShareDialogPath] = useState<{ path: string; name: string } | null>(null);
   const [sharesOpen, setSharesOpen] = useState(false);
-  const [sectionCollapsed, setSectionCollapsed] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem('volum_sectionCollapsed') ?? '{}'); } catch { return {}; }
-  });
   const [trashContextMenu, setTrashContextMenu] = useState<{ x: number; y: number; entry: TrashEntry } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileGridRef = useRef<HTMLDivElement>(null);
@@ -123,6 +116,19 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const currentPathRef = useRef(currentPath);
   currentPathRef.current = currentPath;
+
+  const topBarTitle = useMemo(() => {
+    if (showingMyPC && selectedDriveName) {
+      const d = devices.find(dd => dd.name === selectedDriveName);
+      return d?.model || selectedDriveName;
+    }
+    if (showingMyPC) return 'My PC';
+    if (showingTrash) return 'Trash';
+    if (showingSettings) return 'Settings';
+    if (showingJobs) return 'Jobs';
+    if (currentPath) return 'Files';
+    return undefined;
+  }, [showingMyPC, selectedDriveName, devices, showingTrash, showingSettings, showingJobs, currentPath]);
 
   const activeView = useMemo(() => {
     if (showingSettings) return 'settings';
@@ -187,7 +193,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const entriesRef = useRef(entries);
   entriesRef.current = entries;
-  const subdirs = useMemo(() => entries.filter((e) => e.type === 'directory').slice(0, 20), [entries]);
   const pollingPath = useRef<string | null>(null);
 
   useEffect(() => {
@@ -282,7 +287,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       if (prefs.sortField) setSortField(prefs.sortField);
       if (prefs.sortDirection) setSortDirection(prefs.sortDirection);
     }
-    pushRecent(path);
     setCurrentPath(path);
     setShowingJobs(false);
     localStorage.setItem('volum_currentPath', path);
@@ -291,12 +295,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setQuery('');
     setSelectedDriveName(null);
     setShowingMyPC(false);
-  };
-
-  const pushRecent = (path: string) => {
-    const next = [path, ...recentPaths.filter((p) => p !== path)].slice(0, 10);
-    setRecentPaths(next);
-    localStorage.setItem('volum_recent', JSON.stringify(next));
   };
 
   // ── Handlers: Folder / Rename / Delete ───────────────────
@@ -370,28 +368,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       message: `Permanently delete "${entry.name}"? This cannot be undone.`,
       confirmLabel: 'Delete Permanently', danger: true,
       onConfirm: () => { void runAction(async () => { await deleteTrash(entry.id); const r = await getTrash(); setTrashEntries(r.entries ?? []); }, 'Item deleted permanently'); }
-    });
-  };
-
-  const handleBulkRestoreTrash = () => {
-    const ids = [...selectedTrashIds];
-    if (ids.length === 0) return;
-    setConfirmDialog({
-      title: 'Restore Items',
-      message: `Restore ${ids.length} item${ids.length === 1 ? '' : 's'} to their original locations?`,
-      confirmLabel: 'Restore',
-      onConfirm: () => { void runAction(async () => { for (const id of ids) await restoreTrash(id); setSelectedTrashIds([]); const r = await getTrash(); setTrashEntries(r.entries ?? []); }, `${ids.length} item${ids.length === 1 ? '' : 's'} restored`); }
-    });
-  };
-
-  const handleBulkDeleteTrash = () => {
-    const ids = [...selectedTrashIds];
-    if (ids.length === 0) return;
-    setConfirmDialog({
-      title: 'Delete Permanently',
-      message: `Permanently delete ${ids.length} item${ids.length === 1 ? '' : 's'}? This cannot be undone.`,
-      confirmLabel: 'Delete Permanently', danger: true,
-      onConfirm: () => { void runAction(async () => { for (const id of ids) await deleteTrash(id); setSelectedTrashIds([]); const r = await getTrash(); setTrashEntries(r.entries ?? []); }, `${ids.length} item${ids.length === 1 ? '' : 's'} deleted permanently`); }
     });
   };
 
@@ -697,7 +673,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       case 'desktop': setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); break;
       case 'files':
         setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null);
-        if (!currentPath) { const target = favorites.length > 0 ? favorites[0] : roots.find((r) => r.available)?.path; if (target) navigateTo(target); }
+        if (!currentPath) { const target = roots.find((r) => r.available)?.path; if (target) navigateTo(target); }
         break;
       case 'trash': setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setShowingJobs(false); setViewMode((prev) => prev === 'columns' ? 'list' : prev); break;
       case 'jobs': setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); break;
@@ -717,9 +693,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const persistFavorites = (items: string[]) => { setFavorites(items); localStorage.setItem('volum_favorites', JSON.stringify(items)); };
   const addFavorite = (path: string) => { if (!favorites.includes(path)) persistFavorites([...favorites, path]); };
   const removeFavorite = (path: string) => { persistFavorites(favorites.filter((f) => f !== path)); };
-  const toggleSection = (section: string) => {
-    setSectionCollapsed((prev) => { const next = { ...prev, [section]: !prev[section] }; localStorage.setItem('volum_sectionCollapsed', JSON.stringify(next)); return next; });
-  };
 
   // ── Derived values ───────────────────────────────────────
 
@@ -778,8 +751,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const showStatusBar = activeView !== 'settings' && activeView !== 'jobs';
 
   const folderSuggestions = useMemo(
-    () => uniquePaths([currentPath, ...roots.map((r) => r.path), ...devices.flatMap((d) => (d.partitions ?? []).filter((p) => p.volumPath).map((p) => p.volumPath!)), ...favorites, ...recentPaths]),
-    [currentPath, favorites, recentPaths, roots, devices]
+    () => uniquePaths([currentPath, ...roots.map((r) => r.path), ...devices.flatMap((d) => (d.partitions ?? []).filter((p) => p.volumPath).map((p) => p.volumPath!))]),
+    [currentPath, roots, devices]
   );
 
   const breadcrumbs = useMemo(() => {
@@ -841,6 +814,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       <main className={styles.appShell}>
         <TopBar
           activeView={activeView}
+          title={topBarTitle}
           onGoDesktop={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); }}
           theme={theme}
           onToggleTheme={onToggleTheme}
@@ -880,6 +854,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           {activeView === 'desktop' && (
             <DesktopView
               devices={devices} trashEntries={trashEntries} jobs={jobs}
+              favorites={favorites}
               selectedDriveName={selectedDriveName}
               onNavigateTo={navigateTo}
               onNavigateToTrash={handleDesktopNavigateToTrash}
@@ -896,18 +871,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             <TrashView
               trashEntries={trashEntries} selectedTrashIds={selectedTrashIds}
               onSelectTrash={handleSelectTrashItem}
-              onSelectAllTrash={() => { setSelectedTrashIds(trashEntries.map((e) => e.id)); setLastSelectedTrashId(trashEntries.length > 0 ? trashEntries[trashEntries.length - 1].id : null); }}
-              onInvertSelectionTrash={() => { const allIds = trashEntries.map((e) => e.id); setSelectedTrashIds(allIds.filter((id) => !selectedTrashIds.includes(id))); setLastSelectedTrashId(null); }}
-              onClearSelectionTrash={() => setSelectedTrashIds([])}
-              onBulkRestoreTrash={handleBulkRestoreTrash}
-              onBulkDeleteTrash={handleBulkDeleteTrash}
-              onCloseTrash={() => setShowingTrash(false)}
-              onRefreshTrash={() => { getTrash().then((r) => setTrashEntries(r.entries ?? [])); }}
-              viewMode={viewMode}
-              onCycleViewMode={() => setViewMode((prev) => cycleViewMode(prev))}
-              sortField={sortField} sortDirection={sortDirection}
-              onSortChange={(value) => { const [f, d] = value.split(':') as [SortField, SortDirection]; setSortField(f); setSortDirection(d); }}
-              canWrite={canWrite} sortedTrashEntries={sortedTrashEntries}
+              sortedTrashEntries={sortedTrashEntries}
               onTrashContextMenu={handleTrashContextMenu}
             />
           )}
@@ -924,6 +888,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               loading={loading} error={error} sseConnected={sseConnected}
               onDismissError={() => setError(null)}
               canWrite={canWrite} isFavorited={isFavorited}
+              favorites={favorites}
               onToggleFavorite={() => isFavorited ? removeFavorite(currentPath) : addFavorite(currentPath)}
               query={query} searchOpen={searchOpen} searchResults={searchResults}
               onSearch={(q) => { setQuery(q); if (searchTimerRef.current) clearTimeout(searchTimerRef.current); searchTimerRef.current = setTimeout(() => handleGlobalSearch(q), 200); setSearchOpen(true); }}
@@ -962,9 +927,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onEntryTouchStart={handleEntryTouchStart}
               onEntryTouchMove={handleEntryTouchMove}
               onEntryTouchEnd={handleEntryTouchEnd}
-              devices={devices} favorites={favorites} recentPaths={recentPaths}
-              subdirs={subdirs} sectionCollapsed={sectionCollapsed}
-              onToggleSection={toggleSection} onRemoveFavorite={removeFavorite}
               locationMode={locationMode}
               onLocationNavigate={(path: string) => navigateTo(path.startsWith('/') ? path : `/${path}`)}
               onToggleLocationMode={() => setLocationMode((v) => !v)}
@@ -972,18 +934,15 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           )}
           {activeView === 'jobs' && (
             <JobsPage
-              jobs={jobs} jobFilter={jobFilter} setJobFilter={setJobFilter}
+              jobs={jobs}
               completedCollapsed={completedCollapsed} setCompletedCollapsed={setCompletedCollapsed}
               onCancel={handleCancelJob} onPause={handlePauseJob}
               onResume={handleResumeJob} onRetry={handleRetryJob}
               onClearCompleted={handleClearCompleted} onClearFailed={handleClearFailed}
-              onClose={() => setShowingJobs(false)}
             />
           )}
           {activeView === 'settings' && (
             <SettingsPanel
-              variant="page"
-              onClose={() => setShowingSettings(false)}
               onOpenShares={() => { setShowingSettings(false); setSharesOpen(true); }}
               wallpaper={wallpaper}
               onWallpaperChange={setWallpaper}

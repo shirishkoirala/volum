@@ -130,7 +130,7 @@ export function FileContextMenu({
         </button>
       )}
       <button type="button" onClick={() => { onToggleFavorite(); onClose(); }} role="menuitem">
-        <Icon name="bookmark-new" size={16} /> {isFavorited ? 'Unpin from sidebar' : 'Pin to sidebar'}
+        <Icon name="bookmark-new" size={16} /> {isFavorited ? 'Remove from desktop' : 'Add to desktop'}
       </button>
       <button type="button" className={styles.danger} onClick={() => { onDelete(); onClose(); }} disabled={!canWrite || !canDelete} role="menuitem">
         <Icon name="edit-delete" size={16} /> Delete

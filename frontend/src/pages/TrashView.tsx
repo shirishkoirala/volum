@@ -1,118 +1,33 @@
-import { Icon, FolderIcon, FileIcon } from '../components/ui/Icon';
-import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
+import { FolderIcon, FileIcon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
-import { SortSelect } from '../components/input/SortSelect';
 import { trashIconUrl } from '../api/icons';
 import type { TrashEntry } from '../api/client';
-import { formatBytes, formatGridDate, formatTrashPath } from '../utils/format';
-import { Button, IconButton } from '../components/ui/shared';
+import { formatBytes, formatGridDate } from '../utils/format';
 import styles from './TrashView.module.css';
-
-type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
-type SortDirection = 'asc' | 'desc';
 
 type TrashViewProps = {
   trashEntries: TrashEntry[];
   selectedTrashIds: string[];
   onSelectTrash: (entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => void;
-  onSelectAllTrash: () => void;
-  onInvertSelectionTrash: () => void;
-  onClearSelectionTrash: () => void;
-  onBulkRestoreTrash: () => void;
-  onBulkDeleteTrash: () => void;
-  onCloseTrash: () => void;
-  onRefreshTrash: () => void;
-  viewMode: 'list' | 'grid' | 'columns';
-  onCycleViewMode: () => void;
-  sortField: SortField;
-  sortDirection: SortDirection;
-  onSortChange: (value: string) => void;
-  canWrite: boolean;
   sortedTrashEntries: TrashEntry[];
   onTrashContextMenu: (entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => void;
 };
 
 export function TrashView({
   trashEntries, selectedTrashIds,
-  onSelectTrash, onSelectAllTrash, onInvertSelectionTrash, onClearSelectionTrash,
-  onBulkRestoreTrash, onBulkDeleteTrash,
-  onCloseTrash, onRefreshTrash,
-  viewMode, onCycleViewMode,
-  sortField, sortDirection, onSortChange,
-  canWrite,
+  onSelectTrash,
   sortedTrashEntries,
   onTrashContextMenu,
 }: TrashViewProps) {
   return (
     <>
-      {selectedTrashIds.length > 0 ? (
-        <header className={styles.topbar}>
-          <div className={styles.selectionBar}>
-            <span>{selectedTrashIds.length} selected</span>
-            <div className={styles.selectionActions}>
-              {canWrite && (
-                <Button size="compact" onClick={onBulkRestoreTrash}>
-                  <Icon name="edit-restore" size={16} />
-                  Restore
-                </Button>
-              )}
-              {canWrite && (
-                <Button variant="danger" size="compact" onClick={onBulkDeleteTrash}>
-                  <Icon name="edit-delete" size={16} />
-                  Delete
-                </Button>
-              )}
-            </div>
-            <Button size="compact" onClick={onClearSelectionTrash}>
-              Clear
-            </Button>
-          </div>
-        </header>
-      ) : (
-        <BreadcrumbBar
-          crumbs={[{ label: 'Desktop' }, { label: 'Trash' }]}
-          onBack={onCloseTrash}
-          onNavigate={() => {}}
-        >
-          <IconButton
-            disabled={trashEntries.length === 0}
-            onClick={onSelectAllTrash}
-            title="Select all"
-          >
-            <Icon name="selection-select-all" size={18} />
-          </IconButton>
-          <IconButton
-            disabled={trashEntries.length === 0}
-            onClick={onInvertSelectionTrash}
-            title="Invert selection"
-          >
-            <Icon name="selection-invert" size={18} />
-          </IconButton>
-          <SortSelect view="trash" sortField={sortField} sortDirection={sortDirection} onChange={onSortChange} className={styles.sortSelect} />
-          <IconButton
-            onClick={onCycleViewMode}
-            title="Change view"
-          >
-            {viewMode === 'list' ? (
-              <Icon name="view-grid" size={18} />
-            ) : viewMode === 'grid' ? (
-              <Icon name="view-list-column" size={18} />
-            ) : (
-              <Icon name="view-list-tree" size={18} />
-            )}
-          </IconButton>
-          <IconButton onClick={onRefreshTrash} title="Refresh">
-            <Icon name="view-refresh" size={18} />
-          </IconButton>
-        </BreadcrumbBar>
-      )}
       {trashEntries.length === 0 ? (
         <div className={styles.emptyWrapper}>
           <EmptyState icon={trashIconUrl(false, '64')} title="Trash is empty" />
         </div>
       ) : (
         <section
-          className={`${viewMode === 'grid' ? styles.fileGrid : styles.fileList}`}
+          className={styles.fileGrid}
           onContextMenu={(event) => event.preventDefault()}
           tabIndex={-1}
           role="list"
@@ -137,7 +52,7 @@ export function TrashView({
               }
             }
 
-            return viewMode === 'grid' ? (
+            return (
               <div
                 className={`${styles.fileRow}${isSelected ? ` ${styles.selected}` : ''}`}
                 key={entry.id}
@@ -168,39 +83,6 @@ export function TrashView({
                   {formatBytes(entry.size)}
                   <span>{formatGridDate(entry.deletedAt)}</span>
                 </span>
-              </div>
-            ) : (
-              <div
-                className={`${styles.fileRow}${isSelected ? ` ${styles.selected}` : ''}`}
-                key={entry.id}
-                onClick={(event) => onSelectTrash(entry, event)}
-                onContextMenu={(event) => onTrashContextMenu(entry, event)}
-                onKeyDown={handleTrashKeyDown}
-                role="listitem"
-                tabIndex={idx === 0 ? 0 : -1}
-                data-trash-id={entry.id}
-              >
-                {entry.type === 'directory' ? (
-                  <FolderIcon size={28} />
-                ) : (
-                  <FileIcon entry={{
-                    name: entry.name,
-                    type: entry.type,
-                    path: entry.originalPath,
-                    size: entry.size,
-                    modifiedAt: entry.deletedAt,
-                    permissions: '',
-                    owner: '',
-                    group: '',
-                    hidden: false,
-                  }} size={28} />
-                )}
-                <span className={styles.fileName}>{entry.name}</span>
-                <span>{entry.type}</span>
-                <span>{formatBytes(entry.size)}</span>
-                <span>{new Date(entry.deletedAt).toLocaleString()}</span>
-                <span>{formatTrashPath(entry.originalPath)}</span>
-                <span>{entry.id}</span>
               </div>
             );
           })

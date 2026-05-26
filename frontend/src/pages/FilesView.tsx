@@ -1,12 +1,11 @@
-import { DragEvent, KeyboardEvent, MouseEvent, RefObject, TouchEvent, useState, useEffect, useCallback } from 'react';
+import { DragEvent, KeyboardEvent, MouseEvent, RefObject, TouchEvent } from 'react';
 import { Icon, FileIcon, FolderIcon } from '../components/ui/Icon';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
-import { FilesSidebar } from '../components/layout/FilesSidebar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { IconButton, Notice } from '../components/ui/shared';
 import { folderIconUrl } from '../api/icons';
 import { rawUrl, downloadUrl, isImageExtension, isVideoExtension, isAudioExtension, isTextExtension } from '../api/client';
-import type { FileEntry, SearchResult, BlockDevice } from '../api/client';
+import type { FileEntry, SearchResult } from '../api/client';
 import { formatBytes, formatGridDate } from '../utils/format';
 import { buildColumnPath } from '../utils/path';
 import type { ViewMode } from '../utils/view';
@@ -68,14 +67,7 @@ type FilesViewProps = {
   onEntryTouchStart?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
   onEntryTouchMove?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
   onEntryTouchEnd?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
-  // sidebar
-  devices: BlockDevice[];
   favorites: string[];
-  recentPaths: string[];
-  subdirs: FileEntry[];
-  sectionCollapsed: Record<string, boolean>;
-  onToggleSection: (section: string) => void;
-  onRemoveFavorite: (path: string) => void;
   locationMode?: boolean;
   onLocationNavigate?: (path: string) => void;
   onToggleLocationMode?: () => void;
@@ -97,32 +89,9 @@ export function FilesView({
   dragOverPath, renameState, renameInputRef, onSubmitRename, onCancelRename, onRenameChange,
   rubberBandStyle, onPreview,
   fileGridRef, onEntryTouchStart, onEntryTouchMove, onEntryTouchEnd,
-  devices, favorites, recentPaths, subdirs, sectionCollapsed, onToggleSection, onRemoveFavorite,
+  favorites,
   locationMode, onLocationNavigate, onToggleLocationMode,
 }: FilesViewProps) {
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 760);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 760);
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-
-  useEffect(() => {
-    if (!isMobile || !sidebarOpen) return;
-    const handler = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') setSidebarOpen(false);
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [isMobile, sidebarOpen]);
-
-  const handleSidebarNavigate = useCallback((path: string) => {
-    if (isMobile) setSidebarOpen(false);
-    onNavigate(path);
-  }, [isMobile, onNavigate]);
 
   function handleBreadcrumbBack() {
     const parts = currentPath.split('/').filter(Boolean);
@@ -143,57 +112,9 @@ export function FilesView({
 
   return (
     <div className={styles.filesViewContainer}>
-      {isMobile && sidebarOpen && (
-        <div className={styles.sidebarBackdrop} onClick={() => setSidebarOpen(false)} />
-      )}
-      {isMobile && sidebarOpen && (
-        <aside className={styles.sidebarOverlay}>
-          <div className={styles.sidebarOverlayHeader}>
-            <span className={styles.sidebarOverlayTitle}>Places</span>
-            <IconButton
-              onClick={() => setSidebarOpen(false)}
-              title="Close sidebar"
-            >
-              <Icon name="window-close" size={16} />
-            </IconButton>
-          </div>
-          <FilesSidebar
-            devices={devices}
-            favorites={favorites}
-            recentPaths={recentPaths}
-            currentPath={currentPath}
-            subdirs={subdirs}
-            sectionCollapsed={sectionCollapsed}
-            onToggleSection={onToggleSection}
-            onNavigate={handleSidebarNavigate}
-            onRemoveFavorite={onRemoveFavorite}
-          />
-        </aside>
-      )}
-      <div className={styles.sidebarNormal}>
-        <FilesSidebar
-          devices={devices}
-          favorites={favorites}
-          recentPaths={recentPaths}
-          currentPath={currentPath}
-          subdirs={subdirs}
-          sectionCollapsed={sectionCollapsed}
-          onToggleSection={onToggleSection}
-          onNavigate={onNavigate}
-          onRemoveFavorite={onRemoveFavorite}
-        />
-      </div>
       <div className={styles.fileContent}>
         <BreadcrumbBar crumbs={breadcrumbs} onBack={handleBreadcrumbBack} onNavigate={onNavigate} locationMode={locationMode} onLocationNavigate={onLocationNavigate} onToggleLocationMode={onToggleLocationMode}>
           <div className={styles.toolbar}>
-            {isMobile && (
-              <IconButton
-                onClick={() => setSidebarOpen(true)}
-                title="Show sidebar"
-              >
-                <Icon name="view-list" size={18} />
-              </IconButton>
-            )}
             <input
               ref={fileInputRef as React.RefObject<HTMLInputElement>}
               className={styles.hiddenFileInput}
@@ -252,7 +173,7 @@ export function FilesView({
             <IconButton
               active={isFavorited}
               onClick={onToggleFavorite}
-              title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+              title={isFavorited ? 'Remove from desktop' : 'Add to desktop'}
             >
               <Icon name="bookmark-new" size={18} />
             </IconButton>

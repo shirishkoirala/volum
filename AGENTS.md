@@ -5,6 +5,8 @@
 - **Production build**: `docker compose -f docker-compose.server.yml up --build -d`
 - **Frontend dev**: `cd frontend && npm run dev` (port 5174, API on 8090)
 - **TypeScript check**: `cd frontend && npx tsc --noEmit`
+- **Lint**: `cd frontend && npm run lint`
+- **Must lint + type-check after every change before running the server**
 - **Full frontend build**: `cd frontend && npm run build`
 - **Go is NOT installed locally** — always verify backend via Docker build
 
@@ -103,6 +105,18 @@ frontend/src/
 - **CSS Modules**: every component has `*.module.css`, Vite auto-hashes class names. Use `styles.className` (camelCase) in components.
 
 ## Recent Changes (this session)
+
+### Task 9 — Trash & Jobs Header Removal
+- Removed both toolbar headers (selection bar + sort bar) from TrashView — users cannot bulk-restore, bulk-delete, select-all, invert-select, change view mode, sort, or refresh trash
+- Removed filter tabs header from JobsPage — users cannot filter by All/Active/Completed/Failed
+- Removed jobFilter/setJobFilter state from Home.tsx
+- Removed variant system from SettingsPanel entirely (always page, no overlay)
+- Removed BreadcrumbBar from SettingsPanel, TrashView, and JobsPage
+- Removed BreadcrumbBar import and usage from all 3 pages; removed onClose props where applicable
+- Cleaned up TrashView props in Home.tsx (removed 12 unused props)
+- Added proper TrashViewProps type definition
+- Removed orphaned CSS from TrashView.module.css (.topbar, .sortSelect, .selectionBar, .selectionActions, .trashGrid, .trashItemRow, .trashItemInfo, .fileList) and JobsPage.module.css (.filterBar, .filterTab, .filterTab:hover, .filterTab.active)
+- All changes type-checked clean with `npx tsc --noEmit`
 
 ### Task 1 — Admin Share Management UI
 - Created `frontend/src/components/ShareManager.tsx` + `ShareManager.module.css`
@@ -203,6 +217,22 @@ frontend/src/
 - CSS Modules: `styles.className` (camelCase) in components
 
 ## Task History
+
+### Task 10 — Sidebar Removed, Favorites → Desktop Icons
+- Deleted `FilesSidebar.tsx` and `FilesSidebar.module.css`
+- Removed sidebar rendering (overlay + normal) from FilesView.tsx
+- Removed `sidebarOpen`/`isMobile` state, resize/escape listeners, mobile sidebar button
+- Removed sidebar-only props from FilesViewProps: `devices`, `recentPaths`, `subdirs`, `sectionCollapsed`, `onToggleSection`, `onRemoveFavorite`
+- Removed `recentPaths` state, `pushRecent` handler, `sectionCollapsed` state, `subdirs` useMemo from Home.tsx
+- Removed orphaned CSS (`.topbar`, `.sortSelect`, `.sidebarOverlay`, `.sidebarOverlayHeader`, `.sidebarOverlayTitle`, `.sidebarBackdrop`, `.sidebarNormal`) from FilesView.module.css
+- Added `favorites` to DesktopViewProps — favorited folders now appear as desktop icons with folder SVG, drag-reorderable alongside My PC/Trash/Settings/Jobs
+- Kept `favorites` state, `addFavorite`/`removeFavorite`/`persistFavorites` handlers in Home.tsx
+- Kept bookmark toggle button in FilesView toolbar (now says "Add to desktop" / "Remove from desktop")
+- Kept pinBadge indicator on favorited folders in file grid
+- Repurposed FileContextMenu text: "Pin to sidebar" → "Add to desktop", "Unpin from sidebar" → "Remove from desktop"
+- Updated `folderSuggestions` to drop `favorites`/`recentPaths`
+- Updated `handleDockActivate` files fallback to `roots.find` only (no `favorites[0]`)
+- TypeScript + ESLint + Docker build verified
 
 ### E.5 — Desktop Wallpaper
 - Created `frontend/src/utils/wallpaper.ts` — `WallpaperConfig` type, `loadWallpaper`/`saveWallpaper` localStorage helpers, `wallpaperToStyle` CSS conversion, 16 preset colors + 6 gradients

@@ -15,26 +15,6 @@
   gap: var(--space-sm);
 }
 
-.filterTab {
-  background: none;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  font-size: 0.8rem;
-  padding: 4px 10px;
-}
-
-.filterTab:hover {
-  background: var(--color-hover);
-}
-
-.filterTab.active {
-  background: var(--color-brand);
-  border-color: var(--color-brand);
-  color: var(--color-on-accent);
-}
-
 .jobItem {
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);

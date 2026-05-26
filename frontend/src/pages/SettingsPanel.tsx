@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
-import { Button, IconButton, MutedText, Overlay } from '../components/ui/shared';
-import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
+import { Button, MutedText } from '../components/ui/shared';
 import { formatBytes, formatUptime } from '../utils/format';
 import {
   getStatus,
@@ -12,13 +11,10 @@ import {
   type RootEntry,
 } from '../api/client';
 import { PRESET_COLORS, PRESET_GRADIENTS, type WallpaperConfig } from '../utils/wallpaper';
-import bStyles from '../components/layout/BreadcrumbBar.module.css';
 import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
-  onClose: () => void;
   onOpenShares?: () => void;
-  variant?: 'overlay' | 'page';
   wallpaper?: WallpaperConfig;
   onWallpaperChange?: (config: WallpaperConfig) => void;
 };
@@ -33,7 +29,7 @@ const CATEGORIES: { id: CategoryId; label: string; icon: string }[] = [
   { id: 'about', label: 'About', icon: 'help-about' },
 ];
 
-export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay', wallpaper, onWallpaperChange }: SettingsPanelProps) {
+export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: SettingsPanelProps) {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [maintenanceMsg, setMaintenanceMsg] = useState<string | null>(null);
@@ -330,42 +326,13 @@ export function SettingsPanel({ onClose, onOpenShares, variant = 'overlay', wall
     </nav>
   );
 
-  if (variant === 'page') {
-    return (<>
-      <BreadcrumbBar crumbs={[{ label: 'Desktop' }, { label: 'Settings' }]} onBack={onClose} onNavigate={() => {}}>
-        <div className={bStyles.toolbar}>
-          <IconButton onClick={loadStatus} title="Refresh">
-            <Icon name="view-refresh" size={18} />
-          </IconButton>
-        </div>
-      </BreadcrumbBar>
-      <div className={styles.settingsBodyPage}>
-        {sidebarNav}
-        <div className={styles.settingsContent}>
-          {content}
-        </div>
-      </div>
-    </>
-    );
-  }
-
   return (
-    <Overlay onClose={onClose}>
-      <div className={styles.settingsPanel}>
-        <header className={styles.settingsHeader}>
-          <h3>Settings</h3>
-          <button className={styles.settingsClose} onClick={onClose} type="button">
-            <Icon name="window-close" size={18} />
-          </button>
-        </header>
-        <div className={styles.settingsBody}>
-          {sidebarNav}
-          <div className={styles.settingsContent}>
-            {content}
-          </div>
-        </div>
+    <div className={styles.settingsBodyPage}>
+      {sidebarNav}
+      <div className={styles.settingsContent}>
+        {content}
       </div>
-    </Overlay>
+    </div>
   );
 }
 
