@@ -125,13 +125,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const currentPathRef = useRef(currentPath);
   currentPathRef.current = currentPath;
 
-  const dismissToast = (id: number) => setToasts((items) => items.filter((t) => t.id !== id));
-  const showToast = (title: string, variant?: 'success' | 'error', message?: string) => {
+  const dismissToast = useCallback((id: number) => setToasts((items) => items.filter((t) => t.id !== id)), [setToasts]);
+  const showToast = useCallback((title: string, variant?: 'success' | 'error', message?: string) => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
     setToasts((items) => [...items.slice(-3), { title, variant: variant ?? 'success', message, id }]);
     window.setTimeout(() => dismissToast(id), 4000);
-  };
-  const refresh = () => setRefreshKey((v) => v + 1);
+  }, [dismissToast, setToasts]);
+  const refresh = useCallback(() => setRefreshKey((v) => v + 1), []);
 
   // ── Effects ──────────────────────────────────────────────
 
@@ -232,11 +232,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Toast helper ─────────────────────────────────────────
 
-  const showToastObj = (toast: Omit<Toast, 'id'>, timeout = 4000) => {
+  const showToastObj = useCallback((toast: Omit<Toast, 'id'>, timeout = 4000) => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
     setToasts((items) => [...items.slice(-3), { ...toast, id }]);
     window.setTimeout(() => dismissToast(id), timeout);
-  };
+  }, [dismissToast, setToasts]);
 
   const runAction = async (action: () => Promise<unknown>, successTitle?: string) => {
     try {
@@ -295,7 +295,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setRenaming({ path: entry.path, value: entry.name });
   };
 
-  const cancelRename = () => setRenaming(null);
+  const cancelRename = useCallback(() => setRenaming(null), [setRenaming]);
 
   const commitRename = (entry: FileEntry) => {
     if (renaming?.path !== entry.path) return;
@@ -395,7 +395,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setInfoEntry(entry);
   };
 
-  const handleBatchRename = () => setBatchRenameOpen(true);
+  const handleBatchRename = useCallback(() => setBatchRenameOpen(true), [setBatchRenameOpen]);
 
   const handleUploadFiles = (files: FileList | File[]) => {
     if (!canWrite) return;
@@ -612,29 +612,29 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── File area click / workspace click ────────────────────
 
-  const handleFileAreaClick = (event: MouseEvent<HTMLElement>) => {
+  const handleFileAreaClick = useCallback((event: MouseEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return;
     setSelectedPaths([]); setLastSelectedPath(null); setRenaming(null); setContextMenu(null);
-  };
+  }, [setContextMenu, setRenaming]);
 
-  const handleWorkspaceClick = (event: MouseEvent<HTMLElement>) => {
+  const handleWorkspaceClick = useCallback((event: MouseEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return;
     setSelectedPaths([]); setLastSelectedPath(null); setRenaming(null); setContextMenu(null);
-  };
+  }, [setContextMenu, setRenaming]);
 
   // ── Touch handlers (mobile long-press context menu) ──────
 
-  const handleEntryTouchStart = (entry: FileEntry, event: React.TouchEvent<HTMLElement>) => {
+  const handleEntryTouchStart = useCallback((entry: FileEntry, event: React.TouchEvent<HTMLElement>) => {
     const touch = event.touches[0]!;
     longPressEntry.current = { entry, x: touch.clientX, y: touch.clientY };
     longPressTimerRef.current = window.setTimeout(() => {
       const lp = longPressEntry.current;
       if (lp) { setContextMenu({ x: lp.x, y: lp.y, entry: lp.entry }); longPressEntry.current = null; }
     }, 500);
-  };
+  }, [setContextMenu]);
 
-  const handleEntryTouchMove = () => { longPressEntry.current = null; if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; } };
-  const handleEntryTouchEnd = () => { if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; } };
+  const handleEntryTouchMove = useCallback(() => { longPressEntry.current = null; if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; } }, []);
+  const handleEntryTouchEnd = useCallback(() => { if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; } }, []);
 
   // ── Desktop handlers ─────────────────────────────────────
 
@@ -650,7 +650,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setViewMode((prev) => prev === 'columns' ? 'list' : prev);
   };
 
-  const resetToDesktopView = () => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); };
+  const resetToDesktopView = useCallback(() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); }, [setCurrentPath, setSelectedDriveName, setShowingJobs, setShowingMyPC, setShowingSettings, setShowingTrash]);
 
   const handleDockActivate = (id: string) => {
     switch (id) {
@@ -667,10 +667,10 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Search handler ───────────────────────────────────────
 
-  const handleGlobalSearch = (searchQuery: string) => {
+  const handleGlobalSearch = useCallback((searchQuery: string) => {
     if (searchQuery.trim().length < 2) { setSearchResults(null); return; }
     searchFiles(searchQuery.trim(), 20).then((response) => setSearchResults(response.results ?? [])).catch(() => setSearchResults([]));
-  };
+  }, [setSearchResults]);
 
   // ── Derived values ───────────────────────────────────────
 
