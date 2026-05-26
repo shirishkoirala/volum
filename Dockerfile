@@ -3,6 +3,7 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend ./
+RUN npm run test
 RUN npm run build
 
 FROM golang:1.23-alpine AS backend
@@ -12,6 +13,8 @@ COPY backend/go.mod ./
 RUN go mod download
 COPY backend ./
 COPY --from=frontend /app/frontend/dist ./web
+RUN go vet ./...
+RUN go test ./...
 RUN go build \
 	-ldflags="-X github.com/volum-app/volum/backend/internal/version.Version=$(git describe --tags --always 2>/dev/null || echo dev) -X github.com/volum-app/volum/backend/internal/version.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 	-o /out/volum ./cmd/volum
