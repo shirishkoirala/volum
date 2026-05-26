@@ -167,6 +167,10 @@
   font-size: 12px;
 }
 
+.previewStat {
+  font-size: 12px;
+}
+
 .previewStatWarn {
   color: var(--color-warning-text);
 }

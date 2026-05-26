@@ -162,10 +162,6 @@
   color: var(--color-text-muted);
 }
 
-.spin {
-  animation: spin 1s linear infinite;
-}
-
 .iconRotate180 {
   display: inline-flex;
   transform: rotate(180deg);
