@@ -216,6 +216,12 @@ frontend/src/
 - New API endpoints go in `server.go` `routes()`; new job types need registration in `model.go` + `ClaimNext*Job` in `store.go`
 - CSS Modules: `styles.className` (camelCase) in components
 
+## Guiding Principles
+
+- **KISS** — straightforward solutions, no over-engineering
+- **YAGNI** — implement only what's currently needed, no speculative features
+- **SOLID** — single responsibility, open-closed, interface segregation, dependency inversion
+
 ## Task History
 
 ### Task 10 — Sidebar Removed, Favorites → Desktop Icons
