@@ -115,7 +115,7 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
         <p><MutedText>Failed to load status. <Button variant="link" onClick={() => window.location.reload()}>Retry</Button></MutedText></p>
       ) : (
         <>
-          {(activeCategory === 'server' || filteredCategories.some((c) => c.id === 'server')) && (
+          {(!filterQuery.trim() ? activeCategory === 'server' : filteredCategories.some((c) => c.id === 'server')) && (
             <>
               <section className={styles.settingsSection}>
                 <h4>Server</h4>
@@ -150,7 +150,7 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
             </>
           )}
 
-          {(activeCategory === 'storage' || filteredCategories.some((c) => c.id === 'storage')) && (
+          {(!filterQuery.trim() ? activeCategory === 'storage' : filteredCategories.some((c) => c.id === 'storage')) && (
             <section className={styles.settingsSection}>
               <h4>
                 Roots
@@ -180,7 +180,7 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
             </section>
           )}
 
-          {(activeCategory === 'desktop' || filteredCategories.some((c) => c.id === 'desktop')) && wallpaper && onWallpaperChange && (
+          {(!filterQuery.trim() ? activeCategory === 'desktop' : filteredCategories.some((c) => c.id === 'desktop')) && wallpaper && onWallpaperChange && (
             <section className={styles.settingsSection}>
               <h4>Desktop Background</h4>
               <div className={styles.wallpaperOptionRow}>
@@ -237,7 +237,7 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
             </section>
           )}
 
-          {(activeCategory === 'admin' || filteredCategories.some((c) => c.id === 'admin')) && (
+          {(!filterQuery.trim() ? activeCategory === 'admin' : filteredCategories.some((c) => c.id === 'admin')) && (
             <>
               <section className={styles.settingsSection}>
                 <h4>Maintenance</h4>
@@ -282,7 +282,7 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
             </>
           )}
 
-          {(activeCategory === 'about' || filteredCategories.some((c) => c.id === 'about')) && (
+          {(!filterQuery.trim() ? activeCategory === 'about' : filteredCategories.some((c) => c.id === 'about')) && (
             <section className={styles.settingsSection}>
               <h4>About</h4>
               <dl className={styles.settingsDetails}>
