@@ -1,15 +1,13 @@
 import { DragEvent, KeyboardEvent, MouseEvent, RefObject, TouchEvent } from 'react';
-import { Icon, FileIcon, FolderIcon } from '../components/ui/Icon';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
+import { FileColumnView } from '../components/ui/FileColumnView';
+import { FileGridView } from '../components/ui/FileGridView';
+import { FileListView } from '../components/ui/FileListView';
 import { folderIconUrl } from '../api/icons';
-import { rawUrl, isImageExtension } from '../api/client';
 import type { FileEntry, SearchResult } from '../api/client';
-import { formatBytes, formatGridDate } from '../utils/format';
-import { buildColumnPath } from '../utils/path';
 import type { ViewMode } from '../utils/view';
-import { isPreviewableFile, openFileExternally } from '../utils/preview';
 import type { RenameState, ContextMenuState } from '../types';
 import styles from './FilesView.module.css';
 
@@ -104,8 +102,100 @@ export function FilesView({
     onSubmitRename(entry);
   }
 
-  function cancelRename() {
-    onCancelRename();
+  function renderEntries() {
+    if (viewMode === 'columns') {
+      return (
+        <FileColumnView
+          currentPath={currentPath}
+          filteredEntries={filteredEntries}
+          selectedPaths={selectedPaths}
+          onSelectEntry={onSelectEntry}
+          onContextMenu={onContextMenu}
+          onNavigate={onNavigate}
+          onPreview={onPreview}
+          renameState={renameState}
+          draggingUpload={draggingUpload}
+          fileGridRef={fileGridRef}
+          rubberBandStyle={rubberBandStyle}
+          fileClick={fileClick}
+          onFileAreaDragOver={onFileAreaDragOver}
+          onFileAreaDragLeave={onFileAreaDragLeave}
+          onFileAreaDrop={onFileAreaDrop}
+          onFileAreaMouseDown={onFileAreaMouseDown}
+          onFileAreaKeyDown={onFileAreaKeyDown}
+        />
+      );
+    }
+    if (viewMode === 'grid') {
+      return (
+        <FileGridView
+          filteredEntries={filteredEntries}
+          selectedPaths={selectedPaths}
+          onSelectEntry={onSelectEntry}
+          onContextMenu={onContextMenu}
+          canWrite={canWrite}
+          onFileDragStart={onFileDragStart}
+          onFolderDragOver={onFolderDragOver}
+          onFolderDragLeave={onFolderDragLeave}
+          onDropOnFolder={onDropOnFolder}
+          dragOverPath={dragOverPath}
+          favorites={favorites}
+          renameState={renameState}
+          renameInputRef={renameInputRef}
+          onSubmitRename={commitRename}
+          onCancelRename={onCancelRename}
+          onRenameChange={onRenameChange}
+          fileGridRef={fileGridRef}
+          rubberBandStyle={rubberBandStyle}
+          fileClick={fileClick}
+          onFileAreaDragOver={onFileAreaDragOver}
+          onFileAreaDragLeave={onFileAreaDragLeave}
+          onFileAreaDrop={onFileAreaDrop}
+          onFileAreaMouseDown={onFileAreaMouseDown}
+          onFileAreaKeyDown={onFileAreaKeyDown}
+          draggingUpload={draggingUpload}
+          onEntryTouchStart={onEntryTouchStart}
+          onEntryTouchMove={onEntryTouchMove}
+          onEntryTouchEnd={onEntryTouchEnd}
+          onNavigate={onNavigate}
+          onPreview={onPreview}
+        />
+      );
+    }
+    return (
+      <FileListView
+        filteredEntries={filteredEntries}
+        selectedPaths={selectedPaths}
+        onSelectEntry={onSelectEntry}
+        onContextMenu={onContextMenu}
+        canWrite={canWrite}
+        onFileDragStart={onFileDragStart}
+        onFolderDragOver={onFolderDragOver}
+        onFolderDragLeave={onFolderDragLeave}
+        onDropOnFolder={onDropOnFolder}
+        dragOverPath={dragOverPath}
+        favorites={favorites}
+        renameState={renameState}
+        renameInputRef={renameInputRef}
+        onSubmitRename={commitRename}
+        onCancelRename={onCancelRename}
+        onRenameChange={onRenameChange}
+        fileGridRef={fileGridRef}
+        rubberBandStyle={rubberBandStyle}
+        fileClick={fileClick}
+        onFileAreaDragOver={onFileAreaDragOver}
+        onFileAreaDragLeave={onFileAreaDragLeave}
+        onFileAreaDrop={onFileAreaDrop}
+        onFileAreaMouseDown={onFileAreaMouseDown}
+        onFileAreaKeyDown={onFileAreaKeyDown}
+        draggingUpload={draggingUpload}
+        onEntryTouchStart={onEntryTouchStart}
+        onEntryTouchMove={onEntryTouchMove}
+        onEntryTouchEnd={onEntryTouchEnd}
+        onNavigate={onNavigate}
+        onPreview={onPreview}
+      />
+    );
   }
 
   return (
@@ -139,154 +229,7 @@ export function FilesView({
         ) : filteredEntries.length === 0 ? (
           <EmptyState icon={folderIconUrl('64')} title="This folder is empty" subtitle={currentPath} />
         ) : (
-          <section
-            className={`${viewMode === 'grid' ? styles.fileGrid : viewMode === 'columns' ? styles.fileColumns : styles.fileList}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
-            ref={fileGridRef as RefObject<HTMLDivElement>}
-            onDragLeave={onFileAreaDragLeave}
-            onDragOver={onFileAreaDragOver}
-            onDrop={onFileAreaDrop}
-            onClick={fileClick}
-            onMouseDown={onFileAreaMouseDown}
-            onKeyDown={onFileAreaKeyDown}
-            tabIndex={0}
-          >
-            {viewMode === 'columns' ? (
-              <div className={styles.columnBrowser}>
-                {buildColumnPath(currentPath).map((col) => (
-                  <div key={col} className={styles.columnPane}>
-                    {col === currentPath ? (
-                      filteredEntries.map((entry) => (
-                        <div
-                          className={`${styles.columnItem}${selectedPaths.includes(entry.path) ? ` ${styles.selected}` : ''}`}
-                          key={entry.path}
-                          onClick={(event) => onSelectEntry(entry, event)}
-                          onContextMenu={(event) => onContextMenu(entry, event)}
-                          onDoubleClick={() => {
-                            if (renameState) return;
-                            if (entry.type === 'directory') {
-                              onNavigate(entry.path);
-                            } else {
-                              if (isPreviewableFile(entry.name)) {
-                                onPreview(entry);
-                              } else {
-                                openFileExternally(entry.path);
-                              }
-                            }
-                          }}
-                        >
-                          {entry.type === 'directory' ? <FolderIcon size={18} /> : <FileIcon entry={entry} size={18} />}
-                          <span className={styles.columnItemName}>{entry.name}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div
-                        className={styles.columnItem}
-                        onClick={() => onNavigate(col)}
-                      >
-                        <FolderIcon size={18} />
-                        <span className={styles.columnItemName}>{col === '/' ? '/' : col.split('/').pop() || col}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              filteredEntries.map((entry) => {
-                const fileIconSize = viewMode === 'grid' ? 84 : 28;
-                return (
-                  <div
-                    className={`${selectedPaths.includes(entry.path) ? `${styles.fileRow} ${styles.selected}` : styles.fileRow}${dragOverPath === entry.path ? ` ${styles.dragOver}` : ''}`}
-                    key={entry.path}
-                    draggable={canWrite}
-                    onDragStart={(event) => onFileDragStart(event, entry)}
-                    onDragOver={(event) => entry.type === 'directory' ? onFolderDragOver(event, entry.path) : undefined}
-                    onDragLeave={entry.type === 'directory' ? onFolderDragLeave : undefined}
-                    onDrop={(event) => entry.type === 'directory' ? onDropOnFolder(event, entry.path) : undefined}
-                    onClick={(event) => onSelectEntry(entry, event)}
-                    onContextMenu={(event) => onContextMenu(entry, event)}
-                    onTouchStart={onEntryTouchStart ? (event) => onEntryTouchStart(entry, event) : undefined}
-                    onTouchMove={onEntryTouchMove ? (event) => onEntryTouchMove(entry, event) : undefined}
-                    onTouchEnd={onEntryTouchEnd ? (event) => onEntryTouchEnd(entry, event) : undefined}
-                    onDoubleClick={() => {
-                      if (renameState) return;
-                      if (entry.type === 'directory') {
-                        onNavigate(entry.path);
-                        return;
-                      }
-                      if (isPreviewableFile(entry.name)) {
-                        onPreview(entry);
-                      } else {
-                        openFileExternally(entry.path);
-                      }
-                    }}
-                    role="button"
-                  >
-                    {entry.type === 'directory' ? (
-                      <span style={{ position: 'relative', display: 'inline-flex' }}>
-                        <FolderIcon size={fileIconSize} />
-                        {favorites.includes(entry.path) && (
-                          <span className={styles.pinBadge}>
-                            <Icon name="bookmark-new" size={10} />
-                          </span>
-                        )}
-                      </span>
-                    ) : isImageExtension(entry.name.toLowerCase()) ? (
-                      <img
-                        className={styles.fileThumb}
-                        src={rawUrl(entry.path)}
-                        alt={entry.name}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <FileIcon entry={entry} size={fileIconSize} />
-                    )}
-                    {renameState?.path === entry.path ? (
-                      <input
-                        ref={renameInputRef as React.RefObject<HTMLInputElement>}
-                        className={styles.renameInput}
-                        value={renameState.value}
-                        onBlur={() => commitRename(entry)}
-                        onChange={(event) => onRenameChange(event.target.value)}
-                        onClick={(event) => event.stopPropagation()}
-                        onContextMenu={(event) => event.stopPropagation()}
-                        onDoubleClick={(event) => event.stopPropagation()}
-                        onKeyDown={(event) => {
-                          event.stopPropagation();
-                          if (event.key === 'Enter') {
-                            event.preventDefault();
-                            commitRename(entry);
-                          }
-                          if (event.key === 'Escape') {
-                            event.preventDefault();
-                            cancelRename();
-                          }
-                        }}
-                      />
-                    ) : (
-                      <span className={styles.fileName}>{entry.name}</span>
-                    )}
-                    {viewMode === 'grid' && (
-                      <span className={styles.fileMeta}>
-                        {formatBytes(entry.size)}
-                        <span>{formatGridDate(entry.modifiedAt)}</span>
-                      </span>
-                    )}
-                    {viewMode === 'list' && (
-                      <>
-                        <span>{entry.type}</span>
-                        <span>{formatBytes(entry.size)}</span>
-                        <span>{new Date(entry.modifiedAt).toLocaleString()}</span>
-                        <span>{entry.permissions}</span>
-                        <span>{entry.owner}</span>
-                        <span>{entry.group}</span>
-                      </>
-                    )}
-                  </div>
-                );
-              })
-            )}
-            {rubberBandStyle && <div className={styles.rubberBand} style={rubberBandStyle} />}
-          </section>
+          renderEntries()
         )}
       </div>
     </div>

@@ -1,0 +1,40 @@
+.fileGrid {
+  --grid-column: 124px;
+  align-content: start;
+  display: grid;
+  gap: 22px 28px;
+  grid-auto-rows: max-content;
+  grid-template-columns: repeat(auto-fill, var(--grid-column));
+  justify-content: start;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  outline: 0;
+  padding: 2px 4px 24px;
+}
+
+.fileGrid:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+}
+
+.fileGrid.dragOver {
+  border-color: var(--color-brand);
+  box-shadow: inset 0 0 0 2px var(--color-brand);
+}
+
+.gridItem {
+  justify-self: center;
+  align-self: start;
+  max-width: var(--grid-column);
+}
+
+.rubberBand {
+  background: var(--color-brand-bg);
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-sm);
+  opacity: 0.3;
+  pointer-events: none;
+  position: absolute;
+  z-index: 10;
+}
