@@ -4,9 +4,10 @@ import { Button, IconImg, Notice } from '../components/ui/shared';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
+import { DriveSection } from '../components/ui/DriveSection';
 import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderIconUrl, folderBookmarksIconUrl, warningIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
-import { formatBytes, formatDeviceUsage } from '../utils/format';
+import { formatDeviceUsage } from '../utils/format';
 import styles from './DesktopView.module.css';
 
 type DesktopViewProps = {
@@ -290,92 +291,8 @@ export function DesktopView({
               )}
             </Notice>
           )}
-          {internalDrives.length > 0 && (
-            <section className={styles.myPCSection}>
-              <h2 className={styles.myPCSectionTitle}>Internal</h2>
-              <div className={styles.myPCDriveGrid}>
-                {internalDrives.map((dev) => {
-                  const mountedParts = dev.partitions?.filter(p => p.totalBytes != null && p.totalBytes > 0) ?? [];
-                  const aggTotal = mountedParts.reduce((sum, p) => sum + (p.totalBytes ?? 0), 0);
-                  const aggUsed = mountedParts.reduce((sum, p) => sum + (p.usedBytes ?? 0), 0);
-                  const aggFree = aggTotal - aggUsed;
-                  return (
-                    <button
-                      key={dev.name}
-                      className={styles.myPCDriveItem}
-                      onClick={() => onSelectDrive(dev.name)}
-                      type="button"
-                    >
-                      <DeviceIcon name="drive-harddisk" size={32} />
-                      <div className={styles.myPCDriveInfo}>
-                        <span>{dev.model || dev.name}</span>
-                        <small>
-                          {dev.size || ''}
-                          {dev.transport ? ` · ${dev.transport.toUpperCase()}` : ''}
-                          {dev.rotational ? ' · HDD' : ' · SSD'}
-                          {(() => {
-                            const c = dev.partitions?.filter(p => p.volumPath).length ?? 0;
-                            return c > 0 ? ` · ${c} volume${c !== 1 ? 's' : ''}` : '';
-                          })()}
-                        </small>
-                        {aggTotal > 0 && (
-                          <>
-                            <small className={styles.myPCUsageText}>
-                              {formatBytes(aggUsed)} used of {formatBytes(aggTotal)} · {formatBytes(aggFree)} free
-                            </small>
-                            <ProgressBar value={(aggUsed / aggTotal) * 100} className={styles.myPCDriveMeter} />
-                          </>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-          {externalDrives.length > 0 && (
-            <section className={styles.myPCSection}>
-              <h2 className={styles.myPCSectionTitle}>External</h2>
-              <div className={styles.myPCDriveGrid}>
-                {externalDrives.map((dev) => {
-                  const mountedParts = dev.partitions?.filter(p => p.totalBytes != null && p.totalBytes > 0) ?? [];
-                  const aggTotal = mountedParts.reduce((sum, p) => sum + (p.totalBytes ?? 0), 0);
-                  const aggUsed = mountedParts.reduce((sum, p) => sum + (p.usedBytes ?? 0), 0);
-                  const aggFree = aggTotal - aggUsed;
-                  return (
-                    <button
-                      key={dev.name}
-                      className={styles.myPCDriveItem}
-                      onClick={() => onSelectDrive(dev.name)}
-                      type="button"
-                    >
-                      <DeviceIcon name="drive-harddisk" size={32} />
-                      <div className={styles.myPCDriveInfo}>
-                        <span>{dev.model || dev.name}</span>
-                        <small>
-                          {dev.size || ''}
-                          {dev.transport ? ` · ${dev.transport.toUpperCase()}` : ''}
-                          {dev.rotational ? ' · HDD' : ' · SSD'}
-                          {(() => {
-                            const c = dev.partitions?.filter(p => p.volumPath).length ?? 0;
-                            return c > 0 ? ` · ${c} volume${c !== 1 ? 's' : ''}` : '';
-                          })()}
-                        </small>
-                        {aggTotal > 0 && (
-                          <>
-                            <small className={styles.myPCUsageText}>
-                              {formatBytes(aggUsed)} used of {formatBytes(aggTotal)} · {formatBytes(aggFree)} free
-                            </small>
-                            <ProgressBar value={(aggUsed / aggTotal) * 100} className={styles.myPCDriveMeter} />
-                          </>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          )}
+          <DriveSection title="Internal" drives={internalDrives} onSelectDrive={onSelectDrive} />
+          <DriveSection title="External" drives={externalDrives} onSelectDrive={onSelectDrive} />
           {internalDrives.length === 0 && externalDrives.length === 0 && (
             <EmptyState icon={driveIconUrl()} title="No drives found" />
           )}

@@ -2,9 +2,8 @@ import { useEffect, useRef } from 'react';
 import { Icon } from '../ui/Icon';
 import styles from './ContextMenu.module.css';
 
-interface FileContextMenuProps {
-  x: number;
-  y: number;
+export type MenuCapabilities = {
+  canWrite: boolean;
   canPreview: boolean;
   canInfo: boolean;
   canDownload: boolean;
@@ -16,8 +15,13 @@ interface FileContextMenuProps {
   canMove: boolean;
   canPaste: boolean;
   canDelete: boolean;
-  canWrite: boolean;
   canAnalyze: boolean;
+};
+
+interface FileContextMenuProps {
+  x: number;
+  y: number;
+  caps: MenuCapabilities;
   isFavorited: boolean;
   selectedCount: number;
   onPreview: () => void;
@@ -40,11 +44,11 @@ interface FileContextMenuProps {
 }
 
 export function FileContextMenu({
-  x, y, canPreview, canInfo, canDownload, canRename, canArchive, canExtract,
-  canChecksum, canCopy, canMove, canPaste, canDelete, canWrite, canAnalyze, isFavorited, selectedCount,
+  x, y, caps, isFavorited, selectedCount,
   onPreview, onShowInfo, onDownload, onRename, onBatchRename, onCopy, onMove,
   onArchive, onExtract, onChecksum, onPaste, onQuickShare, onShare, onAnalyze, onToggleFavorite, onDelete, onClose,
 }: FileContextMenuProps) {
+  const { canWrite, canPreview, canInfo, canDownload, canRename, canArchive, canExtract, canChecksum, canCopy, canMove, canPaste, canDelete, canAnalyze } = caps;
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

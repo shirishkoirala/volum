@@ -2,7 +2,7 @@ import { DragEvent, KeyboardEvent, MouseEvent, RefObject, TouchEvent } from 'rea
 import { Icon, FileIcon, FolderIcon } from '../components/ui/Icon';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { EmptyState } from '../components/ui/EmptyState';
-import { IconButton } from '../components/ui/shared';
+import { FileSearchBar } from '../components/ui/FileSearchBar';
 import { folderIconUrl } from '../api/icons';
 import { rawUrl, isImageExtension } from '../api/client';
 import type { FileEntry, SearchResult } from '../api/client';
@@ -112,70 +112,12 @@ export function FilesView({
     <div className={styles.filesViewContainer}>
       <div className={styles.fileContent}>
         <BreadcrumbBar crumbs={breadcrumbs} onBack={handleBreadcrumbBack} onNavigate={onNavigate} locationMode={locationMode} onLocationNavigate={onLocationNavigate} onToggleLocationMode={onToggleLocationMode}>
-          <div className={styles.toolbar}>
-            <input
-              ref={fileInputRef as React.RefObject<HTMLInputElement>}
-              className={styles.hiddenFileInput}
-              multiple
-              type="file"
-              onChange={(event) => {
-                if (event.currentTarget.files) {
-                  onUpload(event.currentTarget.files);
-                  event.currentTarget.value = '';
-                }
-              }}
-            />
-            <label className={styles.searchBox}>
-              <Icon name="edit-find" size={16} />
-              <input
-                ref={searchRef as React.RefObject<HTMLInputElement>}
-                placeholder="Search files (Ctrl+K)"
-                value={query}
-                onFocus={() => {}}
-                onChange={(event) => onSearch(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Escape') {
-                    onClearSearch();
-                  }
-                }}
-              />
-              {query.length > 0 && (
-                <button type="button" className={styles.searchClear} onClick={onClearSearch}>
-                  <Icon name="window-close" size={14} />
-                </button>
-              )}
-            </label>
-            {searchOpen && searchResults && searchResults.length > 0 && (
-              <div className={styles.searchResultsDropdown}>
-                {searchResults.map((result) => (
-                  <button
-                    key={result.path}
-                    type="button"
-                    className={styles.searchResultItem}
-                    onClick={() => onSearchResultClick(result)}
-                    aria-label={result.name}
-                  >
-                    <FileIcon entry={{ ...result, hidden: false, permissions: '', owner: '', group: '' }} size={20} />
-                    <span className={styles.searchResultName}>{result.name}</span>
-                    <span className={styles.searchResultPath}>{result.root}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            <IconButton
-              onClick={onRefresh}
-              title="Refresh"
-            >
-              <Icon name="view-refresh" size={18} />
-            </IconButton>
-            <IconButton
-              active={isFavorited}
-              onClick={onToggleFavorite}
-              title={isFavorited ? 'Remove from desktop' : 'Add to desktop'}
-            >
-              <Icon name="bookmark-new" size={18} />
-            </IconButton>
-          </div>
+          <FileSearchBar
+            query={query} searchOpen={searchOpen} searchResults={searchResults}
+            onSearch={onSearch} onClearSearch={onClearSearch} onSearchResultClick={onSearchResultClick}
+            onRefresh={onRefresh} isFavorited={isFavorited} onToggleFavorite={onToggleFavorite}
+            searchRef={searchRef} fileInputRef={fileInputRef} onUpload={onUpload}
+          />
         </BreadcrumbBar>
 
         {error && (

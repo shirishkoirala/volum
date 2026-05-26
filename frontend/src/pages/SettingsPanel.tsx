@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
 import { Button, MutedText } from '../components/ui/shared';
-import { formatBytes, formatUptime } from '../utils/format';
+import { ServerInfo } from '../components/ui/ServerInfo';
+import { WallpaperPicker } from '../components/ui/WallpaperPicker';
+import { formatBytes } from '../utils/format';
 import {
   getStatus,
   dbVacuum,
@@ -10,7 +12,7 @@ import {
   type StatusResponse,
   type RootEntry,
 } from '../api/client';
-import { PRESET_COLORS, PRESET_GRADIENTS, type WallpaperConfig } from '../utils/wallpaper';
+import type { WallpaperConfig } from '../utils/wallpaper';
 import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
@@ -116,38 +118,9 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
       ) : (
         <>
           {(!filterQuery.trim() ? activeCategory === 'server' : filteredCategories.some((c) => c.id === 'server')) && (
-            <>
-              <section className={styles.settingsSection}>
-                <h4>Server</h4>
-                <dl className={styles.settingsDetails}>
-                  <dt>Version</dt>
-                  <dd>{status.version}</dd>
-                  <dt>Build</dt>
-                  <dd>{status.buildTime || 'Unknown'}</dd>
-                  <dt>Runtime</dt>
-                  <dd>{status.goVersion}</dd>
-                  <dt>Uptime</dt>
-                  <dd>{formatUptime(status.uptime)}</dd>
-                  <dt>Worker</dt>
-                  <dd>
-                    <span className={styles.workerStatus}>
-                      <span className={`${styles.statusDot} ${status.jobCounts.active > 0 ? styles.dotBusy : styles.dotIdle}`} />
-                      {status.jobCounts.active > 0 ? 'Busy' : 'Idle'}
-                    </span>
-                  </dd>
-                </dl>
-              </section>
-
-              <section className={styles.settingsSection}>
-                <h4>Database</h4>
-                <dl className={styles.settingsDetails}>
-                  <dt>Path</dt>
-                  <dd>{status.dbPath}</dd>
-                  <dt>Size</dt>
-                  <dd>{formatBytes(status.dbSize)}</dd>
-                </dl>
-              </section>
-            </>
+            <div className={styles.settingsSection}>
+              <ServerInfo status={status} />
+            </div>
           )}
 
           {(!filterQuery.trim() ? activeCategory === 'storage' : filteredCategories.some((c) => c.id === 'storage')) && (
@@ -181,60 +154,9 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
           )}
 
           {(!filterQuery.trim() ? activeCategory === 'desktop' : filteredCategories.some((c) => c.id === 'desktop')) && wallpaper && onWallpaperChange && (
-            <section className={styles.settingsSection}>
-              <h4>Desktop Background</h4>
-              <div className={styles.wallpaperOptionRow}>
-                <button
-                  type="button"
-                  className={`${styles.wallpaperOption}${wallpaper.type === 'default' ? ` ${styles.wallpaperOptionActive}` : ''}`}
-                  onClick={() => onWallpaperChange({ type: 'default' })}
-                >
-                  <div className={styles.wallpaperPreview} style={{ background: 'var(--color-bg)' }} />
-                  <span>Default</span>
-                </button>
-                {PRESET_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`${styles.wallpaperOption}${wallpaper.type === 'color' && wallpaper.value === color ? ` ${styles.wallpaperOptionActive}` : ''}`}
-                    onClick={() => onWallpaperChange({ type: 'color', value: color })}
-                  >
-                    <div className={styles.wallpaperPreview} style={{ backgroundColor: color }} />
-                    <span>{color}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className={styles.wallpaperOptionRow}>
-                <small className={styles.wallpaperSectionLabel}>Custom Color</small>
-                <div className={styles.wallpaperCustomColor}>
-                  <input
-                    type="color"
-                    className={styles.wallpaperColorInput}
-                    value={wallpaper.type === 'color' && wallpaper.value ? wallpaper.value : '#1a1a2e'}
-                    onChange={(e) => onWallpaperChange({ type: 'color', value: e.target.value })}
-                  />
-                  <span className={styles.wallpaperColorHex}>
-                    {wallpaper.type === 'color' ? wallpaper.value : '#1a1a2e'}
-                  </span>
-                </div>
-              </div>
-
-              <h4>Gradients</h4>
-              <div className={styles.wallpaperOptionRow}>
-                {PRESET_GRADIENTS.map((g) => (
-                  <button
-                    key={g.label}
-                    type="button"
-                    className={`${styles.wallpaperOption}${wallpaper.type === 'gradient' && wallpaper.value === g.value ? ` ${styles.wallpaperOptionActive}` : ''}`}
-                    onClick={() => onWallpaperChange({ type: 'gradient', value: g.value, value2: g.value2 })}
-                  >
-                    <div className={styles.wallpaperPreview} style={{ background: `linear-gradient(135deg, ${g.value}, ${g.value2})` }} />
-                    <span>{g.label}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
+            <div className={styles.settingsSection}>
+              <WallpaperPicker wallpaper={wallpaper} onChange={onWallpaperChange} />
+            </div>
           )}
 
           {(!filterQuery.trim() ? activeCategory === 'admin' : filteredCategories.some((c) => c.id === 'admin')) && (

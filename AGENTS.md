@@ -19,7 +19,7 @@
 - Auth: HMAC-signed session cookies, admin/readonly roles
 - All filesystem ops validated through `RootGuard.Resolve` (no raw path access)
 - Move = copy + verify + delete (never direct rename across mounts)
-- Job store: `backend/internal/jobs/store.go`
+- Job store: `backend/internal/jobs/store.go` (split across 5 files: `store.go`, `store_claiming.go`, `store_items.go`, `store_audit.go`, `store_maintenance.go`)
 - Worker: `backend/internal/worker/worker.go` — polls every 1s for new jobs
 - SSE: pushes full job list every 1s; frontend diffs via refs
 
@@ -73,7 +73,7 @@ frontend/src/
 
 #### Backend
 - `backend/internal/api/server.go` — HTTP routes and handlers
-- `backend/internal/jobs/store.go` — SQLite job store + audit logs
+- `backend/internal/jobs/store.go` — SQLite job store (split across 5 files: `store.go`, `store_claiming.go`, `store_items.go`, `store_audit.go`, `store_maintenance.go`)
 - `backend/internal/worker/worker.go` — background job orchestrator
 - `backend/internal/security/paths.go` — RootGuard path validation
 - `backend/internal/files/service.go` — file listing, trash, search, RootUsage
@@ -213,7 +213,7 @@ frontend/src/
 - Never overwrite existing files silently
 - Never use direct rename for cross-mount moves
 - Never commit `data/`, `storage/`, `frontend/dist/`, `frontend/node_modules/`
-- New API endpoints go in `server.go` `routes()`; new job types need registration in `model.go` + `ClaimNext*Job` in `store.go`
+- New API endpoints go in `server.go` `routes()`; new job types need registration in `model.go` + `ClaimNext*Job` in `store_claiming.go`
 - CSS Modules: `styles.className` (camelCase) in components
 
 ## Guiding Principles
@@ -246,5 +246,13 @@ frontend/src/
 - Added "Desktop" category in `SettingsPanel` with: Default button, 16 color swatches, custom color picker (native `<input type="color">`), 6 gradient presets
 - State managed in Home.tsx, persisted to localStorage under `volum_wallpaper`
 - TypeScript + Docker build verified
+
+### Phase 6 — Backend Splitting
+- **6.1** Split `api/server.go` (1329 lines) into 8 focused files: `handlers_auth.go`, `handlers_files.go`, `handlers_trash.go`, `handlers_upload.go`, `handlers_jobs.go`, `handlers_shares.go`, `handlers_db.go`, `middleware.go`
+- **6.2** Split `files/service.go` (789 lines) into `service.go`, `service_trash.go`, `service_disk.go`
+- **6.3** Split `jobs/store.go` (770 lines) into `store.go` (core job CRUD), `store_claiming.go` (ClaimNext*), `store_items.go` (item CRUD), `store_audit.go` (audit logging), `store_maintenance.go` (vacuum/prune)
+- **6.4** Extracted mount discovery from `config/config.go` → `config/mounts.go`
+- **6.5** Already done — `ArchiveFormat()` lives in `worker/tar.go`
+- All builds (Go + Docker) verified passing
 
 

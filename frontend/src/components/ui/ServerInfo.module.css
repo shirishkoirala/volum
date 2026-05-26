@@ -1,0 +1,47 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.section h4 {
+  margin: 0;
+}
+
+.details {
+  display: grid;
+  gap: var(--space-xs) var(--space-lg);
+  grid-template-columns: auto 1fr;
+  margin: 0;
+}
+
+.details dt {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.details dd {
+  font-size: 13px;
+  margin: 0;
+}
+
+.workerStatus {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+}
+
+.statusDot {
+  border-radius: 50%;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+
+.dotIdle {
+  background: var(--color-success);
+}
+
+.dotBusy {
+  background: var(--color-warning);
+}

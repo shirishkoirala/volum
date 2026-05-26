@@ -40,6 +40,7 @@ import { useNavigation } from '../hooks/useNavigation';
 import { useFavorites } from '../hooks/useFavorites';
 import { useWallpaper } from '../hooks/useWallpaper';
 import { useFileActions } from '../hooks/useFileActions';
+import { useDialogStack } from '../hooks/useDialogStack';
 import styles from './Home.module.css';
 
 
@@ -107,15 +108,18 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     analyzePath, setAnalyzePath,
     batchRenameOpen, setBatchRenameOpen,
     fileClipboard, setFileClipboard,
+    shortcutsOpen, setShortcutsOpen,
+    locationMode, setLocationMode,
+    toasts, setToasts,
+  } = useFileActions();
+
+  const {
     confirmDialog, setConfirmDialog,
     textInputDialog, setTextInputDialog,
     transferDialog, setTransferDialog,
-    shortcutsOpen, setShortcutsOpen,
-    locationMode, setLocationMode,
     shareDialogPath, setShareDialogPath,
     sharesOpen, setSharesOpen,
-    toasts, setToasts,
-  } = useFileActions();
+  } = useDialogStack();
 
   const canWrite = session.role === 'admin';
 
@@ -918,11 +922,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           {contextMenu && (
             <FileContextMenu
               x={contextMenu.x} y={contextMenu.y}
-              canPreview={canPreview} canInfo={canInfo} canDownload={canDownload}
-              canRename={canRename} canArchive={canArchive} canExtract={canExtract}
-              canChecksum={canChecksum} canCopy={canCopy} canMove={canMove}
-              canPaste={canPaste} canDelete={canDelete} canWrite={canWrite}
-              canAnalyze={canAnalyze}
+              caps={{ canWrite, canPreview, canInfo, canDownload, canRename, canArchive, canExtract, canChecksum, canCopy, canMove, canPaste, canDelete, canAnalyze }}
               isFavorited={selectedEntryIsFavorited}
               selectedCount={selectedEntries.length}
               onPreview={handlePreview} onShowInfo={handleShowInfo} onDownload={handleDownload}

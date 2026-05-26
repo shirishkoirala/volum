@@ -56,7 +56,7 @@ func setupTestServer(t *testing.T) (*testServer, func()) {
 
 	_ = workerService
 
-	s := New(filesService, jobStore, guard, authService, shareStore)
+	s := New(filesService, jobStore, guard, authService, shareStore, filepath.Join(root, "volum.db"))
 
 	ts := &testServer{Server: s, root: root}
 

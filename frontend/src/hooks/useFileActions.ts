@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import type { FileEntry, SearchResult } from '../api/client';
 import type { ContextMenuState, RenameState } from '../types';
-import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } from '../components/overlay/Dialogs';
 import type { Toast } from '../components/overlay/Toast';
 
 type ClipboardState = { mode: 'copy' | 'move'; entries: FileEntry[] } | null;
@@ -17,13 +16,8 @@ export function useFileActions() {
   const [analyzePath, setAnalyzePath] = useState<string | null>(null);
   const [batchRenameOpen, setBatchRenameOpen] = useState(false);
   const [fileClipboard, setFileClipboard] = useState<ClipboardState>(null);
-  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
-  const [textInputDialog, setTextInputDialog] = useState<TextInputDialogState>(null);
-  const [transferDialog, setTransferDialog] = useState<TransferDialogState>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [locationMode, setLocationMode] = useState(false);
-  const [shareDialogPath, setShareDialogPath] = useState<{ path: string; name: string } | null>(null);
-  const [sharesOpen, setSharesOpen] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   return {
@@ -37,13 +31,8 @@ export function useFileActions() {
     analyzePath, setAnalyzePath,
     batchRenameOpen, setBatchRenameOpen,
     fileClipboard, setFileClipboard,
-    confirmDialog, setConfirmDialog,
-    textInputDialog, setTextInputDialog,
-    transferDialog, setTransferDialog,
     shortcutsOpen, setShortcutsOpen,
     locationMode, setLocationMode,
-    shareDialogPath, setShareDialogPath,
-    sharesOpen, setSharesOpen,
     toasts, setToasts,
   };
 }

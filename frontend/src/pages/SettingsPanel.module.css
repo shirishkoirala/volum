@@ -190,28 +190,6 @@
   margin: var(--space-sm) 0 0;
 }
 
-.workerStatus {
-  align-items: center;
-  display: inline-flex;
-  gap: var(--space-xs);
-  font-size: 13px;
-}
-
-.statusDot {
-  border-radius: 50%;
-  display: inline-block;
-  height: 8px;
-  width: 8px;
-}
-
-.dotBusy {
-  background: var(--color-brand);
-}
-
-.dotIdle {
-  background: var(--color-text-muted);
-}
-
 .settingsSkeleton {
   display: flex;
   flex-direction: column;
@@ -244,81 +222,6 @@
 
 .sharesActions {
   margin-top: var(--space-sm);
-}
-
-.wallpaperOptionRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: var(--space-lg);
-}
-
-.wallpaperOption {
-  align-items: center;
-  background: var(--color-bg);
-  border: 2px solid var(--color-border-light);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px;
-  text-align: center;
-  transition: border-color var(--transition-fast);
-  width: 72px;
-}
-
-.wallpaperOption:hover {
-  border-color: var(--color-brand);
-}
-
-.wallpaperOptionActive {
-  border-color: var(--color-brand);
-  box-shadow: 0 0 0 1px var(--color-brand);
-}
-
-.wallpaperPreview {
-  border-radius: 3px;
-  height: 40px;
-  width: 56px;
-}
-
-.wallpaperOption span {
-  color: var(--color-text-tertiary);
-  font-size: 10px;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wallpaperSectionLabel {
-  color: var(--color-text-muted);
-  display: block;
-  font-size: 11px;
-  margin-bottom: 4px;
-  width: 100%;
-}
-
-.wallpaperCustomColor {
-  align-items: center;
-  display: flex;
-  gap: var(--space-sm);
-}
-
-.wallpaperColorInput {
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  height: 36px;
-  padding: 2px;
-  width: 48px;
-}
-
-.wallpaperColorHex {
-  color: var(--color-text-tertiary);
-  font-family: var(--font-mono, monospace);
-  font-size: 12px;
 }
 
 @media (max-width: 760px) {

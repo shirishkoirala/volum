@@ -1,7 +1,6 @@
 package files
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/volum-app/volum/backend/internal/security"
 )
 
@@ -294,135 +292,6 @@ func parseMode(mode string) (os.FileMode, error) {
 	return 0, fmt.Errorf("mode must be a 9-character permission string (e.g. rwxr-xr-x) or 3-4 digit octal")
 }
 
-func (s *Service) Trash(path string) (TrashEntry, error) {
-	resolved, err := s.guard.Resolve(path)
-	if err != nil {
-		return TrashEntry{}, err
-	}
-	if s.guard.IsRoot(resolved) {
-		return TrashEntry{}, ErrRootOperation
-	}
-	info, err := os.Stat(resolved)
-	if err != nil {
-		return TrashEntry{}, err
-	}
-
-	root, ok := s.guard.RootFor(resolved)
-	if !ok {
-		return TrashEntry{}, security.ErrOutsideRoots
-	}
-	trashRoot := filepath.Join(root.InternalPath, ".volum-trash")
-	if isPathInside(trashRoot, resolved) {
-		return TrashEntry{}, ErrTrashOperation
-	}
-
-	id := uuid.NewString()
-	trashFiles := filepath.Join(trashRoot, "files")
-	trashMeta := filepath.Join(trashRoot, "meta")
-	if err := os.MkdirAll(trashFiles, 0o755); err != nil {
-		return TrashEntry{}, err
-	}
-	if err := os.MkdirAll(trashMeta, 0o755); err != nil {
-		return TrashEntry{}, err
-	}
-
-	trashPath := filepath.Join(trashFiles, id+"-"+filepath.Base(resolved))
-	entryType := "file"
-	if info.IsDir() {
-		entryType = "directory"
-	}
-	entry := TrashEntry{
-		ID:           id,
-		Name:         filepath.Base(resolved),
-		OriginalPath: path,
-		TrashPath:    trashPath,
-		Type:         entryType,
-		Size:         entrySize(resolved, info),
-		DeletedAt:    time.Now().UTC(),
-		RootPath:     root.Path,
-	}
-
-	if err := os.Rename(resolved, trashPath); err != nil {
-		return TrashEntry{}, err
-	}
-	if err := writeTrashEntry(filepath.Join(trashMeta, id+".json"), entry); err != nil {
-		_ = os.Rename(trashPath, resolved)
-		return TrashEntry{}, err
-	}
-	return entry, nil
-}
-
-func (s *Service) ListTrash() ([]TrashEntry, error) {
-	entries := []TrashEntry{}
-	for _, root := range s.guard.RootEntries() {
-		metaDir := filepath.Join(root.InternalPath, ".volum-trash", "meta")
-		items, err := os.ReadDir(metaDir)
-		if errors.Is(err, os.ErrNotExist) {
-			continue
-		}
-		if err != nil {
-			return nil, err
-		}
-		for _, item := range items {
-			if item.IsDir() || filepath.Ext(item.Name()) != ".json" {
-				continue
-			}
-			entry, err := readTrashEntry(filepath.Join(metaDir, item.Name()))
-			if err != nil {
-				continue
-			}
-			if _, err := os.Stat(entry.TrashPath); err != nil {
-				continue
-			}
-			entries = append(entries, entry)
-		}
-	}
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i].DeletedAt.After(entries[j].DeletedAt)
-	})
-	return entries, nil
-}
-
-func (s *Service) RestoreTrash(id string) (Entry, error) {
-	entry, metaPath, err := s.trashEntryByID(id)
-	if err != nil {
-		return Entry{}, err
-	}
-	originalPath, err := s.guard.Resolve(entry.OriginalPath)
-	if err != nil {
-		return Entry{}, err
-	}
-	if _, ok := s.guard.RootFor(originalPath); !ok {
-		return Entry{}, security.ErrOutsideRoots
-	}
-	if _, err := os.Stat(originalPath); err == nil {
-		return Entry{}, ErrDestinationExists
-	} else if !errors.Is(err, os.ErrNotExist) {
-		return Entry{}, err
-	}
-	if err := os.MkdirAll(filepath.Dir(originalPath), 0o755); err != nil {
-		return Entry{}, err
-	}
-	if err := os.Rename(entry.TrashPath, originalPath); err != nil {
-		return Entry{}, err
-	}
-	if err := os.Remove(metaPath); err != nil {
-		return Entry{}, err
-	}
-	return s.entryFromPath(originalPath)
-}
-
-func (s *Service) DeleteTrash(id string) error {
-	entry, metaPath, err := s.trashEntryByID(id)
-	if err != nil {
-		return err
-	}
-	if err := os.RemoveAll(entry.TrashPath); err != nil {
-		return err
-	}
-	return os.Remove(metaPath)
-}
-
 func (s *Service) DownloadPath(path string) (string, os.FileInfo, error) {
 	resolved, err := s.guard.Resolve(path)
 	if err != nil {
@@ -455,57 +324,6 @@ func (s *Service) ThumbnailPath(path string) (string, os.FileInfo, error) {
 	}
 
 	return resolved, info, nil
-}
-
-func (s *Service) trashEntryByID(id string) (TrashEntry, string, error) {
-	if !validBaseName(id) {
-		return TrashEntry{}, "", ErrInvalidName
-	}
-	for _, root := range s.guard.RootEntries() {
-		metaPath := filepath.Join(root.InternalPath, ".volum-trash", "meta", id+".json")
-		entry, err := readTrashEntry(metaPath)
-		if errors.Is(err, os.ErrNotExist) {
-			continue
-		}
-		if err != nil {
-			return TrashEntry{}, "", err
-		}
-		return entry, metaPath, nil
-	}
-	return TrashEntry{}, "", os.ErrNotExist
-}
-
-func validBaseName(name string) bool {
-	name = strings.TrimSpace(name)
-	return name != "" && name == filepath.Base(name) && name != "." && name != ".."
-}
-
-func isPathInside(root, path string) bool {
-	rel, err := filepath.Rel(root, path)
-	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
-}
-
-func readTrashEntry(path string) (TrashEntry, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return TrashEntry{}, err
-	}
-	var entry TrashEntry
-	if err := json.Unmarshal(data, &entry); err != nil {
-		return TrashEntry{}, err
-	}
-	if entry.ID == "" || entry.OriginalPath == "" || entry.TrashPath == "" {
-		return TrashEntry{}, fmt.Errorf("invalid trash metadata %s", path)
-	}
-	return entry, nil
-}
-
-func writeTrashEntry(path string, entry TrashEntry) error {
-	data, err := json.MarshalIndent(entry, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0o644)
 }
 
 func (s *Service) entryFromPath(path string) (Entry, error) {
@@ -677,113 +495,12 @@ func (s *Service) GetDirSizes(publicPaths []string) map[string]int64 {
 	return s.cache.GetMap(publicPaths)
 }
 
-type DiskUsageNode struct {
-	Name       string            `json:"name"`
-	Path       string            `json:"path"`
-	Size       int64             `json:"size"`
-	IsDir      bool              `json:"isDir"`
-	Percentage float64           `json:"percentage"`
-	Children   []DiskUsageNode   `json:"children"`
+func validBaseName(name string) bool {
+	name = strings.TrimSpace(name)
+	return name != "" && name == filepath.Base(name) && name != "." && name != ".."
 }
 
-func (s *Service) AnalyzeDiskUsage(publicPath string) (*DiskUsageNode, error) {
-	internalPath, err := s.guard.Resolve(publicPath)
-	if err != nil {
-		return nil, err
-	}
-
-	info, err := os.Stat(internalPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if !info.IsDir() {
-		return &DiskUsageNode{
-			Name: info.Name(),
-			Path: publicPath,
-			Size: info.Size(),
-		}, nil
-	}
-
-	root := &DiskUsageNode{
-		Name:  filepath.Base(publicPath),
-		Path:  publicPath,
-		IsDir: true,
-	}
-
-	s.walkDiskUsage(internalPath, publicPath, root, 0)
-
-	if root.Size > 0 {
-		computePercentages(root, root.Size)
-	}
-
-	return root, nil
-}
-
-func (s *Service) walkDiskUsage(internalPath, publicPath string, parent *DiskUsageNode, depth int) {
-	if depth > 4 {
-		return
-	}
-
-	entries, err := os.ReadDir(internalPath)
-	if err != nil {
-		return
-	}
-
-	for _, entry := range entries {
-		name := entry.Name()
-		if strings.HasPrefix(name, ".") || name == ".volum-trash" || name == ".volum-tmp" {
-			if entry.IsDir() {
-				continue
-			}
-			continue
-		}
-
-		childInternal := filepath.Join(internalPath, name)
-		childPublic := filepath.Join(publicPath, name)
-
-		info, err := os.Stat(childInternal)
-		if err != nil {
-			continue
-		}
-
-		node := DiskUsageNode{
-			Name:  name,
-			Path:  childPublic,
-			IsDir: info.IsDir(),
-		}
-
-		if info.IsDir() {
-			s.walkDiskUsage(childInternal, childPublic, &node, depth+1)
-		} else {
-			node.Size = info.Size()
-		}
-
-		parent.Size += node.Size
-		parent.Children = append(parent.Children, node)
-	}
-
-	sortChildrenBySize(parent)
-	limitChildren(parent, 50)
-}
-
-func sortChildrenBySize(parent *DiskUsageNode) {
-	sort.Slice(parent.Children, func(i, j int) bool {
-		return parent.Children[i].Size > parent.Children[j].Size
-	})
-}
-
-func limitChildren(parent *DiskUsageNode, max int) {
-	if len(parent.Children) > max {
-		parent.Children = parent.Children[:max]
-	}
-}
-
-func computePercentages(node *DiskUsageNode, total int64) {
-	if total > 0 {
-		node.Percentage = float64(node.Size) / float64(total) * 100
-	}
-	for i := range node.Children {
-		computePercentages(&node.Children[i], total)
-	}
+func isPathInside(root, path string) bool {
+	rel, err := filepath.Rel(root, path)
+	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
 }
