@@ -1,6 +1,6 @@
 import { KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FileEntry, Job, SearchResult, BlockDevice, RootEntry, Session, TrashEntry,
+  FileEntry, Job, BlockDevice, RootEntry, Session, TrashEntry,
   createArchiveJob, createChecksumJob, createCopyJob, createExtractJob,
   createFolder, createMoveJob, deleteTrash, deletePath, getDevices,
   getFiles, getJobs, getRoots, getTrash, renamePath, searchFiles, restoreTrash,
@@ -8,7 +8,7 @@ import {
 } from '../api/client';
 import type { ConflictPolicy } from '../api/client';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
-import type { SortField, SortDirection, ContextMenuState, RenameState } from '../types';
+import type { SortField, SortDirection } from '../types';
 import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
 import { PreviewModal } from '../components/overlay/PreviewModal';
 import { BatchRenameModal } from '../components/overlay/BatchRenameModal';
@@ -25,22 +25,23 @@ import { DesktopView } from '../pages/DesktopView';
 import { TrashView } from '../pages/TrashView';
 import { JobsPage } from '../pages/JobsPage';
 import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
-import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } from '../components/overlay/Dialogs';
+import type { TransferDialogState } from '../components/overlay/Dialogs';
 import { ToastViewport, type Toast } from '../components/overlay/Toast';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
-import { folderIconUrl, preferencesIconUrl, jobsIconUrl, computerIconUrl, trashIconUrl } from '../api/icons';
-import { type ViewMode } from '../utils/view';
+
 import { joinPath, normalizeFolderPath, uniquePaths } from '../utils/path';
-import { loadWallpaper, saveWallpaper, wallpaperToStyle, type WallpaperConfig } from '../utils/wallpaper';
 import { isArchiveFile, archiveBaseName, archiveFileName } from '../utils/archive';
 import { useJobs } from '../hooks/useJobs';
 import { useDragDrop } from '../hooks/useDragDrop';
 import { useRubberBand } from '../hooks/useRubberBand';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useViewPreferences } from '../hooks/useViewPreferences';
+import { useNavigation } from '../hooks/useNavigation';
+import { useFavorites } from '../hooks/useFavorites';
+import { useWallpaper } from '../hooks/useWallpaper';
+import { useFileActions } from '../hooks/useFileActions';
 import styles from './Home.module.css';
 
-type ClipboardState = { mode: 'copy' | 'move'; entries: FileEntry[] } | null;
 
 interface HomeProps {
   session: Session;
@@ -53,96 +54,73 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [roots, setRoots] = useState<RootEntry[]>([]);
   const [devices, setDevices] = useState<BlockDevice[]>([]);
   const [deviceError, setDeviceError] = useState<string | null>(null);
-  const [currentPath, setCurrentPath] = useLocalStorage('volum_currentPath', '');
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [completedCollapsed, setCompletedCollapsed] = useState(true);
-  const [folderPrefs, setFolderPrefs] = useLocalStorage<Record<string, { viewMode?: ViewMode; sortField?: SortField; sortDirection?: SortDirection }>>('volum_folderPrefs', {});
-  const [viewMode, setViewMode] = useLocalStorage<ViewMode>('volum_viewMode', 'grid' as ViewMode);
-  const [showHidden, setShowHidden] = useLocalStorage('volum_showHidden', false);
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
   const [lastSelectedPath, setLastSelectedPath] = useState<string | null>(null);
-  const [renaming, setRenaming] = useState<RenameState>(null);
-  const [sortField, setSortField] = useLocalStorage<SortField>('volum_sortField', 'name' as SortField);
-  const [sortDirection, setSortDirection] = useLocalStorage<SortDirection>('volum_sortDirection', 'asc' as SortDirection);
-  const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
-  const [previewEntry, setPreviewEntry] = useState<FileEntry | null>(null);
-  const [favorites, setFavorites] = useLocalStorage<string[]>('volum_favorites', []);
-  const [analyzePath, setAnalyzePath] = useState<string | null>(null);
-  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [batchRenameOpen, setBatchRenameOpen] = useState(false);
-  const [infoEntry, setInfoEntry] = useState<FileEntry | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
-  const [textInputDialog, setTextInputDialog] = useState<TextInputDialogState>(null);
-  const [transferDialog, setTransferDialog] = useState<TransferDialogState>(null);
-  const [fileClipboard, setFileClipboard] = useState<ClipboardState>(null);
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const searchRef = useRef<HTMLInputElement>(null);
-  const renameInputRef = useRef<HTMLInputElement>(null);
-  const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [locationMode, setLocationMode] = useState(false);
-  const [showingTrash, setShowingTrash] = useState(false);
-  const [showingSettings, setShowingSettings] = useState(false);
-  const [showingJobs, setShowingJobs] = useState(false);
-  const [showingMyPC, setShowingMyPC] = useState(false);
-  const [wallpaper, setWallpaper] = useState<WallpaperConfig>(loadWallpaper);
-  const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
   const [lastSelectedTrashId, setLastSelectedTrashId] = useState<string | null>(null);
-  const [shareDialogPath, setShareDialogPath] = useState<{ path: string; name: string } | null>(null);
-  const [sharesOpen, setSharesOpen] = useState(false);
   const [trashContextMenu, setTrashContextMenu] = useState<{ x: number; y: number; entry: TrashEntry } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileGridRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressEntry = useRef<{ entry: FileEntry; x: number; y: number } | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const viewModeBeforeTrash = useRef<ViewMode | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    currentPath, setCurrentPath,
+    viewMode, setViewMode,
+    sortField, setSortField,
+    sortDirection, setSortDirection,
+    showHidden, setShowHidden,
+    folderPrefs, setFolderPrefs,
+    viewModeBeforeTrash,
+  } = useViewPreferences();
+
+  const {
+    showingTrash, setShowingTrash,
+    setShowingSettings,
+    setShowingJobs,
+    showingMyPC, setShowingMyPC,
+    selectedDriveName, setSelectedDriveName,
+    topBarTitle, activeView, dockItems,
+  } = useNavigation(devices, jobs, trashEntries.length, currentPath);
+
+  const { favorites, addFavorite, removeFavorite } = useFavorites(currentPath);
+  const { wallpaper, setWallpaper, wallpaperStyle } = useWallpaper();
+
+  const {
+    previewEntry, setPreviewEntry,
+    infoEntry, setInfoEntry,
+    renaming, setRenaming,
+    contextMenu, setContextMenu,
+    searchOpen, setSearchOpen,
+    searchResults, setSearchResults,
+    analyzePath, setAnalyzePath,
+    batchRenameOpen, setBatchRenameOpen,
+    fileClipboard, setFileClipboard,
+    confirmDialog, setConfirmDialog,
+    textInputDialog, setTextInputDialog,
+    transferDialog, setTransferDialog,
+    shortcutsOpen, setShortcutsOpen,
+    locationMode, setLocationMode,
+    shareDialogPath, setShareDialogPath,
+    sharesOpen, setSharesOpen,
+    toasts, setToasts,
+  } = useFileActions();
 
   const canWrite = session.role === 'admin';
 
   const currentPathRef = useRef(currentPath);
   currentPathRef.current = currentPath;
-
-  const topBarTitle = useMemo(() => {
-    if (showingMyPC && selectedDriveName) {
-      const d = devices.find(dd => dd.name === selectedDriveName);
-      return d?.model || selectedDriveName;
-    }
-    if (showingMyPC) return 'My PC';
-    if (showingTrash) return 'Trash';
-    if (showingSettings) return 'Settings';
-    if (showingJobs) return 'Jobs';
-    if (currentPath) return 'Files';
-    return undefined;
-  }, [showingMyPC, selectedDriveName, devices, showingTrash, showingSettings, showingJobs, currentPath]);
-
-  const activeView = useMemo(() => {
-    if (showingSettings) return 'settings';
-    if (showingJobs) return 'jobs';
-    if (showingTrash) return 'trash';
-    if (currentPath) return 'files';
-    return 'desktop';
-  }, [currentPath, showingTrash, showingSettings, showingJobs]);
-
-  const activeJobCount = useMemo(
-    () => jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length,
-    [jobs]
-  );
-
-  const dockItems = useMemo(() => [
-    { id: 'desktop', label: 'Desktop', icon: computerIconUrl(), active: activeView === 'desktop' },
-    { id: 'files', label: 'Files', icon: folderIconUrl('64'), active: activeView === 'files' },
-    { id: 'trash', label: 'Trash', icon: trashIconUrl(trashEntries.length > 0, '64'), badge: trashEntries.length > 0 ? trashEntries.length : undefined, active: activeView === 'trash' },
-    { id: 'jobs', label: 'Jobs', icon: jobsIconUrl(), badge: activeJobCount > 0 ? activeJobCount : undefined, active: activeView === 'jobs' },
-    { id: 'settings', label: 'Settings', icon: preferencesIconUrl(), active: activeView === 'settings' },
-  ], [activeView, trashEntries.length, activeJobCount]);
 
   const dismissToast = (id: number) => setToasts((items) => items.filter((t) => t.id !== id));
   const showToast = (title: string, variant?: 'success' | 'error', message?: string) => {
@@ -180,6 +158,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       .then((response) => { setEntries(response.entries ?? []); setError(null); })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPath, refreshKey, showHidden]);
 
   useEffect(() => { renameInputRef.current?.focus(); renameInputRef.current?.select(); }, [renaming]);
@@ -244,6 +223,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchOpen, shortcutsOpen, activeView]);
 
   // ── Toast helper ─────────────────────────────────────────
@@ -682,12 +662,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     searchFiles(searchQuery.trim(), 20).then((response) => setSearchResults(response.results ?? [])).catch(() => setSearchResults([]));
   };
 
-  // ── Favorites ────────────────────────────────────────────
-
-  const persistFavorites = (items: string[]) => setFavorites(items);
-  const addFavorite = (path: string) => { if (!favorites.includes(path)) persistFavorites([...favorites, path]); };
-  const removeFavorite = (path: string) => { persistFavorites(favorites.filter((f) => f !== path)); };
-
   // ── Derived values ───────────────────────────────────────
 
   const filteredEntries = useMemo(() => {
@@ -770,6 +744,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     window.addEventListener('click', closeMenus);
     window.addEventListener('resize', closeMenus);
     return () => { window.removeEventListener('click', closeMenus); window.removeEventListener('resize', closeMenus); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── LocalStorage sync effects ────────────────────────────
@@ -796,7 +771,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPath, viewMode, sortField, sortDirection]);
-  useEffect(() => { saveWallpaper(wallpaper); }, [wallpaper]);
   useEffect(() => { if (Notification.permission === 'default') void Notification.requestPermission(); }, []);
 
   // ── Shell JSX ────────────────────────────────────────────
@@ -857,7 +831,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               showingMyPC={showingMyPC}
               onShowMyPC={setShowingMyPC}
               deviceError={deviceError} onRetryDevices={loadDevices}
-              wallpaperStyle={wallpaperToStyle(wallpaper)}
+              wallpaperStyle={wallpaperStyle}
             />
           )}
           {activeView === 'trash' && (
