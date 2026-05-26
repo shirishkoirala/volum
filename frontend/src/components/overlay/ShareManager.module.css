@@ -40,12 +40,6 @@
   background: var(--color-hover);
 }
 
-.shareColPath {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .shareColToken {
   color: var(--color-text-muted);
   font-family: monospace;

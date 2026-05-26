@@ -51,12 +51,6 @@
   color: var(--color-brand);
 }
 
-.columnItemName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .rubberBand {
   background: var(--color-brand-bg);
   border: 1px solid var(--color-brand);

@@ -73,7 +73,7 @@ export function FolderPicker({
 
   return (
     <div className={styles.folderPicker}>
-      <div className={styles.folderPickerHeader}>
+      <div className={`${styles.folderPickerHeader} row justifyBetween`}>
         <span className={styles.folderPickerTitle}>Select destination</span>
         <div className={styles.folderPickerNav}>
           <IconButton className={styles.folderPickerNavButton} onClick={goBack} disabled={history.length === 0} title="Back">
@@ -120,9 +120,9 @@ export function FolderPicker({
       </div>
       <div className={styles.folderPickerBody}>
         {loading ? (
-          <div className={styles.folderPickerLoading}>Loading...</div>
+          <div className={`${styles.folderPickerLoading} row justifyCenter`}>Loading...</div>
         ) : error ? (
-          <div className={styles.folderPickerError}>{error} <Button variant="link" onClick={() => loadSubdirs(currentDir)}>Retry</Button></div>
+          <div className={`${styles.folderPickerError} row justifyCenter`}>{error} <Button variant="link" onClick={() => loadSubdirs(currentDir)}>Retry</Button></div>
         ) : subdirs.length === 0 ? (
           <EmptyState compact icon={folderIconUrl('64')} title="No subdirectories" />
         ) : (
@@ -132,20 +132,20 @@ export function FolderPicker({
               <button
                 key={dir}
                 type="button"
-                className={styles.folderPickerItem}
+                className={`${styles.folderPickerItem} row gapSm clickable`}
                 onDoubleClick={() => navigateTo(dir)}
                 onClick={() => onSelect(dir)}
                 title={dir}
               >
                 <Icon name="folder-new" size={18} />
-                <span className={styles.folderPickerItemName}>{dirName}</span>
+                <span className="truncate">{dirName}</span>
               </button>
             );
           })
         )}
       </div>
-      <div className={styles.folderPickerFooter}>
-        <span className={styles.folderPickerPath}>{currentDir}</span>
+      <div className={`${styles.folderPickerFooter} row justifyBetween`}>
+        <span className={`${styles.folderPickerPath} truncate flex1`}>{currentDir}</span>
         <div className={styles.folderPickerActions}>
           <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
           <button

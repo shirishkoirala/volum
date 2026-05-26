@@ -70,7 +70,7 @@ export function FileColumnView({
                   }}
                 >
                   {entry.type === 'directory' ? <FolderIcon size={18} /> : <FileIcon entry={entry} size={18} />}
-                  <span className={styles.columnItemName}>{entry.name}</span>
+                  <span className="truncate">{entry.name}</span>
                 </div>
               ))
             ) : (
@@ -79,7 +79,7 @@ export function FileColumnView({
                 onClick={() => onNavigate(col)}
               >
                 <FolderIcon size={18} />
-                <span className={styles.columnItemName}>{col === '/' ? '/' : col.split('/').pop() || col}</span>
+                <span className="truncate">{col === '/' ? '/' : col.split('/').pop() || col}</span>
               </div>
             )}
           </div>

@@ -94,7 +94,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
             </div>
             {shares.map((share) => (
               <div key={share.id} className={styles.shareRow}>
-                <span className={styles.shareColPath} title={share.path}>{share.path}</span>
+                <span className="truncate" title={share.path}>{share.path}</span>
                 <span className={styles.shareColToken}>{share.token.slice(0, 8)}…</span>
                 <span className={styles.shareColExpiry}>
                   {share.expiresAt ? new Date(share.expiresAt).toLocaleDateString() : 'Never'}
