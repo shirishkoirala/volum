@@ -64,7 +64,7 @@ export function TrashView({
                 data-trash-id={entry.id}
               >
                 {entry.type === 'directory' ? (
-                  <FolderIcon size={84} />
+                  <FolderIcon size={76} />
                 ) : (
                   <FileIcon entry={{
                     name: entry.name,
@@ -76,7 +76,7 @@ export function TrashView({
                     owner: '',
                     group: '',
                     hidden: false,
-                  }} size={84} />
+                  }} size={76} />
                 )}
                 <span className={styles.fileName}>{entry.name}</span>
                 <span className={styles.fileMeta}>
