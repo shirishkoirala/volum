@@ -49,17 +49,6 @@ export function formatGridDate(value: string): string {
 }
 
 /**
- * Truncate a trash-original path to a compact ".../last/two" form.
- */
-export function formatTrashPath(path: string): string {
-  const parts = path.split('/').filter(Boolean);
-  if (parts.length <= 2) {
-    return path;
-  }
-  return `.../${parts.slice(-2).join('/')}`;
-}
-
-/**
  * Produce a human-readable usage summary for a block device partition.
  */
 export function formatDeviceUsage(part: BlockDevice): string {

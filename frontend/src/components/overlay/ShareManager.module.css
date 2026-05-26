@@ -106,8 +106,4 @@
   animation: skeletonPulse 1.5s ease-in-out infinite;
 }
 
-@keyframes skeletonPulse {
-  0% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-  100% { opacity: 0.4; }
-}
+

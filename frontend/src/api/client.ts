@@ -105,10 +105,6 @@ export type JobsResponse = {
   jobs: Job[] | null;
 };
 
-export type UploadResponse = {
-  jobs: Job[] | null;
-};
-
 export type Session = {
   authEnabled: boolean;
   authenticated: boolean;
@@ -257,7 +253,7 @@ export async function uploadFiles(path: string, files: File[]) {
     throw new Error(body.error ?? response.statusText);
   }
 
-  return response.json() as Promise<UploadResponse>;
+  return response.json() as Promise<JobsResponse>;
 }
 
 export function cancelJob(id: string) {

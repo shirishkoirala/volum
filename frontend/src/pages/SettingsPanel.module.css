@@ -321,12 +321,6 @@
   font-size: 12px;
 }
 
-@keyframes skeletonPulse {
-  0% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-  100% { opacity: 0.4; }
-}
-
 @media (max-width: 760px) {
   .settingsBodyPage {
     flex-direction: column;

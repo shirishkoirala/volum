@@ -8,6 +8,7 @@ import {
   rawUrl,
   type FileEntry
 } from '../../api/client';
+import { openFileExternally } from '../../utils/preview';
 import { Icon } from '../ui/Icon';
 import { IconButton, Overlay } from '../ui/shared';
 import styles from './Preview.module.css';
@@ -60,7 +61,7 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
           <span className={styles.previewTitle}>{entry.name}</span>
           <div className={styles.previewActions}>
             <IconButton
-              onClick={() => window.open(downloadUrl(entry.path), '_blank')}
+              onClick={() => openFileExternally(entry.path)}
               title="Download"
             >
               <Icon name="edit-download" size={18} />

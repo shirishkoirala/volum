@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
 import type { ViewMode } from '../../utils/view';
+import type { SortField, SortDirection } from '../../types';
 import styles from './AppMenuBar.module.css';
-
-type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
-type SortDirection = 'asc' | 'desc';
 
 export type AppMenuHandlers = {
   onCreateFolder: () => void;

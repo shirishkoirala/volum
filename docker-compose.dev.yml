@@ -7,9 +7,9 @@ services:
       - ./storage:/storage
       - ./data:/data
     environment:
-      - VOLUM_ROOTS=/storage
-      - VOLUM_DB=/data/volum.db
-      - VOLUM_PORT=8090
+      - VOLUM_ROOTS=${VOLUM_ROOTS:-/storage}
+      - VOLUM_DB=${VOLUM_DB:-/data/volum.db}
+      - VOLUM_PORT=${VOLUM_PORT:-8090}
       # Set these to enable login in dev.
       # - VOLUM_ADMIN_PASSWORD=admin
       # - VOLUM_READONLY_PASSWORD=readonly

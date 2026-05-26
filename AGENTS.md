@@ -49,7 +49,7 @@ frontend/src/
 │   └── LoginScreen.tsx
 ├── components/
 │   ├── input/                       # Form controls, pickers
-│   │   ├── Select.tsx, SortSelect.tsx
+│   │   ├── Select.tsx
 │   │   ├── FolderPicker.tsx, BatchRenameModal.tsx
 │   ├── overlay/                     # Modals, dialogs, overlays
 │   │   ├── Dialogs.tsx              (ConfirmDialog, TextInputDialog, TransferDialog)
@@ -63,7 +63,7 @@ frontend/src/
 │   └── ui/                          # Generic/reusable UI primitives
 │       ├── Icon.tsx, shared.tsx (Overlay, ToolbarButton)
 │       ├── EmptyState.tsx, ProgressBar.tsx
-│       ├── ThemeToggle.tsx, LogoutButton.tsx
+│       ├── ThemeToggle.tsx
 ├── styles/       (global.css, tokens.css)
 ├── api/          (client.ts, icons.ts)
 ├── assets/       (SVG icons)
@@ -91,7 +91,7 @@ frontend/src/
 - `frontend/src/components/layout/BreadcrumbBar.tsx` — breadcrumb nav with overflow
 - `frontend/src/components/input/FolderPicker.tsx` — destination folder browser
 - `frontend/src/components/ui/EmptyState.tsx` — standardized empty/error state
-- `frontend/src/utils/format.ts` — `formatBytes`, `formatUptime`, `formatGridDate`, `formatTrashPath`, `formatDeviceUsage`
+- `frontend/src/utils/format.ts` — `formatBytes`, `formatUptime`, `formatGridDate`, `formatDeviceUsage`
 
 ## UI Patterns
 
@@ -101,7 +101,7 @@ frontend/src/
 - **Share links**: backend CRUD exists; ShareDialog creates; ShareManager lists/revokes
 - **Dialogs**: use `Dialogs.module.css` classes (`dialogButton`, `dialogActions`, etc.)
 - **State naming**: `showingTrash`, `showingSettings` for workspace flags; `settingsOpen` for the settings overlay state (used before page conversion but now replaced by `showingSettings`)
-- **Shared utils** — formatting (`formatBytes`, `formatUptime`, etc.), path ops (`joinPath`, `normalizeFolderPath`), archive helpers, job predicates, and view utilities (`cycleViewMode`, `ViewMode` type) all live in `frontend/src/utils/`. Never define these locally.
+- **Shared utils** — formatting (`formatBytes`, `formatUptime`, etc.), path ops (`joinPath`, `normalizeFolderPath`), archive helpers, job predicates, and view utilities (`ViewMode` type) all live in `frontend/src/utils/`. Never define these locally.
 - **CSS Modules**: every component has `*.module.css`, Vite auto-hashes class names. Use `styles.className` (camelCase) in components.
 
 ## Recent Changes (this session)
@@ -172,9 +172,9 @@ frontend/src/
 - Created `hooks/useJobs.ts` — SSE job subscription + job control handlers (cancel/retry/pause/resume)
 - Created `hooks/useDragDrop.ts` — drag/drop state and handlers for file transfers
 - Created `hooks/useRubberBand.ts` — rubber-band selection logic
-- Created `components/layout/SelectionToolbar.tsx` — toolbar with conditional action buttons (Preview, Info, Copy, Move, Archive, Extract, Checksum, Paste, Delete)
+
 - Created `components/overlay/FileContextMenu.tsx` + `TrashContextMenu.tsx` — context menu components with `ContextMenu.module.css`
-- Removed orphaned CSS: `.topbar`, `.selectionBar`, `.selectionActions`, `.contextMenu` from App.module.css (now in SelectionToolbar/ContextMenu modules)
+- Removed orphaned CSS: `.topbar`, `.selectionBar`, `.selectionActions`, `.contextMenu` from App.module.css (now in ContextMenu modules)
 - App.module.css reduced from 116→9 lines (.authShell only)
 - Home.module.css created with `.appShell` + `.workspace` grid layout
 
@@ -247,11 +247,4 @@ frontend/src/
 - State managed in Home.tsx, persisted to localStorage under `volum_wallpaper`
 - TypeScript + Docker build verified
 
-### E.4 — Dual-pane View
-- Created `DualPaneView.tsx` + `.module.css` — two independent file browser panels with breadcrumb nav, file lists, and Copy/Move between panes
-- Each pane: independent `currentPath`, `entries`, `selectedPaths`, `loading`, `error` state; uses `getFiles()` API
-- Draggable divider (25%-75% range) for resizing panes
-- "Copy →" / "Move →" buttons in each pane's breadcrumb bar when items are selected and other pane has a path
-- Home.tsx integration: `showDualPane` state, `activeView` includes `'dualPane'`, dock item "Dual Pane", keyboard shortcut `Ctrl+Shift+E`
-- `ActiveView` type updated in TopBar.tsx + StatusBar.tsx to include `'dualPane'`
-- TypeScript + Docker build verified
+

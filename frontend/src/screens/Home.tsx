@@ -2,12 +2,13 @@ import { KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, use
 import {
   FileEntry, Job, SearchResult, BlockDevice, RootEntry, Session, TrashEntry,
   createArchiveJob, createChecksumJob, createCopyJob, createExtractJob,
-  createFolder, createMoveJob, deleteTrash, deletePath, downloadUrl, getDevices,
-  getFiles, getJobs, getRoots, getTrash, isAudioExtension, isImageExtension,
-  isTextExtension, isVideoExtension, renamePath, searchFiles, restoreTrash,
+  createFolder, createMoveJob, deleteTrash, deletePath, getDevices,
+  getFiles, getJobs, getRoots, getTrash, renamePath, searchFiles, restoreTrash,
   uploadFiles, getDirSizes, createShare,
 } from '../api/client';
 import type { ConflictPolicy } from '../api/client';
+import { isPreviewableFile, openFileExternally } from '../utils/preview';
+import type { SortField, SortDirection, ContextMenuState, RenameState } from '../types';
 import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
 import { PreviewModal } from '../components/overlay/PreviewModal';
 import { BatchRenameModal } from '../components/overlay/BatchRenameModal';
@@ -36,12 +37,9 @@ import { isArchiveFile, archiveBaseName, archiveFileName } from '../utils/archiv
 import { useJobs } from '../hooks/useJobs';
 import { useDragDrop } from '../hooks/useDragDrop';
 import { useRubberBand } from '../hooks/useRubberBand';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import styles from './Home.module.css';
 
-type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
-type SortDirection = 'asc' | 'desc';
-type ContextMenuState = { x: number; y: number; entry: FileEntry } | null;
-type RenameState = { path: string; value: string } | null;
 type ClipboardState = { mode: 'copy' | 'move'; entries: FileEntry[] } | null;
 
 interface HomeProps {
@@ -55,16 +53,14 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [roots, setRoots] = useState<RootEntry[]>([]);
   const [devices, setDevices] = useState<BlockDevice[]>([]);
   const [deviceError, setDeviceError] = useState<string | null>(null);
-  const [currentPath, setCurrentPath] = useState(() => localStorage.getItem('volum_currentPath') ?? '');
+  const [currentPath, setCurrentPath] = useLocalStorage('volum_currentPath', '');
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [completedCollapsed, setCompletedCollapsed] = useState(true);
-  const [folderPrefs, setFolderPrefs] = useState<Record<string, { viewMode?: ViewMode; sortField?: SortField; sortDirection?: SortDirection }>>(() => {
-    try { return JSON.parse(localStorage.getItem('volum_folderPrefs') ?? '{}'); } catch { return {}; }
-  });
-  const [viewMode, setViewMode] = useState<ViewMode>(() => (localStorage.getItem('volum_viewMode') as ViewMode) || 'grid');
-  const [showHidden, setShowHidden] = useState(() => localStorage.getItem('volum_showHidden') === 'true');
+  const [folderPrefs, setFolderPrefs] = useLocalStorage<Record<string, { viewMode?: ViewMode; sortField?: SortField; sortDirection?: SortDirection }>>('volum_folderPrefs', {});
+  const [viewMode, setViewMode] = useLocalStorage<ViewMode>('volum_viewMode', 'grid' as ViewMode);
+  const [showHidden, setShowHidden] = useLocalStorage('volum_showHidden', false);
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,13 +68,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
   const [lastSelectedPath, setLastSelectedPath] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<RenameState>(null);
-  const [sortField, setSortField] = useState<SortField>(() => (localStorage.getItem('volum_sortField') as SortField) || 'name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>(() => (localStorage.getItem('volum_sortDirection') as SortDirection) || 'asc');
+  const [sortField, setSortField] = useLocalStorage<SortField>('volum_sortField', 'name' as SortField);
+  const [sortDirection, setSortDirection] = useLocalStorage<SortDirection>('volum_sortDirection', 'asc' as SortDirection);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [previewEntry, setPreviewEntry] = useState<FileEntry | null>(null);
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    try { return JSON.parse(localStorage.getItem('volum_favorites') ?? '[]'); } catch { return []; }
-  });
+  const [favorites, setFavorites] = useLocalStorage<string[]>('volum_favorites', []);
   const [analyzePath, setAnalyzePath] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -93,7 +87,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const renameInputRef = useRef<HTMLInputElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [locationMode, setLocationMode] = useState(false);
-  const sseConnected = true;
   const [showingTrash, setShowingTrash] = useState(false);
   const [showingSettings, setShowingSettings] = useState(false);
   const [showingJobs, setShowingJobs] = useState(false);
@@ -289,7 +282,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     }
     setCurrentPath(path);
     setShowingJobs(false);
-    localStorage.setItem('volum_currentPath', path);
     setSearchOpen(false);
     setSearchResults(null);
     setQuery('');
@@ -399,16 +391,16 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const handleDownload = () => {
     const entry = selectedEntries[0];
     if (selectedEntries.length !== 1 || !entry) return;
-    window.location.href = downloadUrl(entry.path);
+    openFileExternally(entry.path);
   };
 
   const handlePreview = () => {
     const entry = selectedEntries[0];
     if (selectedEntries.length !== 1 || !entry || entry.type !== 'file') return;
-    if (isImageExtension(entry.name.toLowerCase()) || isVideoExtension(entry.name.toLowerCase()) || isAudioExtension(entry.name.toLowerCase()) || isTextExtension(entry.name.toLowerCase())) {
+    if (isPreviewableFile(entry.name)) {
       setPreviewEntry(entry);
     } else {
-      window.open(downloadUrl(entry.path), '_blank');
+      openFileExternally(entry.path);
     }
   };
 
@@ -668,9 +660,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setViewMode((prev) => prev === 'columns' ? 'list' : prev);
   };
 
+  const resetToDesktopView = () => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); };
+
   const handleDockActivate = (id: string) => {
     switch (id) {
-      case 'desktop': setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); break;
+      case 'desktop': resetToDesktopView(); break;
       case 'files':
         setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null);
         if (!currentPath) { const target = roots.find((r) => r.available)?.path; if (target) navigateTo(target); }
@@ -690,7 +684,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Favorites ────────────────────────────────────────────
 
-  const persistFavorites = (items: string[]) => { setFavorites(items); localStorage.setItem('volum_favorites', JSON.stringify(items)); };
+  const persistFavorites = (items: string[]) => setFavorites(items);
   const addFavorite = (path: string) => { if (!favorites.includes(path)) persistFavorites([...favorites, path]); };
   const removeFavorite = (path: string) => { persistFavorites(favorites.filter((f) => f !== path)); };
 
@@ -791,19 +785,17 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { localStorage.setItem('volum_viewMode', viewMode); }, [viewMode]);
   useEffect(() => {
     if (!showingTrash && viewModeBeforeTrash.current) { setViewMode(viewModeBeforeTrash.current); viewModeBeforeTrash.current = null; }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showingTrash]);
-  useEffect(() => { localStorage.setItem('volum_sortField', sortField); localStorage.setItem('volum_sortDirection', sortDirection); }, [sortField, sortDirection]);
   useEffect(() => {
     const path = currentPath;
     if (path) {
       setFolderPrefs((prev) => ({ ...prev, [path]: { viewMode, sortField, sortDirection } }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPath, viewMode, sortField, sortDirection]);
-  useEffect(() => { localStorage.setItem('volum_folderPrefs', JSON.stringify(folderPrefs)); }, [folderPrefs]);
-  useEffect(() => { localStorage.setItem('volum_showHidden', String(showHidden)); }, [showHidden]);
   useEffect(() => { saveWallpaper(wallpaper); }, [wallpaper]);
   useEffect(() => { if (Notification.permission === 'default') void Notification.requestPermission(); }, []);
 
@@ -815,7 +807,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         <TopBar
           activeView={activeView}
           title={topBarTitle}
-          onGoDesktop={() => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); }}
+          onGoDesktop={resetToDesktopView}
           theme={theme}
           onToggleTheme={onToggleTheme}
           onOpenSettings={() => setShowingSettings(true)}
@@ -839,7 +831,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             sortField,
             sortDirection,
             onSortChange: (value) => { const [f, d] = value.split(':') as [SortField, SortDirection]; setSortField(f); setSortDirection(d); },
-            onGoDesktop: () => { setCurrentPath(''); setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); },
+            onGoDesktop: resetToDesktopView,
             onGoFiles: () => { setShowingMyPC(false); handleDockActivate('files'); },
             onGoTrash: () => { setCurrentPath(''); setShowingTrash(true); setShowingSettings(false); setShowingJobs(false); setViewMode((prev) => prev === 'columns' ? 'list' : prev); },
             onGoJobs: () => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); },
@@ -860,7 +852,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onNavigateToTrash={handleDesktopNavigateToTrash}
               onOpenSettings={() => { setShowingSettings(true); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); }}
               onOpenJobs={() => { setShowingJobs(true); setShowingSettings(false); setShowingTrash(false); setShowingMyPC(false); setSelectedDriveName(null); }}
-              onOpenFiles={() => { setShowingTrash(false); setShowingSettings(false); setShowingJobs(false); setShowingMyPC(false); setSelectedDriveName(null); handleDockActivate('files'); }}
+              onOpenFiles={() => handleDockActivate('files')}
               onSelectDrive={setSelectedDriveName}
               showingMyPC={showingMyPC}
               onShowMyPC={setShowingMyPC}
@@ -886,7 +878,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               selectedPaths={selectedPaths}
               onSelectEntry={handleSelectEntry}
               viewMode={viewMode}
-              loading={loading} error={error} sseConnected={sseConnected}
+              loading={loading} error={error}
               onDismissError={() => setError(null)}
               canWrite={canWrite} isFavorited={isFavorited}
               favorites={favorites}
@@ -920,9 +912,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onRenameChange={(value) => setRenaming({ path: renaming?.path ?? '', value })}
               rubberBandStyle={rubberBandStyle}
               onPreview={(entry) => {
-                const ext = entry.name.toLowerCase();
-                if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext)) setPreviewEntry(entry);
-                else window.open(downloadUrl(entry.path), '_blank');
+                if (isPreviewableFile(entry.name)) setPreviewEntry(entry);
+                else openFileExternally(entry.path);
               }}
               fileGridRef={fileGridRef as React.RefObject<HTMLDivElement>}
               onEntryTouchStart={handleEntryTouchStart}

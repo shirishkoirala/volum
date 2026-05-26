@@ -3,7 +3,7 @@ services:
     build: .
     container_name: volum
     ports:
-      - "${VOLUM_PORT:-8090}:8090"
+      - "${VOLUM_PORT:-8090}:${VOLUM_PORT:-8090}"
     volumes:
       - type: bind
         source: /
@@ -14,14 +14,14 @@ services:
         source: /opt/docker/volum
         target: /data
     environment:
-      - VOLUM_AUTH_REQUIRED=true
+      - VOLUM_AUTH_REQUIRED=${VOLUM_AUTH_REQUIRED:-true}
       - VOLUM_ADMIN_PASSWORD=${VOLUM_ADMIN_PASSWORD}
       - VOLUM_SESSION_SECRET=${VOLUM_SESSION_SECRET}
       - VOLUM_READONLY_PASSWORD=${VOLUM_READONLY_PASSWORD:-}
-      - VOLUM_INCLUDE_ROOT=true
-      - VOLUM_DISCOVER_ROOTS=true
-      - VOLUM_HOST_ROOT=/host
+      - VOLUM_INCLUDE_ROOT=${VOLUM_INCLUDE_ROOT:-true}
+      - VOLUM_DISCOVER_ROOTS=${VOLUM_DISCOVER_ROOTS:-true}
+      - VOLUM_HOST_ROOT=${VOLUM_HOST_ROOT:-/host}
       - VOLUM_ROOTS=${VOLUM_ROOTS:-}
-      - VOLUM_DB=/data/volum.db
-      - VOLUM_PORT=8090
+      - VOLUM_DB=${VOLUM_DB:-/data/volum.db}
+      - VOLUM_PORT=${VOLUM_PORT:-8090}
     restart: unless-stopped

@@ -2,17 +2,16 @@ import { DragEvent, KeyboardEvent, MouseEvent, RefObject, TouchEvent } from 'rea
 import { Icon, FileIcon, FolderIcon } from '../components/ui/Icon';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { EmptyState } from '../components/ui/EmptyState';
-import { IconButton, Notice } from '../components/ui/shared';
+import { IconButton } from '../components/ui/shared';
 import { folderIconUrl } from '../api/icons';
-import { rawUrl, downloadUrl, isImageExtension, isVideoExtension, isAudioExtension, isTextExtension } from '../api/client';
+import { rawUrl, isImageExtension } from '../api/client';
 import type { FileEntry, SearchResult } from '../api/client';
 import { formatBytes, formatGridDate } from '../utils/format';
 import { buildColumnPath } from '../utils/path';
 import type { ViewMode } from '../utils/view';
+import { isPreviewableFile, openFileExternally } from '../utils/preview';
+import type { RenameState, ContextMenuState } from '../types';
 import styles from './FilesView.module.css';
-
-type RenameState = { path: string; value: string } | null;
-type ContextMenuState = { x: number; y: number; entry: FileEntry } | null;
 
 type FilesViewProps = {
   currentPath: string;
@@ -27,7 +26,6 @@ type FilesViewProps = {
   viewMode: ViewMode;
   loading: boolean;
   error: string | null;
-  sseConnected: boolean;
   onDismissError: () => void;
   canWrite: boolean;
   isFavorited: boolean;
@@ -78,7 +76,7 @@ export function FilesView({
   filteredEntries, selectedPaths,
   onSelectEntry,
   viewMode,
-  loading, error, sseConnected, onDismissError,
+  loading, error, onDismissError,
   canWrite, isFavorited, onToggleFavorite,
   query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
   searchRef, fileInputRef, onUpload,
@@ -186,10 +184,6 @@ export function FilesView({
             <button type="button" className={styles.errorDismiss} onClick={onDismissError} aria-label="Dismiss error">&times;</button>
           </div>
         )}
-        {!sseConnected && (
-          <Notice variant="warning" className={styles.sseWarning}>Connection lost &mdash; reconnecting...</Notice>
-        )}
-
         {loading ? (
           <div className={viewMode === 'columns' ? styles.columnSkeleton : styles.skeletonGrid}>
             {Array.from({ length: viewMode === 'columns' ? 4 : 12 }).map((_, i) => (
@@ -230,11 +224,10 @@ export function FilesView({
                             if (entry.type === 'directory') {
                               onNavigate(entry.path);
                             } else {
-                              const ext = entry.name.toLowerCase();
-                              if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext) || ext.endsWith('.pdf')) {
+                              if (isPreviewableFile(entry.name)) {
                                 onPreview(entry);
                               } else {
-                                window.open(downloadUrl(entry.path), '_blank');
+                                openFileExternally(entry.path);
                               }
                             }
                           }}
@@ -278,11 +271,10 @@ export function FilesView({
                         onNavigate(entry.path);
                         return;
                       }
-                      const ext = entry.name.toLowerCase();
-                      if (isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext) || ext.endsWith('.pdf')) {
+                      if (isPreviewableFile(entry.name)) {
                         onPreview(entry);
                       } else {
-                        window.open(downloadUrl(entry.path), '_blank');
+                        openFileExternally(entry.path);
                       }
                     }}
                     role="button"

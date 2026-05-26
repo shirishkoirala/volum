@@ -24,3 +24,13 @@
   scrollbar-color: var(--color-text-muted) transparent;
   scrollbar-width: thin;
 }
+
+@keyframes skeletonPulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+  100% { opacity: 0.4; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
