@@ -3,11 +3,11 @@
   border-right: 1px solid var(--color-border-light);
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl);
+  gap: 18px;
   min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: var(--space-xl);
+  padding: var(--space-lg);
   width: 240px;
   z-index: 10;
 }
@@ -16,7 +16,7 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  margin: 0 0 var(--space-md);
+  margin: 0 0 10px;
   text-transform: uppercase;
   color: var(--color-text-muted);
 }
@@ -26,7 +26,7 @@
   cursor: pointer;
   display: flex;
   gap: var(--space-sm);
-  margin-bottom: var(--space-md);
+  margin-bottom: 10px;
   user-select: none;
 }
 
@@ -49,7 +49,7 @@
 
 .sectionBody {
   display: grid;
-  gap: var(--space-sm);
+  gap: 6px;
 }
 
 .sectionCollapsed .sectionBody {
@@ -58,21 +58,21 @@
 
 .rootList {
   display: grid;
-  gap: var(--space-sm);
+  gap: 6px;
 }
 
 .rootItem {
   align-items: center;
   background: var(--color-bg);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   cursor: pointer;
   display: flex;
-  gap: var(--space-md);
-  min-height: 52px;
+  gap: 10px;
+  min-height: 46px;
   min-width: 0;
-  padding: var(--space-md);
+  padding: 9px 10px;
   text-align: left;
   transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
   width: 100%;
@@ -80,7 +80,7 @@
 
 .rootDetails {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
   width: 100%;
 }
@@ -98,7 +98,7 @@
   color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .rootMeter {
@@ -120,19 +120,19 @@
 .rootItem:hover {
   background: var(--color-surface);
   border-color: var(--color-brand);
-  box-shadow: var(--shadow-card-hover);
+  box-shadow: 0 2px 8px var(--color-shadow);
 }
 
 .deviceGroup {
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .deviceHeader {
   align-items: center;
   display: flex;
   gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-sm);
+  padding: 4px 6px;
 }
 
 .deviceHeader .rootDetails span {
@@ -142,16 +142,17 @@
 
 .partitionItem {
   align-items: center;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-subtle);
+  background: transparent;
+  border: 1px solid transparent;
+  border-left-color: var(--color-border-light);
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   cursor: pointer;
   display: flex;
   gap: var(--space-sm);
-  margin-left: calc(var(--space-xl) + 4px);
-  min-height: 40px;
-  padding: var(--space-sm);
+  margin-left: 24px;
+  min-height: 38px;
+  padding: 7px 8px;
   text-align: left;
   transition: background var(--transition-fast), border-color var(--transition-fast);
   width: auto;
@@ -183,7 +184,7 @@
 .sectionEmpty {
   color: var(--color-text-muted);
   font-size: 12px;
-  padding: var(--space-sm) 0;
+  padding: 4px 0;
   text-align: center;
 }
 
@@ -206,6 +207,7 @@
   color: var(--color-text-muted);
   font-size: 11px;
   font-weight: 400;
+  line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -231,8 +233,9 @@
 
 @media (max-width: 760px) {
   .filesSidebar {
-    width: 180px;
+    border-right: 0;
     padding: var(--space-md);
     font-size: 12px;
+    width: 100%;
   }
 }

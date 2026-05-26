@@ -3,7 +3,7 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  gap: var(--space-xl);
+  gap: var(--space-lg);
 }
 
 .fileContent {
@@ -264,14 +264,16 @@
 }
 
 .fileGrid {
-  --grid-min-column: 128px;
+  --grid-column: 124px;
   align-content: start;
   display: grid;
-  gap: var(--space-3xl);
+  gap: 22px 28px;
   grid-auto-rows: max-content;
-  grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-column), 1fr));
+  grid-template-columns: repeat(auto-fill, var(--grid-column));
+  justify-content: start;
   outline: 0;
   overflow-y: auto;
+  padding: 2px 4px 24px;
 }
 
 .fileGrid .fileRow {
@@ -283,13 +285,13 @@
   display: flex;
   position: relative;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
   justify-content: flex-start;
   justify-self: center;
   align-self: start;
-  min-height: 158px;
-  max-width: 172px;
-  padding: var(--space-sm);
+  min-height: 136px;
+  max-width: var(--grid-column);
+  padding: 6px;
   width: 100%;
   transition:
     background var(--transition-fast),
@@ -335,15 +337,15 @@
 
 .fileGrid .fileThumb {
   border-radius: var(--radius-sm);
-  height: 84px;
+  height: 76px;
   object-fit: cover;
-  width: 84px;
+  width: 76px;
 }
 
 .fileGrid .fileName {
   text-align: center;
   font-size: 13px;
-  line-height: 1.3;
+  line-height: 1.25;
   white-space: normal;
   word-break: break-word;
   display: -webkit-box;
@@ -355,7 +357,7 @@
 .fileMeta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   font-size: 11px;
   color: var(--color-text-muted);
   line-height: 1.2;
@@ -446,8 +448,10 @@
 
 .skeletonGrid {
   display: grid;
-  gap: var(--space-md);
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 18px 24px;
+  grid-template-columns: repeat(auto-fill, 124px);
+  justify-content: start;
+  padding: 2px 4px 24px;
 }
 
 .columnSkeleton {
@@ -461,21 +465,21 @@
 .skeletonCard {
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  min-height: 150px;
+  border-radius: var(--radius-md);
+  min-height: 132px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-md);
-  padding: var(--space-lg) var(--space-sm);
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-sm);
 }
 
 .skeletonIcon {
   background: var(--color-border-row);
   border-radius: var(--radius-md);
-  height: 56px;
-  width: 56px;
+  height: 52px;
+  width: 52px;
 }
 
 .skeletonLine {
