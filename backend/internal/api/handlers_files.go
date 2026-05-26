@@ -8,9 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-
-	"github.com/volum-app/volum/backend/internal/jobs"
-	"github.com/volum-app/volum/backend/internal/worker"
 )
 
 func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
@@ -275,90 +272,4 @@ func (s *Server) handleChmod(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, entry)
 }
 
-func (s *Server) handleCreateExtractJob(w http.ResponseWriter, r *http.Request) {
-	var req jobs.CreateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
-		return
-	}
-	req.Type = jobs.TypeExtract
-	req.ConflictPolicy = "rename"
 
-	source, err := s.guard.Resolve(req.SourcePath)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	info, err := os.Stat(source)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	if !info.Mode().IsRegular() {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "extract source must be a regular file"})
-		return
-	}
-	format := worker.ArchiveFormat(req.SourcePath)
-	if format == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unsupported archive format, supported: .zip, .tar, .tar.gz, .tgz"})
-		return
-	}
-	if _, err := s.guard.Resolve(req.DestinationPath); err != nil {
-		writeError(w, err)
-		return
-	}
-	destination, err := s.guard.Resolve(req.DestinationPath)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	if destination == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "destinationPath is required"})
-		return
-	}
-
-	job, err := s.jobs.Create(r.Context(), req)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusCreated, job)
-}
-
-func (s *Server) handleCreateChecksumJob(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		SourcePath string `json:"sourcePath"`
-		VerifyMode string `json:"verifyMode"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
-		return
-	}
-	if req.SourcePath == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sourcePath is required"})
-		return
-	}
-	if req.VerifyMode == "" {
-		req.VerifyMode = "sha256"
-	}
-	if req.VerifyMode != "md5" && req.VerifyMode != "sha256" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "verifyMode must be md5 or sha256"})
-		return
-	}
-
-	if _, err := s.guard.Resolve(req.SourcePath); err != nil {
-		writeError(w, err)
-		return
-	}
-
-	job, err := s.jobs.Create(r.Context(), jobs.CreateRequest{
-		Type:       jobs.TypeChecksum,
-		SourcePath: req.SourcePath,
-		VerifyMode: req.VerifyMode,
-	})
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusCreated, job)
-}

@@ -274,7 +274,8 @@ func TestCreateAndGetJob(t *testing.T) {
 	srcPath := filepath.Join(ts.root, "source.txt")
 	os.WriteFile(srcPath, []byte("data"), 0o644)
 
-	resp := ts.post("/api/jobs/copy", map[string]string{
+	resp := ts.post("/api/jobs", map[string]string{
+		"type":            "copy",
 		"sourcePath":      srcPath,
 		"destinationPath": filepath.Join(ts.root, "dest.txt"),
 		"conflictPolicy":  "rename",
@@ -363,7 +364,8 @@ func TestCreateChecksumJob(t *testing.T) {
 	path := filepath.Join(ts.root, "checksum.txt")
 	os.WriteFile(path, []byte("test data"), 0o644)
 
-	resp := ts.post("/api/jobs/checksum", map[string]string{
+	resp := ts.post("/api/jobs", map[string]string{
+		"type":       "checksum",
 		"sourcePath": path,
 		"verifyMode": "sha256",
 	})

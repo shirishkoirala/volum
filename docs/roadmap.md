@@ -79,19 +79,19 @@
 
 | # | Task | Status |
 |---|---|---|
-| 8.1 | Add tests for `auth` package — login, session verification, HMAC signing | |
-| 8.2 | Add tests for `shares` package — Create, List, GetByToken, Delete | |
-| 8.3 | Add tests for `storage` package — DB open, migration, schema validation | |
-| 8.4 | Add lint + test steps to Dockerfile | |
+| 8.1 | Add tests for `auth` package — login, session verification, HMAC signing | ✓ |
+| 8.2 | Add tests for `shares` package — Create, List, GetByToken, Delete | ✓ |
+| 8.3 | Add tests for `storage` package — DB open, migration, schema validation | ✓ |
+| 8.4 | Add lint + test steps to Dockerfile | ✓ |
 
-## Phase 9 — Architecture (Future)
+## Phase 9 — Architecture
 
 | # | Task | Status |
 |---|---|---|
-| 9.1 | Normalize API routes to RESTful conventions (RPC-style → resource-based) | |
-| 9.2 | Consider OpenAPI/Swagger spec for backend ↔ frontend type sync | |
-| 9.3 | Enable stricter TypeScript options (`noUncheckedIndexedAccess`, `noUnusedLocals`) | |
-| 9.4 | Add shared CSS utility classes to reduce `.module.css` duplication | |
+| 9.1 | Normalize API routes to RESTful conventions (5 job creation endpoints → single `POST /api/jobs`) | ✓ |
+| 9.2 | Consider OpenAPI/Swagger spec for backend ↔ frontend type sync | ✚ |
+| 9.3 | Enable stricter TypeScript options (`noUncheckedIndexedAccess`, `noUnusedLocals`) | ✓ |
+| 9.4 | Add shared CSS utility classes to reduce `.module.css` duplication | ✓ |
 
 ---
 

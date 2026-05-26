@@ -79,15 +79,15 @@ export function AppMenuBar({ handlers }: AppMenuBarProps) {
       e.preventDefault();
       const next = (idx + 1) % MENUS.length;
       setFocusIdx(next);
-      setOpenMenu(MENUS[next].id);
+      setOpenMenu(MENUS[next]!.id);
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
       const prev = (idx - 1 + MENUS.length) % MENUS.length;
       setFocusIdx(prev);
-      setOpenMenu(MENUS[prev].id);
+      setOpenMenu(MENUS[prev]!.id);
     } else if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      setOpenMenu(MENUS[idx].id);
+      setOpenMenu(MENUS[idx]!.id);
     }
   };
 

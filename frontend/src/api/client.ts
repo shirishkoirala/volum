@@ -178,58 +178,16 @@ export function getJobs() {
   return request<JobsResponse>('/api/jobs');
 }
 
-export function createCopyJob(sourcePath: string, destinationPath: string, conflictPolicy: ConflictPolicy = 'ask') {
-  return request<Job>('/api/jobs/copy', {
+export function createJob(params: {
+  type: string;
+  sourcePath: string;
+  destinationPath?: string;
+  conflictPolicy?: ConflictPolicy;
+  verifyMode?: string;
+}) {
+  return request<Job>('/api/jobs', {
     method: 'POST',
-    body: JSON.stringify({
-      sourcePath,
-      destinationPath,
-      conflictPolicy,
-      verifyMode: 'size'
-    })
-  });
-}
-
-export function createMoveJob(sourcePath: string, destinationPath: string, conflictPolicy: ConflictPolicy = 'ask') {
-  return request<Job>('/api/jobs/move', {
-    method: 'POST',
-    body: JSON.stringify({
-      sourcePath,
-      destinationPath,
-      conflictPolicy,
-      verifyMode: 'size'
-    })
-  });
-}
-
-export function createArchiveJob(sourcePath: string, destinationPath: string, conflictPolicy: ConflictPolicy = 'rename') {
-  return request<Job>('/api/jobs/archive', {
-    method: 'POST',
-    body: JSON.stringify({
-      sourcePath,
-      destinationPath,
-      conflictPolicy,
-      verifyMode: 'size'
-    })
-  });
-}
-
-export function createExtractJob(sourcePath: string, destinationPath: string) {
-  return request<Job>('/api/jobs/extract', {
-    method: 'POST',
-    body: JSON.stringify({
-      sourcePath,
-      destinationPath,
-      conflictPolicy: 'rename',
-      verifyMode: 'size'
-    })
-  });
-}
-
-export function createChecksumJob(sourcePath: string, verifyMode: 'md5' | 'sha256' = 'sha256') {
-  return request<Job>('/api/jobs/checksum', {
-    method: 'POST',
-    body: JSON.stringify({ sourcePath, verifyMode })
+    body: JSON.stringify(params)
   });
 }
 

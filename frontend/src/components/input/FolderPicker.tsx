@@ -66,7 +66,8 @@ export function FolderPicker({
   const goBack = () => {
     if (history.length === 0) return;
     const prev = history[history.length - 1];
-    setHistory((prev) => prev.slice(0, -1));
+    if (prev === undefined) return;
+    setHistory((h) => h.slice(0, -1));
     setCurrentDir(prev);
   };
 

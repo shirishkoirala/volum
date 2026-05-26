@@ -119,7 +119,7 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
       const moreBtnW = 34;
 
       for (let i = 0; i < measureItems.length; i++) {
-        const w = measureItems[i].offsetWidth;
+        const w = measureItems[i]!.offsetWidth;
         const needsMore = i < measureItems.length - 1;
         if (total + w + (needsMore ? moreBtnW : 0) > available && i > 0) {
           overflowIdx = i;
@@ -150,7 +150,7 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
     : [];
 
   const visibleCrumbs = overflowCount > 0
-    ? [crumbs[0], crumbs[crumbs.length - 1]]
+    ? [crumbs[0]!, crumbs[crumbs.length - 1]!]
     : crumbs;
 
   const handleLocationKeyDown = (e: React.KeyboardEvent) => {
@@ -246,6 +246,7 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
                 <Icon name="go-next" size={16} />
                 {(() => {
                   const overflowCrumb = crumbs[crumbs.length - 2];
+                  if (!overflowCrumb) return null;
                   return (
                     <span className={styles.overflowDots} onClick={() => setShowOverflow(!showOverflow)}>
                       <span className={styles.overflowBtn}>···</span>

@@ -57,13 +57,13 @@ export function useRubberBand(
             elBandRect.top < bandRect.bottom && elBandRect.bottom > bandRect.top) {
           const idx = Number((el as HTMLElement).dataset.index);
           if (idx >= 0 && idx < filteredRef.current.length) {
-            selected.push(filteredRef.current[idx].path);
+            selected.push(filteredRef.current[idx]!.path);
           }
         }
       });
       setSelectedPaths(selected);
       if (selected.length > 0) {
-        setLastSelectedPath(selected[selected.length - 1]);
+        setLastSelectedPath(selected[selected.length - 1]!);
       }
     };
 

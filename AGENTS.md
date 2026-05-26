@@ -264,4 +264,16 @@ frontend/src/
 - **7.6** SQLite connection pool limited to `SetMaxOpenConns(1)` — prevents "database is locked"
 - Docker build + server start verified
 
+### Phase 8 — Testing
+- **8.1** 15 tests for auth package (login, session, HMAC, context round-trip)
+- **8.2** 9 tests for shares package (create, list, getByToken, delete, full flow)
+- **8.3** 8 tests for storage package (open, migrate, addColumn, maxOpenConns)
+- **8.4** Added `go vet + go test` steps to Dockerfile (run on every build)
+
+### Phase 9 — Architecture
+- **9.1** Consolidated 5 job-creation endpoints (`POST /api/jobs/{type}`) into single `POST /api/jobs` with `type` field in body; merged extract/checksum validation into unified handler
+- **9.3** Enabled `noUncheckedIndexedAccess` and `noUnusedLocals` in `tsconfig.json`; fixed 40+ strictness errors across all frontend files
+- **9.4** Added CSS utility classes to `global.css` (`.row`, `.col`, `.gap*`, `.truncate`, `.clickable`, flex helpers, alignment, color utilities)
+- **9.2** (recommendation) OpenAPI/Swagger would improve backend↔frontend type sync but deferred — existing TypeScript types in `client.ts` are already well-maintained
+
 

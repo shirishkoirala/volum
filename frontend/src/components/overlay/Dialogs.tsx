@@ -140,7 +140,7 @@ export function TransferDialog({
   const inputRef = useRef<HTMLInputElement>(null);
   const title = dialog.mode === 'copy' ? 'Copy Items' : 'Move Items';
   const actionLabel = dialog.mode === 'copy' ? 'Copy' : 'Move';
-  const itemLabel = dialog.entries.length === 1 ? dialog.entries[0].name : `${dialog.entries.length} selected items`;
+  const itemLabel = dialog.entries.length === 1 ? dialog.entries[0]!.name : `${dialog.entries.length} selected items`;
 
   useDialogEscape(onClose);
 

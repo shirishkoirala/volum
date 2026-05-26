@@ -34,3 +34,36 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Utility classes */
+.row { display: flex; align-items: center; }
+.col { display: flex; flex-direction: column; }
+.rowWrap { display: flex; flex-flow: row wrap; align-items: center; }
+.flex1 { flex: 1; }
+.grow { flex-grow: 1; }
+.shrink0 { flex-shrink: 0; }
+
+.justifyCenter { justify-content: center; }
+.justifyBetween { justify-content: space-between; }
+.justifyEnd { justify-content: flex-end; }
+.alignStart { align-items: flex-start; }
+.alignEnd { align-items: flex-end; }
+.alignStretch { align-items: stretch; }
+
+.gapXs { gap: var(--space-xs); }
+.gapSm { gap: var(--space-sm); }
+.gapMd { gap: var(--space-md); }
+.gapLg { gap: var(--space-lg); }
+.gapXl { gap: var(--space-xl); }
+.gap2xl { gap: var(--space-2xl); }
+.gap3xl { gap: var(--space-3xl); }
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.clickable { cursor: pointer; }
+.noWrap { white-space: nowrap; }
+.textMuted { color: var(--color-text-muted); }
+.textSecondary { color: var(--color-text-secondary); }

@@ -1,8 +1,7 @@
 import { KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileEntry, Job, BlockDevice, RootEntry, Session, TrashEntry,
-  createArchiveJob, createChecksumJob, createCopyJob, createExtractJob,
-  createFolder, createMoveJob, deleteTrash, deletePath, getDevices,
+  createFolder, createJob, deleteTrash, deletePath, getDevices,
   getFiles, getJobs, getRoots, getTrash, renamePath, searchFiles, restoreTrash,
   uploadFiles, getDirSizes, createShare,
 } from '../api/client';
@@ -184,7 +183,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         setEntries((prev) => {
           let changed = false;
           const next = prev.map((e) => {
-            if (sizes[e.path] !== undefined && e.size !== sizes[e.path]) { changed = true; return { ...e, size: sizes[e.path] }; }
+            const newSize = sizes[e.path];
+            if (newSize !== undefined && e.size !== newSize) { changed = true; return { ...e, size: newSize }; }
             return e;
           });
           if (!changed) return prev;
@@ -314,7 +314,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const handleDelete = () => {
     if (selectedEntries.length === 0) return;
     const entriesToDelete = [...selectedEntries];
-    const label = entriesToDelete.length === 1 ? `"${entriesToDelete[0].name}"` : `${entriesToDelete.length} selected items`;
+    const label = entriesToDelete.length === 1 ? `"${entriesToDelete[0]!.name}"` : `${entriesToDelete.length} selected items`;
     setConfirmDialog({
       title: 'Move to Trash',
       message: `Move ${label} to trash? You can restore it from the Trash panel.`,
@@ -457,8 +457,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       for (const entry of dialog.entries) {
         for (const dest of destinations) {
           const targetPath = joinPath(dest, entry.name);
-          if (dialog.mode === 'copy') await createCopyJob(entry.path, targetPath, conflictPolicy);
-          else await createMoveJob(entry.path, targetPath, conflictPolicy);
+          await createJob({
+            type: dialog.mode === 'copy' ? 'copy' : 'move',
+            sourcePath: entry.path,
+            destinationPath: targetPath,
+            conflictPolicy,
+            verifyMode: 'size'
+          });
         }
       }
       if (dialog.mode === 'move') setFileClipboard(null);
@@ -477,12 +482,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           message: `"${archiveName}" already exists in ${currentPath}. Overwrite it?`,
           confirmLabel: 'Overwrite',
           danger: true,
-          onConfirm: () => { void runAction(() => createArchiveJob(entry.path, targetPath, 'overwrite'), 'Archive job started'); }
+          onConfirm: () => { void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'overwrite' }), 'Archive job started'); }
         });
       } else {
-        void runAction(() => createArchiveJob(entry.path, targetPath, 'rename'), 'Archive job started');
+        void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'rename' }), 'Archive job started');
       }
-    }).catch(() => { void runAction(() => createArchiveJob(entry.path, targetPath, 'rename'), 'Archive job started'); });
+    }).catch(() => { void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'rename' }), 'Archive job started'); });
   };
 
   const handleCreateArchive = () => {
@@ -519,12 +524,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               title: 'Destination Not Empty',
               message: `The destination folder contains ${existing.length} item${existing.length === 1 ? '' : 's'}. Extract here anyway? Existing files with the same name may be renamed.`,
               confirmLabel: 'Extract Anyway',
-              onConfirm: () => { void runAction(() => createExtractJob(entry.path, dest), 'Extract job started'); }
+              onConfirm: () => { void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract job started'); }
             });
           } else {
-            void runAction(() => createExtractJob(entry.path, dest), 'Extract job started');
+            void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract job started');
           }
-        }).catch(() => { void runAction(() => createExtractJob(entry.path, dest), 'Extract job started'); });
+        }).catch(() => { void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract job started'); });
       }
     });
   };
@@ -543,7 +548,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setTextInputDialog({
       title: 'Generate Checksum', label: 'Verify mode', initialValue: 'sha256',
       placeholder: 'sha256', confirmLabel: 'Generate',
-      onSubmit: (value) => { const mode = value.trim().toLowerCase() === 'md5' ? 'md5' : 'sha256'; void runAction(() => createChecksumJob(entry.path, mode), `Checksum (${mode}) job started`); }
+      onSubmit: (value) => { const mode = value.trim().toLowerCase() === 'md5' ? 'md5' : 'sha256'; void runAction(() => createJob({ type: 'checksum', sourcePath: entry.path, verifyMode: mode }), `Checksum (${mode}) job started`); }
     });
   };
 
@@ -552,13 +557,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const handleSelectAll = () => {
     const nextPaths = filteredEntries.map((entry) => entry.path);
     setSelectedPaths(nextPaths);
-    setLastSelectedPath(nextPaths.length > 0 ? nextPaths[nextPaths.length - 1] : null);
+    setLastSelectedPath(nextPaths.length > 0 ? nextPaths[nextPaths.length - 1]! : null);
   };
 
   const handleInvertSelection = () => {
     const nextPaths = filteredEntries.filter((entry) => !selectedPaths.includes(entry.path)).map((entry) => entry.path);
     setSelectedPaths(nextPaths);
-    setLastSelectedPath(nextPaths.length > 0 ? nextPaths[nextPaths.length - 1] : null);
+    setLastSelectedPath(nextPaths.length > 0 ? nextPaths[nextPaths.length - 1]! : null);
   };
 
   const handleSelectEntry = (entry: FileEntry, event: MouseEvent<HTMLElement>) => {
@@ -570,7 +575,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       if (from !== -1 && to !== -1) { const [start, end] = from < to ? [from, to] : [to, from]; setSelectedPaths(filteredEntries.slice(start, end + 1).map((item) => item.path)); return; }
     }
     if (event.metaKey || event.ctrlKey) {
-      if (selectedPaths.includes(entry.path)) { const next = selectedPaths.filter((p) => p !== entry.path); setSelectedPaths(next); setLastSelectedPath(next.length > 0 ? next[next.length - 1] : null); }
+      if (selectedPaths.includes(entry.path)) { const nextP = selectedPaths.filter((p) => p !== entry.path); setSelectedPaths(nextP); setLastSelectedPath(nextP.length > 0 ? nextP[nextP.length - 1]! : null); }
       else { setSelectedPaths([...selectedPaths, entry.path]); setLastSelectedPath(entry.path); }
       return;
     }
@@ -599,7 +604,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     if (event.key === 'Delete' && canWrite && canDelete) { event.preventDefault(); handleDelete(); return; }
     if (event.key === 'Escape') { setSelectedPaths([]); setContextMenu(null); setLastSelectedPath(null); return; }
     if (event.key === 'Enter' && selectedEntries.length === 1) {
-      if (selectedEntries[0].type === 'directory') navigateTo(selectedEntries[0].path);
+      const entry = selectedEntries[0]!;
+      if (entry.type === 'directory') navigateTo(entry.path);
       else handlePreview();
     }
   };
@@ -619,7 +625,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   // ── Touch handlers (mobile long-press context menu) ──────
 
   const handleEntryTouchStart = (entry: FileEntry, event: React.TouchEvent<HTMLElement>) => {
-    const touch = event.touches[0];
+    const touch = event.touches[0]!;
     longPressEntry.current = { entry, x: touch.clientX, y: touch.clientY };
     longPressTimerRef.current = window.setTimeout(() => {
       const lp = longPressEntry.current;

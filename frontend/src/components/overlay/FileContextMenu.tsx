@@ -69,7 +69,7 @@ export function FileContextMenu({
       const next = e.key === 'ArrowDown'
         ? (idx + 1) % buttons.length
         : (idx - 1 + buttons.length) % buttons.length;
-      buttons[next].focus();
+      buttons[next]?.focus();
     }
   }
 

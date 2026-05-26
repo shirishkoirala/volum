@@ -114,7 +114,7 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
                 className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
                 onClick={() => toggleBit(i)}
               >
-                {permBits[i] ? PERM_BITS[i].bit : '-'}
+                {permBits[i] ? PERM_BITS[i]!.bit : '-'}
               </button>
             ))}
             <span className={styles.permGroupLabel}>Group</span>
@@ -125,7 +125,7 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
                 className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
                 onClick={() => toggleBit(i)}
               >
-                {permBits[i] ? PERM_BITS[i].bit : '-'}
+                {permBits[i] ? PERM_BITS[i]!.bit : '-'}
               </button>
             ))}
             <span className={styles.permGroupLabel}>Other</span>
@@ -136,7 +136,7 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
                 className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
                 onClick={() => toggleBit(i)}
               >
-                {permBits[i] ? PERM_BITS[i].bit : '-'}
+                {permBits[i] ? PERM_BITS[i]!.bit : '-'}
               </button>
             ))}
           </div>

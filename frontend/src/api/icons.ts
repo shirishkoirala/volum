@@ -139,18 +139,18 @@ function pickIcon(mimetype: string, size: string): string {
 
 function genericMimetypeIcon(mimetype: string, size: string) {
   const s = size === '22' ? '22' : '64';
-  if (mimetype.startsWith('image-')) return s === '22' ? MIME_ICONS['image-x-generic'].s22 : MIME_ICONS['image-x-generic'].s64;
-  if (mimetype.startsWith('audio-')) return s === '22' ? MIME_ICONS['audio-x-generic'].s22 : MIME_ICONS['audio-x-generic'].s64;
-  if (mimetype.startsWith('video-')) return s === '22' ? MIME_ICONS['video-x-generic'].s22 : MIME_ICONS['video-x-generic'].s64;
-  if (mimetype.startsWith('text-')) return s === '22' ? MIME_ICONS['text-x-generic'].s22 : MIME_ICONS['text-x-generic'].s64;
-  if (mimetype.includes('spreadsheet') || mimetype.includes('excel')) return s === '22' ? MIME_ICONS['x-office-spreadsheet'].s22 : MIME_ICONS['x-office-spreadsheet'].s64;
-  if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) return s === '22' ? MIME_ICONS['x-office-presentation'].s22 : MIME_ICONS['x-office-presentation'].s64;
-  if (mimetype.includes('document') || mimetype.includes('word')) return s === '22' ? MIME_ICONS['x-office-document'].s22 : MIME_ICONS['x-office-document'].s64;
+  if (mimetype.startsWith('image-')) return s === '22' ? MIME_ICONS['image-x-generic']!.s22 : MIME_ICONS['image-x-generic']!.s64;
+  if (mimetype.startsWith('audio-')) return s === '22' ? MIME_ICONS['audio-x-generic']!.s22 : MIME_ICONS['audio-x-generic']!.s64;
+  if (mimetype.startsWith('video-')) return s === '22' ? MIME_ICONS['video-x-generic']!.s22 : MIME_ICONS['video-x-generic']!.s64;
+  if (mimetype.startsWith('text-')) return s === '22' ? MIME_ICONS['text-x-generic']!.s22 : MIME_ICONS['text-x-generic']!.s64;
+  if (mimetype.includes('spreadsheet') || mimetype.includes('excel')) return s === '22' ? MIME_ICONS['x-office-spreadsheet']!.s22 : MIME_ICONS['x-office-spreadsheet']!.s64;
+  if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) return s === '22' ? MIME_ICONS['x-office-presentation']!.s22 : MIME_ICONS['x-office-presentation']!.s64;
+  if (mimetype.includes('document') || mimetype.includes('word')) return s === '22' ? MIME_ICONS['x-office-document']!.s22 : MIME_ICONS['x-office-document']!.s64;
   if (mimetype.includes('zip') || mimetype.includes('compressed') || mimetype.includes('tar') || mimetype.includes('gzip')) {
-    return s === '22' ? MIME_ICONS['application-zip'].s22 : MIME_ICONS['application-zip'].s64;
+    return s === '22' ? MIME_ICONS['application-zip']!.s22 : MIME_ICONS['application-zip']!.s64;
   }
   if (mimetype.includes('executable') || mimetype.includes('sharedlib') || mimetype.includes('octet-stream')) {
-    return s === '22' ? MIME_ICONS['application-octet-stream'].s22 : MIME_ICONS['application-octet-stream'].s64;
+    return s === '22' ? MIME_ICONS['application-octet-stream']!.s22 : MIME_ICONS['application-octet-stream']!.s64;
   }
   return unknown64;
 }

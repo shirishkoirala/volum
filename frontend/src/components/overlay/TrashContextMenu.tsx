@@ -31,7 +31,7 @@ export function TrashContextMenu({ x, y, onRestore, onDeletePermanently, onClose
       const next = e.key === 'ArrowDown'
         ? (idx + 1) % buttons.length
         : (idx - 1 + buttons.length) % buttons.length;
-      buttons[next].focus();
+      buttons[next]?.focus();
     }
   }
 

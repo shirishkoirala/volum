@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/volum-app/volum/backend/internal/jobs"
+	"github.com/volum-app/volum/backend/internal/worker"
 )
 
 func (s *Server) handleJobs(w http.ResponseWriter, r *http.Request) {
@@ -76,38 +77,73 @@ func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleCreateCopyJob(w http.ResponseWriter, r *http.Request) {
-	s.handleCreateTransferJob(w, r, jobs.TypeCopy)
-}
-
-func (s *Server) handleCreateMoveJob(w http.ResponseWriter, r *http.Request) {
-	s.handleCreateTransferJob(w, r, jobs.TypeMove)
-}
-
-func (s *Server) handleCreateArchiveJob(w http.ResponseWriter, r *http.Request) {
-	s.handleCreateTransferJob(w, r, jobs.TypeArchive)
-}
-
-func (s *Server) handleCreateTransferJob(w http.ResponseWriter, r *http.Request, jobType jobs.Type) {
+func (s *Server) handleCreateJob(w http.ResponseWriter, r *http.Request) {
 	var req jobs.CreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
 		return
 	}
-	req.Type = jobType
-	source, err := s.guard.Resolve(req.SourcePath)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	if _, err := s.guard.Resolve(req.DestinationPath); err != nil {
-		writeError(w, err)
-		return
-	}
-	if jobType == jobs.TypeMove {
-		if _, err := os.Stat(source); err != nil {
+
+	switch req.Type {
+	case jobs.TypeExtract:
+		req.ConflictPolicy = "rename"
+		source, err := s.guard.Resolve(req.SourcePath)
+		if err != nil {
 			writeError(w, err)
 			return
+		}
+		info, err := os.Stat(source)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		if !info.Mode().IsRegular() {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "extract source must be a regular file"})
+			return
+		}
+		if worker.ArchiveFormat(req.SourcePath) == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "unsupported archive format, supported: .zip, .tar, .tar.gz, .tgz"})
+			return
+		}
+		if req.DestinationPath == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "destinationPath is required"})
+			return
+		}
+		if _, err := s.guard.Resolve(req.DestinationPath); err != nil {
+			writeError(w, err)
+			return
+		}
+
+	case jobs.TypeChecksum:
+		if req.VerifyMode == "" {
+			req.VerifyMode = "sha256"
+		}
+		if req.VerifyMode != "md5" && req.VerifyMode != "sha256" {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "verifyMode must be md5 or sha256"})
+			return
+		}
+		if _, err := s.guard.Resolve(req.SourcePath); err != nil {
+			writeError(w, err)
+			return
+		}
+
+	default:
+		source, err := s.guard.Resolve(req.SourcePath)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		if req.DestinationPath != "" {
+			if _, err := s.guard.Resolve(req.DestinationPath); err != nil {
+				writeError(w, err)
+				return
+			}
+		}
+		if req.Type == jobs.TypeMove {
+			if _, err := os.Stat(source); err != nil {
+				writeError(w, err)
+				return
+			}
 		}
 	}
 
@@ -116,7 +152,7 @@ func (s *Server) handleCreateTransferJob(w http.ResponseWriter, r *http.Request,
 		writeError(w, err)
 		return
 	}
-	if jobType == jobs.TypeMove {
+	if req.Type == jobs.TypeMove {
 		if err := s.jobs.CreateAuditLog(r.Context(), "move_queued", req.SourcePath, "queued move to "+req.DestinationPath); err != nil {
 			writeError(w, err)
 			return
