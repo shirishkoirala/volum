@@ -69,10 +69,10 @@ This roadmap tracks UI inconsistencies found in the current frontend after the c
 
 | # | Task | Status |
 |---|---|---|
-| 8.1 | Test desktop width similar to the server screenshot: Desktop, Files, Trash, Settings, Jobs, Share Manager | ☐ |
-| 8.2 | Test mobile/narrow width for toolbar overflow, breadcrumb wrapping, settings nav, and dialog body scroll | ☐ |
-| 8.3 | Verify text does not overflow buttons, cards, breadcrumbs, menu items, and grid tiles with long file names | ☐ |
-| 8.4 | Add visual regression notes/screenshots for any high-risk layout after each phase | ☐ |
+| 8.1 | Test desktop width similar to the server screenshot: Desktop, Files, Trash, Settings, Jobs, Share Manager | ✓ |
+| 8.2 | Test mobile/narrow width for toolbar overflow, breadcrumb wrapping, settings nav, and dialog body scroll | ✓ |
+| 8.3 | Verify text does not overflow buttons, cards, breadcrumbs, menu items, and grid tiles with long file names | ✓ |
+| 8.4 | Add visual regression notes/screenshots for any high-risk layout after each phase | ✓ |
 
 ## Acceptance Checks
 
