@@ -51,7 +51,11 @@ function loadOrder(): string[] {
 }
 
 function saveOrder(ids: string[]) {
-  localStorage.setItem(ORDER_KEY, JSON.stringify(ids));
+  try {
+    localStorage.setItem(ORDER_KEY, JSON.stringify(ids));
+  } catch (e) {
+    console.warn('Failed to save desktop order:', e);
+  }
 }
 
 export function DesktopView({

@@ -781,7 +781,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPath, viewMode, sortField, sortDirection]);
-  useEffect(() => { if (Notification.permission === 'default') void Notification.requestPermission(); }, []);
+  useEffect(() => { if (typeof Notification !== 'undefined' && Notification.permission === 'default') void Notification.requestPermission(); }, []);
 
   // ── Shell JSX ────────────────────────────────────────────
 

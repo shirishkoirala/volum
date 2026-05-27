@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getSession, logout, Session } from './api/client';
 import { LoginScreen } from './screens/LoginScreen';
 import { Home } from './screens/Home';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import styles from './App.module.css';
 
 export function App() {
@@ -39,11 +40,13 @@ export function App() {
   }
 
   return (
-    <Home
-      session={session!}
-      onLogout={handleLogout}
-      theme={theme}
-      onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-    />
+    <ErrorBoundary>
+      <Home
+        session={session!}
+        onLogout={handleLogout}
+        theme={theme}
+        onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+      />
+    </ErrorBoundary>
   );
 }

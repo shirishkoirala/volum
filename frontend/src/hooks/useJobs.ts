@@ -36,14 +36,20 @@ export function useJobs(
 
     const events = new EventSource('/api/jobs/events');
     events.addEventListener('jobs', (event) => {
-      const response = JSON.parse((event as MessageEvent).data) as { jobs: Job[] | null };
-      const nextJobs = response.jobs ?? [];
+      let nextJobs: Job[] = [];
+      try {
+        const response = JSON.parse((event as MessageEvent).data) as { jobs: Job[] | null };
+        nextJobs = response.jobs ?? [];
+      } catch (e) {
+        console.warn('Failed to parse SSE job event:', e);
+        return;
+      }
       for (const job of nextJobs) {
         const previousStatus = jobStatuses.current.get(job.id);
         if (job.status === 'completed' && previousStatus !== 'completed' && refreshesFiles(job)) {
           refreshRef.current();
         }
-        if (!knownJobIds.current.has(job.id) && Notification.permission === 'granted') {
+        if (typeof Notification !== 'undefined' && !knownJobIds.current.has(job.id) && Notification.permission === 'granted') {
           if (job.status === 'completed') {
             new Notification('Job completed', { body: `[${job.type}] ${job.sourcePath ?? job.id}` });
           } else if (job.status === 'failed') {
