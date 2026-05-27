@@ -9,7 +9,7 @@
 }
 
 .shortcutsPanel h3 {
-  font-size: 17px;
+  font-size: var(--font-size-title);
   margin: 0 0 var(--space-lg);
 }
 
@@ -19,7 +19,7 @@
   align-items: center;
   padding: 6px 0;
   gap: var(--space-lg);
-  font-size: 14px;
+  font-size: var(--font-size-md);
 }
 
 .shortcutKey {
@@ -28,7 +28,7 @@
   border-radius: var(--radius-sm);
   color: var(--color-text-muted);
   font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   padding: 2px 8px;
   white-space: nowrap;
 }

@@ -3,7 +3,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text);
-  font-size: 13px;
+  font-size: var(--font-size-base);
   outline: none;
   padding: 0 10px;
   min-height: 38px;

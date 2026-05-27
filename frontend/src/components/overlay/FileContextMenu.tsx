@@ -1,22 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Icon } from '../ui/Icon';
+import type { MenuCapabilities } from '../../types/capabilities';
 import styles from './ContextMenu.module.css';
-
-export type MenuCapabilities = {
-  canWrite: boolean;
-  canPreview: boolean;
-  canInfo: boolean;
-  canDownload: boolean;
-  canRename: boolean;
-  canArchive: boolean;
-  canExtract: boolean;
-  canChecksum: boolean;
-  canCopy: boolean;
-  canMove: boolean;
-  canPaste: boolean;
-  canDelete: boolean;
-  canAnalyze: boolean;
-};
 
 interface FileContextMenuProps {
   x: number;

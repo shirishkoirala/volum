@@ -42,16 +42,16 @@ This roadmap tracks UI inconsistencies found in the current frontend after the c
 
 | # | Task | Status |
 |---|---|---|
-| 5.1 | Ensure disabled write actions communicate why they are unavailable: readonly role, no selection, root item, or trash context | ☐ |
-| 5.2 | Make File menu, context menu, toolbar, and keyboard shortcut availability use one shared capability model | ☐ |
-| 5.3 | Add missing capability guards to AppMenuBar actions so Delete/Rename are disabled when no item is selected, not only when `canWrite=false` | ☐ |
-| 5.4 | Normalize menu item heights, icon sizes, separator spacing, and danger action placement between app menu and context menus | ☐ |
+| 5.1 | Ensure disabled write actions communicate why they are unavailable: readonly role, no selection, root item, or trash context | ✓ |
+| 5.2 | Make File menu, context menu, toolbar, and keyboard shortcut availability use one shared capability model | ✓ |
+| 5.3 | Add missing capability guards to AppMenuBar actions so Delete/Rename are disabled when no item is selected, not only when `canWrite=false` | ✓ |
+| 5.4 | Normalize menu item heights, icon sizes, separator spacing, and danger action placement between app menu and context menus | ✓ |
 
 ## Phase 6 — Settings And Admin Surfaces
 
 | # | Task | Status |
 |---|---|---|
-| 6.1 | Replace Settings root usage inline meter width with `ProgressBar` or a shared meter primitive | ☐ |
+| 6.1 | Replace Settings root usage inline meter width with `ProgressBar` or a shared meter primitive | ✓ |
 | 6.2 | Ensure Settings, ServerInfo, ShareManager, Jobs, and DiskUsageAnalyzer use the same status badge and notice language | ☐ |
 | 6.3 | Normalize settings category nav with the main sidebar/dock density and active-state treatment | ☐ |
 | 6.4 | Confirm all admin actions have loading, success, error, and retry states with consistent button sizing | ☐ |
@@ -60,10 +60,10 @@ This roadmap tracks UI inconsistencies found in the current frontend after the c
 
 | # | Task | Status |
 |---|---|---|
-| 7.1 | Audit all CSS variables against `tokens.css`; remove stale references and define only reusable missing tokens | ☐ |
-| 7.2 | Keep card radius at `--radius-md` or smaller for repeated operational items unless a modal/shell requires larger radius | ☐ |
-| 7.3 | Reduce one-off hardcoded spacing where it should be a design token, while preserving precise layout values for fixed grids | ☐ |
-| 7.4 | Verify light/dark contrast for selected items, disabled text, warning/danger notices, progress bars, and skeletons | ☐ |
+| 7.1 | Audit all CSS variables against `tokens.css`; remove stale references and define only reusable missing tokens | ✓ |
+| 7.2 | Keep card radius at `--radius-md` or smaller for repeated operational items unless a modal/shell requires larger radius | ✓ |
+| 7.3 | Reduce one-off hardcoded spacing where it should be a design token, while preserving precise layout values for fixed grids | ✓ |
+| 7.4 | Verify light/dark contrast for selected items, disabled text, warning/danger notices, progress bars, and skeletons | ✓ |
 
 ## Phase 8 — Responsive QA
 

@@ -40,7 +40,7 @@
 }
 
 .option span {
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   color: var(--color-text-muted);
   max-width: 64px;
   overflow: hidden;

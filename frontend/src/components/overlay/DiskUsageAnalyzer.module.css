@@ -26,7 +26,7 @@
   justify-content: center;
   padding: var(--space-3xl) 0;
   color: var(--color-text-muted);
-  font-size: 14px;
+  font-size: var(--font-size-md);
 }
 
 .loading svg {
@@ -38,7 +38,7 @@
   color: var(--color-danger-text);
   display: flex;
   gap: var(--space-sm);
-  font-size: 13px;
+  font-size: var(--font-size-base);
 }
 
 .summary {
@@ -52,7 +52,7 @@
 
 .summaryLabel {
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--font-size-base);
 }
 
 .summaryValue {
@@ -86,7 +86,7 @@
   gap: var(--space-sm);
   align-items: center;
   padding: var(--space-xs) 0;
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   text-transform: uppercase;
   border-bottom: 1px solid var(--color-border-light);
@@ -111,7 +111,7 @@
 }
 
 .tree {
-  font-size: 13px;
+  font-size: var(--font-size-base);
 }
 
 .treeNode {
@@ -187,7 +187,7 @@
 
 .empty {
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--font-size-base);
   padding: var(--space-lg) 0;
   text-align: center;
 }

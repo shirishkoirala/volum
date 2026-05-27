@@ -55,7 +55,7 @@
   display: flex;
   gap: var(--space-sm);
   padding: 4px 0;
-  font-size: 13px;
+  font-size: var(--font-size-base);
 }
 
 .renamePreviewItem.changed {
@@ -79,7 +79,7 @@
 
 .renameError {
   color: var(--color-danger-text);
-  font-size: 13px;
+  font-size: var(--font-size-base);
   margin: 0;
   padding: 0 var(--space-xl);
 }

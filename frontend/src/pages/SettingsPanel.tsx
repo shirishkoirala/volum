@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
 import { Button, MutedText } from '../components/ui/shared';
+import { ProgressBar } from '../components/ui/ProgressBar';
 import { ServerInfo } from '../components/ui/ServerInfo';
 import { WallpaperPicker } from '../components/ui/WallpaperPicker';
 import { formatBytes } from '../utils/format';
@@ -141,11 +142,9 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
                       <span>{rootLabel(root)}</span>
                       <small>{root.path}</small>
                     </div>
-                    {root.available && root.totalBytes > 0 && (
-                      <span className={styles.rootMeter}>
-                        <span style={{ width: `${Math.min((root.usedBytes / root.totalBytes) * 100, 100)}%` }} />
-                      </span>
-                    )}
+{root.available && root.totalBytes > 0 && (
+  <ProgressBar value={Math.min((root.usedBytes / root.totalBytes) * 100, 100)} className={styles.rootMeter} />
+)}
                     <small>{root.available ? formatRootUsage(root) : 'Unavailable — check mount or configuration'}</small>
                   </div>
                 ))}

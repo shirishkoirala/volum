@@ -23,7 +23,7 @@
   background: var(--color-brand-bg);
   border: 1px solid var(--color-brand);
   border-radius: var(--radius-sm);
-  opacity: 0.3;
+  opacity: var(--opacity-ghost);
   pointer-events: none;
   position: absolute;
   z-index: 10;

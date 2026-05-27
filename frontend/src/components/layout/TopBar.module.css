@@ -27,7 +27,7 @@
 .right {
   align-items: center;
   display: flex;
-  gap: 2px;
+  gap: var(--space-xxs);
   margin-left: auto;
   position: relative;
 }
@@ -56,13 +56,13 @@
 }
 
 .brandName {
-  font-size: 13px;
+  font-size: var(--font-size-base);
   font-weight: 600;
 }
 
 .clock {
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: var(--font-size-base);
   font-variant-numeric: tabular-nums;
   padding: 0 8px;
   user-select: none;
@@ -94,7 +94,7 @@
   box-shadow: var(--shadow-menu);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-xxs);
   min-width: 200px;
   padding: var(--space-sm);
   position: absolute;
@@ -111,7 +111,7 @@
   color: var(--color-text-secondary);
   cursor: pointer;
   display: flex;
-  font-size: 13px;
+  font-size: var(--font-size-base);
   gap: 10px;
   min-height: 36px;
   padding: 0 10px;

@@ -5,7 +5,7 @@
 }
 
 .title {
-  font-size: 15px;
+  font-size: var(--font-size-lg);
   font-weight: 600;
   margin: 0;
   color: var(--color-text);
@@ -39,19 +39,19 @@
 .info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-xxs);
   min-width: 0;
   flex: 1;
 }
 
 .info > span:first-child {
-  font-size: 14px;
+  font-size: var(--font-size-md);
   font-weight: 600;
   color: var(--color-text);
 }
 
 .info small {
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
 }
 

@@ -15,7 +15,7 @@
   border-bottom: 1px solid var(--color-border);
   column-gap: var(--space-sm);
   display: grid;
-  font-size: 11px;
+  font-size: var(--font-size-xs);
   font-weight: 700;
   grid-template-columns: 1fr 120px 100px 80px 70px 80px;
   padding: var(--space-sm) var(--space-md);
@@ -26,7 +26,7 @@
   align-items: center;
   column-gap: var(--space-sm);
   display: grid;
-  font-size: 13px;
+  font-size: var(--font-size-base);
   grid-template-columns: 1fr 120px 100px 80px 70px 80px;
   min-height: 42px;
   padding: var(--space-xs) var(--space-md);
@@ -43,17 +43,17 @@
 .shareColToken {
   color: var(--color-text-muted);
   font-family: monospace;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
 }
 
 .shareColExpiry {
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: var(--font-size-sm);
 }
 
 .shareColDownloads {
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: var(--font-size-sm);
 }
 
 .shareColEnabled {
@@ -63,7 +63,7 @@
 .shareColActions {
   align-items: center;
   display: flex;
-  gap: 2px;
+  gap: var(--space-xxs);
 }
 
 .shareActionButton {

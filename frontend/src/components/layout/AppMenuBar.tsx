@@ -41,6 +41,7 @@ type MenuItem = {
   label: string;
   icon?: string;
   disabled?: boolean;
+  danger?: boolean;
   onClick: () => void;
 };
 
@@ -130,7 +131,7 @@ export function AppMenuBar({ handlers }: AppMenuBarProps) {
      { label: 'Invert Selection', icon: 'selection-invert', onClick: handlers.onInvertSelection },
      { label: '---', disabled: true, onClick: () => {} },
      { label: 'Rename', icon: 'edit-rename', disabled: !handlers.canWrite || handlers.selectedCount === 0, onClick: handlers.onRename },
-     { label: 'Delete', icon: 'edit-delete', disabled: !handlers.canWrite || handlers.selectedCount === 0, onClick: handlers.onDelete },
+     { label: 'Delete', icon: 'edit-delete', disabled: !handlers.canWrite || handlers.selectedCount === 0, danger: true, onClick: handlers.onDelete },
    ];
 
   const viewItems: MenuItem[] = [
@@ -203,7 +204,7 @@ export function AppMenuBar({ handlers }: AppMenuBarProps) {
                 ) : (
                   <button
                     key={item.label}
-                    className={`${styles.menuItem}${item.disabled ? ` ${styles.menuItemDisabled}` : ''}`}
+                    className={`${styles.menuItem}${item.disabled ? ` ${styles.menuItemDisabled}` : ''}${item.danger ? ` ${styles.danger}` : ''}`}
                     onClick={() => { if (!item.disabled) handleItemClick(item.onClick); }}
                     onKeyDown={(e) => handleItemKeyDown(e, menuItems[menu.id], itemIdx)}
                     data-menu-index={itemIdx}
