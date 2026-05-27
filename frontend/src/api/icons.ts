@@ -3,6 +3,7 @@ import type { FileEntry } from '../api/client';
 import folderIcon from '../assets/places/folder.svg?url';
 import driveHarddisk from '../assets/drive-harddisk.svg?url';
 import computerIconSvg from '../assets/computer.svg?url';
+import filesIconSvg from '../assets/files.svg?url';
 import folderBookmarksIcon from '../assets/places/folder-bookmarks.svg?url';
 import desktopIconSvg from '../assets/places/desktop.svg?url';
 import trashIcon from '../assets/places/user-trash.svg?url';
@@ -48,7 +49,7 @@ export function folderBookmarksIconUrl() {
 }
 
 export function filesIconUrl() {
-  return folderIcon;
+  return filesIconSvg;
 }
 
 export function desktopDockIconUrl() {
