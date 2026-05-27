@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import type { SortField, SortDirection } from '../types';
 import type { ViewMode } from '../utils/view';
@@ -6,7 +6,7 @@ import type { ViewMode } from '../utils/view';
 type FolderPrefs = Record<string, { viewMode?: ViewMode; sortField?: SortField; sortDirection?: SortDirection }>;
 
 export function useViewPreferences() {
-  const [currentPath, setCurrentPath] = useLocalStorage('volum_currentPath', '');
+  const [currentPath, setCurrentPath] = useState('');
   const [viewMode, setViewMode] = useLocalStorage<ViewMode>('volum_viewMode', 'grid' as ViewMode);
   const [sortField, setSortField] = useLocalStorage<SortField>('volum_sortField', 'name' as SortField);
   const [sortDirection, setSortDirection] = useLocalStorage<SortDirection>('volum_sortDirection', 'asc' as SortDirection);

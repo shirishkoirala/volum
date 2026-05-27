@@ -12,6 +12,7 @@
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   padding: var(--space-2xl);
   flex: 1;
+  min-height: 0;
 }
 
 .desktopError {

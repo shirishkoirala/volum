@@ -2,9 +2,9 @@
   display: grid;
   grid-template-columns: 56px minmax(0, 1fr);
   grid-template-rows: 44px 1fr 28px;
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
   position: relative;
+  overflow: hidden;
 }
 
 .workspace {
