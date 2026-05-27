@@ -1,14 +1,32 @@
 .header {
+  align-items: center;
+  display: flex;
+  gap: var(--space-md);
+  justify-content: space-between;
   margin-bottom: var(--space-md);
   min-height: 46px;
 }
 
 .left {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: var(--space-md);
   min-width: 0;
 }
 
 .breadcrumbs {
+  align-items: center;
+  display: flex;
+  flex: 1;
   min-width: 0;
+}
+
+.right {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-sm);
 }
 
 .breadcrumbsInner {
@@ -50,7 +68,11 @@
   color: var(--color-text);
   font-size: var(--font-size-base);
   font-weight: 600;
+  max-width: 360px;
+  overflow: hidden;
   padding: 5px 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .overflowDots {
@@ -224,5 +246,31 @@
   .header {
     align-items: stretch;
     flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    min-height: 0;
+  }
+
+  .left {
+    gap: var(--space-sm);
+  }
+
+  .right {
+    align-self: stretch;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .breadcrumbsInner {
+    min-height: 32px;
+  }
+
+  .current {
+    max-width: 58vw;
+  }
+
+  .moreMenu,
+  .overflowMenu {
+    max-width: calc(100vw - 32px);
   }
 }

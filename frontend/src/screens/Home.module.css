@@ -3,6 +3,7 @@
   grid-template-columns: 56px minmax(0, 1fr);
   grid-template-rows: 44px 1fr 28px;
   height: 100vh;
+  height: 100dvh;
   position: relative;
 }
 
@@ -13,4 +14,16 @@
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  .appShell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 38px minmax(0, 1fr) 48px 24px;
+  }
+
+  .workspace {
+    grid-column: 1;
+    grid-row: 2;
+  }
 }

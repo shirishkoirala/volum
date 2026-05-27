@@ -118,3 +118,33 @@
   gap: var(--space-sm);
   justify-content: flex-end;
 }
+
+@media (max-width: 760px) {
+  .infoPanel {
+    border-radius: var(--radius-md);
+    max-height: calc(100dvh - 24px);
+    width: 100%;
+  }
+
+  .infoPanelBody {
+    gap: var(--space-sm);
+    padding: var(--space-md);
+  }
+
+  .infoIconRow {
+    align-items: flex-start;
+  }
+
+  .infoDl {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .infoDl dt {
+    margin-top: var(--space-xs);
+  }
+
+  .infoActions {
+    flex-wrap: wrap;
+  }
+}

@@ -76,3 +76,28 @@
 .jobCollapseToggle:hover {
   text-decoration: underline;
 }
+
+@media (max-width: 760px) {
+  .jobList {
+    padding: var(--space-sm);
+  }
+
+  .jobItem {
+    padding: var(--space-sm);
+  }
+
+  .jobTitleRow,
+  .jobMeta,
+  .jobActions {
+    flex-wrap: wrap;
+  }
+
+  .jobTitleRow {
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+
+  .jobMeta {
+    gap: var(--space-xs) var(--space-sm);
+  }
+}

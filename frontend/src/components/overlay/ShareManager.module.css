@@ -40,6 +40,13 @@
   background: var(--color-hover);
 }
 
+.shareColPath {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .shareColToken {
   color: var(--color-text-muted);
   font-family: monospace;
@@ -71,12 +78,6 @@
   width: 30px;
 }
 
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .skeletonRow {
   align-items: center;
   column-gap: var(--space-sm);
@@ -106,3 +107,70 @@
   animation: skeletonPulse 1.5s ease-in-out infinite;
 }
 
+@media (max-width: 760px) {
+  .shareManager {
+    max-height: calc(100dvh - 24px);
+    width: 100%;
+  }
+
+  .shareTable {
+    border-radius: var(--radius-sm);
+    overflow-y: auto;
+  }
+
+  .shareHeader {
+    display: none;
+  }
+
+  .shareRow {
+    align-items: stretch;
+    display: grid;
+    gap: var(--space-xs);
+    grid-template-columns: 1fr auto;
+    min-height: 0;
+    padding: var(--space-sm);
+  }
+
+  .shareColPath {
+    grid-column: 1 / -1;
+    white-space: normal;
+    word-break: break-all;
+  }
+
+  .shareColToken,
+  .shareColExpiry,
+  .shareColDownloads,
+  .shareColEnabled {
+    align-items: center;
+    display: flex;
+    gap: var(--space-xs);
+  }
+
+  .shareColToken::before,
+  .shareColExpiry::before,
+  .shareColDownloads::before,
+  .shareColEnabled::before {
+    color: var(--color-text-muted);
+    content: attr(data-label);
+    flex: 0 0 72px;
+    font-family: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .shareColActions {
+    align-self: end;
+    grid-column: 2;
+    grid-row: 2 / span 4;
+  }
+
+  .skeletonRow {
+    grid-template-columns: 1fr;
+    padding: var(--space-sm);
+  }
+
+  .skeletonRow .skeletonCell:nth-child(n + 4) {
+    display: none;
+  }
+}

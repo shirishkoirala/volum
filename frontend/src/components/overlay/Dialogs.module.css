@@ -205,3 +205,34 @@
   margin-left: auto;
   white-space: nowrap;
 }
+
+@media (max-width: 760px) {
+  .appDialog,
+  .appDialogSm,
+  .appDialogWide {
+    border-radius: var(--radius-md);
+    max-height: calc(100dvh - 24px);
+    max-width: 100%;
+    min-width: 0;
+    overflow-y: auto;
+    padding: var(--space-md);
+    width: 100%;
+  }
+
+  .dialogFieldRow {
+    flex-wrap: wrap;
+  }
+
+  .dialogActions {
+    flex-wrap: wrap;
+  }
+
+  .previewItem {
+    align-items: flex-start;
+    min-height: 34px;
+  }
+
+  .previewItemFate {
+    margin-left: 0;
+  }
+}

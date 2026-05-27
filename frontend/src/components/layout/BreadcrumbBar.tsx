@@ -168,8 +168,8 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
 
   if (locationMode) {
     return (
-      <header className={`${styles.header} row gapMd justifyBetween`}>
-        <div className={`${styles.left} row gapMd flex1`}>
+      <header className={styles.header}>
+        <div className={styles.left}>
           <IconButton onClick={onToggleLocationMode} title="Cancel">
             <Icon name="window-close" size={18} />
           </IconButton>
@@ -191,15 +191,15 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
   }
 
   return (
-    <header className={`${styles.header} row gapMd justifyBetween`}>
-      <div className={`${styles.left} row gapMd flex1`}>
+    <header className={styles.header}>
+      <div className={styles.left}>
         <IconButton
           onClick={onBack}
           title="Go back"
         >
           <RotatedIcon><Icon name="go-next" size={18} /></RotatedIcon>
         </IconButton>
-        <nav className={`${styles.breadcrumbs} row flex1`} aria-label="Breadcrumb">
+        <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
           <div ref={navRef} className={styles.breadcrumbsInner}>
             {visibleCrumbs.map((crumb, rawIndex) => {
               const index = overflowCount > 0 ? (rawIndex === 0 ? 0 : crumbs.length - 1) : rawIndex;
@@ -208,13 +208,13 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
                 <span key={crumb.path ?? index} className={styles.crumbRow}>
                   {index > 0 && <Icon name="go-next" size={16} />}
                   {isLast ? (
-                    <span className={`${styles.current} truncate`}>{crumb.label}</span>
+                    <span className={styles.current}>{crumb.label}</span>
                   ) : crumb.path ? (
                     <button type="button" onClick={() => onNavigate(crumb.path!)} className={styles.crumbBtn}>
                       {crumb.label}
                     </button>
                   ) : (
-                    <span className={`${styles.current} truncate`}>{crumb.label}</span>
+                    <span className={styles.current}>{crumb.label}</span>
                   )}
                 </span>
               );
@@ -270,7 +270,7 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
         </nav>
       </div>
       {childrenArray.length > 0 && (
-        <div className={`${styles.right} row gapSm shrink0`} ref={rightRef}>
+        <div className={styles.right} ref={rightRef}>
           {visibleToolbarItems}
           {toolbarOverflowIdx > 0 && (
             <div className={styles.moreWrap}>

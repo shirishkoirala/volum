@@ -3,11 +3,12 @@
 ## Build & Run
 
 - **Production build**: `docker compose -f docker-compose.server.yml up --build -d`
-- **Frontend dev**: `cd frontend && npm run dev` (port 5174, API on 8090)
-- **TypeScript check**: `cd frontend && npx tsc --noEmit`
-- **Lint**: `cd frontend && npm run lint`
+- **Dev server**: always use Docker dev (`docker compose -f docker-compose.dev.yml up --build`) instead of local `npm run dev` unless explicitly requested otherwise
+- **Tests/checks**: always run verification through Docker when possible; use local frontend commands only as a fallback and call that out
+- **Frontend fallback typecheck**: `cd frontend && npx tsc --noEmit`
+- **Frontend fallback lint**: `cd frontend && npm run lint`
+- **Frontend fallback build**: `cd frontend && npm run build`
 - **Must lint + type-check after every change before running the server**
-- **Full frontend build**: `cd frontend && npm run build`
 - **Go is NOT installed locally** — always verify backend via Docker build
 
 ## Architecture
@@ -275,5 +276,4 @@ frontend/src/
 - **9.3** Enabled `noUncheckedIndexedAccess` and `noUnusedLocals` in `tsconfig.json`; fixed 40+ strictness errors across all frontend files
 - **9.4** Added CSS utility classes to `global.css` (`.row`, `.col`, `.gap*`, `.truncate`, `.clickable`, flex helpers, alignment, color utilities)
 - **9.2** (recommendation) OpenAPI/Swagger would improve backend↔frontend type sync but deferred — existing TypeScript types in `client.ts` are already well-maintained
-
 

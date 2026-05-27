@@ -21,6 +21,18 @@
   width: 100%;
 }
 
+.listType,
+.listSize,
+.listModified,
+.listPermissions,
+.listOwner,
+.listGroup {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .fileRowList:hover {
   background: var(--color-hover);
 }
@@ -169,4 +181,32 @@
 
 .renameInput:focus {
   box-shadow: 0 0 0 2px var(--color-brand-bg);
+}
+
+@media (max-width: 760px) {
+  .fileRowList {
+    gap: var(--space-sm);
+    grid-template-columns: 28px minmax(0, 1fr) 72px;
+    min-height: 46px;
+    padding: 0 var(--space-sm);
+  }
+
+  .fileRowGrid {
+    min-height: 126px;
+    padding: 4px;
+  }
+
+  .listType,
+  .listModified,
+  .listPermissions,
+  .listOwner,
+  .listGroup {
+    display: none;
+  }
+
+  .listSize {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    text-align: right;
+  }
 }

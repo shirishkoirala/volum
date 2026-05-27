@@ -99,3 +99,9 @@
 .danger {
   color: var(--color-danger) !important;
 }
+
+@media (max-width: 760px) {
+  .menuBar {
+    display: none;
+  }
+}

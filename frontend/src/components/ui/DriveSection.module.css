@@ -67,3 +67,18 @@
   overflow: hidden;
   width: 100%;
 }
+
+@media (max-width: 760px) {
+  .section {
+    gap: var(--space-sm);
+  }
+
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .item {
+    gap: var(--space-md);
+    padding: var(--space-md);
+  }
+}

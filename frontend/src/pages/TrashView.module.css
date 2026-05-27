@@ -38,3 +38,11 @@
   flex: 0 0 auto;
   width: auto;
 }
+
+@media (max-width: 760px) {
+  .trashGrid {
+    --grid-column: 108px;
+    gap: 14px;
+    padding: 0 0 var(--space-lg);
+  }
+}

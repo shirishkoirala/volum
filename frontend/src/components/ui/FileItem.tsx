@@ -115,12 +115,12 @@ export function FileItem({
       )}
       {viewMode === 'list' && (
         <>
-          <span>{entry.type}</span>
-          <span>{formatBytes(entry.size)}</span>
-          <span>{new Date(entry.modifiedAt).toLocaleString()}</span>
-          <span>{entry.permissions}</span>
-          <span>{entry.owner}</span>
-          <span>{entry.group}</span>
+          <span className={styles.listType}>{entry.type}</span>
+          <span className={styles.listSize}>{formatBytes(entry.size)}</span>
+          <span className={styles.listModified}>{new Date(entry.modifiedAt).toLocaleString()}</span>
+          <span className={styles.listPermissions}>{entry.permissions}</span>
+          <span className={styles.listOwner}>{entry.owner}</span>
+          <span className={styles.listGroup}>{entry.group}</span>
         </>
       )}
     </div>

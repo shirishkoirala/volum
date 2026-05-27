@@ -16,17 +16,17 @@ This roadmap tracks UI inconsistencies found in the current frontend after the c
 | # | Task | Status |
 |---|---|---|
 | 2.1 | Replace TrashView's local `.fileGrid`, `.fileRow`, `.fileName`, and `.fileMeta` styling with the shared `FileGridView`/`FileItem` pattern or a dedicated shared `GridItem` primitive | ✓ |
-| 2.2 | Make Files and Trash selection/focus states visually identical, including hover border, selected border, keyboard outline, and text color | ☐ |
+| 2.2 | Make Files and Trash selection/focus states visually identical, including hover border, selected border, keyboard outline, and text color | ✓ |
 | 2.3 | Use one icon size source for grid tiles instead of hardcoded `76`/`84` values across `FileItem` and `TrashView` | ✓ |
-| 2.4 | Confirm list, grid, and columns views have matching drag-over and focus-visible behavior | ☐ |
+| 2.4 | Confirm list, grid, and columns views have matching drag-over and focus-visible behavior | ✓ |
 
 ## Phase 3 — CSS Modules Discipline
 
 | # | Task | Status |
 |---|---|---|
-| 3.1 | Remove global utility classes from component markup where CSS Modules already own layout (`row`, `gapSm`, `truncate`, `justifyBetween`, etc.) | ☐ |
+| 3.1 | Remove global utility classes from component markup where CSS Modules already own layout (`row`, `gapSm`, `truncate`, `justifyBetween`, etc.) | ✓ |
 | 3.2 | Replace remaining non-essential inline styles with CSS-module classes or CSS custom properties | ☐ |
-| 3.3 | Keep legitimate dynamic CSS variables inline only when the value is data-driven, such as progress width, pointer position, z-index, or wallpaper preview color | ☐ |
+| 3.3 | Keep legitimate dynamic CSS variables inline only when the value is data-driven, such as progress width, pointer position, z-index, or wallpaper preview color | ✓ |
 | 3.4 | Remove `:global(.dialog-button)` compatibility styling from `FolderPicker.module.css` after all dialog buttons use shared `Button` or module classes | ✓ |
 
 ## Phase 4 — Dialog And Overlay Consistency
@@ -36,7 +36,7 @@ This roadmap tracks UI inconsistencies found in the current frontend after the c
 | 4.1 | Standardize modal shells on `Overlay` + `PanelHeader` + shared action buttons | ☐ |
 | 4.2 | Replace `window.confirm()` in Share Manager with the app's `ConfirmDialog` flow | ✓ |
 | 4.3 | Make close buttons use `IconButton` + `Icon name="window-close"` instead of hand-written SVGs | ✓ |
-| 4.4 | Normalize dialog widths, padding, shadows, and mobile behavior across Preview, InfoPanel, DiskUsageAnalyzer, ShareDialog, ShareManager, BatchRename, and TransferDialog | ☐ |
+| 4.4 | Normalize dialog widths, padding, shadows, and mobile behavior across Preview, InfoPanel, DiskUsageAnalyzer, ShareDialog, ShareManager, BatchRename, and TransferDialog | ✓ |
 
 ## Phase 5 — Navigation, Menus, And Actions
 

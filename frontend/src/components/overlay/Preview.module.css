@@ -133,9 +133,28 @@
 
 @media (max-width: 760px) {
   .previewPanel {
-    max-height: 95vh;
+    max-height: calc(100dvh - 24px);
     max-width: 100%;
     min-width: 0;
     width: 100%;
+  }
+
+  .previewHeader {
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .previewText {
+    padding: var(--space-md);
+  }
+
+  .previewAudioWrapper,
+  .previewUnsupported,
+  .previewError {
+    padding: var(--space-lg);
+  }
+
+  .previewIframe {
+    height: calc(100dvh - 110px);
   }
 }

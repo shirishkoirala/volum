@@ -103,15 +103,15 @@ export function ShareManager({ onClose }: ShareManagerProps) {
               </div>
               {shares.map((share) => (
                 <div key={share.id} className={styles.shareRow}>
-                  <span className={styles.truncate} title={share.path}>{share.path}</span>
-                  <span className={styles.shareColToken}>{share.token.slice(0, 8)}…</span>
-                  <span className={styles.shareColExpiry}>
+                  <span className={styles.shareColPath} data-label="Path" title={share.path}>{share.path}</span>
+                  <span className={styles.shareColToken} data-label="Token">{share.token.slice(0, 8)}…</span>
+                  <span className={styles.shareColExpiry} data-label="Expires">
                     {share.expiresAt ? new Date(share.expiresAt).toLocaleDateString() : 'Never'}
                   </span>
-                  <span className={styles.shareColDownloads}>
+                  <span className={styles.shareColDownloads} data-label="Downloads">
                     {share.downloadCount}{share.maxDownloads ? ` / ${share.maxDownloads}` : ''}
                   </span>
-                  <span className={styles.shareColEnabled}>
+                  <span className={styles.shareColEnabled} data-label="Status">
                     <StatusBadge variant={share.enabled ? 'active' : 'disabled'}>
                       {share.enabled ? 'Active' : 'Disabled'}
                     </StatusBadge>

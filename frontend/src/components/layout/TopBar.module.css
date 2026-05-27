@@ -17,6 +17,7 @@
   display: flex;
   gap: 4px;
   flex: 1;
+  min-width: 0;
 }
 
 .center {
@@ -30,6 +31,7 @@
   gap: var(--space-xxs);
   margin-left: auto;
   position: relative;
+  flex-shrink: 0;
 }
 
 .brand {
@@ -135,4 +137,6 @@
   .topbar { height: 38px; padding: 0 4px; }
   .brandName { display: none; }
   .clock { display: none; }
+  .brand { padding: 4px 6px; }
+  .brandIcon { height: 22px; width: 22px; }
 }

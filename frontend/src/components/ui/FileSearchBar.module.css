@@ -73,6 +73,16 @@
 }
 
 @media (max-width: 760px) {
+  .toolbar {
+    gap: var(--space-xs);
+  }
+
+  .searchBox {
+    min-height: 34px;
+    padding: 0 var(--space-sm);
+    width: min(52vw, 220px);
+  }
+
   .searchResultsDropdown {
     min-width: 0;
     width: calc(100vw - 2rem);

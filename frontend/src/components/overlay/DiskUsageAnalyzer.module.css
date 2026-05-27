@@ -192,4 +192,31 @@
   text-align: center;
 }
 
+@media (max-width: 760px) {
+  .analyzer {
+    border-radius: var(--radius-md);
+    max-height: calc(100dvh - 24px);
+    width: 100%;
+  }
+
+  .body {
+    padding: var(--space-md);
+  }
+
+  .summary {
+    grid-template-columns: 1fr;
+  }
+
+  .header,
+  .treeNodeRow {
+    grid-template-columns: 12px 20px minmax(0, 1fr) auto;
+  }
+
+  .headerPercent,
+  .headerBar,
+  .treePercent,
+  .treeBarWrapper {
+    display: none;
+  }
+}
 

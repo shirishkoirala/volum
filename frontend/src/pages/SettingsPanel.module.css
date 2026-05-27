@@ -257,4 +257,30 @@
     flex-wrap: wrap;
   }
 
+  .settingsNavItem {
+    min-height: 32px;
+    padding: 0 8px;
+  }
+
+  .settingsContent {
+    padding: var(--space-md);
+  }
+
+  .settingsSection {
+    margin-bottom: var(--space-lg);
+  }
+
+  .settingsRootItem {
+    padding: var(--space-sm);
+  }
+
+  .settingsRootName {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .maintenanceActions {
+    gap: var(--space-xs);
+  }
 }

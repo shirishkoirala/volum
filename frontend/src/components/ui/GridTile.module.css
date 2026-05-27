@@ -79,3 +79,10 @@
   line-height: 1.2;
   text-align: center;
 }
+
+@media (max-width: 760px) {
+  .tile {
+    min-height: 126px;
+    padding: 4px;
+  }
+}

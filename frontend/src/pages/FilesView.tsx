@@ -211,7 +211,7 @@ export function FilesView({
         </BreadcrumbBar>
 
         {error && (
-          <div className={`${styles.errorBanner} row gapSm justifyBetween`}>
+          <div className={styles.errorBanner}>
             {error}
             <button type="button" className={styles.errorDismiss} onClick={onDismissError} aria-label="Dismiss error">&times;</button>
           </div>
