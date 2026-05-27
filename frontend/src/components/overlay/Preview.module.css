@@ -80,7 +80,7 @@
 .previewText {
   background: var(--color-code-bg);
   color: var(--color-code-text);
-  font-family: "JetBrains Mono", "Fira Code", "Cascadia Code", ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-base);
   line-height: 1.55;
   margin: 0;

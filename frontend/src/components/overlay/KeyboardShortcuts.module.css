@@ -27,7 +27,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-muted);
-  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-sm);
   padding: 2px 8px;
   white-space: nowrap;
