@@ -64,7 +64,7 @@ export function FileItem({
       role="button"
     >
       {entry.type === 'directory' ? (
-        <span className={styles.iconWrap}>
+        <span className={styles.iconWrap} onContextMenu={(e) => e.preventDefault()}>
           <FolderIcon size={fileIconSize} />
           {isFavorited && (
             <span className={styles.pinBadge}>

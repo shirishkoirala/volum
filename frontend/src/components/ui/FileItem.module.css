@@ -146,6 +146,7 @@
 .iconWrap {
   display: inline-flex;
   position: relative;
+  -webkit-touch-callout: none;
 }
 
 .fileThumb {
