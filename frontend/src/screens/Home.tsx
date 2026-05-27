@@ -467,7 +467,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         }
       }
       if (dialog.mode === 'move') setFileClipboard(null);
-    }, dialog.mode === 'copy' ? 'Copy job started' : 'Move job started');
+    }, dialog.mode === 'copy' ? 'Copy transfer started' : 'Move transfer started');
   };
 
   // ── Handlers: Archive / Checksum ─────────────────────────
@@ -482,12 +482,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           message: `"${archiveName}" already exists in ${currentPath}. Overwrite it?`,
           confirmLabel: 'Overwrite',
           danger: true,
-          onConfirm: () => { void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'overwrite' }), 'Archive job started'); }
+          onConfirm: () => { void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'overwrite' }), 'Archive transfer started'); }
         });
       } else {
-        void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'rename' }), 'Archive job started');
+        void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'rename' }), 'Archive transfer started');
       }
-    }).catch(() => { void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'rename' }), 'Archive job started'); });
+    }).catch(() => { void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'rename' }), 'Archive transfer started'); });
   };
 
   const handleCreateArchive = () => {
@@ -524,12 +524,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               title: 'Destination Not Empty',
               message: `The destination folder contains ${existing.length} item${existing.length === 1 ? '' : 's'}. Extract here anyway? Existing files with the same name may be renamed.`,
               confirmLabel: 'Extract Anyway',
-              onConfirm: () => { void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract job started'); }
+              onConfirm: () => { void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract transfer started'); }
             });
           } else {
-            void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract job started');
+            void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract transfer started');
           }
-        }).catch(() => { void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract job started'); });
+        }).catch(() => { void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract transfer started'); });
       }
     });
   };
@@ -548,7 +548,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setTextInputDialog({
       title: 'Generate Checksum', label: 'Verify mode', initialValue: 'sha256',
       placeholder: 'sha256', confirmLabel: 'Generate',
-      onSubmit: (value) => { const mode = value.trim().toLowerCase() === 'md5' ? 'md5' : 'sha256'; void runAction(() => createJob({ type: 'checksum', sourcePath: entry.path, verifyMode: mode }), `Checksum (${mode}) job started`); }
+      onSubmit: (value) => { const mode = value.trim().toLowerCase() === 'md5' ? 'md5' : 'sha256'; void runAction(() => createJob({ type: 'checksum', sourcePath: entry.path, verifyMode: mode }), `Checksum (${mode}) transfer started`); }
     });
   };
 

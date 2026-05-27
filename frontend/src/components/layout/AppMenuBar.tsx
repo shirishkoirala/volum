@@ -167,7 +167,7 @@ export function AppMenuBar({ handlers }: AppMenuBarProps) {
     { label: 'Desktop', icon: 'go-home', onClick: handlers.onGoDesktop },
     { label: 'Files', icon: 'folder', onClick: handlers.onGoFiles },
     { label: 'Trash', icon: 'edit-delete', onClick: handlers.onGoTrash },
-    { label: 'Jobs', icon: 'document-properties', onClick: handlers.onGoJobs },
+    { label: 'Transfers', icon: 'document-properties', onClick: handlers.onGoJobs },
     { label: 'Settings', icon: 'preferences-system', onClick: handlers.onGoSettings },
     { label: '---', disabled: true, onClick: () => {} },
     { label: 'Go to Location...', icon: 'go-jump', onClick: handlers.onToggleLocation },

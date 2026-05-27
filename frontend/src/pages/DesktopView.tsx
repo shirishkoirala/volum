@@ -137,9 +137,9 @@ export function DesktopView({
     items.push({
       id: 'jobs',
       type: 'jobs',
-      label: 'Jobs',
-      subtitle: jobs.length === 0 ? 'No jobs' : `${activeJobCount} active`,
-      ariaLabel: `Open Jobs${activeJobCount > 0 ? `, ${activeJobCount} active` : ', no active jobs'}`,
+      label: 'Transfers',
+      subtitle: jobs.length === 0 ? 'No transfers' : `${activeJobCount} active`,
+      ariaLabel: `Open Transfers${activeJobCount > 0 ? `, ${activeJobCount} active` : ', no active transfers'}`,
       onClick: onOpenJobs,
       badge: activeJobCount > 0 ? activeJobCount : undefined,
       icon: (

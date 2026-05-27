@@ -51,9 +51,9 @@ export function useJobs(
         }
         if (typeof Notification !== 'undefined' && !knownJobIds.current.has(job.id) && Notification.permission === 'granted') {
           if (job.status === 'completed') {
-            new Notification('Job completed', { body: `[${job.type}] ${job.sourcePath ?? job.id}` });
+            new Notification('Transfer completed', { body: `[${job.type}] ${job.sourcePath ?? job.id}` });
           } else if (job.status === 'failed') {
-            new Notification('Job failed', { body: `[${job.type}] ${job.errorMessage ?? job.id}` });
+            new Notification('Transfer failed', { body: `[${job.type}] ${job.errorMessage ?? job.id}` });
           }
         }
       }
@@ -83,7 +83,7 @@ export function useJobs(
       await cancelJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Job cancelled');
+    }, 'Transfer cancelled');
   };
 
   const handleRetryJob = (id: string) => {
@@ -91,7 +91,7 @@ export function useJobs(
       await retryJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Job retried');
+    }, 'Transfer retried');
   };
 
   const handleRetryItem = (jobId: string, itemId: string) => {
@@ -107,7 +107,7 @@ export function useJobs(
       await pauseJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Job paused');
+    }, 'Transfer paused');
   };
 
   const handleResumeJob = (id: string) => {
@@ -115,7 +115,7 @@ export function useJobs(
       await resumeJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Job resumed');
+    }, 'Transfer resumed');
   };
 
   const handleClearCompleted = () => {
@@ -123,7 +123,7 @@ export function useJobs(
       await clearCompletedJobs();
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Completed jobs cleared');
+    }, 'Completed transfers cleared');
   };
 
   const handleClearFailed = () => {
@@ -131,7 +131,7 @@ export function useJobs(
       await clearFailedJobs();
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Failed jobs cleared');
+    }, 'Failed transfers cleared');
   };
 
   return {

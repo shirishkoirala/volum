@@ -8,7 +8,7 @@ import desktopIconSvg from '../assets/places/desktop.svg?url';
 import trashIcon from '../assets/places/user-trash.svg?url';
 import trashFullIcon from '../assets/places/user-trash-full.svg?url';
 import preferencesIconSvg from '../assets/preferences-system.svg?url';
-import jobIconSvg from '../assets/utilities-terminal.svg?url';
+import jobIconSvg from '../assets/system-config-samba.svg?url';
 
 function ext(name: string) {
   const dot = name.lastIndexOf('.');

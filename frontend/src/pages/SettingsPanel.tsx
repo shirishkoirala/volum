@@ -74,7 +74,7 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
     setMaintenanceError(null);
     try {
       const result = await dbPruneJobs();
-      setMaintenanceMsg(`Pruned ${result.removed} old job records.`);
+      setMaintenanceMsg(`Pruned ${result.removed} old transfer records.`);
       loadStatus();
     } catch (err) {
       setMaintenanceError(err instanceof Error ? err.message : 'Prune failed');
@@ -169,7 +169,7 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
                   </Button>
                   <Button size="compact" onClick={handlePruneJobs} disabled={maintenanceBusy !== null}>
                     {maintenanceBusy === 'pruneJobs' && <Icon name="view-refresh" size={12} className={styles.spin} />}
-                    Prune Old Jobs
+                    Prune Old Transfers
                   </Button>
                   <Button size="compact" onClick={handlePruneAuditLogs} disabled={maintenanceBusy !== null}>
                     {maintenanceBusy === 'pruneAudit' && <Icon name="view-refresh" size={12} className={styles.spin} />}
@@ -181,7 +181,7 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
               </section>
 
               <section className={styles.settingsSection}>
-                <h4>Jobs</h4>
+                <h4>Transfers</h4>
                 <dl className={styles.settingsDetails}>
                   <dt>Active</dt>
                   <dd>{status.jobCounts.active}</dd>

@@ -180,7 +180,7 @@ export function JobsPage({
       <main className={styles.jobsPage}>
         <div className={styles.jobList} onKeyDown={handleJobListKeyDown} role="list">
       {jobs.length === 0 ? (
-        <EmptyState icon={jobsIconUrl()} title="No jobs yet" subtitle="File operations like copy, move, and archive will appear here." />
+        <EmptyState icon={jobsIconUrl()} title="No transfers yet" subtitle="File operations like copy, move, and archive will appear here." />
       ) : (
             <>
               {renderJobGroup(jobs, completedCollapsed, setCompletedCollapsed, onCancel, onPause, onResume, onRetry)}
