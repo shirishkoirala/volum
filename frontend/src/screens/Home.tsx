@@ -726,7 +726,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const isFavorited = favorites.includes(currentPath);
   const selectedEntryIsFavorited = contextMenu?.entry ? favorites.includes(contextMenu.entry.path) : isFavorited;
-  const showStatusBar = activeView !== 'settings' && activeView !== 'jobs';
+  const showStatusBar = activeView !== 'settings' && activeView !== 'jobs' && activeView !== 'desktop';
 
   const folderSuggestions = useMemo(
     () => uniquePaths([currentPath, ...roots.map((r) => r.path), ...devices.flatMap((d) => (d.partitions ?? []).filter((p) => p.volumPath).map((p) => p.volumPath!))]),
