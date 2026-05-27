@@ -5,7 +5,7 @@ import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { DriveSection } from '../components/ui/DriveSection';
-import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderIconUrl, folderBookmarksIconUrl, warningIconUrl } from '../api/icons';
+import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderBookmarksIconUrl, filesIconUrl, warningIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job } from '../api/client';
 import { formatDeviceUsage } from '../utils/format';
 import styles from './DesktopView.module.css';
@@ -161,7 +161,7 @@ export function DesktopView({
       onClick: onOpenFiles,
       icon: (
         <div className={styles.desktopIconWrapper}>
-          <IconImg src={folderIconUrl()} alt="" width={64} height={64} />
+          <IconImg src={filesIconUrl()} alt="" width={64} height={64} />
         </div>
       ),
     });

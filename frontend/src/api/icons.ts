@@ -9,6 +9,7 @@ import trashIcon22 from '../assets/places/22/user-trash.svg?url';
 import trashFull22 from '../assets/places/22/user-trash-full.svg?url';
 import trashIcon64 from '../assets/places/64/user-trash.svg?url';
 import trashFull64 from '../assets/places/64/user-trash-full.svg?url';
+import systemFileManager64 from '../assets/apps/64/system-file-manager.svg?url';
 import preferencesIconSvg from '../assets/preferences/22/preferences-system.svg?url';
 import jobIconSvg from '../assets/actions/22/system-run.svg?url';
 import dialogWarningSvg from '../assets/status/22/dialog-warning.svg?url';
@@ -88,6 +89,10 @@ export function folderIconUrl(size = '22') {
 
 export function folderBookmarksIconUrl() {
   return folderBookmarks64;
+}
+
+export function filesIconUrl() {
+  return systemFileManager64;
 }
 
 export function driveIconUrl() {
