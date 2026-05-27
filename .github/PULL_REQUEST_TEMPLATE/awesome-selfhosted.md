@@ -20,5 +20,4 @@ File Transfer > Web-based File Managers
 - [x] The entry is sorted alphabetically within its category
 
 ## Demo
-
-A public demo instance is planned but not yet available.
+No public demo instance is configured.

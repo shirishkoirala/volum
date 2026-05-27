@@ -57,7 +57,9 @@ server {
 ```yml
 services:
   volum:
-    image: ghcr.io/shirishkoirala/volum:latest
+    build:
+      context: ..
+      dockerfile: Dockerfile
     expose:
       - "8090"
     environment:
@@ -79,7 +81,7 @@ If you use Tailscale, you can skip the reverse proxy entirely. Access Volum dire
 http://100.x.x.x:8090
 ```
 
-For a Tailscale Funnel (public internet via Tailscale):
+For a Tailscale Funnel:
 
 ```sh
 tailscale serve --bg --https 443 http://localhost:8090
