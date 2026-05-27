@@ -10,53 +10,29 @@ import trashFullIcon from '../assets/places/user-trash-full.svg?url';
 import preferencesIconSvg from '../assets/preferences-system.svg?url';
 import jobIconSvg from '../assets/utilities-terminal.svg?url';
 
-import textGenericIcon from '../assets/mimetypes/text-x-generic.svg?url';
-import textCssIcon from '../assets/mimetypes/text-css.svg?url';
-import textHtmlIcon from '../assets/mimetypes/text-html.svg?url';
-import textScriptIcon from '../assets/mimetypes/text-x-script.svg?url';
-import textMarkdownIcon from '../assets/mimetypes/text-x-markdown.svg?url';
-import imageGenericIcon from '../assets/mimetypes/image-x-generic.svg?url';
-import audioGenericIcon from '../assets/mimetypes/audio-x-generic.svg?url';
-import videoGenericIcon from '../assets/mimetypes/video-x-generic.svg?url';
-import applicationZipIcon from '../assets/mimetypes/application-zip.svg?url';
-import applicationPdfIcon from '../assets/mimetypes/application-pdf.svg?url';
-import applicationJsonIcon from '../assets/mimetypes/application-json.svg?url';
-import applicationOctetIcon from '../assets/mimetypes/application-octet-stream.svg?url';
-import applicationDiskImageIcon from '../assets/mimetypes/application-x-apple-diskimage.svg?url';
-import officeDocumentIcon from '../assets/mimetypes/x-office-document.svg?url';
-import officePresentationIcon from '../assets/mimetypes/x-office-presentation.svg?url';
-import officeSpreadsheetIcon from '../assets/mimetypes/x-office-spreadsheet.svg?url';
-import unknownIcon from '../assets/mimetypes/unknown.svg?url';
-
 function ext(name: string) {
   const dot = name.lastIndexOf('.');
   if (dot === -1 || dot === name.length - 1) return '';
   return name.slice(dot + 1).toLowerCase();
 }
 
-const iconPair = (url: string) => ({ s22: url, s64: url });
+const MIMETYPE_ASSETS = import.meta.glob<string>('../assets/mimetypes/*.svg', { eager: true, query: '?url', import: 'default' });
 
-const MIME_ICONS: Record<string, { s22: string; s64: string }> = {
-  'application-json': iconPair(applicationJsonIcon),
-  'application-octet-stream': iconPair(applicationOctetIcon),
-  'application-pdf': iconPair(applicationPdfIcon),
-  'application-x-apple-diskimage': iconPair(applicationDiskImageIcon),
-  'application-x-raw-disk-image': iconPair(applicationDiskImageIcon),
-  'application-zip': iconPair(applicationZipIcon),
-  'audio-x-generic': iconPair(audioGenericIcon),
-  'image-x-generic': iconPair(imageGenericIcon),
-  'text-css': iconPair(textCssIcon),
-  'text-html': iconPair(textHtmlIcon),
-  'text-plain': iconPair(textGenericIcon),
-  'text-x-generic': iconPair(textGenericIcon),
-  'text-x-markdown': iconPair(textMarkdownIcon),
-  'text-x-script': iconPair(textScriptIcon),
-  unknown: iconPair(unknownIcon),
-  'video-x-generic': iconPair(videoGenericIcon),
-  'x-office-document': iconPair(officeDocumentIcon),
-  'x-office-presentation': iconPair(officePresentationIcon),
-  'x-office-spreadsheet': iconPair(officeSpreadsheetIcon),
-};
+const MIME_ICON_URLS = Object.fromEntries(
+  Object.entries(MIMETYPE_ASSETS).map(([path, url]) => {
+    const filename = path.split('/').pop() ?? 'unknown.svg';
+    return [filename.replace(/\.svg$/, ''), url];
+  }),
+) as Record<string, string>;
+
+function findMimetypeAssetUrl(mimetype: string) {
+  const alias = MIMETYPE_ALIASES[mimetype];
+  return MIME_ICON_URLS[mimetype] ?? (alias ? MIME_ICON_URLS[alias] : undefined);
+}
+
+function mimetypeAssetUrl(mimetype: string) {
+  return findMimetypeAssetUrl(mimetype) ?? MIME_ICON_URLS.unknown ?? folderIcon;
+}
 
 const FOLDER_ICONS: Record<string, string> = {
   '22': folderIcon,
@@ -100,7 +76,7 @@ export function jobsIconUrl() {
 }
 
 export function warningIconUrl() {
-  return unknownIcon;
+  return mimetypeAssetUrl('unknown');
 }
 
 export function emptyIconUrl() {
@@ -112,36 +88,89 @@ export function fileTypeIconUrl(entry: FileEntry, size = '22') {
   return mimetypeIconUrl(entry.name, size);
 }
 
-function mimetypeIconUrl(filename: string, size = '22'): string {
+function mimetypeIconUrl(filename: string, _size = '22'): string {
   const e = ext(filename);
   const m = MIMETYPE_MAP[e];
-  if (m) return pickIcon(m, size);
-  return pickIcon('unknown', size);
+  if (m) return pickIcon(m);
+  return pickIcon('unknown');
 }
 
-function pickIcon(mimetype: string, size: string): string {
-  const entry = MIME_ICONS[mimetype];
-  if (entry) return size === '22' ? entry.s22 : entry.s64;
-  return genericMimetypeIcon(mimetype, size);
+function pickIcon(mimetype: string): string {
+  const exact = findMimetypeAssetUrl(mimetype);
+  if (exact) return exact;
+  return genericMimetypeIcon(mimetype);
 }
 
-function genericMimetypeIcon(mimetype: string, size: string) {
-  const s = size === '22' ? '22' : '64';
-  if (mimetype.startsWith('image-')) return s === '22' ? MIME_ICONS['image-x-generic']!.s22 : MIME_ICONS['image-x-generic']!.s64;
-  if (mimetype.startsWith('audio-')) return s === '22' ? MIME_ICONS['audio-x-generic']!.s22 : MIME_ICONS['audio-x-generic']!.s64;
-  if (mimetype.startsWith('video-')) return s === '22' ? MIME_ICONS['video-x-generic']!.s22 : MIME_ICONS['video-x-generic']!.s64;
-  if (mimetype.startsWith('text-')) return s === '22' ? MIME_ICONS['text-x-generic']!.s22 : MIME_ICONS['text-x-generic']!.s64;
-  if (mimetype.includes('spreadsheet') || mimetype.includes('excel')) return s === '22' ? MIME_ICONS['x-office-spreadsheet']!.s22 : MIME_ICONS['x-office-spreadsheet']!.s64;
-  if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) return s === '22' ? MIME_ICONS['x-office-presentation']!.s22 : MIME_ICONS['x-office-presentation']!.s64;
-  if (mimetype.includes('document') || mimetype.includes('word')) return s === '22' ? MIME_ICONS['x-office-document']!.s22 : MIME_ICONS['x-office-document']!.s64;
+function genericMimetypeIcon(mimetype: string) {
+  if (mimetype.startsWith('image-')) return mimetypeAssetUrl('image-x-generic');
+  if (mimetype.startsWith('audio-')) return mimetypeAssetUrl('audio-x-generic');
+  if (mimetype.startsWith('video-')) return mimetypeAssetUrl('video-x-generic');
+  if (mimetype.startsWith('text-')) return mimetypeAssetUrl('text-x-generic');
+  if (mimetype.includes('spreadsheet') || mimetype.includes('excel')) return mimetypeAssetUrl('x-office-spreadsheet');
+  if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) return mimetypeAssetUrl('x-office-presentation');
+  if (mimetype.includes('document') || mimetype.includes('word')) return mimetypeAssetUrl('x-office-document');
   if (mimetype.includes('zip') || mimetype.includes('compressed') || mimetype.includes('tar') || mimetype.includes('gzip')) {
-    return s === '22' ? MIME_ICONS['application-zip']!.s22 : MIME_ICONS['application-zip']!.s64;
+    return mimetypeAssetUrl('application-zip');
   }
   if (mimetype.includes('executable') || mimetype.includes('sharedlib') || mimetype.includes('octet-stream')) {
-    return s === '22' ? MIME_ICONS['application-octet-stream']!.s22 : MIME_ICONS['application-octet-stream']!.s64;
+    return mimetypeAssetUrl('application-octet-stream');
   }
-  return unknownIcon;
+  return mimetypeAssetUrl('unknown');
 }
+
+const MIMETYPE_ALIASES: Record<string, string> = {
+  'application-msword': 'x-office-document',
+  'application-vnd.sqlite3': 'application-x-sqlite2',
+  'application-vnd.ms-excel': 'x-office-spreadsheet',
+  'application-vnd.ms-powerpoint': 'x-office-presentation',
+  'application-vnd.oasis.opendocument.graphics': 'x-office-drawing',
+  'application-vnd.oasis.opendocument.presentation': 'x-office-presentation',
+  'application-vnd.oasis.opendocument.spreadsheet': 'x-office-spreadsheet',
+  'application-vnd.oasis.opendocument.text': 'x-office-document',
+  'application-vnd.openxmlformats-officedocument.presentationml.presentation': 'x-office-presentation',
+  'application-vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'x-office-spreadsheet',
+  'application-vnd.openxmlformats-officedocument.wordprocessingml.document': 'x-office-document',
+  'application-x-cd-image': 'application-x-iso',
+  'application-x-cbr': 'application-vnd.comicbook+zip',
+  'application-x-compressed-tar': 'application-x-tar',
+  'application-x-executable': 'application-x-ms-dos-executable',
+  'application-x-lzip': 'application-zip',
+  'application-x-rar': 'application-zip',
+  'application-x-rpm': 'rpm',
+  'application-x-sharedlib': 'application-x-sharedlib',
+  'application-x-xz': 'application-zip',
+  'application-x-xz-compressed-tar': 'application-x-tar',
+  'application-x-java-archive': 'application-x-jar',
+  'application-x-raw-disk-image': 'application-x-qemu-disk',
+  'audio-flac': 'audio-x-flac',
+  'audio-mpeg': 'audio-x-generic',
+  'audio-x-ogg': 'application-ogg',
+  'audio-x-wav': 'audio-x-generic',
+  'font-otf': 'font-x-generic',
+  'font-ttf': 'application-x-font-ttf',
+  'image-x-adobe-dng': 'image-x-psd',
+  'image-x-adobe-illustrator': 'image-x-generic',
+  'image-bmp': 'image-x-bmp',
+  'image-gif': 'image-x-gif',
+  'image-ico': 'image-x-ico',
+  'image-jpeg': 'image-x-jpeg',
+  'image-png': 'image-x-generic',
+  'image-svg+xml': 'image-x-svg+xml',
+  'image-tiff': 'image-x-tiff',
+  'text-csv': 'x-office-spreadsheet',
+  'text-javascript': 'application-x-javascript',
+  'text-markdown': 'text-x-markdown',
+  'text-plain': 'text-x-generic',
+  'text-rtf': 'text-rtf',
+  'text-xml': 'application-xml',
+  'video-mp4': 'video-x-generic',
+  'video-mpeg': 'video-x-generic',
+  'video-webm': 'video-x-generic',
+  'video-x-flv': 'video-x-generic',
+  'video-x-matroska': 'video-x-generic',
+  'video-x-msvideo': 'video-x-generic',
+  'video-x-wmv': 'video-x-generic',
+};
 
 const MIMETYPE_MAP: Record<string, string> = {
   '7z': 'application-x-7z-compressed',
