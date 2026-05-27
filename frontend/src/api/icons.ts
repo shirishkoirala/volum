@@ -1,55 +1,32 @@
 import type { FileEntry } from '../api/client';
 
-import folderIcon22 from '../assets/places/22/folder.svg?url';
-import folderIcon64 from '../assets/places/64/folder.svg?url';
-import driveHarddisk64 from '../assets/devices/64/drive-harddisk.svg?url';
-import computerIconSvg from '../assets/devices/22/computer.svg?url';
-import folderBookmarks64 from '../assets/places/64/folder-bookmarks.svg?url';
-import desktopIconSvg from '../assets/places/64/desktop.svg?url';
-import trashIcon22 from '../assets/places/22/user-trash.svg?url';
-import trashFull22 from '../assets/places/22/user-trash-full.svg?url';
-import trashIcon64 from '../assets/places/64/user-trash.svg?url';
-import trashFull64 from '../assets/places/64/user-trash-full.svg?url';
-import systemFileManager64 from '../assets/apps/64/system-file-manager.svg?url';
-import preferencesIconSvg from '../assets/preferences/22/preferences-system.svg?url';
-import jobIconSvg from '../assets/actions/22/system-run.svg?url';
-import dialogWarningSvg from '../assets/status/22/dialog-warning.svg?url';
+import folderIcon from '../assets/places/folder.svg?url';
+import driveHarddisk from '../assets/drive-harddisk.svg?url';
+import computerIconSvg from '../assets/computer.svg?url';
+import folderBookmarksIcon from '../assets/places/folder-bookmarks.svg?url';
+import desktopIconSvg from '../assets/places/desktop.svg?url';
+import trashIcon from '../assets/places/user-trash.svg?url';
+import trashFullIcon from '../assets/places/user-trash-full.svg?url';
+import preferencesIconSvg from '../assets/preferences-system.svg?url';
+import jobIconSvg from '../assets/utilities-terminal.svg?url';
 
-import textGeneric22 from '../assets/mimetypes/22/text-x-generic.svg?url';
-import textGeneric64 from '../assets/mimetypes/64/text-x-generic.svg?url';
-import textCss22 from '../assets/mimetypes/22/text-css.svg?url';
-import textCss64 from '../assets/mimetypes/64/text-css.svg?url';
-import textHtml22 from '../assets/mimetypes/22/text-html.svg?url';
-import textHtml64 from '../assets/mimetypes/64/text-html.svg?url';
-import textScript22 from '../assets/mimetypes/22/text-x-script.svg?url';
-import textScript64 from '../assets/mimetypes/64/text-x-script.svg?url';
-import textMarkdown22 from '../assets/mimetypes/22/text-x-markdown.svg?url';
-import textMarkdown64 from '../assets/mimetypes/64/text-x-markdown.svg?url';
-import imageGeneric22 from '../assets/mimetypes/22/image-x-generic.svg?url';
-import imageGeneric64 from '../assets/mimetypes/64/image-x-generic.svg?url';
-import audioGeneric22 from '../assets/mimetypes/22/audio-x-generic.svg?url';
-import audioGeneric64 from '../assets/mimetypes/64/audio-x-generic.svg?url';
-import videoGeneric22 from '../assets/mimetypes/22/video-x-generic.svg?url';
-import videoGeneric64 from '../assets/mimetypes/64/video-x-generic.svg?url';
-import applicationZip22 from '../assets/mimetypes/22/application-zip.svg?url';
-import applicationZip64 from '../assets/mimetypes/64/application-zip.svg?url';
-import applicationPdf22 from '../assets/mimetypes/22/application-pdf.svg?url';
-import applicationPdf64 from '../assets/mimetypes/64/application-pdf.svg?url';
-import applicationJson22 from '../assets/mimetypes/22/application-json.svg?url';
-import applicationJson64 from '../assets/mimetypes/64/application-json.svg?url';
-import applicationOctet22 from '../assets/mimetypes/22/application-octet-stream.svg?url';
-import applicationOctet64 from '../assets/mimetypes/64/application-octet-stream.svg?url';
-import applicationDiskImage22 from '../assets/mimetypes/22/application-x-apple-diskimage.svg?url';
-import applicationDiskImage64 from '../assets/mimetypes/64/application-x-apple-diskimage.svg?url';
-import officeDocument22 from '../assets/mimetypes/22/x-office-document.svg?url';
-import officeDocument64 from '../assets/mimetypes/64/x-office-document.svg?url';
-import officePresentation22 from '../assets/mimetypes/22/x-office-presentation.svg?url';
-import officePresentation64 from '../assets/mimetypes/64/x-office-presentation.svg?url';
-import officeSpreadsheet22 from '../assets/mimetypes/22/x-office-spreadsheet.svg?url';
-import officeSpreadsheet64 from '../assets/mimetypes/64/x-office-spreadsheet.svg?url';
-import emptyIconSvg from '../assets/applets/256/empty.svg?url';
-import unknown22 from '../assets/mimetypes/22/unknown.svg?url';
-import unknown64 from '../assets/mimetypes/64/unknown.svg?url';
+import textGenericIcon from '../assets/mimetypes/text-x-generic.svg?url';
+import textCssIcon from '../assets/mimetypes/text-css.svg?url';
+import textHtmlIcon from '../assets/mimetypes/text-html.svg?url';
+import textScriptIcon from '../assets/mimetypes/text-x-script.svg?url';
+import textMarkdownIcon from '../assets/mimetypes/text-x-markdown.svg?url';
+import imageGenericIcon from '../assets/mimetypes/image-x-generic.svg?url';
+import audioGenericIcon from '../assets/mimetypes/audio-x-generic.svg?url';
+import videoGenericIcon from '../assets/mimetypes/video-x-generic.svg?url';
+import applicationZipIcon from '../assets/mimetypes/application-zip.svg?url';
+import applicationPdfIcon from '../assets/mimetypes/application-pdf.svg?url';
+import applicationJsonIcon from '../assets/mimetypes/application-json.svg?url';
+import applicationOctetIcon from '../assets/mimetypes/application-octet-stream.svg?url';
+import applicationDiskImageIcon from '../assets/mimetypes/application-x-apple-diskimage.svg?url';
+import officeDocumentIcon from '../assets/mimetypes/x-office-document.svg?url';
+import officePresentationIcon from '../assets/mimetypes/x-office-presentation.svg?url';
+import officeSpreadsheetIcon from '../assets/mimetypes/x-office-spreadsheet.svg?url';
+import unknownIcon from '../assets/mimetypes/unknown.svg?url';
 
 function ext(name: string) {
   const dot = name.lastIndexOf('.');
@@ -57,43 +34,45 @@ function ext(name: string) {
   return name.slice(dot + 1).toLowerCase();
 }
 
+const iconPair = (url: string) => ({ s22: url, s64: url });
+
 const MIME_ICONS: Record<string, { s22: string; s64: string }> = {
-  'application-json': { s22: applicationJson22, s64: applicationJson64 },
-  'application-octet-stream': { s22: applicationOctet22, s64: applicationOctet64 },
-  'application-pdf': { s22: applicationPdf22, s64: applicationPdf64 },
-  'application-x-apple-diskimage': { s22: applicationDiskImage22, s64: applicationDiskImage64 },
-  'application-x-raw-disk-image': { s22: applicationDiskImage22, s64: applicationDiskImage64 },
-  'application-zip': { s22: applicationZip22, s64: applicationZip64 },
-  'audio-x-generic': { s22: audioGeneric22, s64: audioGeneric64 },
-  'image-x-generic': { s22: imageGeneric22, s64: imageGeneric64 },
-  'text-css': { s22: textCss22, s64: textCss64 },
-  'text-html': { s22: textHtml22, s64: textHtml64 },
-  'text-plain': { s22: textGeneric22, s64: textGeneric64 },
-  'text-x-generic': { s22: textGeneric22, s64: textGeneric64 },
-  'text-x-markdown': { s22: textMarkdown22, s64: textMarkdown64 },
-  'text-x-script': { s22: textScript22, s64: textScript64 },
-  unknown: { s22: unknown22, s64: unknown64 },
-  'video-x-generic': { s22: videoGeneric22, s64: videoGeneric64 },
-  'x-office-document': { s22: officeDocument22, s64: officeDocument64 },
-  'x-office-presentation': { s22: officePresentation22, s64: officePresentation64 },
-  'x-office-spreadsheet': { s22: officeSpreadsheet22, s64: officeSpreadsheet64 },
+  'application-json': iconPair(applicationJsonIcon),
+  'application-octet-stream': iconPair(applicationOctetIcon),
+  'application-pdf': iconPair(applicationPdfIcon),
+  'application-x-apple-diskimage': iconPair(applicationDiskImageIcon),
+  'application-x-raw-disk-image': iconPair(applicationDiskImageIcon),
+  'application-zip': iconPair(applicationZipIcon),
+  'audio-x-generic': iconPair(audioGenericIcon),
+  'image-x-generic': iconPair(imageGenericIcon),
+  'text-css': iconPair(textCssIcon),
+  'text-html': iconPair(textHtmlIcon),
+  'text-plain': iconPair(textGenericIcon),
+  'text-x-generic': iconPair(textGenericIcon),
+  'text-x-markdown': iconPair(textMarkdownIcon),
+  'text-x-script': iconPair(textScriptIcon),
+  unknown: iconPair(unknownIcon),
+  'video-x-generic': iconPair(videoGenericIcon),
+  'x-office-document': iconPair(officeDocumentIcon),
+  'x-office-presentation': iconPair(officePresentationIcon),
+  'x-office-spreadsheet': iconPair(officeSpreadsheetIcon),
 };
 
 const FOLDER_ICONS: Record<string, string> = {
-  '22': folderIcon22,
-  '64': folderIcon64,
+  '22': folderIcon,
+  '64': folderIcon,
 };
 
 export function folderIconUrl(size = '22') {
-  return FOLDER_ICONS[size] ?? FOLDER_ICONS['64'] ?? folderIcon64;
+  return FOLDER_ICONS[size] ?? FOLDER_ICONS['64'] ?? folderIcon;
 }
 
 export function folderBookmarksIconUrl() {
-  return folderBookmarks64;
+  return folderBookmarksIcon;
 }
 
 export function filesIconUrl() {
-  return systemFileManager64;
+  return folderIcon;
 }
 
 export function desktopDockIconUrl() {
@@ -101,7 +80,7 @@ export function desktopDockIconUrl() {
 }
 
 export function driveIconUrl() {
-  return driveHarddisk64;
+  return driveHarddisk;
 }
 
 export function computerIconUrl() {
@@ -109,8 +88,7 @@ export function computerIconUrl() {
 }
 
 export function trashIconUrl(full: boolean, size = '22') {
-  if (size === '22') return full ? trashFull22 : trashIcon22;
-  return full ? trashFull64 : trashIcon64;
+  return full ? trashFullIcon : trashIcon;
 }
 
 export function preferencesIconUrl() {
@@ -122,11 +100,11 @@ export function jobsIconUrl() {
 }
 
 export function warningIconUrl() {
-  return dialogWarningSvg;
+  return unknownIcon;
 }
 
 export function emptyIconUrl() {
-  return emptyIconSvg;
+  return folderIcon;
 }
 
 export function fileTypeIconUrl(entry: FileEntry, size = '22') {
@@ -162,7 +140,7 @@ function genericMimetypeIcon(mimetype: string, size: string) {
   if (mimetype.includes('executable') || mimetype.includes('sharedlib') || mimetype.includes('octet-stream')) {
     return s === '22' ? MIME_ICONS['application-octet-stream']!.s22 : MIME_ICONS['application-octet-stream']!.s64;
   }
-  return unknown64;
+  return unknownIcon;
 }
 
 const MIMETYPE_MAP: Record<string, string> = {
