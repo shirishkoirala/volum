@@ -75,6 +75,48 @@ These are the only SVGs referenced from `frontend/src/api/icons.ts`:
 
 ---
 
+## Definitely Never Used
+
+These ~13,500+ icons are KDE Plasma system tray / status bar / app-specific icons completely irrelevant to Volum (a web-based file manager). They will never be used.
+
+| Pattern | Description | Count |
+|---------|-------------|------:|
+| `*-symbolic.svg` throughout | KDE symbolic variant duplicates (~50% of all files) | 9,815 |
+| `third-party app indicators` | Telegram, Transmission, Dropbox, VLC, KDE Connect, etc. | 1,556 |
+| `network-mobile-*` | Cellular signal bars (0–100%, 3G/4G/LTE/5G, locked, etc.) | 530 |
+| `call-*`, `mail-*` | Phone call and mail status indicators | 577 |
+| `network-wireless-*` | WiFi signal bars (0–100%, limited, locked, connected, etc.) | 161 |
+| `battery-*` | Battery level indicators (000–100%, charging/caution/missing) | 165 |
+| `input-*` | Caps lock, num lock, keyboard, touchpad, combo key indicators | 154 |
+| `weather-*`, `temperature-*`, `redshift-*`, `daytime-*`, `night-light-*` | Weather/temperature/day-night status icons | 176 |
+| `fcitx-*`, `ime-*` | Chinese/Japanese/Korean input method editors | 229 |
+| `media-playback-*`, `media-playlist-*` | Media player controls (play/pause/stop/shuffle/repeat) | 127 |
+| `task-*`, `appointment-*` | KDE calendar and Todo task status icons | 97 |
+| `emblems/` | KDE Dolphin file emblem icons (entire directory) | 177 |
+| `state-*`, `data-*`, `radio-*`, `checkbox-*`, `rating-*`, `starred-*` | KDE form theme elements and state indicators | 128 |
+| `user-*` (available/away/busy/idle/offline/online) | User presence status icons | 51 |
+| `camera-*`, `mic-*`, `microphone-*` | Camera and microphone status (on/off/ready) | 99 |
+| `audio-volume-*` | Volume level indicators (high/medium/low/muted/danger) | 43 |
+| `rotation-*`, `orientation-*`, `flightmode-*`, `location-*` | Screen orientation, flight mode, location services | 42 |
+| `network-wired-*` | Wired ethernet connection status | 36 |
+| `notification-*`, `notifications-*` | Notification state icons (active/inactive/disabled) | 25 |
+| `software-update-*`, `update-*` | Software update status (high/low/medium/none) | 26 |
+| `security-*` (high/medium/low) | KDE firewall/security level indicators | 28 |
+| `system-suspend-*`, `system-lock-*` | Suspend and screen lock status | 30 |
+| `printer-*` | Printer status (error/printing/warning) | 13 |
+| `display-brightness-*`, `keyboard-brightness-*`, `keyboard-layout-*` | Brightness and layout indicators | 3 |
+| `video-card-*`, `video-off-*` | Video card and video mute indicators | 11 |
+| `script-error-*` | Script error status | 2 |
+| `network-cellular-*` | Cellular network type indicators (3G/4G/5G/EDGE) | 16 |
+| `network-bluetooth-*` | Bluetooth status (active/inactive/locked) | 17 |
+| `network-vpn-*` | VPN connection status | 5 |
+| `network-flightmode-*` | Airplane mode toggles | 10 |
+| **Total** | | **~13,500+** |
+
+Many icons appear in multiple sizes (16px, 22px, 24px, 32px, 48px, 64px) plus symbolic/non-symbolic variants, so individual `*.svg` file counts are inflated by duplication. The actual unique icon concepts is ~2,000.
+
+---
+
 ## Notable Unused SVGs
 
 Some SVGs that seem potentially useful but are not currently referenced:
