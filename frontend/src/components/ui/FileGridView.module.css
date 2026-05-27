@@ -10,7 +10,7 @@
   flex: 1;
   overflow-y: auto;
   outline: 0;
-  padding: 2px 4px 24px;
+  padding: var(--space-lg);
 }
 
 .fileGrid:focus-visible {
@@ -43,6 +43,6 @@
   .fileGrid {
     --grid-column: 108px;
     gap: 14px;
-    padding: 0 0 var(--space-lg);
+    padding: var(--space-md);
   }
 }

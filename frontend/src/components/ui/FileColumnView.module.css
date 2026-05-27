@@ -5,6 +5,7 @@
   min-height: 300px;
   outline: 0;
   overflow-x: auto;
+  padding: 0 var(--space-lg);
 }
 
 .fileColumns.dragOver {
@@ -81,5 +82,9 @@
   .columnPane {
     max-width: min(78vw, 240px);
     min-width: min(78vw, 220px);
+  }
+
+  .fileColumns {
+    padding: 0 var(--space-md);
   }
 }
