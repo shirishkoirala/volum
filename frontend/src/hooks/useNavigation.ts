@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { BlockDevice, Job } from '../api/client';
-import { computerIconUrl, folderIconUrl, jobsIconUrl, preferencesIconUrl, trashIconUrl } from '../api/icons';
+import { folderIconUrl, jobsIconUrl, preferencesIconUrl, trashIconUrl, desktopDockIconUrl } from '../api/icons';
 export type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs';
 
 export function useNavigation(
@@ -42,7 +42,7 @@ export function useNavigation(
   );
 
   const dockItems = useMemo(() => [
-    { id: 'desktop', label: 'Desktop', icon: computerIconUrl(), active: activeView === 'desktop' },
+    { id: 'desktop', label: 'Desktop', icon: desktopDockIconUrl(), active: activeView === 'desktop' },
     { id: 'files', label: 'Files', icon: folderIconUrl('64'), active: activeView === 'files' },
     { id: 'trash', label: 'Trash', icon: trashIconUrl(trashCount > 0, '64'), badge: trashCount > 0 ? trashCount : undefined, active: activeView === 'trash' },
     { id: 'jobs', label: 'Jobs', icon: jobsIconUrl(), badge: activeJobCount > 0 ? activeJobCount : undefined, active: activeView === 'jobs' },

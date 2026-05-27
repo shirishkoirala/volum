@@ -5,6 +5,7 @@ import folderIcon64 from '../assets/places/64/folder.svg?url';
 import driveHarddisk64 from '../assets/devices/64/drive-harddisk.svg?url';
 import computerIconSvg from '../assets/devices/22/computer.svg?url';
 import folderBookmarks64 from '../assets/places/64/folder-bookmarks.svg?url';
+import desktopIconSvg from '../assets/places/64/desktop.svg?url';
 import trashIcon22 from '../assets/places/22/user-trash.svg?url';
 import trashFull22 from '../assets/places/22/user-trash-full.svg?url';
 import trashIcon64 from '../assets/places/64/user-trash.svg?url';
@@ -93,6 +94,10 @@ export function folderBookmarksIconUrl() {
 
 export function filesIconUrl() {
   return systemFileManager64;
+}
+
+export function desktopDockIconUrl() {
+  return desktopIconSvg;
 }
 
 export function driveIconUrl() {
