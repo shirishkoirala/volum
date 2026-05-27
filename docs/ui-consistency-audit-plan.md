@@ -52,9 +52,9 @@ This roadmap tracks UI inconsistencies found in the current frontend after the c
 | # | Task | Status |
 |---|---|---|
 | 6.1 | Replace Settings root usage inline meter width with `ProgressBar` or a shared meter primitive | ✓ |
-| 6.2 | Ensure Settings, ServerInfo, ShareManager, Jobs, and DiskUsageAnalyzer use the same status badge and notice language | ☐ |
-| 6.3 | Normalize settings category nav with the main sidebar/dock density and active-state treatment | ☐ |
-| 6.4 | Confirm all admin actions have loading, success, error, and retry states with consistent button sizing | ☐ |
+| 6.2 | Ensure Settings, ServerInfo, ShareManager, Jobs, and DiskUsageAnalyzer use the same status badge and notice language | ✓ |
+| 6.3 | Normalize settings category nav with the main sidebar/dock density and active-state treatment | ✓ |
+| 6.4 | Confirm all admin actions have loading, success, error, and retry states with consistent button sizing | ✓ |
 
 ## Phase 7 — Theme And Token Audit
 

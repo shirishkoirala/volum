@@ -37,7 +37,7 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
   const [loading, setLoading] = useState(true);
   const [maintenanceMsg, setMaintenanceMsg] = useState<string | null>(null);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
-  const [maintenanceBusy, setMaintenanceBusy] = useState(false);
+  const [maintenanceBusy, setMaintenanceBusy] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<CategoryId>('server');
   const [filterQuery, setFilterQuery] = useState('');
 
@@ -54,7 +54,7 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
   }, [loadStatus]);
 
   const handleVacuum = async () => {
-    setMaintenanceBusy(true);
+    setMaintenanceBusy('vacuum');
     setMaintenanceMsg(null);
     setMaintenanceError(null);
     try {
@@ -64,12 +64,12 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
     } catch (err) {
       setMaintenanceError(err instanceof Error ? err.message : 'Vacuum failed');
     } finally {
-      setMaintenanceBusy(false);
+      setMaintenanceBusy(null);
     }
   };
 
   const handlePruneJobs = async () => {
-    setMaintenanceBusy(true);
+    setMaintenanceBusy('pruneJobs');
     setMaintenanceMsg(null);
     setMaintenanceError(null);
     try {
@@ -79,12 +79,12 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
     } catch (err) {
       setMaintenanceError(err instanceof Error ? err.message : 'Prune failed');
     } finally {
-      setMaintenanceBusy(false);
+      setMaintenanceBusy(null);
     }
   };
 
   const handlePruneAuditLogs = async () => {
-    setMaintenanceBusy(true);
+    setMaintenanceBusy('pruneAudit');
     setMaintenanceMsg(null);
     setMaintenanceError(null);
     try {
@@ -94,7 +94,7 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
     } catch (err) {
       setMaintenanceError(err instanceof Error ? err.message : 'Prune failed');
     } finally {
-      setMaintenanceBusy(false);
+      setMaintenanceBusy(null);
     }
   };
 
@@ -163,13 +163,16 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
               <section className={styles.settingsSection}>
                 <h4>Maintenance</h4>
                 <div className={styles.maintenanceActions}>
-                  <Button size="compact" onClick={handleVacuum} disabled={maintenanceBusy}>
+                  <Button size="compact" onClick={handleVacuum} disabled={maintenanceBusy !== null}>
+                    {maintenanceBusy === 'vacuum' && <Icon name="view-refresh" size={12} className={styles.spin} />}
                     Vacuum DB
                   </Button>
-                  <Button size="compact" onClick={handlePruneJobs} disabled={maintenanceBusy}>
+                  <Button size="compact" onClick={handlePruneJobs} disabled={maintenanceBusy !== null}>
+                    {maintenanceBusy === 'pruneJobs' && <Icon name="view-refresh" size={12} className={styles.spin} />}
                     Prune Old Jobs
                   </Button>
-                  <Button size="compact" onClick={handlePruneAuditLogs} disabled={maintenanceBusy}>
+                  <Button size="compact" onClick={handlePruneAuditLogs} disabled={maintenanceBusy !== null}>
+                    {maintenanceBusy === 'pruneAudit' && <Icon name="view-refresh" size={12} className={styles.spin} />}
                     Prune Audit Logs
                   </Button>
                 </div>

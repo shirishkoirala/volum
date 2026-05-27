@@ -225,6 +225,12 @@
   margin-top: var(--space-sm);
 }
 
+.spin {
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
 @media (max-width: 760px) {
   .settingsBodyPage {
     flex-direction: column;

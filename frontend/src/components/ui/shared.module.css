@@ -162,6 +162,21 @@
   color: var(--color-text-muted);
 }
 
+.success {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+.danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
 .iconRotate180 {
   display: inline-flex;
   transform: rotate(180deg);

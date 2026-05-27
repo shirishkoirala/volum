@@ -100,9 +100,9 @@ export function Notice({ variant, className, children }: { variant: 'error' | 'w
   );
 }
 
-export function StatusBadge({ variant, children }: { variant: 'active' | 'disabled'; children: ReactNode }) {
+export function StatusBadge({ variant, children }: { variant: 'active' | 'disabled' | 'success' | 'warning' | 'danger'; children: ReactNode }) {
   return (
-    <span className={cx(styles.statusBadge, variant === 'active' ? styles.active : styles.disabled)}>
+    <span className={cx(styles.statusBadge, styles[variant])}>
       {children}
     </span>
   );

@@ -3,9 +3,16 @@ import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from '../components/ui/ProgressBar';
-import { Button } from '../components/ui/shared';
+import { Button, StatusBadge } from '../components/ui/shared';
 import { formatBytes } from '../utils/format';
 import styles from './JobsPage.module.css';
+
+const jobVariant = (status: string): 'success' | 'warning' | 'danger' | 'disabled' => {
+  if (status === 'completed') return 'success';
+  if (status === 'running' || status === 'paused') return 'warning';
+  if (status === 'failed') return 'danger';
+  return 'disabled';
+};
 
 function isActiveStatus(status: string) {
   return status === 'queued' || status === 'running' || status === 'paused';
@@ -50,7 +57,7 @@ function JobItem({
     <article className={styles.jobItem} role="listitem" tabIndex={0} data-job-id={job.id} onKeyDown={(e) => { if (e.key === 'Enter') e.stopPropagation(); }}>
       <div className={styles.jobTitleRow}>
         <strong>{job.type}</strong>
-        <span className={styles.jobStatus}>{job.status}</span>
+        <StatusBadge variant={jobVariant(job.status)}>{job.status}</StatusBadge>
       </div>
       <ProgressBar value={progress} />
       <div className={styles.jobMeta}>

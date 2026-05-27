@@ -1,5 +1,6 @@
 import type { StatusResponse } from '../../api/client';
 import { formatBytes, formatUptime } from '../../utils/format';
+import { StatusBadge } from './shared';
 import styles from './ServerInfo.module.css';
 
 type ServerInfoProps = {
@@ -22,10 +23,9 @@ export function ServerInfo({ status }: ServerInfoProps) {
           <dd>{formatUptime(status.uptime)}</dd>
           <dt>Worker</dt>
           <dd>
-            <span className={styles.workerStatus}>
-              <span className={`${styles.statusDot} ${status.jobCounts.active > 0 ? styles.dotBusy : styles.dotIdle}`} />
+            <StatusBadge variant={status.jobCounts.active > 0 ? 'warning' : 'success'}>
               {status.jobCounts.active > 0 ? 'Busy' : 'Idle'}
-            </span>
+            </StatusBadge>
           </dd>
         </dl>
       </section>
