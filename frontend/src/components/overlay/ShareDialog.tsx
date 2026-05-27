@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import { IconButton, Overlay, PanelHeader } from '../ui/shared';
+import { Button, IconButton, Overlay, PanelHeader } from '../ui/shared';
 import { createShare, type Share } from '../../api/client';
 import dStyles from './Dialogs.module.css';
 import uiStyles from '../ui/shared.module.css';
@@ -83,7 +83,7 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
             {share.expiresAt && <p className={dStyles.dialogHelp}>Expires: {new Date(share.expiresAt).toLocaleString()}</p>}
             {share.maxDownloads && <p className={dStyles.dialogHelp}>Max downloads: {share.maxDownloads}</p>}
             <div className={dStyles.dialogActions}>
-              <button type="button" className={`${dStyles.dialogButton} ${dStyles.secondary}`} onClick={onClose}>Close</button>
+              <Button size="compact" onClick={onClose}>Close</Button>
             </div>
           </>
         ) : (
@@ -124,10 +124,10 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
             </label>
             {error && <p className={dStyles.dialogError}>{error}</p>}
             <div className={dStyles.dialogActions}>
-              <button type="button" className={`${dStyles.dialogButton} ${dStyles.secondary}`} onClick={onClose}>Cancel</button>
-              <button type="submit" className={`${dStyles.dialogButton} ${dStyles.primary}`} disabled={submitting}>
+              <Button size="compact" onClick={onClose}>Cancel</Button>
+              <Button type="submit" size="compact" variant="primary" disabled={submitting}>
                 {submitting ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Creating...</> : 'Create Share Link'}
-              </button>
+              </Button>
             </div>
           </form>
         )}

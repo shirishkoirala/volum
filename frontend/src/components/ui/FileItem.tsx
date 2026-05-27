@@ -4,6 +4,7 @@ import { rawUrl, isImageExtension } from '../../api/client';
 import type { FileEntry } from '../../api/client';
 import { formatBytes, formatGridDate } from '../../utils/format';
 import type { RenameState } from '../../types';
+import { GRID_ICON_SIZE, LIST_ICON_SIZE } from './GridTile';
 import styles from './FileItem.module.css';
 
 type FileItemProps = {
@@ -40,7 +41,7 @@ export function FileItem({
   onCommitRename, onCancelRename, onRenameChange,
   className,
 }: FileItemProps) {
-  const fileIconSize = viewMode === 'grid' ? 84 : 28;
+  const fileIconSize = viewMode === 'grid' ? GRID_ICON_SIZE : LIST_ICON_SIZE;
   const rowClass = viewMode === 'grid' ? styles.fileRowGrid : styles.fileRowList;
 
   return (
@@ -63,7 +64,7 @@ export function FileItem({
       role="button"
     >
       {entry.type === 'directory' ? (
-        <span style={{ position: 'relative', display: 'inline-flex' }}>
+        <span className={styles.iconWrap}>
           <FolderIcon size={fileIconSize} />
           {isFavorited && (
             <span className={styles.pinBadge}>

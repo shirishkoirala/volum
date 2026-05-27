@@ -3,6 +3,7 @@ package devices
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -58,29 +59,19 @@ func List(roots []security.Root) ([]BlockDevice, error) {
 		return nil, fmt.Errorf("parse lsblk: %w", err)
 	}
 
-	rootMap := buildRootMap(roots)
-
 	var result []BlockDevice
 	for _, dev := range parsed.BlockDevices {
 		if dev.Type == "loop" || dev.Type == "rom" {
 			continue
 		}
-		bd := convertDevice(dev, rootMap)
+		bd := convertDevice(dev, roots)
 		result = append(result, bd)
 	}
 
 	return result, nil
 }
 
-func buildRootMap(roots []security.Root) map[string]security.Root {
-	m := make(map[string]security.Root, len(roots))
-	for _, r := range roots {
-		m[r.Path] = r
-	}
-	return m
-}
-
-func convertDevice(d lsblkDevice, rootMap map[string]security.Root) BlockDevice {
+func convertDevice(d lsblkDevice, roots []security.Root) BlockDevice {
 	bd := BlockDevice{
 		Name:       d.Name,
 		Size:       d.Size,
@@ -96,14 +87,14 @@ func convertDevice(d lsblkDevice, rootMap map[string]security.Root) BlockDevice 
 	}
 
 	for _, child := range d.Children {
-		part := convertPartition(child, rootMap)
+		part := convertPartition(child, roots)
 		bd.Partitions = append(bd.Partitions, part)
 	}
 
 	return bd
 }
 
-func convertPartition(d lsblkDevice, rootMap map[string]security.Root) BlockDevice {
+func convertPartition(d lsblkDevice, roots []security.Root) BlockDevice {
 	pd := BlockDevice{
 		Name:       d.Name,
 		Size:       d.Size,
@@ -113,11 +104,8 @@ func convertPartition(d lsblkDevice, rootMap map[string]security.Root) BlockDevi
 
 	if d.MountPoint != nil {
 		pd.MountPoint = *d.MountPoint
-		publicPath := stripHostPrefix(pd.MountPoint)
-		pd.VolumPath = publicPath
-
-		if root, ok := rootMap[publicPath]; ok {
-			pd.VolumPath = root.Path
+		if publicPath, root, ok := publicPathForMountPoint(pd.MountPoint, roots); ok {
+			pd.VolumPath = publicPath
 			pd.Label = root.Label
 			if total, free, used, err := diskUsage(pd.MountPoint); err == nil {
 				pd.TotalBytes = total
@@ -142,14 +130,49 @@ func convertPartition(d lsblkDevice, rootMap map[string]security.Root) BlockDevi
 	return pd
 }
 
-func stripHostPrefix(mountPoint string) string {
-	if strings.HasPrefix(mountPoint, "/host/") {
-		return mountPoint[5:]
+func publicPathForMountPoint(mountPoint string, roots []security.Root) (string, security.Root, bool) {
+	if strings.TrimSpace(mountPoint) == "" {
+		return "", security.Root{}, false
 	}
-	if mountPoint == "/host" {
-		return "/"
+	internalPath, err := filepath.Abs(mountPoint)
+	if err != nil {
+		return "", security.Root{}, false
 	}
-	return mountPoint
+	internalPath = filepath.Clean(internalPath)
+
+	var best *security.Root
+	for _, root := range roots {
+		if !pathInside(root.InternalPath, internalPath) {
+			continue
+		}
+		if best == nil || len(root.InternalPath) > len(best.InternalPath) {
+			item := root
+			best = &item
+		}
+	}
+	if best == nil {
+		return "", security.Root{}, false
+	}
+
+	rel, err := filepath.Rel(best.InternalPath, internalPath)
+	if err != nil || strings.HasPrefix(rel, "..") {
+		return "", security.Root{}, false
+	}
+	if rel == "." {
+		return best.Path, *best, true
+	}
+	return filepath.Join(best.Path, rel), *best, true
+}
+
+func pathInside(root, candidate string) bool {
+	rel, err := filepath.Rel(root, candidate)
+	if err != nil {
+		return false
+	}
+	if rel == "." {
+		return true
+	}
+	return !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && rel != ".."
 }
 
 func diskUsage(path string) (int64, int64, int64, error) {

@@ -9,6 +9,9 @@
 }
 
 .folderPickerHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
   padding: var(--space-sm) var(--space-md);
   border-bottom: 1px solid var(--color-border-light);
 }
@@ -72,9 +75,13 @@
 
 .folderPickerLoading,
 .folderPickerError {
+  align-items: center;
+  display: flex;
+  justify-content: center;
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
   min-height: 80px;
+  text-align: center;
 }
 
 .folderPickerError {
@@ -84,6 +91,9 @@
 .folderPickerItem {
   background: transparent;
   border: 0;
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
   color: var(--color-text-secondary);
   font-size: var(--font-size-base);
   min-height: 32px;
@@ -98,6 +108,9 @@
 }
 
 .folderPickerFooter {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
   border-top: 1px solid var(--color-border-light);
   padding: var(--space-sm) var(--space-md);
 }
@@ -112,36 +125,6 @@
   display: flex;
   gap: var(--space-sm);
   flex-shrink: 0;
-}
-
-.folderPickerActions :global(.dialog-button) {
-  min-height: 30px;
-  font-size: var(--font-size-sm);
-  padding: 0 var(--space-md);
-}
-
-.dialogButton {
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  min-height: 38px;
-  padding: 0 var(--space-lg);
-}
-
-.dialogButton:disabled {
-  cursor: not-allowed;
-  opacity: var(--opacity-disabled);
-}
-
-.secondary {
-  background: transparent;
-  border-color: var(--color-border);
-  color: var(--color-text-secondary);
-}
-
-.primary {
-  background: var(--color-brand);
-  color: var(--color-on-accent);
 }
 
 .dialogSuggestions {
@@ -180,4 +163,10 @@
 .dialogSuggestions button:hover {
   border-color: var(--color-brand);
   color: var(--color-brand-text);
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

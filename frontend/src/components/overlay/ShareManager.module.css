@@ -71,6 +71,12 @@
   width: 30px;
 }
 
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .skeletonRow {
   align-items: center;
   column-gap: var(--space-sm);
@@ -99,5 +105,4 @@
 .skeletonRow {
   animation: skeletonPulse 1.5s ease-in-out infinite;
 }
-
 

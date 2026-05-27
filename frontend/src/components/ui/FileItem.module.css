@@ -38,6 +38,11 @@
   outline: none;
 }
 
+.fileRowList:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
+}
+
 .fileRowGrid {
   align-items: center;
   background: transparent;
@@ -58,6 +63,11 @@
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
     color var(--transition-fast);
+}
+
+.fileRowGrid:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
 }
 
 .fileRowGrid:hover {
@@ -121,11 +131,16 @@
   z-index: 1;
 }
 
+.iconWrap {
+  display: inline-flex;
+  position: relative;
+}
+
 .fileThumb {
   border-radius: var(--radius-sm);
-  height: 76px;
+  height: 84px;
   object-fit: cover;
-  width: 76px;
+  width: 84px;
 }
 
 .fileMeta {

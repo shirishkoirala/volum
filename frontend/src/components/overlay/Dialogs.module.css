@@ -130,35 +130,6 @@
   justify-content: flex-end;
 }
 
-.dialogButton {
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  min-height: 38px;
-  padding: 0 var(--space-lg);
-}
-
-.dialogButton:disabled {
-  cursor: not-allowed;
-  opacity: var(--opacity-disabled);
-}
-
-.secondary {
-  background: transparent;
-  border-color: var(--color-border);
-  color: var(--color-text-secondary);
-}
-
-.primary {
-  background: var(--color-brand);
-  color: var(--color-on-accent);
-}
-
-.danger {
-  background: var(--color-danger);
-  color: var(--color-on-accent);
-}
-
 .previewSummary {
   display: flex;
   flex-wrap: wrap;

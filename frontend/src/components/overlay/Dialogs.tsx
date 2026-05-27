@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import { IconButton, Overlay, PanelHeader } from '../ui/shared';
+import { Button, IconButton, Overlay, PanelHeader } from '../ui/shared';
 import { Select } from '../input/Select';
 import { FolderPicker } from '../input/FolderPicker';
 import type { FileEntry } from '../../api/client';
@@ -60,14 +60,10 @@ export function ConfirmDialog({ dialog, onClose }: { dialog: NonNullable<Confirm
         <PanelHeader title={dialog.title} onClose={onClose} />
         <p className={styles.dialogMessage}>{dialog.message}</p>
         <div className={styles.dialogActions}>
-          <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
-          <button
-            type="button"
-            className={`${styles.dialogButton} ${dialog.danger ? styles.danger : styles.primary}`}
-            onClick={handleConfirm}
-          >
+          <Button size="compact" onClick={onClose}>Cancel</Button>
+          <Button size="compact" variant={dialog.danger ? 'danger' : 'primary'} onClick={handleConfirm}>
             {dialog.confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </Overlay>
@@ -110,8 +106,8 @@ export function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextI
         </label>
         {error && <p className={styles.dialogError}>{error}</p>}
         <div className={styles.dialogActions}>
-          <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
-          <button type="button" className={`${styles.dialogButton} ${styles.primary}`} onClick={handleSubmit}>{dialog.confirmLabel}</button>
+          <Button size="compact" onClick={onClose}>Cancel</Button>
+          <Button size="compact" variant="primary" onClick={handleSubmit}>{dialog.confirmLabel}</Button>
         </div>
       </div>
     </Overlay>
@@ -243,14 +239,15 @@ export function TransferDialog({
             })}
           </div>
           <div className={styles.dialogActions}>
-            <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={() => setPreviewMode(false)}>Go back</button>
-            <button
+            <Button size="compact" onClick={() => setPreviewMode(false)}>Go back</Button>
+            <Button
               type="button"
-              className={`${styles.dialogButton} ${styles.primary}`}
+              size="compact"
+              variant="primary"
               onClick={() => onSubmit(dialog, destination, conflictPolicy)}
             >
               Proceed with {actionLabel.toLowerCase()}
-            </button>
+            </Button>
           </div>
         </div>
       </Overlay>
@@ -318,11 +315,11 @@ export function TransferDialog({
         {error && <p className={styles.dialogError}>{error}</p>}
         {previewError && <p className={styles.dialogError}>{previewError}</p>}
         <div className={styles.dialogActions}>
-          <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} onClick={onClose}>Cancel</button>
-          <button type="button" className={`${styles.dialogButton} ${styles.secondary}`} disabled={previewLoading} onClick={handlePreview}>
+          <Button size="compact" onClick={onClose}>Cancel</Button>
+          <Button size="compact" onClick={handlePreview} disabled={previewLoading}>
             {previewLoading ? 'Scanning...' : 'Preview'}
-          </button>
-          <button type="submit" className={`${styles.dialogButton} ${styles.primary}`}>{actionLabel}</button>
+          </Button>
+          <Button size="compact" variant="primary" type="submit">{actionLabel}</Button>
         </div>
       </form>
     </Overlay>

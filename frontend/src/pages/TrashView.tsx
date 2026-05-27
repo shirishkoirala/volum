@@ -3,6 +3,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { trashIconUrl } from '../api/icons';
 import type { TrashEntry } from '../api/client';
 import { formatBytes, formatGridDate } from '../utils/format';
+import { GRID_ICON_SIZE, GridTile } from '../components/ui/GridTile';
 import styles from './TrashView.module.css';
 
 type TrashViewProps = {
@@ -27,7 +28,7 @@ export function TrashView({
         </div>
       ) : (
         <section
-          className={styles.fileGrid}
+          className={styles.trashGrid}
           onContextMenu={(event) => event.preventDefault()}
           tabIndex={-1}
           role="list"
@@ -53,37 +54,34 @@ export function TrashView({
             }
 
             return (
-              <div
-                className={`${styles.fileRow}${isSelected ? ` ${styles.selected}` : ''}`}
+              <GridTile
                 key={entry.id}
-                onClick={(event) => onSelectTrash(entry, event)}
-                onContextMenu={(event) => onTrashContextMenu(entry, event)}
-                onKeyDown={handleTrashKeyDown}
+                className={styles.trashItem}
+                icon={entry.type === 'directory' ? <FolderIcon size={GRID_ICON_SIZE} /> : <FileIcon entry={{
+                  name: entry.name,
+                  type: entry.type,
+                  path: entry.originalPath,
+                  size: entry.size,
+                  modifiedAt: entry.deletedAt,
+                  permissions: '',
+                  owner: '',
+                  group: '',
+                  hidden: false,
+                }} size={GRID_ICON_SIZE} />}
+                name={entry.name}
+                metadata={<>
+                  <span>{formatBytes(entry.size)}</span>
+                  <span>{formatGridDate(entry.deletedAt)}</span>
+                </>}
+                isSelected={isSelected}
+                isDragOver={false}
                 role="listitem"
                 tabIndex={idx === 0 ? 0 : -1}
                 data-trash-id={entry.id}
-              >
-                {entry.type === 'directory' ? (
-                  <FolderIcon size={76} />
-                ) : (
-                  <FileIcon entry={{
-                    name: entry.name,
-                    type: entry.type,
-                    path: entry.originalPath,
-                    size: entry.size,
-                    modifiedAt: entry.deletedAt,
-                    permissions: '',
-                    owner: '',
-                    group: '',
-                    hidden: false,
-                  }} size={76} />
-                )}
-                <span className={styles.fileName}>{entry.name}</span>
-                <span className={styles.fileMeta}>
-                  {formatBytes(entry.size)}
-                  <span>{formatGridDate(entry.deletedAt)}</span>
-                </span>
-              </div>
+                onClick={(event) => onSelectTrash(entry, event)}
+                onContextMenu={(event) => onTrashContextMenu(entry, event)}
+                onKeyDown={handleTrashKeyDown}
+              />
             );
           })
           }

@@ -4,7 +4,7 @@ import {
   Clipboard, Columns3, Copy, Download, Eye, EyeOff, FileInput, Folder,
   FolderPlus, Grid3X3, HelpCircle, Home, Info, ListChecks, ListTree, LogOut,
   List, ListX, Monitor, Moon, MoreHorizontal, Pause, Pencil, Play, RefreshCw, RotateCcw,
-  Scissors, Search, Send, Settings, Square, Sun, Trash2, Upload, Usb, X, HardDrive,
+  Scissors, Search, Send, Settings, Square, Sun, Trash2, Upload, Usb, X, HardDrive, ArrowDown,
   type LucideIcon,
 } from 'lucide-react';
 import { IconImg } from './shared';
@@ -29,6 +29,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'edit-rename': Pencil,
   'folder-new': FolderPlus,
   'go-next': ChevronRight,
+  'go-down': ArrowDown,
   'selection-invert': ListX,
   'selection-select-all': CheckSquare,
   'media-playback-pause': Pause,

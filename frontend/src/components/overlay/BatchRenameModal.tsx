@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Icon, FileIcon } from '../ui/Icon';
-import { MutedText, Overlay, PanelHeader } from '../ui/shared';
+import { Button, MutedText, Overlay, PanelHeader } from '../ui/shared';
 import { Select } from '../input/Select';
 import { batchRename } from '../../api/client';
 import type { FileEntry } from '../../api/client';
 import uiStyles from '../ui/shared.module.css';
 import styles from './BatchRename.module.css';
-import dStyles from './Dialogs.module.css';
 
 type PatternType = 'replace' | 'prefix' | 'suffix' | 'case';
 
@@ -129,15 +128,15 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
         {error && <p className={styles.renameError}>{error}</p>}
 
         <div className={styles.renameActions}>
-          <button type="button" className={`${dStyles.dialogButton} ${dStyles.secondary}`} onClick={onClose}>Cancel</button>
-          <button
-            type="button"
-            className={`${dStyles.dialogButton} ${dStyles.primary}`}
+          <Button size="compact" onClick={onClose}>Cancel</Button>
+          <Button
+            size="compact"
+            variant="primary"
             disabled={submitting || previews.every((p) => !p.changed)}
             onClick={handleSubmit}
           >
             {submitting ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Renaming...</> : `Rename ${previews.filter((p) => p.changed).length} items`}
-          </button>
+          </Button>
         </div>
       </div>
     </Overlay>

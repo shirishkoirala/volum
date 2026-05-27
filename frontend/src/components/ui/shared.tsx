@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { Icon } from './Icon';
 import styles from './shared.module.css';
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -45,9 +46,7 @@ export function PanelHeader({ title, subtitle, onClose, children }: PanelHeaderP
         {children}
         {onClose && (
           <IconButton onClick={onClose} aria-label="Close">
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={styles.iconImg}>
-              <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-            </svg>
+            <Icon name="window-close" size={18} />
           </IconButton>
         )}
       </div>
