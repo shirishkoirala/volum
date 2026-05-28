@@ -23,6 +23,7 @@
 * {
   scrollbar-color: var(--color-text-muted) transparent;
   scrollbar-width: thin;
+  -webkit-touch-callout: none;
 }
 
 @keyframes skeletonPulse {

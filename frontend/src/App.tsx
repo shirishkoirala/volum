@@ -31,22 +31,22 @@ export function App() {
     void logout().then((nextSession) => setSession(nextSession));
   };
 
-  if (loading) {
-    return <div className={styles.authShell}>Loading...</div>;
-  }
-
-  if (session?.authEnabled && !session.authenticated) {
-    return <LoginScreen onLoggedIn={handleLoggedIn} />;
-  }
-
   return (
-    <ErrorBoundary>
-      <Home
-        session={session!}
-        onLogout={handleLogout}
-        theme={theme}
-        onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-      />
-    </ErrorBoundary>
+    <div onContextMenu={(e) => e.preventDefault()}>
+      {loading ? (
+        <div className={styles.authShell}>Loading...</div>
+      ) : session?.authEnabled && !session.authenticated ? (
+        <LoginScreen onLoggedIn={handleLoggedIn} />
+      ) : (
+        <ErrorBoundary>
+          <Home
+            session={session!}
+            onLogout={handleLogout}
+            theme={theme}
+            onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+          />
+        </ErrorBoundary>
+      )}
+    </div>
   );
 }
