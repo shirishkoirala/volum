@@ -3,8 +3,8 @@
   display: flex;
   gap: var(--space-md);
   justify-content: space-between;
-  margin-bottom: var(--space-xs);
-  min-height: 44px;
+  margin-bottom: 0;
+  min-height: 40px;
 }
 
 .left {
