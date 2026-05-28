@@ -35,6 +35,7 @@ type Root struct {
 	TotalBytes int64  `json:"totalBytes"`
 	FreeBytes  int64  `json:"freeBytes"`
 	UsedBytes  int64  `json:"usedBytes"`
+	IsHome     bool   `json:"isHome"`
 }
 
 type TrashEntry struct {
@@ -94,6 +95,7 @@ func (s *Service) RootUsage() []Root {
 			FSType:     root.FSType,
 			Discovered: root.Discovered,
 			Available:  root.Available,
+			IsHome:     root.IsHome,
 		}
 		if total, free, err := diskUsage(root.InternalPath); err == nil {
 			item.TotalBytes = total

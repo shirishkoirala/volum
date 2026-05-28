@@ -30,6 +30,7 @@ export type RootEntry = {
   totalBytes: number;
   freeBytes: number;
   usedBytes: number;
+  isHome: boolean;
 };
 
 export type RootResponse = {

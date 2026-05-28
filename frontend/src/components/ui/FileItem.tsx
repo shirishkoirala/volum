@@ -1,4 +1,4 @@
-import { DragEvent, MouseEvent, RefObject, TouchEvent } from 'react';
+import { DragEvent, RefObject } from 'react';
 import { Icon, FileIcon, FolderIcon } from './Icon';
 import { rawUrl, isImageExtension } from '../../api/client';
 import type { FileEntry } from '../../api/client';
@@ -16,16 +16,15 @@ type FileItemProps = {
   isFavorited: boolean;
   renameState: RenameState | null;
   renameInputRef?: RefObject<HTMLInputElement | null>;
-  onSelect: (event: MouseEvent<HTMLElement>) => void;
-  onContextMenu: (event: MouseEvent<HTMLElement>) => void;
-  onDoubleClick: () => void;
+  onContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
+  onClick: () => void;
   onDragStart: (event: DragEvent<HTMLElement>) => void;
   onDragOver?: (event: DragEvent<HTMLElement>) => void;
   onDragLeave?: () => void;
   onDrop?: (event: DragEvent<HTMLElement>) => void;
-  onTouchStart?: (event: TouchEvent<HTMLElement>) => void;
-  onTouchMove?: (event: TouchEvent<HTMLElement>) => void;
-  onTouchEnd?: (event: TouchEvent<HTMLElement>) => void;
+  onTouchStart?: (event: React.TouchEvent<HTMLElement>) => void;
+  onTouchMove?: (event: React.TouchEvent<HTMLElement>) => void;
+  onTouchEnd?: (event: React.TouchEvent<HTMLElement>) => void;
   onCommitRename: () => void;
   onCancelRename: () => void;
   onRenameChange: (value: string) => void;
@@ -35,7 +34,7 @@ type FileItemProps = {
 export function FileItem({
   entry, viewMode, isSelected, isDragOver, canWrite, isFavorited,
   renameState, renameInputRef,
-  onSelect, onContextMenu, onDoubleClick,
+  onContextMenu, onClick,
   onDragStart, onDragOver, onDragLeave, onDrop,
   onTouchStart, onTouchMove, onTouchEnd,
   onCommitRename, onCancelRename, onRenameChange,
@@ -52,15 +51,14 @@ export function FileItem({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      onClick={onSelect}
+      onClick={() => {
+        if (renameState) return;
+        onClick();
+      }}
       onContextMenu={onContextMenu}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      onDoubleClick={() => {
-        if (renameState) return;
-        onDoubleClick();
-      }}
       role="button"
     >
       {entry.type === 'directory' ? (

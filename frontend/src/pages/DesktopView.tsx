@@ -5,13 +5,14 @@ import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { DriveSection } from '../components/ui/DriveSection';
-import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderBookmarksIconUrl, filesIconUrl, warningIconUrl } from '../api/icons';
-import type { BlockDevice, TrashEntry, Job } from '../api/client';
+import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderBookmarksIconUrl, filesIconUrl, warningIconUrl, homeIconUrl } from '../api/icons';
+import type { BlockDevice, TrashEntry, Job, RootEntry } from '../api/client';
 import { formatDeviceUsage } from '../utils/format';
 import styles from './DesktopView.module.css';
 
 type DesktopViewProps = {
   devices: BlockDevice[];
+  roots: RootEntry[];
   trashEntries: TrashEntry[];
   jobs: Job[];
   favorites: string[];
@@ -33,7 +34,6 @@ type DesktopIconItem = {
   id: string;
   type: 'myPC' | 'trash' | 'settings' | 'jobs' | 'files' | 'folderShortcut';
   label: string;
-  subtitle: string;
   ariaLabel: string;
   onClick: () => void;
   badge?: number;
@@ -59,7 +59,7 @@ function saveOrder(ids: string[]) {
 }
 
 export function DesktopView({
-  devices, trashEntries, jobs, favorites, selectedDriveName,
+  devices, roots, trashEntries, jobs, favorites, selectedDriveName,
   onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onSelectDrive,
   showingMyPC, onShowMyPC,
   deviceError, onRetryDevices, wallpaperStyle,
@@ -72,6 +72,8 @@ export function DesktopView({
   useEffect(() => {
     saveOrder(iconOrder);
   }, [iconOrder]);
+
+  const homeRoot = useMemo(() => roots.find(r => r.isHome), [roots]);
 
   const { internalDrives, externalDrives } = useMemo(() => {
     const internal: BlockDevice[] = [];
@@ -94,7 +96,7 @@ export function DesktopView({
       id: 'myPC',
       type: 'myPC',
       label: 'My PC',
-      subtitle: `${devices.length} drive${devices.length === 1 ? '' : 's'}`,
+
       ariaLabel: `Show My PC, ${devices.length} drive${devices.length === 1 ? '' : 's'}`,
       onClick: () => onShowMyPC(true),
       icon: (
@@ -108,7 +110,7 @@ export function DesktopView({
       id: 'trash',
       type: 'trash',
       label: 'Trash',
-      subtitle: trashEntries.length === 0 ? 'Empty' : `${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'}`,
+
       ariaLabel: `Open Trash${trashEntries.length > 0 ? `, ${trashEntries.length} items` : ', empty'}`,
       onClick: onNavigateToTrash,
       badge: trashEntries.length > 0 ? trashEntries.length : undefined,
@@ -124,7 +126,7 @@ export function DesktopView({
       id: 'settings',
       type: 'settings',
       label: 'Settings',
-      subtitle: 'System info &amp; maintenance',
+
       ariaLabel: 'Open Settings',
       onClick: onOpenSettings,
       icon: (
@@ -138,7 +140,7 @@ export function DesktopView({
       id: 'jobs',
       type: 'jobs',
       label: 'Transfers',
-      subtitle: jobs.length === 0 ? 'No transfers' : `${activeJobCount} active`,
+
       ariaLabel: `Open Transfers${activeJobCount > 0 ? `, ${activeJobCount} active` : ', no active transfers'}`,
       onClick: onOpenJobs,
       badge: activeJobCount > 0 ? activeJobCount : undefined,
@@ -156,7 +158,7 @@ export function DesktopView({
       id: 'files',
       type: 'files',
       label: 'Files',
-      subtitle: 'Browse file system',
+
       ariaLabel: 'Open Files',
       onClick: onOpenFiles,
       icon: (
@@ -172,7 +174,7 @@ export function DesktopView({
         id: `fav-${path}`,
         type: 'folderShortcut',
         label: name,
-        subtitle: path.length > 30 ? '...' + path.slice(-27) : path,
+
         ariaLabel: `Open folder ${name}`,
         onClick: () => onNavigateTo(path),
         icon: (
@@ -295,9 +297,15 @@ export function DesktopView({
               )}
             </Notice>
           )}
+          {homeRoot && (
+            <button className={styles.homeEntry} onClick={() => onNavigateTo(homeRoot.path)} type="button">
+              <IconImg src={homeIconUrl()} alt="" width={64} height={64} />
+              <span>Home</span>
+            </button>
+          )}
           <DriveSection title="Internal" drives={internalDrives} onSelectDrive={onSelectDrive} />
           <DriveSection title="External" drives={externalDrives} onSelectDrive={onSelectDrive} />
-          {internalDrives.length === 0 && externalDrives.length === 0 && (
+          {internalDrives.length === 0 && externalDrives.length === 0 && !homeRoot && (
             <EmptyState icon={driveIconUrl()} title="No drives found" />
           )}
         </div>
@@ -333,7 +341,6 @@ export function DesktopView({
           >
             {item.icon}
             <span className={styles.desktopIconLabel}>{item.label}</span>
-            <small className={styles.desktopIconUsage} dangerouslySetInnerHTML={{ __html: item.subtitle }} />
           </button>
         ))}
       </div>

@@ -27,7 +27,8 @@ func Load() (Config, error) {
 	includeRoot := parseBool(os.Getenv("VOLUM_INCLUDE_ROOT"))
 	discoverRoots := parseBool(os.Getenv("VOLUM_DISCOVER_ROOTS"))
 
-	roots, err := loadRoots(os.Getenv("VOLUM_ROOTS"), hostRoot, includeRoot, discoverRoots)
+	homeRoot := strings.TrimSpace(os.Getenv("VOLUM_HOME"))
+	roots, err := loadRoots(os.Getenv("VOLUM_ROOTS"), hostRoot, includeRoot, discoverRoots, homeRoot)
 	if err != nil {
 		return Config{}, err
 	}
@@ -67,7 +68,7 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
-func loadRoots(value, hostRoot string, includeRoot, discoverRoots bool) ([]security.Root, error) {
+func loadRoots(value, hostRoot string, includeRoot, discoverRoots bool, homeRoot string) ([]security.Root, error) {
 	roots := make([]security.Root, 0)
 	if includeRoot {
 		roots = append(roots, rootSpec("/", hostRoot, "Server root", "", "", true))
@@ -85,6 +86,25 @@ func loadRoots(value, hostRoot string, includeRoot, discoverRoots bool) ([]secur
 	}
 	roots = append(roots, explicit...)
 	roots = dedupeRoots(roots)
+	if homeRoot != "" {
+		homePath, err := cleanAbs(homeRoot)
+		if err == nil {
+			found := false
+			for i, r := range roots {
+				if r.Path == homePath {
+					roots[i].IsHome = true
+					roots[i].Label = "Home"
+					found = true
+					break
+				}
+			}
+			if !found {
+				r := rootSpec(homePath, hostRoot, "Home", "", "", false)
+				r.IsHome = true
+				roots = append(roots, r)
+			}
+		}
+	}
 	if len(roots) == 0 {
 		return nil, errors.New("no roots configured; set VOLUM_ROOTS or enable VOLUM_INCLUDE_ROOT/VOLUM_DISCOVER_ROOTS")
 	}

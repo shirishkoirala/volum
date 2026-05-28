@@ -20,7 +20,6 @@ type FilesViewProps = {
   entries: FileEntry[];
   filteredEntries: FileEntry[];
   selectedPaths: string[];
-  onSelectEntry: (entry: FileEntry, event: MouseEvent<HTMLElement>) => void;
   viewMode: ViewMode;
   loading: boolean;
   error: string | null;
@@ -72,7 +71,6 @@ type FilesViewProps = {
 export function FilesView({
   currentPath, breadcrumbs, onNavigate, onGoUp, onRefresh,
   filteredEntries, selectedPaths,
-  onSelectEntry,
   viewMode,
   loading, error, onDismissError,
   canWrite, isFavorited, onToggleFavorite,
@@ -109,7 +107,6 @@ export function FilesView({
           currentPath={currentPath}
           filteredEntries={filteredEntries}
           selectedPaths={selectedPaths}
-          onSelectEntry={onSelectEntry}
           onContextMenu={onContextMenu}
           onNavigate={onNavigate}
           onPreview={onPreview}
@@ -131,7 +128,6 @@ export function FilesView({
         <FileGridView
           filteredEntries={filteredEntries}
           selectedPaths={selectedPaths}
-          onSelectEntry={onSelectEntry}
           onContextMenu={onContextMenu}
           canWrite={canWrite}
           onFileDragStart={onFileDragStart}
@@ -166,7 +162,6 @@ export function FilesView({
       <FileListView
         filteredEntries={filteredEntries}
         selectedPaths={selectedPaths}
-        onSelectEntry={onSelectEntry}
         onContextMenu={onContextMenu}
         canWrite={canWrite}
         onFileDragStart={onFileDragStart}

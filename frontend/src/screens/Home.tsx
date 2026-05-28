@@ -64,6 +64,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
   const [lastSelectedPath, setLastSelectedPath] = useState<string | null>(null);
+  void lastSelectedPath;
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
   const [lastSelectedTrashId, setLastSelectedTrashId] = useState<string | null>(null);
   const [trashContextMenu, setTrashContextMenu] = useState<{ x: number; y: number; entry: TrashEntry } | null>(null);
@@ -566,24 +567,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setLastSelectedPath(nextPaths.length > 0 ? nextPaths[nextPaths.length - 1]! : null);
   };
 
-  const handleSelectEntry = (entry: FileEntry, event: MouseEvent<HTMLElement>) => {
-    if (renaming) return;
-    setContextMenu(null);
-    if (event.shiftKey && lastSelectedPath) {
-      const from = filteredEntries.findIndex((item) => item.path === lastSelectedPath);
-      const to = filteredEntries.findIndex((item) => item.path === entry.path);
-      if (from !== -1 && to !== -1) { const [start, end] = from < to ? [from, to] : [to, from]; setSelectedPaths(filteredEntries.slice(start, end + 1).map((item) => item.path)); return; }
-    }
-    if (event.metaKey || event.ctrlKey) {
-      if (selectedPaths.includes(entry.path)) { const nextP = selectedPaths.filter((p) => p !== entry.path); setSelectedPaths(nextP); setLastSelectedPath(nextP.length > 0 ? nextP[nextP.length - 1]! : null); }
-      else { setSelectedPaths([...selectedPaths, entry.path]); setLastSelectedPath(entry.path); }
-      return;
-    }
-    if (selectedPaths.includes(entry.path)) { setSelectedPaths((paths) => paths.filter((p) => p !== entry.path)); setLastSelectedPath(null); return; }
-    setSelectedPaths([entry.path]);
-    setLastSelectedPath(entry.path);
-  };
-
   const handleContextMenuEvent = (entry: FileEntry, event: MouseEvent<HTMLElement>) => {
     event.preventDefault();
     if (renaming) return;
@@ -830,7 +813,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         <section className={styles.workspace} onClick={handleWorkspaceClick}>
           {activeView === 'desktop' && (
             <DesktopView
-              devices={devices} trashEntries={trashEntries} jobs={jobs}
+              devices={devices} roots={roots} trashEntries={trashEntries} jobs={jobs}
               favorites={favorites}
               selectedDriveName={selectedDriveName}
               onNavigateTo={navigateTo}
@@ -861,7 +844,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onRefresh={refresh}
               entries={entries} filteredEntries={filteredEntries}
               selectedPaths={selectedPaths}
-              onSelectEntry={handleSelectEntry}
               viewMode={viewMode}
               loading={loading} error={error}
               onDismissError={() => setError(null)}

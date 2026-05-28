@@ -24,4 +24,5 @@ services:
       - VOLUM_ROOTS=${VOLUM_ROOTS:-}
       - VOLUM_DB=${VOLUM_DB:-/data/volum.db}
       - VOLUM_PORT=${VOLUM_PORT:-8090}
+      - VOLUM_HOME=${VOLUM_HOME:-}
     restart: unless-stopped

@@ -28,7 +28,7 @@ export function DriveSection({ title, drives, onSelectDrive }: DriveSectionProps
               onClick={() => onSelectDrive(dev.name)}
               type="button"
             >
-              <DeviceIcon name="drive-harddisk" size={32} />
+              <DeviceIcon name="drive-harddisk" size={64} />
               <div className={styles.info}>
                 <span>{dev.model || dev.name}</span>
                 <small>

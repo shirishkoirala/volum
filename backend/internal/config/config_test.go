@@ -34,7 +34,7 @@ func TestRealFilesystemFilter(t *testing.T) {
 }
 
 func TestLoadRootsMergesDiscoveredAndExplicit(t *testing.T) {
-	roots, err := loadRoots("/data,/mnt/media", "", true, false)
+	roots, err := loadRoots("/data,/mnt/media", "", true, false, "")
 	if err != nil {
 		t.Fatal(err)
 	}

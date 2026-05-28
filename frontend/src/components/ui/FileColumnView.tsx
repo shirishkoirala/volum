@@ -1,4 +1,4 @@
-import { DragEvent, KeyboardEvent, MouseEvent, RefObject } from 'react';
+import { DragEvent, KeyboardEvent, RefObject } from 'react';
 import { FileIcon, FolderIcon } from './Icon';
 import type { FileEntry } from '../../api/client';
 import { isPreviewableFile, openFileExternally } from '../../utils/preview';
@@ -10,25 +10,24 @@ type FileColumnViewProps = {
   currentPath: string;
   filteredEntries: FileEntry[];
   selectedPaths: string[];
-  onSelectEntry: (entry: FileEntry, event: MouseEvent<HTMLElement>) => void;
-  onContextMenu: (entry: FileEntry, event: MouseEvent<HTMLElement>) => void;
+  onContextMenu: (entry: FileEntry, event: React.MouseEvent<HTMLElement>) => void;
   onNavigate: (path: string) => void;
   onPreview: (entry: FileEntry) => void;
   renameState: RenameState | null;
   draggingUpload: boolean;
   fileGridRef?: RefObject<HTMLDivElement | null>;
   rubberBandStyle: React.CSSProperties | null;
-  fileClick: (event: MouseEvent<HTMLElement>) => void;
+  fileClick: (event: React.MouseEvent<HTMLElement>) => void;
   onFileAreaDragOver: (event: DragEvent<HTMLElement>) => void;
   onFileAreaDragLeave: (event: DragEvent<HTMLElement>) => void;
   onFileAreaDrop: (event: DragEvent<HTMLElement>) => void;
-  onFileAreaMouseDown: (event: MouseEvent<HTMLElement>) => void;
+  onFileAreaMouseDown: (event: React.MouseEvent<HTMLElement>) => void;
   onFileAreaKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
 };
 
 export function FileColumnView({
   currentPath, filteredEntries, selectedPaths,
-  onSelectEntry, onContextMenu, onNavigate, onPreview,
+  onContextMenu, onNavigate, onPreview,
   renameState,
   draggingUpload, fileGridRef, rubberBandStyle, fileClick,
   onFileAreaDragOver, onFileAreaDragLeave, onFileAreaDrop,
@@ -54,9 +53,7 @@ export function FileColumnView({
                 <div
                   className={`${styles.columnItem}${selectedPaths.includes(entry.path) ? ` ${styles.selected}` : ''}`}
                   key={entry.path}
-                  onClick={(event) => onSelectEntry(entry, event)}
-                  onContextMenu={(event) => onContextMenu(entry, event)}
-                  onDoubleClick={() => {
+                  onClick={() => {
                     if (renameState) return;
                     if (entry.type === 'directory') {
                       onNavigate(entry.path);
@@ -68,6 +65,7 @@ export function FileColumnView({
                       }
                     }
                   }}
+                  onContextMenu={(event) => onContextMenu(entry, event)}
                 >
                   {entry.type === 'directory' ? <FolderIcon size={18} /> : <FileIcon entry={entry} size={18} />}
                   <span className={styles.truncate}>{entry.name}</span>

@@ -60,12 +60,6 @@
   color: var(--color-text);
 }
 
-.desktopIconUsage {
-   color: var(--color-text-muted);
-   font-size: var(--font-size-xs);
-   line-height: 1.2;
- }
-
 .desktopIconWrapper {
   position: relative;
 }
@@ -155,6 +149,27 @@
 .partitionUnmounted {
   cursor: default;
   opacity: var(--opacity-disabled);
+}
+
+.homeEntry {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  text-align: center;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+  width: 120px;
+}
+
+.homeEntry:hover {
+  background: var(--color-surface);
+  border-color: var(--color-border-subtle);
 }
 
 .myPCContent {

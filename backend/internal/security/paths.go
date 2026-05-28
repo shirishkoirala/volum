@@ -22,6 +22,7 @@ type Root struct {
 	FSType       string `json:"fsType,omitempty"`
 	Discovered   bool   `json:"discovered"`
 	Available    bool   `json:"available"`
+	IsHome       bool   `json:"isHome"`
 }
 
 type RootGuard struct {

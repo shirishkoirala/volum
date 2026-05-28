@@ -6,6 +6,7 @@ import computerIconSvg from '../assets/computer.svg?url';
 import filesIconSvg from '../assets/files.svg?url';
 import folderBookmarksIcon from '../assets/places/folder-bookmarks.svg?url';
 import desktopIconSvg from '../assets/places/desktop.svg?url';
+import goHomeIcon from '../assets/go-home.svg?url';
 import trashIcon from '../assets/places/user-trash.svg?url';
 import trashFullIcon from '../assets/places/user-trash-full.svg?url';
 import preferencesIconSvg from '../assets/preferences-system.svg?url';
@@ -54,6 +55,10 @@ export function filesIconUrl() {
 
 export function desktopDockIconUrl() {
   return desktopIconSvg;
+}
+
+export function homeIconUrl() {
+  return goHomeIcon;
 }
 
 export function driveIconUrl() {

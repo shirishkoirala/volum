@@ -133,8 +133,7 @@ export function FolderPicker({
                 key={dir}
                 type="button"
                 className={styles.folderPickerItem}
-                onDoubleClick={() => navigateTo(dir)}
-                onClick={() => onSelect(dir)}
+                onClick={() => { navigateTo(dir); onSelect(dir); }}
                 title={dir}
               >
                 <Icon name="folder-new" size={18} />
