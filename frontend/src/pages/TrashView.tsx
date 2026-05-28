@@ -24,7 +24,7 @@ export function TrashView({
     <>
       {trashEntries.length === 0 ? (
         <div className={styles.emptyWrapper}>
-          <EmptyState icon={trashIconUrl(false, '64')} title="Trash is empty" />
+          <EmptyState icon={trashIconUrl(false)} title="Trash is empty" />
         </div>
       ) : (
         <section

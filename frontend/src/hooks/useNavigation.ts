@@ -44,7 +44,7 @@ export function useNavigation(
   const dockItems = useMemo(() => [
     { id: 'desktop', label: 'Desktop', icon: desktopDockIconUrl(), active: activeView === 'desktop' },
     { id: 'files', label: 'Files', icon: filesIconUrl(), active: activeView === 'files' },
-    { id: 'trash', label: 'Trash', icon: trashIconUrl(trashCount > 0, '64'), badge: trashCount > 0 ? trashCount : undefined, active: activeView === 'trash' },
+    { id: 'trash', label: 'Trash', icon: trashIconUrl(trashCount > 0), badge: trashCount > 0 ? trashCount : undefined, active: activeView === 'trash' },
     { id: 'jobs', label: 'Transfers', icon: jobsIconUrl(), badge: activeJobCount > 0 ? activeJobCount : undefined, active: activeView === 'jobs' },
     { id: 'settings', label: 'Settings', icon: preferencesIconUrl(), active: activeView === 'settings' },
   ], [activeView, trashCount, activeJobCount]);

@@ -82,6 +82,5 @@ export function FolderIcon({ size = 22 }: { size?: number }) {
 }
 
 export function TrashIcon({ full = false, size = 22 }: { full?: boolean; size?: number }) {
-  const iconSize = size <= 22 ? '22' : '64';
-  return <IconImg src={trashIconUrl(full, iconSize)} alt="" width={size} height={size} />;
+  return <IconImg src={trashIconUrl(full)} alt="" width={size} height={size} />;
 }

@@ -69,7 +69,7 @@ export function computerIconUrl() {
   return computerIconSvg;
 }
 
-export function trashIconUrl(full: boolean, size = '22') {
+export function trashIconUrl(full: boolean) {
   return full ? trashFullIcon : trashIcon;
 }
 
@@ -91,10 +91,11 @@ export function emptyIconUrl() {
 
 export function fileTypeIconUrl(entry: FileEntry, size = '22') {
   if (entry.type === 'directory') return folderIconUrl(size);
-  return mimetypeIconUrl(entry.name, size);
+  if (entry.permissions.includes('x')) return mimetypeAssetUrl('application-x-ms-dos-executable');
+  return mimetypeIconUrl(entry.name);
 }
 
-function mimetypeIconUrl(filename: string, _size = '22'): string {
+function mimetypeIconUrl(filename: string): string {
   const e = ext(filename);
   const m = MIMETYPE_MAP[e];
   if (m) return pickIcon(m);

@@ -196,7 +196,7 @@ export function DesktopView({
       if (!used.has(item.id)) ordered.push(item);
     }
     return ordered;
-  }, [devices, trashEntries, jobs, favorites, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onNavigateTo]);
+  }, [devices, trashEntries, favorites, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onNavigateTo]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';
