@@ -26,7 +26,7 @@
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
-  cursor: grab;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 6px;

@@ -3,8 +3,8 @@
   display: flex;
   gap: var(--space-md);
   justify-content: space-between;
-  margin-bottom: var(--space-md);
-  min-height: 46px;
+  margin-bottom: var(--space-xs);
+  min-height: 44px;
 }
 
 .left {
@@ -56,7 +56,7 @@
   display: inline-flex;
   font-size: var(--font-size-base);
   gap: var(--space-xxs);
-  padding: 5px 6px;
+  padding: 4px 6px;
   transition: background var(--transition-fast);
 }
 
@@ -70,7 +70,7 @@
   font-weight: 600;
   max-width: 360px;
   overflow: hidden;
-  padding: 5px 6px;
+  padding: 4px 6px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
