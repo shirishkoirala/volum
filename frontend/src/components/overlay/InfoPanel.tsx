@@ -97,7 +97,7 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
         <dd>{entry.group || '—'}</dd>
       </dl>
 
-      <h4>Permissions</h4>
+      <h4 className={styles.sectionTitle}>Permissions</h4>
       <div className={styles.permGrid}>
         <span className={styles.permGroupLabel}/>
         <span className={styles.permColLabel}>Read</span>

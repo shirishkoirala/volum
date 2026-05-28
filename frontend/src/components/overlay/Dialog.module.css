@@ -32,6 +32,11 @@
   overflow-y: auto;
 }
 
+.dialog h3,
+.dialog h4 {
+  color: var(--color-text);
+}
+
 .dialogFooter {
   display: flex;
   flex-shrink: 0;

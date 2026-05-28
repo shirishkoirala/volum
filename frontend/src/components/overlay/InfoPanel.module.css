@@ -34,7 +34,7 @@
   color: var(--color-text);
 }
 
-.infoPanel h4 {
+.sectionTitle {
   color: var(--color-text);
   font-size: var(--font-size-lg);
   margin: 0;
