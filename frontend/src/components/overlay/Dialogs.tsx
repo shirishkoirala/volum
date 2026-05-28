@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import { Button, IconButton, Overlay, PanelHeader } from '../ui/shared';
+import { Button, IconButton } from '../ui/shared';
+import { Dialog } from './Dialog';
 import { Select } from '../input/Select';
 import { FolderPicker } from '../input/FolderPicker';
 import type { FileEntry } from '../../api/client';
@@ -34,39 +35,23 @@ export type TransferDialogState = {
   initialDestination: string;
 } | null;
 
-function useDialogEscape(onClose: () => void) {
-  useEffect(() => {
-    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-}
-
 export function ConfirmDialog({ dialog, onClose }: { dialog: NonNullable<ConfirmDialogState>; onClose: () => void }) {
-  useDialogEscape(onClose);
-
   const handleConfirm = () => {
     onClose();
     dialog.onConfirm();
   };
 
   return (
-    <Overlay zIndex={110} onClose={onClose}>
-      <div className={`${styles.appDialog} ${styles.appDialogSm}`} role="dialog" aria-modal="true" aria-label={dialog.title}>
-        <PanelHeader title={dialog.title} onClose={onClose} />
-        <p className={styles.dialogMessage}>{dialog.message}</p>
-        <div className={styles.dialogActions}>
-          <Button size="compact" onClick={onClose}>Cancel</Button>
-          <Button size="compact" variant={dialog.danger ? 'danger' : 'primary'} onClick={handleConfirm}>
-            {dialog.confirmLabel}
-          </Button>
-        </div>
-      </div>
-    </Overlay>
+    <Dialog title={dialog.title} onClose={onClose} width="sm" footer={
+      <>
+        <Button size="compact" onClick={onClose}>Cancel</Button>
+        <Button size="compact" variant={dialog.danger ? 'danger' : 'primary'} onClick={handleConfirm}>
+          {dialog.confirmLabel}
+        </Button>
+      </>
+    }>
+      <p className={styles.dialogMessage}>{dialog.message}</p>
+    </Dialog>
   );
 }
 
@@ -75,7 +60,7 @@ export function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextI
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useDialogEscape(onClose);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
   const handleSubmit = () => {
     if (!value.trim()) {
@@ -87,30 +72,25 @@ export function TextInputDialog({ dialog, onClose }: { dialog: NonNullable<TextI
   };
 
   return (
-    <Overlay zIndex={110} onClose={onClose}>
-      <div className={styles.appDialog} role="dialog" aria-modal="true" aria-label={dialog.title}>
-        <PanelHeader title={dialog.title} onClose={onClose} />
-        <label className={styles.dialogField}>
-          <span>{dialog.label}</span>
-          <input
-            ref={inputRef}
-            value={value}
-            onChange={(event) => {
-              setValue(event.target.value);
-              setError(null);
-            }}
-            placeholder={dialog.placeholder}
-            autoFocus
-            onKeyDown={(event) => { if (event.key === 'Enter') handleSubmit(); }}
-          />
-        </label>
-        {error && <p className={styles.dialogError}>{error}</p>}
-        <div className={styles.dialogActions}>
-          <Button size="compact" onClick={onClose}>Cancel</Button>
-          <Button size="compact" variant="primary" onClick={handleSubmit}>{dialog.confirmLabel}</Button>
-        </div>
-      </div>
-    </Overlay>
+    <Dialog title={dialog.title} onClose={onClose} footer={
+      <>
+        <Button size="compact" onClick={onClose}>Cancel</Button>
+        <Button size="compact" variant="primary" onClick={handleSubmit}>{dialog.confirmLabel}</Button>
+      </>
+    }>
+      <label className={styles.dialogField}>
+        <span>{dialog.label}</span>
+        <input
+          ref={inputRef}
+          value={value}
+          onChange={(event) => { setValue(event.target.value); setError(null); }}
+          placeholder={dialog.placeholder}
+          autoFocus
+          onKeyDown={(event) => { if (event.key === 'Enter') handleSubmit(); }}
+        />
+      </label>
+      {error && <p className={styles.dialogError}>{error}</p>}
+    </Dialog>
   );
 }
 
@@ -138,15 +118,9 @@ export function TransferDialog({
   const actionLabel = dialog.mode === 'copy' ? 'Copy' : 'Move';
   const itemLabel = dialog.entries.length === 1 ? dialog.entries[0]!.name : `${dialog.entries.length} selected items`;
 
-  useDialogEscape(onClose);
+  useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-    inputRef.current?.select();
-  }, []);
-
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = () => {
     if (destination.split('|').map((s) => s.trim()).filter(Boolean).length === 0) {
       setError('Destination folder path is required.');
       return;
@@ -209,119 +183,100 @@ export function TransferDialog({
 
   if (previewMode && previewItems && previewSummary) {
     return (
-      <Overlay zIndex={110} onClose={onClose}>
-        <div className={`${styles.appDialog} ${styles.appDialogWide}`} role="dialog" aria-modal="true">
-          <PanelHeader title={`Preview ${title}`} subtitle={`${itemLabel} → ${destination}`} onClose={onClose} />
-          <div className={styles.previewSummary}>
-            {previewSummary.newFiles > 0 && <span className={styles.previewStat}><strong>{previewSummary.newFiles}</strong> new</span>}
-            {previewSummary.skipped > 0 && <span className={styles.previewStat}><strong>{previewSummary.skipped}</strong> skipped</span>}
-            {previewSummary.overwritten > 0 && <span className={`${styles.previewStat} ${styles.previewStatWarn}`}><strong>{previewSummary.overwritten}</strong> overwritten</span>}
-            {previewSummary.renamed > 0 && <span className={`${styles.previewStat} ${styles.previewStatWarn}`}><strong>{previewSummary.renamed}</strong> renamed</span>}
-            {previewSummary.cancelled > 0 && <span className={`${styles.previewStat} ${styles.previewStatDanger}`}><strong>{previewSummary.cancelled}</strong> cancelled</span>}
-            <span className={styles.previewStatMuted}>· {previewSummary.total} total</span>
-          </div>
-          <div className={styles.previewItemList}>
-            {previewItems.map((item) => {
-              let fateClass = styles.fateNew;
-              let fateIcon = '✦';
-              if (item.fate.startsWith('Skip')) { fateClass = styles.fateSkip; fateIcon = '−'; }
-              else if (item.fate.startsWith('Over')) { fateClass = styles.fateOverwrite; fateIcon = '✦'; }
-              else if (item.fate.startsWith('Ren')) { fateClass = styles.fateRename; fateIcon = '↻'; }
-              else if (item.fate.startsWith('Can')) { fateClass = styles.fateCancel; fateIcon = '✕'; }
-              else if (item.fate.startsWith('Ask')) { fateClass = styles.fateAsk; fateIcon = '?'; }
-              return (
-                <div key={item.name} className={styles.previewItem}>
-                  <span className={`${styles.fateBadge} ${fateClass}`}>{fateIcon}</span>
-                  <span className={styles.previewItemName}>{item.name}</span>
-                  <span className={styles.previewItemFate}>{item.fate}</span>
-                </div>
-              );
-            })}
-          </div>
-          <div className={styles.dialogActions}>
-            <Button size="compact" onClick={() => setPreviewMode(false)}>Go back</Button>
-            <Button
-              type="button"
-              size="compact"
-              variant="primary"
-              onClick={() => onSubmit(dialog, destination, conflictPolicy)}
-            >
-              Proceed with {actionLabel.toLowerCase()}
-            </Button>
-          </div>
+      <Dialog title={`Preview ${title}`} subtitle={`${itemLabel} → ${destination}`} onClose={onClose} width="lg" footer={
+        <>
+          <Button size="compact" onClick={() => setPreviewMode(false)}>Go back</Button>
+          <Button size="compact" variant="primary" onClick={() => onSubmit(dialog, destination, conflictPolicy)}>
+            Proceed with {actionLabel.toLowerCase()}
+          </Button>
+        </>
+      }>
+        <div className={styles.previewSummary}>
+          {previewSummary.newFiles > 0 && <span className={styles.previewStat}><strong>{previewSummary.newFiles}</strong> new</span>}
+          {previewSummary.skipped > 0 && <span className={styles.previewStat}><strong>{previewSummary.skipped}</strong> skipped</span>}
+          {previewSummary.overwritten > 0 && <span className={`${styles.previewStat} ${styles.previewStatWarn}`}><strong>{previewSummary.overwritten}</strong> overwritten</span>}
+          {previewSummary.renamed > 0 && <span className={`${styles.previewStat} ${styles.previewStatWarn}`}><strong>{previewSummary.renamed}</strong> renamed</span>}
+          {previewSummary.cancelled > 0 && <span className={`${styles.previewStat} ${styles.previewStatDanger}`}><strong>{previewSummary.cancelled}</strong> cancelled</span>}
+          <span className={styles.previewStatMuted}>· {previewSummary.total} total</span>
         </div>
-      </Overlay>
+        <div className={styles.previewItemList}>
+          {previewItems.map((item) => {
+            let fateClass = styles.fateNew;
+            let fateIcon = '✦';
+            if (item.fate.startsWith('Skip')) { fateClass = styles.fateSkip; fateIcon = '−'; }
+            else if (item.fate.startsWith('Over')) { fateClass = styles.fateOverwrite; fateIcon = '✦'; }
+            else if (item.fate.startsWith('Ren')) { fateClass = styles.fateRename; fateIcon = '↻'; }
+            else if (item.fate.startsWith('Can')) { fateClass = styles.fateCancel; fateIcon = '✕'; }
+            else if (item.fate.startsWith('Ask')) { fateClass = styles.fateAsk; fateIcon = '?'; }
+            return (
+              <div key={item.name} className={styles.previewItem}>
+                <span className={`${styles.fateBadge} ${fateClass}`}>{fateIcon}</span>
+                <span className={styles.previewItemName}>{item.name}</span>
+                <span className={styles.previewItemFate}>{item.fate}</span>
+              </div>
+            );
+          })}
+        </div>
+      </Dialog>
     );
   }
 
   return (
-    <Overlay zIndex={110} onClose={onClose}>
-      <form className={styles.appDialog} role="dialog" aria-modal="true" aria-label={title} onSubmit={handleSubmit}>
-        <PanelHeader title={title} subtitle={itemLabel} onClose={onClose} />
-        <label className={styles.dialogField}>
-          <span>Destination folder path</span>
-          <div className={styles.dialogFieldRow}>
-            <input
-              ref={inputRef}
-              value={destination}
-              onChange={(event) => {
-                setDestination(event.target.value);
-                setError(null);
-              }}
-              placeholder="/path/to/folder"
-            />
-            <IconButton onClick={() => setPickerOpen(true)} title="Browse folders">
-              <Icon name="folder-new" size={16} />
-            </IconButton>
-          </div>
-        </label>
-        <p className={styles.dialogHelp}>Use | to send items to multiple destinations.</p>
-        {pickerOpen && (
-          <FolderPicker
-            initialPath={destination}
-            onSelect={(path) => {
-              setDestination(path);
-              setError(null);
-              setPickerOpen(false);
-            }}
-            onClose={() => setPickerOpen(false)}
+    <Dialog title={title} subtitle={itemLabel} onClose={onClose} footer={
+      <>
+        <Button size="compact" onClick={onClose}>Cancel</Button>
+        <Button size="compact" onClick={handlePreview} disabled={previewLoading}>
+          {previewLoading ? 'Scanning...' : 'Preview'}
+        </Button>
+        <Button size="compact" variant="primary" onClick={handleSubmit}>{actionLabel}</Button>
+      </>
+    }>
+      <label className={styles.dialogField}>
+        <span>Destination folder path</span>
+        <div className={styles.dialogFieldRow}>
+          <input
+            ref={inputRef}
+            value={destination}
+            onChange={(event) => { setDestination(event.target.value); setError(null); }}
+            placeholder="/path/to/folder"
           />
-        )}
-        {!pickerOpen && folderSuggestions.length > 0 && (
-          <div className={styles.dialogSuggestions}>
-            <span>Choose destination</span>
-            <div>
-              {folderSuggestions.map((path) => (
-                <button key={path} type="button" onClick={() => {
-                  setDestination(path.replace(/\/+$/, '') || '/');
-                  setError(null);
-                }} title={path}>
-                  {path === '/' ? '/' : (path.split('/').filter(Boolean).pop() || path)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        <label className={styles.dialogField}>
-          <span>If a file already exists</span>
-          <Select value={conflictPolicy} onChange={(value) => setConflictPolicy(value as ConflictPolicy)}>
-            <option value="ask">Ask when needed</option>
-            <option value="skip">Skip existing files</option>
-            <option value="overwrite">Overwrite existing files</option>
-            <option value="rename">Rename new files</option>
-            <option value="cancel">Cancel the job</option>
-          </Select>
-        </label>
-        {error && <p className={styles.dialogError}>{error}</p>}
-        {previewError && <p className={styles.dialogError}>{previewError}</p>}
-        <div className={styles.dialogActions}>
-          <Button size="compact" onClick={onClose}>Cancel</Button>
-          <Button size="compact" onClick={handlePreview} disabled={previewLoading}>
-            {previewLoading ? 'Scanning...' : 'Preview'}
-          </Button>
-          <Button size="compact" variant="primary" type="submit">{actionLabel}</Button>
+          <IconButton onClick={() => setPickerOpen(true)} title="Browse folders">
+            <Icon name="folder-new" size={16} />
+          </IconButton>
         </div>
-      </form>
-    </Overlay>
+      </label>
+      <p className={styles.dialogHelp}>Use | to send items to multiple destinations.</p>
+      {pickerOpen && (
+        <FolderPicker
+          initialPath={destination}
+          onSelect={(path) => { setDestination(path); setError(null); setPickerOpen(false); }}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
+      {!pickerOpen && folderSuggestions.length > 0 && (
+        <div className={styles.dialogSuggestions}>
+          <span>Choose destination</span>
+          <div>
+            {folderSuggestions.map((path) => (
+              <button key={path} type="button" onClick={() => { setDestination(path.replace(/\/+$/, '') || '/'); setError(null); }} title={path}>
+                {path === '/' ? '/' : (path.split('/').filter(Boolean).pop() || path)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      <label className={styles.dialogField}>
+        <span>If a file already exists</span>
+        <Select value={conflictPolicy} onChange={(value) => setConflictPolicy(value as ConflictPolicy)}>
+          <option value="ask">Ask when needed</option>
+          <option value="skip">Skip existing files</option>
+          <option value="overwrite">Overwrite existing files</option>
+          <option value="rename">Rename new files</option>
+          <option value="cancel">Cancel the job</option>
+        </Select>
+      </label>
+      {error && <p className={styles.dialogError}>{error}</p>}
+      {previewError && <p className={styles.dialogError}>{previewError}</p>}
+    </Dialog>
   );
 }

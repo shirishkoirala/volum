@@ -1,10 +1,4 @@
 .shortcutsPanel {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-menu);
-  max-height: 500px;
-  min-width: 340px;
-  overflow-y: auto;
   padding: var(--space-xl);
 }
 

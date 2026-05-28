@@ -1,28 +1,9 @@
-.renameModal {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-menu);
-  display: flex;
-  flex-direction: column;
-  max-height: 80vh;
-  max-width: 640px;
-  width: 90vw;
-}
-
 .renamePattern {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding: var(--space-lg) var(--space-xl);
+  padding-bottom: var(--space-md);
   border-bottom: 1px solid var(--color-border-row);
-}
-
-.renamePattern select {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  height: 38px;
-  padding: 0 10px;
 }
 
 .renameFields {
@@ -47,7 +28,6 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding: var(--space-sm) var(--space-xl);
 }
 
 .renamePreviewItem {
@@ -81,38 +61,22 @@
   color: var(--color-danger-text);
   font-size: var(--font-size-base);
   margin: 0;
-  padding: 0 var(--space-xl);
-}
-
-.renameActions {
-  align-items: center;
-  display: flex;
-  gap: var(--space-sm);
-  justify-content: flex-end;
-  padding: var(--space-lg) var(--space-xl);
-  border-top: 1px solid var(--color-border-light);
 }
 
 @media (max-width: 760px) {
-  .renameModal {
-    max-height: calc(100dvh - 24px);
-    width: 100%;
+  .renamePattern {
+    padding-left: 0;
+    padding-right: 0;
   }
 
-  .renamePattern,
-  .renamePreviewList,
-  .renameActions {
-    padding-left: var(--space-md);
-    padding-right: var(--space-md);
+  .renamePreviewList {
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .renamePreviewItem {
     align-items: flex-start;
     flex-direction: column;
     gap: 2px;
-  }
-
-  .renameActions {
-    flex-wrap: wrap;
   }
 }

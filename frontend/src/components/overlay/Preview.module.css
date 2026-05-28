@@ -1,16 +1,3 @@
-.previewPanel {
-  background: var(--color-surface);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-menu);
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
-  max-width: 90vw;
-  min-height: 200px;
-  min-width: 400px;
-  overflow: hidden;
-}
-
 .previewHeader {
   align-items: center;
   background: var(--color-bg);
@@ -124,21 +111,7 @@
   width: 100%;
 }
 
-@media (max-width: 1100px) {
-  .previewPanel {
-    max-width: 95vw;
-    min-width: 320px;
-  }
-}
-
 @media (max-width: 760px) {
-  .previewPanel {
-    max-height: calc(100dvh - 24px);
-    max-width: 100%;
-    min-width: 0;
-    width: 100%;
-  }
-
   .previewHeader {
     gap: var(--space-sm);
     padding: var(--space-sm) var(--space-md);

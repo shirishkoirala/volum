@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Icon, FileIcon } from '../ui/Icon';
-import { Button, MutedText, Overlay, PanelHeader } from '../ui/shared';
+import { Button, MutedText } from '../ui/shared';
+import { Dialog } from './Dialog';
 import { chmodPath } from '../../api/client';
 import type { FileEntry } from '../../api/client';
 import uiStyles from '../ui/shared.module.css';
@@ -74,91 +75,64 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
   })();
 
   return (
-    <Overlay onClose={onClose}>
-      <div className={styles.infoPanel}>
-        <div className={styles.infoHeader}>
-          <PanelHeader title="Info" onClose={onClose} />
-        </div>
-
-        <div className={styles.infoPanelBody}>
-          <div className={styles.infoIconRow}>
-            <FileIcon entry={entry} size={48} />
-            <div>
-              <strong>{entry.name}</strong>
-              <MutedText>{entry.type === 'directory' ? 'Directory' : 'File'}</MutedText>
-            </div>
-          </div>
-
-          <dl className={styles.infoDl}>
-            <dt>Path</dt>
-            <dd>{entry.path}</dd>
-            <dt>Size</dt>
-            <dd>{sizeStr}</dd>
-            <dt>Modified</dt>
-            <dd>{new Date(entry.modifiedAt).toLocaleString()}</dd>
-            <dt>Owner</dt>
-            <dd>{entry.owner || '—'}</dd>
-            <dt>Group</dt>
-            <dd>{entry.group || '—'}</dd>
-          </dl>
-
-          <h4>Permissions</h4>
-          <div className={styles.permGrid}>
-            <span className={styles.permGroupLabel}/>
-            <span className={styles.permColLabel}>Read</span>
-            <span className={styles.permColLabel}>Write</span>
-            <span className={styles.permColLabel}>Execute</span>
-            <span className={styles.permGroupLabel}>Owner</span>
-            {[0, 1, 2].map((i) => (
-              <button
-                key={i}
-                type="button"
-                className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
-                onClick={() => toggleBit(i)}
-              >
-                {permBits[i] ? PERM_BITS[i]!.bit : '-'}
-              </button>
-            ))}
-            <span className={styles.permGroupLabel}>Group</span>
-            {[3, 4, 5].map((i) => (
-              <button
-                key={i}
-                type="button"
-                className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
-                onClick={() => toggleBit(i)}
-              >
-                {permBits[i] ? PERM_BITS[i]!.bit : '-'}
-              </button>
-            ))}
-            <span className={styles.permGroupLabel}>Other</span>
-            {[6, 7, 8].map((i) => (
-              <button
-                key={i}
-                type="button"
-                className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
-                onClick={() => toggleBit(i)}
-              >
-                {permBits[i] ? PERM_BITS[i]!.bit : '-'}
-              </button>
-            ))}
-          </div>
-          <div className={styles.permPreview}>{permString}</div>
-
-          {error && <p className={styles.infoError}>{error}</p>}
-          {saved && <p className={styles.infoSaved}>Permissions updated</p>}
-
-          <div className={styles.infoActions}>
-            <Button onClick={onClose}>Close</Button>
-            <Button
-              variant="primary"
-              disabled={changing || saved || permString === entry.permissions}
-              onClick={handleSave}
-            >
-              {changing ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Saving...</> : 'Apply Permissions'}
-            </Button>
-          </div>
+    <Dialog title="Info" onClose={onClose} width="md">
+      <div className={styles.infoIconRow}>
+        <FileIcon entry={entry} size={48} />
+        <div>
+          <strong>{entry.name}</strong>
+          <MutedText>{entry.type === 'directory' ? 'Directory' : 'File'}</MutedText>
         </div>
       </div>
-    </Overlay>
+
+      <dl className={styles.infoDl}>
+        <dt>Path</dt>
+        <dd>{entry.path}</dd>
+        <dt>Size</dt>
+        <dd>{sizeStr}</dd>
+        <dt>Modified</dt>
+        <dd>{new Date(entry.modifiedAt).toLocaleString()}</dd>
+        <dt>Owner</dt>
+        <dd>{entry.owner || '—'}</dd>
+        <dt>Group</dt>
+        <dd>{entry.group || '—'}</dd>
+      </dl>
+
+      <h4>Permissions</h4>
+      <div className={styles.permGrid}>
+        <span className={styles.permGroupLabel}/>
+        <span className={styles.permColLabel}>Read</span>
+        <span className={styles.permColLabel}>Write</span>
+        <span className={styles.permColLabel}>Execute</span>
+        <span className={styles.permGroupLabel}>Owner</span>
+        {[0, 1, 2].map((i) => (
+          <button key={i} type="button" className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`} onClick={() => toggleBit(i)}>
+            {permBits[i] ? PERM_BITS[i]!.bit : '-'}
+          </button>
+        ))}
+        <span className={styles.permGroupLabel}>Group</span>
+        {[3, 4, 5].map((i) => (
+          <button key={i} type="button" className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`} onClick={() => toggleBit(i)}>
+            {permBits[i] ? PERM_BITS[i]!.bit : '-'}
+          </button>
+        ))}
+        <span className={styles.permGroupLabel}>Other</span>
+        {[6, 7, 8].map((i) => (
+          <button key={i} type="button" className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`} onClick={() => toggleBit(i)}>
+            {permBits[i] ? PERM_BITS[i]!.bit : '-'}
+          </button>
+        ))}
+      </div>
+      <div className={styles.permPreview}>{permString}</div>
+
+      {error && <p className={styles.infoError}>{error}</p>}
+      {saved && <p className={styles.infoSaved}>Permissions updated</p>}
+
+      <div className={styles.infoActions}>
+        <Button onClick={onClose}>Close</Button>
+        <Button variant="primary" disabled={changing || saved || permString === entry.permissions} onClick={handleSave}>
+          {changing ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Saving...</> : 'Apply Permissions'}
+        </Button>
+      </div>
+    </Dialog>
   );
 }

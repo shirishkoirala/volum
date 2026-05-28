@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Icon, FileIcon, FolderIcon } from '../ui/Icon';
-import { Overlay, PanelHeader } from '../ui/shared';
+import { Dialog } from './Dialog';
 import { analyzeDiskUsage } from '../../api/client';
 import type { DiskUsageNode } from '../../api/client';
 import { formatBytes } from '../../utils/format';
@@ -79,51 +79,46 @@ export function DiskUsageAnalyzer({ path, onClose }: DiskUsageAnalyzerProps) {
   const total = data?.size ?? 0;
 
   return (
-    <Overlay onClose={onClose}>
-      <div className={styles.analyzer}>
-        <PanelHeader title="Disk Usage Analyzer" subtitle={path} onClose={onClose} />
-        <div className={styles.body}>
-          {loading && (
-            <div className={styles.loading}>
-              <Icon name="view-refresh" size={20} />
-              <span>Scanning directory tree...</span>
+    <Dialog title="Disk Usage Analyzer" subtitle={path} onClose={onClose} width="xl">
+      <div className={styles.body}>
+        {loading && (
+          <div className={styles.loading}>
+            <Icon name="view-refresh" size={20} />
+            <span>Scanning directory tree...</span>
+          </div>
+        )}
+        {error && (
+          <div className={styles.error}>
+            <Icon name="dialog-warning" size={18} />
+            <span>{error}</span>
+          </div>
+        )}
+        {data && !loading && !error && (
+          <>
+            <div className={styles.summary}>
+              <span className={styles.summaryLabel}>Total size:</span>
+              <span className={styles.summaryValue}>{formatBytes(total)}</span>
+              <UsageBar percentage={100} />
             </div>
-          )}
-          {error && (
-            <div className={styles.error}>
-              <Icon name="dialog-warning" size={18} />
-              <span>{error}</span>
+            <div className={styles.header}>
+              <span className={styles.headerSpacer} />
+              <span className={styles.headerName}>Name</span>
+              <span className={styles.headerSize}>Size</span>
+              <span className={styles.headerPercent}>%</span>
+              <span className={styles.headerBar}>Usage</span>
             </div>
-          )}
-          {data && !loading && !error && (
-            <>
-              <div className={styles.summary}>
-                <span className={styles.summaryLabel}>Total size:</span>
-                <span className={styles.summaryValue}>{formatBytes(total)}</span>
-                <UsageBar percentage={100} />
-              </div>
-              <div className={styles.header}>
-                <span className={styles.headerSpacer} />
-                <span className={styles.headerName}>Name</span>
-                <span className={styles.headerSize}>Size</span>
-                <span className={styles.headerPercent}>%</span>
-                <span className={styles.headerBar}>Usage</span>
-              </div>
-              <div className={styles.tree} role="tree">
-                {data.children && data.children.length > 0 ? (
-                  data.children.map((child) => (
-                    <TreeNode key={child.path} node={child} depth={0} total={total} />
-                  ))
-                ) : (
-                  <div className={styles.empty}>
-                    <span>No files found</span>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+            <div className={styles.tree} role="tree">
+              {data.children && data.children.length > 0 ? (
+                data.children.map((child) => (
+                  <TreeNode key={child.path} node={child} depth={0} total={total} />
+                ))
+              ) : (
+                <div className={styles.empty}><span>No files found</span></div>
+              )}
+            </div>
+          </>
+        )}
       </div>
-    </Overlay>
+    </Dialog>
   );
 }

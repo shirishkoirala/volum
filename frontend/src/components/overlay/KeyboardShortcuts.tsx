@@ -1,4 +1,4 @@
-import { Overlay } from '../ui/shared';
+import { Dialog } from './Dialog';
 import styles from './KeyboardShortcuts.module.css';
 
 type KeyboardShortcutsProps = {
@@ -25,7 +25,7 @@ const shortcuts: [string, string][] = [
 
 export function KeyboardShortcuts({ onClose }: KeyboardShortcutsProps) {
   return (
-    <Overlay onClose={onClose}>
+    <Dialog hideHeader onClose={onClose} width="sm">
       <div className={styles.shortcutsPanel}>
         <h3>Keyboard Shortcuts</h3>
         {shortcuts.map(([label, key], index) => (
@@ -45,6 +45,6 @@ export function KeyboardShortcuts({ onClose }: KeyboardShortcutsProps) {
           )
         ))}
       </div>
-    </Overlay>
+    </Dialog>
   );
 }

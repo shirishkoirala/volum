@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Icon, FileIcon } from '../ui/Icon';
-import { Button, MutedText, Overlay, PanelHeader } from '../ui/shared';
+import { Button, MutedText } from '../ui/shared';
+import { Dialog } from './Dialog';
 import { Select } from '../input/Select';
 import { batchRename } from '../../api/client';
 import type { FileEntry } from '../../api/client';
@@ -73,72 +74,63 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
   };
 
   return (
-    <Overlay onClose={onClose}>
-      <div className={styles.renameModal}>
-        <PanelHeader title={`Batch Rename (${entries.length} items)`} onClose={onClose} />
+    <Dialog title={`Batch Rename (${entries.length} items)`} onClose={onClose} width="lg" footer={
+      <>
+        <Button size="compact" onClick={onClose}>Cancel</Button>
+        <Button size="compact" variant="primary" disabled={submitting || previews.every((p) => !p.changed)} onClick={handleSubmit}>
+          {submitting ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Renaming...</> : `Rename ${previews.filter((p) => p.changed).length} items`}
+        </Button>
+      </>
+    }>
+      <div className={styles.renamePattern}>
+        <Select value={patternType} onChange={(value) => setPatternType(value as PatternType)}>
+          <option value="replace">Find & Replace</option>
+          <option value="prefix">Add Prefix</option>
+          <option value="suffix">Add Suffix</option>
+          <option value="case">Change Case</option>
+        </Select>
 
-        <div className={styles.renamePattern}>
-          <Select value={patternType} onChange={(value) => setPatternType(value as PatternType)}>
-            <option value="replace">Find & Replace</option>
-            <option value="prefix">Add Prefix</option>
-            <option value="suffix">Add Suffix</option>
-            <option value="case">Change Case</option>
-          </Select>
-
-          {patternType === 'replace' && (
-            <div className={styles.renameFields}>
-              <input placeholder="Find" value={find} onChange={(e) => setFind(e.target.value)} />
-              <Icon name="go-next" size={16} />
-              <input placeholder="Replace with" value={replace} onChange={(e) => setReplace(e.target.value)} />
-            </div>
-          )}
-          {patternType === 'prefix' && (
-            <div className={styles.renameFields}>
-              <input placeholder="Prefix text" value={prefix} onChange={(e) => setPrefix(e.target.value)} />
-            </div>
-          )}
-          {patternType === 'suffix' && (
-            <div className={styles.renameFields}>
-              <input placeholder="Suffix text" value={suffix} onChange={(e) => setSuffix(e.target.value)} />
-            </div>
-          )}
-          {patternType === 'case' && (
-            <div className={styles.renameFields}>
-              <Select value={caseType} onChange={(value) => setCaseType(value as 'lower' | 'upper' | 'title')}>
-                <option value="lower">Lowercase</option>
-                <option value="upper">Uppercase</option>
-                <option value="title">Title Case</option>
-              </Select>
-            </div>
-          )}
-        </div>
-
-        <div className={styles.renamePreviewList}>
-          {previews.slice(0, 100).map(({ entry, newName, changed }) => (
-            <div key={entry.path} className={`${styles.renamePreviewItem}${changed ? ` ${styles.changed}` : ''}`}>
-              <FileIcon entry={entry} size={22} />
-              <span className={styles.renameOld}>{entry.name}</span>
-              <Icon name="go-next" size={14} />
-              <span className={styles.renameNew}>{newName}</span>
-            </div>
-          ))}
-          {previews.length > 100 && <p><MutedText compact>+{previews.length - 100} more items</MutedText></p>}
-        </div>
-
-        {error && <p className={styles.renameError}>{error}</p>}
-
-        <div className={styles.renameActions}>
-          <Button size="compact" onClick={onClose}>Cancel</Button>
-          <Button
-            size="compact"
-            variant="primary"
-            disabled={submitting || previews.every((p) => !p.changed)}
-            onClick={handleSubmit}
-          >
-            {submitting ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Renaming...</> : `Rename ${previews.filter((p) => p.changed).length} items`}
-          </Button>
-        </div>
+        {patternType === 'replace' && (
+          <div className={styles.renameFields}>
+            <input placeholder="Find" value={find} onChange={(e) => setFind(e.target.value)} />
+            <Icon name="go-next" size={16} />
+            <input placeholder="Replace with" value={replace} onChange={(e) => setReplace(e.target.value)} />
+          </div>
+        )}
+        {patternType === 'prefix' && (
+          <div className={styles.renameFields}>
+            <input placeholder="Prefix text" value={prefix} onChange={(e) => setPrefix(e.target.value)} />
+          </div>
+        )}
+        {patternType === 'suffix' && (
+          <div className={styles.renameFields}>
+            <input placeholder="Suffix text" value={suffix} onChange={(e) => setSuffix(e.target.value)} />
+          </div>
+        )}
+        {patternType === 'case' && (
+          <div className={styles.renameFields}>
+            <Select value={caseType} onChange={(value) => setCaseType(value as 'lower' | 'upper' | 'title')}>
+              <option value="lower">Lowercase</option>
+              <option value="upper">Uppercase</option>
+              <option value="title">Title Case</option>
+            </Select>
+          </div>
+        )}
       </div>
-    </Overlay>
+
+      <div className={styles.renamePreviewList}>
+        {previews.slice(0, 100).map(({ entry, newName, changed }) => (
+          <div key={entry.path} className={`${styles.renamePreviewItem}${changed ? ` ${styles.changed}` : ''}`}>
+            <FileIcon entry={entry} size={22} />
+            <span className={styles.renameOld}>{entry.name}</span>
+            <Icon name="go-next" size={14} />
+            <span className={styles.renameNew}>{newName}</span>
+          </div>
+        ))}
+        {previews.length > 100 && <p><MutedText compact>+{previews.length - 100} more items</MutedText></p>}
+      </div>
+
+      {error && <p className={styles.renameError}>{error}</p>}
+    </Dialog>
   );
 }

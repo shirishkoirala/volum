@@ -200,6 +200,7 @@
 }
 
 .panelHeader h3 {
+  color: var(--color-text);
   font-size: var(--font-size-title);
   line-height: 1.25;
   margin: 0;

@@ -373,10 +373,15 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Handlers: Preview / Info / Download / Batch ──────────
 
-  const handleDownload = () => {
-    const entry = selectedEntries[0];
-    if (selectedEntries.length !== 1 || !entry) return;
-    openFileExternally(entry.path);
+  const handleDownload = (entry?: FileEntry) => {
+    const fileEntry = entry ?? selectedEntries[0];
+    if (!fileEntry) return;
+    setConfirmDialog({
+      title: 'Download File?',
+      message: `Download "${fileEntry.name}"? This will open the file in a new browser tab.`,
+      confirmLabel: 'Download',
+      onConfirm: () => openFileExternally(fileEntry.path),
+    });
   };
 
   const handlePreview = () => {
@@ -385,7 +390,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     if (isPreviewableFile(entry.name)) {
       setPreviewEntry(entry);
     } else {
-      openFileExternally(entry.path);
+      handleDownload(entry);
     }
   };
 
@@ -880,7 +885,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               rubberBandStyle={rubberBandStyle}
               onPreview={(entry) => {
                 if (isPreviewableFile(entry.name)) setPreviewEntry(entry);
-                else openFileExternally(entry.path);
+                else handleDownload(entry);
               }}
               fileGridRef={fileGridRef as React.RefObject<HTMLDivElement>}
               onEntryTouchStart={handleEntryTouchStart}
@@ -961,15 +966,19 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Overlay rendering ────────────────────────────────────
 
-  if (previewEntry) return <>{shell}<PreviewModal entry={previewEntry} onClose={() => setPreviewEntry(null)} /></>;
-  if (infoEntry) return <>{shell}<InfoPanel entry={infoEntry} onClose={() => setInfoEntry(null)} onRefresh={refresh} /></>;
-  if (batchRenameOpen) return <>{shell}<BatchRenameModal entries={selectedEntries} onClose={() => setBatchRenameOpen(false)} onDone={() => { showToastObj({ title: 'Items renamed', variant: 'success' }); refresh(); }} /></>;
-  if (confirmDialog) return <>{shell}<ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} /></>;
-  if (textInputDialog) return <>{shell}<TextInputDialog dialog={textInputDialog} onClose={() => setTextInputDialog(null)} /></>;
-  if (transferDialog) return <>{shell}<TransferDialog dialog={transferDialog} folderSuggestions={folderSuggestions} onClose={() => setTransferDialog(null)} onSubmit={handleTransferSubmit} /></>;
-  if (shareDialogPath) return <>{shell}<ShareDialog path={shareDialogPath.path} name={shareDialogPath.name} onClose={() => setShareDialogPath(null)} /></>;
-  if (shortcutsOpen) return <>{shell}<KeyboardShortcuts onClose={() => setShortcutsOpen(false)} /></>;
-  if (sharesOpen) return <>{shell}<ShareManager onClose={() => setSharesOpen(false)} /></>;
-  if (analyzePath) return <>{shell}<DiskUsageAnalyzer path={analyzePath} onClose={() => setAnalyzePath(null)} /></>;
-  return shell;
+  return (
+    <>
+      {shell}
+      {previewEntry && <PreviewModal entry={previewEntry} onClose={() => setPreviewEntry(null)} onDownload={() => handleDownload(previewEntry)} />}
+      {infoEntry && <InfoPanel entry={infoEntry} onClose={() => setInfoEntry(null)} onRefresh={refresh} />}
+      {batchRenameOpen && <BatchRenameModal entries={selectedEntries} onClose={() => setBatchRenameOpen(false)} onDone={() => { showToastObj({ title: 'Items renamed', variant: 'success' }); refresh(); }} />}
+      {confirmDialog && <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} />}
+      {textInputDialog && <TextInputDialog dialog={textInputDialog} onClose={() => setTextInputDialog(null)} />}
+      {transferDialog && <TransferDialog dialog={transferDialog} folderSuggestions={folderSuggestions} onClose={() => setTransferDialog(null)} onSubmit={handleTransferSubmit} />}
+      {shareDialogPath && <ShareDialog path={shareDialogPath.path} name={shareDialogPath.name} onClose={() => setShareDialogPath(null)} />}
+      {shortcutsOpen && <KeyboardShortcuts onClose={() => setShortcutsOpen(false)} />}
+      {sharesOpen && <ShareManager onClose={() => setSharesOpen(false)} />}
+      {analyzePath && <DiskUsageAnalyzer path={analyzePath} onClose={() => setAnalyzePath(null)} />}
+    </>
+  );
 }

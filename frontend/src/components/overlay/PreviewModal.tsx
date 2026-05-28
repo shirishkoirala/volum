@@ -8,17 +8,18 @@ import {
   rawUrl,
   type FileEntry
 } from '../../api/client';
-import { openFileExternally } from '../../utils/preview';
 import { Icon } from '../ui/Icon';
-import { IconButton, Overlay } from '../ui/shared';
+import { IconButton } from '../ui/shared';
+import { Dialog } from './Dialog';
 import styles from './Preview.module.css';
 
 type PreviewModalProps = {
   entry: FileEntry;
   onClose: () => void;
+  onDownload?: () => void;
 };
 
-export function PreviewModal({ entry, onClose }: PreviewModalProps) {
+export function PreviewModal({ entry, onClose, onDownload }: PreviewModalProps) {
   const [textContent, setTextContent] = useState<string | null>(null);
   const [textError, setTextError] = useState<string | null>(null);
 
@@ -30,95 +31,57 @@ export function PreviewModal({ entry, onClose }: PreviewModalProps) {
   const showPDF = /\.pdf$/i.test(entry.name);
 
   useEffect(() => {
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [onClose]);
-
-  useEffect(() => {
-    if (!showText) {
-      return;
-    }
+    if (!showText) return;
     fetch(fileUrl)
       .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to read file (${response.status})`);
-        }
-        const text = await response.text();
-        setTextContent(text);
+        if (!response.ok) throw new Error(`Failed to read file (${response.status})`);
+        setTextContent(await response.text());
       })
       .catch((err: Error) => setTextError(err.message));
   }, [fileUrl, showText]);
 
   return (
-    <Overlay onClose={onClose}>
-      <div className={styles.previewPanel}>
-        <div className={styles.previewHeader}>
-          <span className={styles.previewTitle}>{entry.name}</span>
-          <div className={styles.previewActions}>
-            <IconButton
-              onClick={() => openFileExternally(entry.path)}
-              title="Download"
-            >
-              <Icon name="edit-download" size={18} />
-            </IconButton>
-            <IconButton
-              onClick={() => window.open(fileUrl, '_blank')}
-              title="Open raw"
-            >
-              <Icon name="document-open" size={18} />
-            </IconButton>
-            <IconButton
-              onClick={onClose}
-              title="Close"
-            >
-              <Icon name="window-close" size={18} />
-            </IconButton>
-          </div>
-        </div>
-
-        <div className={styles.previewContent}>
-          {showImage && (
-            <img
-              alt={entry.name}
-              className={styles.previewImage}
-              src={fileUrl}
-            />
-          )}
-          {showVideo && (
-            <video
-              className={styles.previewVideo}
-              controls
-              src={fileUrl}
-            />
-          )}
-          {showAudio && (
-            <div className={styles.previewAudioWrapper}>
-              <p className={styles.previewAudioLabel}>{entry.name}</p>
-              <audio controls src={fileUrl} />
-            </div>
-          )}
-          {showText && textContent !== null && (
-            <pre className={styles.previewText}><code>{textContent}</code></pre>
-          )}
-          {showText && textError !== null && (
-            <div className={styles.previewError}>{textError}</div>
-          )}
-          {showPDF && (
-            <iframe className={styles.previewIframe} src={fileUrl} title={entry.name} />
-          )}
-          {!showImage && !showVideo && !showAudio && !showText && !showPDF && (
-            <div className={styles.previewUnsupported}>
-              <p>No preview available for this file type.</p>
-              <a href={downloadUrl(entry.path)} target="_blank" rel="noopener noreferrer">Download instead</a>
-            </div>
-          )}
+    <Dialog hideHeader onClose={onClose}>
+      <div className={styles.previewHeader}>
+        <span className={styles.previewTitle}>{entry.name}</span>
+        <div className={styles.previewActions}>
+          <IconButton onClick={() => onDownload?.()} title="Download">
+            <Icon name="edit-download" size={18} />
+          </IconButton>
+          <IconButton onClick={() => window.open(fileUrl, '_blank')} title="Open raw">
+            <Icon name="document-open" size={18} />
+          </IconButton>
+          <IconButton onClick={onClose} title="Close">
+            <Icon name="window-close" size={18} />
+          </IconButton>
         </div>
       </div>
-    </Overlay>
+
+      <div className={styles.previewContent}>
+        {showImage && <img alt={entry.name} className={styles.previewImage} src={fileUrl} />}
+        {showVideo && <video className={styles.previewVideo} controls src={fileUrl} />}
+        {showAudio && (
+          <div className={styles.previewAudioWrapper}>
+            <p className={styles.previewAudioLabel}>{entry.name}</p>
+            <audio controls src={fileUrl} />
+          </div>
+        )}
+        {showText && textContent !== null && (
+          <pre className={styles.previewText}><code>{textContent}</code></pre>
+        )}
+        {showText && textError !== null && (
+          <div className={styles.previewError}>{textError}</div>
+        )}
+        {showPDF && (
+          <iframe className={styles.previewIframe} src={fileUrl} title={entry.name} />
+        )}
+        {!showImage && !showVideo && !showAudio && !showText && !showPDF && (
+          <div className={styles.previewUnsupported}>
+            <p>No preview available for this file type.</p>
+            <a href={downloadUrl(entry.path)} target="_blank" rel="noopener noreferrer">Download instead</a>
+          </div>
+        )}
+      </div>
+    </Dialog>
   );
 }
