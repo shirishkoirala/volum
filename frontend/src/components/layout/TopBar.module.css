@@ -134,7 +134,7 @@
 }
 
 @media (max-width: 760px) {
-  .topbar { height: 38px; padding: 0 4px; }
+  .topbar { padding: 0 4px; }
   .brandName { display: none; }
   .clock { display: none; }
   .brand { padding: 4px 6px; }
