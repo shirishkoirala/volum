@@ -182,6 +182,13 @@
   margin-top: var(--space-sm);
 }
 
+.settingsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
 .maintenanceMsg {
   color: var(--color-success-text);
   font-size: var(--font-size-sm);
@@ -283,7 +290,8 @@
     gap: 2px;
   }
 
-  .maintenanceActions {
+  .maintenanceActions,
+  .settingsActions {
     gap: var(--space-xs);
   }
 }

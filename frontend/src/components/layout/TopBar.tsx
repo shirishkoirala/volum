@@ -1,8 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Icon } from '../ui/Icon';
-import { ThemeToggle } from '../ui/ThemeToggle';
+import { useEffect, useState } from 'react';
 import { AppMenuBar, type AppMenuHandlers } from './AppMenuBar';
-import type { Session } from '../../api/client';
 import appIcon from '../../assets/icon-light.png';
 import styles from './TopBar.module.css';
 
@@ -11,45 +8,26 @@ type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs';
 type TopBarProps = {
   activeView: ActiveView;
   onGoDesktop: () => void;
-  theme: 'light' | 'dark';
-  onToggleTheme: () => void;
-  onOpenSettings: () => void;
-  onLogout: () => void;
-  onOpenShortcuts: () => void;
-  session: Session | null;
   menuHandlers?: AppMenuHandlers;
   title?: string;
 };
 
-export function TopBar({ activeView, onGoDesktop, theme, onToggleTheme, onOpenSettings, onLogout, onOpenShortcuts, session, menuHandlers, title }: TopBarProps) {
-  const [clock, setClock] = useState(() => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-  const [showSystemMenu, setShowSystemMenu] = useState(false);
-  const systemMenuRef = useRef<HTMLDivElement>(null);
+function formatDateTime(date: Date) {
+  const weekday = date.toLocaleDateString([], { weekday: 'short' });
+  const dayMonth = date.toLocaleDateString([], { day: '2-digit', month: 'short' });
+  const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return `${weekday}, ${dayMonth}, ${time}`;
+}
+
+export function TopBar({ activeView, onGoDesktop, menuHandlers, title }: TopBarProps) {
+  const [dateTime, setDateTime] = useState(() => formatDateTime(new Date()));
 
   useEffect(() => {
     const id = setInterval(() => {
-      setClock(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      setDateTime(formatDateTime(new Date()));
     }, 30000);
     return () => clearInterval(id);
   }, []);
-
-  useEffect(() => {
-    if (!showSystemMenu) return;
-    const handleClick = (e: MouseEvent) => {
-      if (systemMenuRef.current && !systemMenuRef.current.contains(e.target as Node)) {
-        setShowSystemMenu(false);
-      }
-    };
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setShowSystemMenu(false);
-    };
-    document.addEventListener('mousedown', handleClick);
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('mousedown', handleClick);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [showSystemMenu]);
 
   return (
     <header className={styles.topbar}>
@@ -61,36 +39,7 @@ export function TopBar({ activeView, onGoDesktop, theme, onToggleTheme, onOpenSe
         {activeView === 'files' && menuHandlers && <AppMenuBar handlers={menuHandlers} />}
       </div>
       <div className={styles.center}>
-        <span className={styles.clock}>{clock}</span>
-      </div>
-      <div className={styles.right}>
-        <ThemeToggle theme={theme} onClick={onToggleTheme} className={styles.systemBtn} size={16} />
-        <button className={styles.systemBtn} onClick={() => setShowSystemMenu(v => !v)} type="button" title="System menu" aria-label="System menu">
-          <Icon name="preferences-system" size={16} />
-        </button>
-        {showSystemMenu && (
-          <div className={styles.systemMenu} ref={systemMenuRef} role="menu">
-            <button className={styles.systemMenuItem} onClick={() => { onToggleTheme(); setShowSystemMenu(false); }} role="menuitem" type="button">
-              <Icon name={theme === 'light' ? 'weather-clear-night' : 'weather-clear'} size={16} />
-              {theme === 'light' ? 'Dark Theme' : 'Light Theme'}
-            </button>
-            <button className={styles.systemMenuItem} onClick={() => { onOpenShortcuts(); setShowSystemMenu(false); }} role="menuitem" type="button">
-              <Icon name="dialog-information" size={16} />
-              Keyboard Shortcuts
-            </button>
-            <div className={styles.systemMenuSeparator} role="separator" />
-            <button className={styles.systemMenuItem} onClick={() => { onOpenSettings(); setShowSystemMenu(false); }} role="menuitem" type="button">
-              <Icon name="preferences-system" size={16} />
-              Settings
-            </button>
-            {session?.authEnabled && (
-              <button className={styles.systemMenuItem} onClick={() => { onLogout(); setShowSystemMenu(false); }} role="menuitem" type="button">
-                <Icon name="system-log-out" size={16} />
-                Log Out
-              </button>
-            )}
-          </div>
-        )}
+        <span className={styles.clock}>{dateTime}</span>
       </div>
     </header>
   );

@@ -780,13 +780,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           activeView={activeView}
           title={topBarTitle}
           onGoDesktop={resetToDesktopView}
-          theme={theme}
-          onToggleTheme={onToggleTheme}
-          onOpenSettings={() => setShowingSettings(true)}
-          onLogout={onLogout}
-          onOpenShortcuts={() => setShortcutsOpen(true)}
-          session={session}
-           menuHandlers={{
+          menuHandlers={{
              onCreateFolder: handleCreateFolder,
              onUpload: () => fileInputRef.current?.click(),
              onCut: () => setClipboardFromSelection('move'),
@@ -910,6 +904,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onOpenShares={() => { setShowingSettings(false); setSharesOpen(true); }}
               wallpaper={wallpaper}
               onWallpaperChange={setWallpaper}
+              theme={theme}
+              onToggleTheme={onToggleTheme}
+              onOpenShortcuts={() => setShortcutsOpen(true)}
+              onLogout={onLogout}
+              session={session}
             />
           )}
 

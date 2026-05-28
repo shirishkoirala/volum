@@ -12,6 +12,7 @@ import {
   dbPruneAuditLogs,
   type StatusResponse,
   type RootEntry,
+  type Session,
 } from '../api/client';
 import type { WallpaperConfig } from '../utils/wallpaper';
 import styles from './SettingsPanel.module.css';
@@ -20,11 +21,17 @@ type SettingsPanelProps = {
   onOpenShares?: () => void;
   wallpaper?: WallpaperConfig;
   onWallpaperChange?: (config: WallpaperConfig) => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
+  onOpenShortcuts: () => void;
+  onLogout: () => void;
+  session: Session | null;
 };
 
-type CategoryId = 'server' | 'storage' | 'desktop' | 'admin' | 'about';
+type CategoryId = 'general' | 'server' | 'storage' | 'desktop' | 'admin' | 'about';
 
 const CATEGORIES: { id: CategoryId; label: string; icon: string }[] = [
+  { id: 'general', label: 'General', icon: 'preferences-system' },
   { id: 'server', label: 'Server', icon: 'dialog-information' },
   { id: 'storage', label: 'Storage', icon: 'drive-harddisk' },
   { id: 'desktop', label: 'Desktop', icon: 'monitor' },
@@ -32,13 +39,22 @@ const CATEGORIES: { id: CategoryId; label: string; icon: string }[] = [
   { id: 'about', label: 'About', icon: 'help-about' },
 ];
 
-export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: SettingsPanelProps) {
+export function SettingsPanel({
+  onOpenShares,
+  wallpaper,
+  onWallpaperChange,
+  theme,
+  onToggleTheme,
+  onOpenShortcuts,
+  onLogout,
+  session,
+}: SettingsPanelProps) {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [maintenanceMsg, setMaintenanceMsg] = useState<string | null>(null);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
   const [maintenanceBusy, setMaintenanceBusy] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<CategoryId>('server');
+  const [activeCategory, setActiveCategory] = useState<CategoryId>('general');
   const [filterQuery, setFilterQuery] = useState('');
 
   const loadStatus = useCallback(() => {
@@ -118,6 +134,25 @@ export function SettingsPanel({ onOpenShares, wallpaper, onWallpaperChange }: Se
         <p><MutedText>Failed to load status. <Button variant="link" onClick={() => window.location.reload()}>Retry</Button></MutedText></p>
       ) : (
         <>
+          {(!filterQuery.trim() ? activeCategory === 'general' : filteredCategories.some((c) => c.id === 'general')) && (
+            <section className={styles.settingsSection}>
+              <h4>General</h4>
+              <div className={styles.settingsActions}>
+                <Button size="compact" onClick={onToggleTheme}>
+                  {theme === 'light' ? 'Use Dark Theme' : 'Use Light Theme'}
+                </Button>
+                <Button size="compact" onClick={onOpenShortcuts}>
+                  Keyboard Shortcuts
+                </Button>
+                {session?.authEnabled && (
+                  <Button size="compact" onClick={onLogout}>
+                    Log Out
+                  </Button>
+                )}
+              </div>
+            </section>
+          )}
+
           {(!filterQuery.trim() ? activeCategory === 'server' : filteredCategories.some((c) => c.id === 'server')) && (
             <div className={styles.settingsSection}>
               <ServerInfo status={status} />
