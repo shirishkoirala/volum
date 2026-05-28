@@ -3,10 +3,16 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-menu);
+  color: var(--color-text);
   max-width: 420px;
   width: 90vw;
   max-height: 85vh;
   overflow-y: auto;
+}
+
+.infoHeader {
+  color: var(--color-text);
+  padding: var(--space-lg) var(--space-lg) 0;
 }
 
 .infoPanelBody {
@@ -22,6 +28,7 @@
 }
 
 .infoIconRow strong {
+  color: var(--color-text);
   display: block;
   font-size: var(--font-size-lg);
   word-break: break-all;
@@ -48,6 +55,12 @@
   margin: 0;
   word-break: break-all;
   color: var(--color-text);
+}
+
+.infoPanel h4 {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  margin: var(--space-md) 0 var(--space-xs);
 }
 
 .permGrid {
@@ -129,6 +142,10 @@
   .infoPanelBody {
     gap: var(--space-sm);
     padding: var(--space-md);
+  }
+
+  .infoHeader {
+    padding: var(--space-md) var(--space-md) 0;
   }
 
   .infoIconRow {

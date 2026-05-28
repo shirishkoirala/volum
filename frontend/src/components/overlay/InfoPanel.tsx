@@ -76,7 +76,9 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
   return (
     <Overlay onClose={onClose}>
       <div className={styles.infoPanel}>
-        <PanelHeader title="Info" onClose={onClose} />
+        <div className={styles.infoHeader}>
+          <PanelHeader title="Info" onClose={onClose} />
+        </div>
 
         <div className={styles.infoPanelBody}>
           <div className={styles.infoIconRow}>
