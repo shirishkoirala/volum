@@ -91,7 +91,7 @@ export function emptyIconUrl() {
 
 export function fileTypeIconUrl(entry: FileEntry, size = '22') {
   if (entry.type === 'directory') return folderIconUrl(size);
-  if (entry.permissions.includes('x')) return mimetypeAssetUrl('application-x-ms-dos-executable');
+  if (entry.permissions.includes('x')) return mimetypeAssetUrl('station');
   return mimetypeIconUrl(entry.name);
 }
 
