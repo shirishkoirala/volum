@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import type { SortField, SortDirection } from '../types';
 import type { ViewMode } from '../utils/view';
@@ -14,15 +14,19 @@ export function useViewPreferences() {
   const [folderPrefs, setFolderPrefs] = useLocalStorage<FolderPrefs>('volum_folderPrefs', {});
   const viewModeBeforeTrash = useRef<ViewMode | null>(null);
 
-  useEffect(() => {
-    if (currentPath && folderPrefs[currentPath]) {
-      const prefs = folderPrefs[currentPath];
+  const navigateToPath = useCallback((path: string) => {
+    if (currentPath && currentPath !== path) {
+      setFolderPrefs((prev) => ({ ...prev, [currentPath]: { viewMode, sortField, sortDirection } }));
+    }
+
+    const prefs = folderPrefs[path];
+    if (prefs) {
       if (prefs.viewMode) setViewMode(prefs.viewMode);
       if (prefs.sortField) setSortField(prefs.sortField);
       if (prefs.sortDirection) setSortDirection(prefs.sortDirection);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    setCurrentPath(path);
+  }, [currentPath, folderPrefs, setFolderPrefs, setSortDirection, setSortField, setViewMode, sortDirection, sortField, viewMode]);
 
   useEffect(() => {
     const path = currentPath;
@@ -33,12 +37,11 @@ export function useViewPreferences() {
   }, [currentPath, viewMode, sortField, sortDirection]);
 
   return {
-    currentPath, setCurrentPath,
+    currentPath, setCurrentPath, navigateToPath,
     viewMode, setViewMode,
     sortField, setSortField,
     sortDirection, setSortDirection,
     showHidden, setShowHidden,
-    folderPrefs, setFolderPrefs,
     viewModeBeforeTrash,
   };
 }

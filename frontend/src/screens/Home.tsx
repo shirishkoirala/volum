@@ -25,7 +25,7 @@ import { TrashView } from '../pages/TrashView';
 import { JobsPage } from '../pages/JobsPage';
 import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
 import type { TransferDialogState } from '../components/overlay/Dialogs';
-import { ToastViewport, type Toast } from '../components/overlay/Toast';
+import { ToastViewport } from '../components/overlay/Toast';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
 import { DesktopContextMenu } from '../components/overlay/DesktopContextMenu';
@@ -48,6 +48,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { useWallpaper } from '../hooks/useWallpaper';
 import { useFileActions } from '../hooks/useFileActions';
 import { useDialogStack } from '../hooks/useDialogStack';
+import { useToasts } from '../hooks/useToasts';
 import styles from './Home.module.css';
 
 
@@ -90,12 +91,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const emptyMenuBlockedRef = useRef(false);
 
   const {
-    currentPath, setCurrentPath,
+    currentPath, setCurrentPath, navigateToPath,
     viewMode, setViewMode,
     sortField, setSortField,
     sortDirection, setSortDirection,
     showHidden, setShowHidden,
-    folderPrefs, setFolderPrefs,
     viewModeBeforeTrash,
   } = useViewPreferences();
 
@@ -124,8 +124,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     fileClipboard, setFileClipboard,
     shortcutsOpen, setShortcutsOpen,
     locationMode, setLocationMode,
-    toasts, setToasts,
   } = useFileActions();
+  const { toasts, dismissToast, showToast, showToastObj } = useToasts();
 
   const {
     confirmDialog, setConfirmDialog,
@@ -137,15 +137,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const canWrite = session.role === 'admin';
 
-  const currentPathRef = useRef(currentPath);
-  currentPathRef.current = currentPath;
-
-  const dismissToast = useCallback((id: number) => setToasts((items) => items.filter((t) => t.id !== id)), [setToasts]);
-  const showToast = useCallback((title: string, variant?: 'success' | 'error', message?: string) => {
-    const id = Date.now() + Math.floor(Math.random() * 1000);
-    setToasts((items) => [...items.slice(-3), { title, variant: variant ?? 'success', message, id }]);
-    window.setTimeout(() => dismissToast(id), 4000);
-  }, [dismissToast, setToasts]);
   const refresh = useCallback(() => setRefreshKey((v) => v + 1), []);
 
   // ── Effects ──────────────────────────────────────────────
@@ -245,14 +236,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchOpen, shortcutsOpen, activeView]);
 
-  // ── Toast helper ─────────────────────────────────────────
-
-  const showToastObj = useCallback((toast: Omit<Toast, 'id'>, timeout = 4000) => {
-    const id = Date.now() + Math.floor(Math.random() * 1000);
-    setToasts((items) => [...items.slice(-3), { ...toast, id }]);
-    window.setTimeout(() => dismissToast(id), timeout);
-  }, [dismissToast, setToasts]);
-
   const handleRefreshDesktop = useCallback(() => {
     loadDevices();
     refresh();
@@ -275,17 +258,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   // ── Navigation ───────────────────────────────────────────
 
   const navigateTo = (path: string) => {
-    const prevPath = currentPathRef.current;
-    if (prevPath && prevPath !== path) {
-      setFolderPrefs((prev) => ({ ...prev, [prevPath]: { viewMode, sortField, sortDirection } }));
-    }
-    const prefs = folderPrefs[path];
-    if (prefs) {
-      if (prefs.viewMode) setViewMode(prefs.viewMode);
-      if (prefs.sortField) setSortField(prefs.sortField);
-      if (prefs.sortDirection) setSortDirection(prefs.sortDirection);
-    }
-    setCurrentPath(path);
+    navigateToPath(path);
     setShowingJobs(false);
     setSearchOpen(false);
     setSearchResults(null);
@@ -858,30 +831,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── LocalStorage sync effects ────────────────────────────
-
-  useEffect(() => {
-    if (currentPath && folderPrefs[currentPath]) {
-      const prefs = folderPrefs[currentPath];
-      if (prefs.viewMode) setViewMode(prefs.viewMode);
-      if (prefs.sortField) setSortField(prefs.sortField);
-      if (prefs.sortDirection) setSortDirection(prefs.sortDirection);
-    }
-    // This intentionally applies the persisted preference only on first mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // ── View mode restoration ────────────────────────────────
 
   useEffect(() => {
     if (!showingTrash && viewModeBeforeTrash.current) { setViewMode(viewModeBeforeTrash.current); viewModeBeforeTrash.current = null; }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showingTrash]);
-  useEffect(() => {
-    const path = currentPath;
-    if (path) {
-      setFolderPrefs((prev) => ({ ...prev, [path]: { viewMode, sortField, sortDirection } }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPath, viewMode, sortField, sortDirection]);
   useEffect(() => { if (typeof Notification !== 'undefined' && Notification.permission === 'default') void Notification.requestPermission(); }, []);
 
   // ── Shell JSX ────────────────────────────────────────────

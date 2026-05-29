@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import type { FileEntry, SearchResult } from '../api/client';
 import type { ContextMenuState, RenameState } from '../types';
-import type { Toast } from '../components/overlay/Toast';
 
 type ClipboardState = { mode: 'copy' | 'move'; entries: FileEntry[] } | null;
 
 export function useFileActions() {
-  const [query, setQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
   const [renaming, setRenaming] = useState<RenameState>(null);
@@ -18,10 +16,8 @@ export function useFileActions() {
   const [fileClipboard, setFileClipboard] = useState<ClipboardState>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [locationMode, setLocationMode] = useState(false);
-  const [toasts, setToasts] = useState<Toast[]>([]);
 
   return {
-    query, setQuery,
     searchOpen, setSearchOpen,
     searchResults, setSearchResults,
     renaming, setRenaming,
@@ -33,6 +29,5 @@ export function useFileActions() {
     fileClipboard, setFileClipboard,
     shortcutsOpen, setShortcutsOpen,
     locationMode, setLocationMode,
-    toasts, setToasts,
   };
 }
