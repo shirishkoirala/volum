@@ -2,7 +2,7 @@ import type { FileEntry } from '../../api/client';
 import {
   AlertTriangle, Archive, ArrowRight, ArrowUpDown, Bookmark, ChevronRight, CheckSquare,
   Clipboard, Columns3, Copy, Download, Eye, EyeOff, FileInput, Folder,
-  FolderPlus, Grid3X3, HelpCircle, Home, Info, ListChecks, ListTree, LogOut,
+  FolderPlus, Globe, Grid3X3, HelpCircle, Home, Info, ListChecks, ListTree, LogOut,
   List, ListX, Monitor, Moon, MoreHorizontal, Pause, Pencil, Play, RefreshCw, RotateCcw,
   Scissors, Search, Send, Settings, Square, Sun, Trash2, Upload, Usb, X, HardDrive, ArrowDown,
   type LucideIcon,
@@ -57,6 +57,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'view-columns': Columns3,
   'sort-desc': ArrowUpDown,
   'go-home': Home,
+  'internet-web-browser': Globe,
   'folder': Folder,
   'document-properties': ListChecks,
   'go-jump': ArrowRight,

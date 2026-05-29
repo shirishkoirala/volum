@@ -29,10 +29,13 @@ import { ToastViewport, type Toast } from '../components/overlay/Toast';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
 import { DesktopContextMenu } from '../components/overlay/DesktopContextMenu';
+import { ServiceFormModal } from '../components/overlay/ServiceFormModal';
 import { FilesEmptyMenu } from '../components/overlay/FilesEmptyMenu';
 import { TrashEmptyMenu } from '../components/overlay/TrashEmptyMenu';
 import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
 import type { DesktopIconItem } from '../pages/DesktopView';
+import { useServiceShortcuts } from '../hooks/useServiceShortcuts';
+import { nextServiceId, type ServiceShortcut } from '../utils/services';
 
 import { joinPath, normalizeFolderPath, uniquePaths } from '../utils/path';
 import { isArchiveFile, archiveBaseName, archiveFileName } from '../utils/archive';
@@ -107,6 +110,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const { favorites, addFavorite, removeFavorite } = useFavorites(currentPath);
   const { wallpaper, setWallpaper, wallpaperStyle } = useWallpaper();
+  const { services, addService, updateService, removeService } = useServiceShortcuts();
 
   const {
     previewEntry, setPreviewEntry,
@@ -711,6 +715,30 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     showToastObj({ title: 'Removed from desktop', variant: 'success' });
   }, [removeFavorite, showToastObj]);
 
+  // ── Service shortcuts ──────────────────────────────────
+
+  const [serviceFormData, setServiceFormData] = useState<{ initial?: ServiceShortcut } | null>(null);
+
+  const handleOpenServiceForm = useCallback((svc?: ServiceShortcut) => {
+    setDesktopContextMenu(null);
+    setServiceFormData(svc ? { initial: svc } : {});
+  }, []);
+
+  const handleSaveService = useCallback((data: { name: string; url: string; iconUrl?: string }) => {
+    if (serviceFormData?.initial) {
+      updateService(serviceFormData.initial.id, data);
+      showToastObj({ title: 'Service updated', variant: 'success' });
+    } else {
+      addService({ id: nextServiceId(), ...data });
+      showToastObj({ title: 'Service added', variant: 'success' });
+    }
+  }, [serviceFormData, addService, updateService, showToastObj]);
+
+  const handleRemoveService = useCallback((id: string) => {
+    removeService(id);
+    showToastObj({ title: 'Service removed from desktop', variant: 'success' });
+  }, [removeService, showToastObj]);
+
   const handleDesktopNavigateToTrash = () => {
     setCurrentPath('');
     setShowingTrash(true);
@@ -898,7 +926,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           {activeView === 'desktop' && (
             <DesktopView
               devices={devices} roots={roots} trashEntries={trashEntries} jobs={jobs}
-              favorites={favorites}
+              favorites={favorites} services={services}
               selectedDriveName={selectedDriveName}
               onNavigateTo={navigateTo}
               onNavigateToTrash={handleDesktopNavigateToTrash}
@@ -1041,6 +1069,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onRefresh={handleRefreshDesktop}
               onEmptyTrash={handleEmptyTrash}
               onRemoveFavorite={handleRemoveDesktopFavorite}
+              onAddService={() => handleOpenServiceForm()}
+              onEditService={(id) => {
+                const svc = services.find((s) => s.id === id);
+                if (svc) handleOpenServiceForm(svc);
+              }}
+              onRemoveService={handleRemoveService}
               onClose={() => setDesktopContextMenu(null)}
             />
           )}
@@ -1107,6 +1141,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       {shortcutsOpen && <KeyboardShortcuts onClose={() => setShortcutsOpen(false)} />}
       {sharesOpen && <ShareManager onClose={() => setSharesOpen(false)} />}
       {analyzePath && <DiskUsageAnalyzer path={analyzePath} onClose={() => setAnalyzePath(null)} />}
+      {serviceFormData && (
+        <ServiceFormModal
+          initial={serviceFormData.initial}
+          onSave={handleSaveService}
+          onClose={() => setServiceFormData(null)}
+        />
+      )}
     </>
   );
 }

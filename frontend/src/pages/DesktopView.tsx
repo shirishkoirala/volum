@@ -7,6 +7,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { DriveSection } from '../components/ui/DriveSection';
 import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderBookmarksIconUrl, filesIconUrl, warningIconUrl, homeIconUrl } from '../api/icons';
 import type { BlockDevice, TrashEntry, Job, RootEntry } from '../api/client';
+import type { ServiceShortcut } from '../utils/services';
 import { formatDeviceUsage } from '../utils/format';
 import styles from './DesktopView.module.css';
 
@@ -16,6 +17,7 @@ type DesktopViewProps = {
   trashEntries: TrashEntry[];
   jobs: Job[];
   favorites: string[];
+  services: ServiceShortcut[];
   selectedDriveName: string | null;
   onNavigateTo: (path: string) => void;
   onNavigateToTrash: () => void;
@@ -33,7 +35,7 @@ type DesktopViewProps = {
 
 export type DesktopIconItem = {
   id: string;
-  type: 'myPC' | 'trash' | 'settings' | 'jobs' | 'files' | 'folderShortcut' | 'emptySpace';
+  type: 'myPC' | 'trash' | 'settings' | 'jobs' | 'files' | 'folderShortcut' | 'serviceShortcut' | 'emptySpace';
   label: string;
   ariaLabel: string;
   onClick: () => void;
@@ -60,7 +62,7 @@ function saveOrder(ids: string[]) {
 }
 
 export function DesktopView({
-  devices, roots, trashEntries, jobs, favorites, selectedDriveName,
+  devices, roots, trashEntries, jobs, favorites, services, selectedDriveName,
   onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onSelectDrive,
   showingMyPC, onShowMyPC,
   deviceError, onRetryDevices, wallpaperStyle,
@@ -187,6 +189,32 @@ export function DesktopView({
       });
     }
 
+    for (const svc of services) {
+      items.push({
+        id: `svc-${svc.id}`,
+        type: 'serviceShortcut',
+        label: svc.name,
+
+        ariaLabel: `Open ${svc.name}`,
+        onClick: () => window.open(svc.url, '_blank', 'noopener,noreferrer'),
+        icon: (
+          <div className={styles.desktopIconWrapper}>
+            {svc.iconUrl ? (
+              <IconImg src={svc.iconUrl} alt="" width={64} height={64} />
+            ) : (
+              <div className={styles.serviceGlobe}>
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="2" y1="12" x2="22" y2="12" />
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                </svg>
+              </div>
+            )}
+          </div>
+        ),
+      });
+    }
+
     const order = iconOrder.filter((id) => items.some((item) => item.id === id));
     const ordered: DesktopIconItem[] = [];
     const used = new Set<string>();
@@ -198,7 +226,7 @@ export function DesktopView({
       if (!used.has(item.id)) ordered.push(item);
     }
     return ordered;
-  }, [devices, trashEntries, favorites, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onNavigateTo]);
+  }, [devices, trashEntries, favorites, services, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onNavigateTo]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';

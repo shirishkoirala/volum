@@ -176,6 +176,65 @@
   white-space: nowrap;
 }
 
+.iconUrlRow {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.iconUrlRow input {
+  flex: 1;
+  min-width: 0;
+}
+
+.faviconPreview {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.faviconStatusRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 20px;
+}
+
+.faviconStatus {
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.faviconDetecting {
+  color: var(--color-text-muted);
+}
+
+.faviconFound {
+  color: var(--color-success-text);
+}
+
+.faviconNotFound {
+  color: var(--color-text-muted);
+}
+
+.detectingSpinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-text-muted);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 @media (max-width: 760px) {
   .dialogFieldRow {
     flex-wrap: wrap;

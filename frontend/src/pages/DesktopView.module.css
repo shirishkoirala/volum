@@ -64,6 +64,15 @@
   position: relative;
 }
 
+.serviceGlobe {
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+}
+
 .desktopTrashBadge {
   align-items: center;
   background: var(--color-danger);
