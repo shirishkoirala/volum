@@ -66,26 +66,22 @@ func (w *Worker) runOnce(ctx context.Context) {
 		w.log.Error("claim archive job failed", "error", err)
 		return
 	}
-	if !ok {
-		return
-	}
-
-	var processErr error
-	switch job.Type {
-	case jobs.TypeArchive:
-		if _, processErr = w.processArchive(ctx, job); processErr != nil {
-		} // processArchive handles job state internally
-	case jobs.TypeExtract:
-		if _, processErr = w.processExtract(ctx, job); processErr != nil {
+	if ok {
+		var processErr error
+		switch job.Type {
+		case jobs.TypeArchive:
+			if _, processErr = w.processArchive(ctx, job); processErr != nil {
+			} // processArchive handles job state internally
+		case jobs.TypeExtract:
+			if _, processErr = w.processExtract(ctx, job); processErr != nil {
+			}
 		}
-	}
-	if processErr != nil {
-		w.log.Error("archive/extract job failed", "job_id", job.ID, "error", processErr)
-		if failErr := w.store.FailJob(ctx, job.ID, processErr); failErr != nil {
-			w.log.Error("mark job failed", "job_id", job.ID, "error", failErr)
+		if processErr != nil {
+			w.log.Error("archive/extract job failed", "job_id", job.ID, "error", processErr)
+			if failErr := w.store.FailJob(ctx, job.ID, processErr); failErr != nil {
+				w.log.Error("mark job failed", "job_id", job.ID, "error", failErr)
+			}
 		}
-	}
-	if processErr != nil {
 		return
 	}
 

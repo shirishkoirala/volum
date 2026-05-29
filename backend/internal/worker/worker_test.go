@@ -314,6 +314,197 @@ func TestProcessChecksumMd5(t *testing.T) {
 	}
 }
 
+func TestRunOnceProcessesChecksumWhenNoArchiveJob(t *testing.T) {
+	root := t.TempDir()
+	filePath := filepath.Join(root, "data.bin")
+	if err := os.WriteFile(filePath, []byte("test data"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	w, store, ctx := setupWorker(t, root)
+	job, err := store.Create(ctx, jobs.CreateRequest{
+		Type:       jobs.TypeChecksum,
+		SourcePath: filePath,
+		VerifyMode: "sha256",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w.runOnce(ctx)
+
+	got, err := store.Get(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != jobs.StatusCompleted {
+		t.Fatalf("expected completed, got %s", got.Status)
+	}
+	items, err := store.ListItems(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(items))
+	}
+	if items[0].Checksum == nil || *items[0].Checksum == "" {
+		t.Fatal("expected item checksum")
+	}
+}
+
+func TestRunOnceProcessesOnlyOneJobPerTick(t *testing.T) {
+	root := t.TempDir()
+	srcDir := filepath.Join(root, "src")
+	if err := os.MkdirAll(srcDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(srcDir, "a.txt"), []byte("hello"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	checksumPath := filepath.Join(root, "data.bin")
+	if err := os.WriteFile(checksumPath, []byte("test data"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	w, store, ctx := setupWorker(t, root)
+	archiveJob, err := store.Create(ctx, jobs.CreateRequest{
+		Type:            jobs.TypeArchive,
+		SourcePath:      srcDir,
+		DestinationPath: filepath.Join(root, "output.zip"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	checksumJob, err := store.Create(ctx, jobs.CreateRequest{
+		Type:       jobs.TypeChecksum,
+		SourcePath: checksumPath,
+		VerifyMode: "sha256",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w.runOnce(ctx)
+
+	gotArchive, err := store.Get(ctx, archiveJob.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotArchive.Status != jobs.StatusCompleted {
+		t.Fatalf("expected archive completed, got %s", gotArchive.Status)
+	}
+	gotChecksum, err := store.Get(ctx, checksumJob.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotChecksum.Status != jobs.StatusQueued {
+		t.Fatalf("expected checksum still queued after first tick, got %s", gotChecksum.Status)
+	}
+
+	w.runOnce(ctx)
+
+	gotChecksum, err = store.Get(ctx, checksumJob.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gotChecksum.Status != jobs.StatusCompleted {
+		t.Fatalf("expected checksum completed after second tick, got %s", gotChecksum.Status)
+	}
+}
+
+func TestProcessChecksumDirectoryCompletesJob(t *testing.T) {
+	root := t.TempDir()
+	dirPath := filepath.Join(root, "dir")
+	if err := os.MkdirAll(dirPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dirPath, "a.txt"), []byte("alpha"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dirPath, "b.txt"), []byte("beta"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	w, store, ctx := setupWorker(t, root)
+	job, err := store.Create(ctx, jobs.CreateRequest{
+		Type:       jobs.TypeChecksum,
+		SourcePath: dirPath,
+		VerifyMode: "sha256",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := w.processChecksum(ctx, job); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := store.Get(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != jobs.StatusCompleted {
+		t.Fatalf("expected completed, got %s", got.Status)
+	}
+	items, err := store.ListItems(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("expected 2 items, got %d", len(items))
+	}
+	for _, item := range items {
+		if item.Status != jobs.StatusCompleted {
+			t.Fatalf("expected completed item, got %s", item.Status)
+		}
+		if item.Checksum == nil || *item.Checksum == "" {
+			t.Fatal("expected item checksum")
+		}
+	}
+}
+
+func TestProcessChecksumDirectoryEmptyCompletesJob(t *testing.T) {
+	root := t.TempDir()
+	dirPath := filepath.Join(root, "empty")
+	if err := os.MkdirAll(dirPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	w, store, ctx := setupWorker(t, root)
+	job, err := store.Create(ctx, jobs.CreateRequest{
+		Type:       jobs.TypeChecksum,
+		SourcePath: dirPath,
+		VerifyMode: "sha256",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := w.processChecksum(ctx, job); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := store.Get(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != jobs.StatusCompleted {
+		t.Fatalf("expected completed, got %s", got.Status)
+	}
+	if got.TotalItems != 0 {
+		t.Fatalf("expected total items 0, got %d", got.TotalItems)
+	}
+	if got.ProcessedItems != 0 {
+		t.Fatalf("expected processed items 0, got %d", got.ProcessedItems)
+	}
+	if got.TotalBytes != 0 {
+		t.Fatalf("expected total bytes 0, got %d", got.TotalBytes)
+	}
+	if got.ProcessedBytes != 0 {
+		t.Fatalf("expected processed bytes 0, got %d", got.ProcessedBytes)
+	}
+}
+
 func TestArchiveFormatDetection(t *testing.T) {
 	tests := []struct {
 		name     string

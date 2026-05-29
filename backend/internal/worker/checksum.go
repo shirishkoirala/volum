@@ -32,6 +32,12 @@ func (w *Worker) processChecksum(ctx context.Context, job jobs.Job) error {
 		return err
 	}
 
+	if job.Status == jobs.StatusQueued {
+		if err := w.store.StartJob(ctx, job.ID); err != nil {
+			return err
+		}
+	}
+
 	if !info.IsDir() {
 		return w.checksumOne(ctx, job.ID, source, mode)
 	}
@@ -46,9 +52,6 @@ func (w *Worker) checksumOne(ctx context.Context, jobID, source, mode string) er
 	}
 	defer f.Close()
 
-	if err := w.store.StartJob(ctx, jobID); err != nil {
-		return err
-	}
 	if err := w.store.SetJobTotals(ctx, jobID, 1, 1); err != nil {
 		return err
 	}
@@ -73,10 +76,6 @@ func (w *Worker) checksumOne(ctx context.Context, jobID, source, mode string) er
 }
 
 func (w *Worker) checksumDir(ctx context.Context, jobID, source, mode string) error {
-	if err := w.store.StartJob(ctx, jobID); err != nil {
-		return err
-	}
-
 	var totalItems int64
 	err := filepath.WalkDir(source, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -95,8 +94,14 @@ func (w *Worker) checksumDir(ctx context.Context, jobID, source, mode string) er
 		return err
 	}
 
+	isCancelled, _ := w.store.IsCancelled(ctx, jobID)
+	if isCancelled {
+		return nil
+	}
+
 	var processedItems int64
-	return filepath.WalkDir(source, func(path string, entry os.DirEntry, walkErr error) error {
+	cancelled := false
+	if err := filepath.WalkDir(source, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
@@ -104,8 +109,9 @@ func (w *Worker) checksumDir(ctx context.Context, jobID, source, mode string) er
 			return nil
 		}
 
-		cancelled, _ := w.store.IsCancelled(ctx, jobID)
-		if cancelled {
+		isCancelled, _ := w.store.IsCancelled(ctx, jobID)
+		if isCancelled {
+			cancelled = true
 			return nil
 		}
 		paused, _ := w.store.IsPaused(ctx, jobID)
@@ -137,7 +143,13 @@ func (w *Worker) checksumDir(ctx context.Context, jobID, source, mode string) er
 			return err
 		}
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+	if cancelled {
+		return nil
+	}
+	return w.store.CompleteJob(ctx, jobID)
 }
 
 func hashReader(r io.Reader, mode string) (string, error) {
