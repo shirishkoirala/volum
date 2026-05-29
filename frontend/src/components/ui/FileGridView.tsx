@@ -9,6 +9,7 @@ type FileGridViewProps = {
   filteredEntries: FileEntry[];
   selectedPaths: string[];
   onContextMenu: (entry: FileEntry, event: React.MouseEvent<HTMLElement>) => void;
+  onEmptyContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
   canWrite: boolean;
   onFileDragStart: (event: DragEvent<HTMLElement>, entry: FileEntry) => void;
   onFolderDragOver: (event: DragEvent<HTMLElement>, path: string) => void;
@@ -52,7 +53,7 @@ function handleFileClick(entry: FileEntry, renameState: RenameState | null, onNa
 
 export function FileGridView({
   filteredEntries, selectedPaths,
-  onContextMenu,
+  onContextMenu, onEmptyContextMenu,
   canWrite, onFileDragStart, onFolderDragOver, onFolderDragLeave, onDropOnFolder,
   dragOverPath, favorites,
   renameState, renameInputRef, onSubmitRename, onCancelRename, onRenameChange,
@@ -68,6 +69,7 @@ export function FileGridView({
       className={`${styles.fileGrid}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
       ref={fileGridRef as RefObject<HTMLDivElement>}
       onClick={fileClick}
+      onContextMenu={onEmptyContextMenu}
       onDragLeave={onFileAreaDragLeave}
       onDragOver={onFileAreaDragOver}
       onDrop={onFileAreaDrop}

@@ -1,7 +1,7 @@
 import { KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileEntry, Job, BlockDevice, RootEntry, Session, TrashEntry,
-  createFolder, createJob, deleteTrash, deletePath, getDevices,
+  createFile, createFolder, createJob, deleteTrash, deletePath, getDevices,
   getFiles, getJobs, getRoots, getTrash, renamePath, searchFiles, restoreTrash,
   uploadFiles, getDirSizes, createShare,
 } from '../api/client';
@@ -28,6 +28,11 @@ import type { TransferDialogState } from '../components/overlay/Dialogs';
 import { ToastViewport, type Toast } from '../components/overlay/Toast';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
+import { DesktopContextMenu } from '../components/overlay/DesktopContextMenu';
+import { FilesEmptyMenu } from '../components/overlay/FilesEmptyMenu';
+import { TrashEmptyMenu } from '../components/overlay/TrashEmptyMenu';
+import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
+import type { DesktopIconItem } from '../pages/DesktopView';
 
 import { joinPath, normalizeFolderPath, uniquePaths } from '../utils/path';
 import { isArchiveFile, archiveBaseName, archiveFileName } from '../utils/archive';
@@ -68,6 +73,10 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [selectedTrashIds, setSelectedTrashIds] = useState<string[]>([]);
   const [lastSelectedTrashId, setLastSelectedTrashId] = useState<string | null>(null);
   const [trashContextMenu, setTrashContextMenu] = useState<{ x: number; y: number; entry: TrashEntry } | null>(null);
+  const [desktopContextMenu, setDesktopContextMenu] = useState<{ x: number; y: number; item: DesktopIconItem } | null>(null);
+  const [filesEmptyMenu, setFilesEmptyMenu] = useState<{ x: number; y: number } | null>(null);
+  const [trashEmptyMenu, setTrashEmptyMenu] = useState<{ x: number; y: number } | null>(null);
+  const [jobsEmptyMenu, setJobsEmptyMenu] = useState<{ x: number; y: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileGridRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
@@ -75,6 +84,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const emptyMenuBlockedRef = useRef(false);
 
   const {
     currentPath, setCurrentPath,
@@ -239,6 +249,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     window.setTimeout(() => dismissToast(id), timeout);
   }, [dismissToast, setToasts]);
 
+  const handleRefreshDesktop = useCallback(() => {
+    loadDevices();
+    refresh();
+    showToastObj({ title: 'Refreshed', variant: 'success' });
+  }, [loadDevices, refresh, showToastObj]);
+
   const runAction = async (action: () => Promise<unknown>, successTitle?: string) => {
     try {
       await action();
@@ -284,6 +300,17 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       placeholder: 'Folder name',
       confirmLabel: 'Create',
       onSubmit: (value) => { void runAction(() => createFolder(currentPath, value.trim()), 'Folder created'); }
+    });
+  };
+
+  const handleCreateFile = () => {
+    setFilesEmptyMenu(null);
+    setTextInputDialog({
+      title: 'New Text File',
+      label: 'File name',
+      placeholder: 'file.txt',
+      confirmLabel: 'Create',
+      onSubmit: (value) => { void runAction(() => createFile(currentPath, value.trim()), 'File created'); }
     });
   };
 
@@ -367,6 +394,9 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const handleTrashContextMenu = (entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
+    event.stopPropagation();
+    emptyMenuBlockedRef.current = true;
+    queueMicrotask(() => { emptyMenuBlockedRef.current = false; });
     if (!selectedTrashIds.includes(entry.id)) { setSelectedTrashIds([entry.id]); setLastSelectedTrashId(entry.id); }
     setTrashContextMenu({ x: event.clientX, y: event.clientY, entry });
   };
@@ -574,9 +604,37 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const handleContextMenuEvent = (entry: FileEntry, event: MouseEvent<HTMLElement>) => {
     event.preventDefault();
+    event.stopPropagation();
+    emptyMenuBlockedRef.current = true;
+    queueMicrotask(() => { emptyMenuBlockedRef.current = false; });
     if (renaming) return;
     if (!selectedPaths.includes(entry.path)) { setSelectedPaths([entry.path]); setLastSelectedPath(entry.path); }
     setContextMenu({ x: event.clientX, y: event.clientY, entry });
+  };
+
+  // ── Handlers: Empty area context menus ───────────────────
+
+  const handleFilesEmptyContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+    if (emptyMenuBlockedRef.current) { emptyMenuBlockedRef.current = false; return; }
+    event.preventDefault();
+    event.stopPropagation();
+    setContextMenu(null);
+    setFilesEmptyMenu({ x: event.clientX, y: event.clientY });
+  };
+
+  const handleTrashEmptyContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+    if (emptyMenuBlockedRef.current) { emptyMenuBlockedRef.current = false; return; }
+    event.preventDefault();
+    event.stopPropagation();
+    setTrashContextMenu(null);
+    setTrashEmptyMenu({ x: event.clientX, y: event.clientY });
+  };
+
+  const handleJobsEmptyContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+    if (emptyMenuBlockedRef.current) { emptyMenuBlockedRef.current = false; return; }
+    event.preventDefault();
+    event.stopPropagation();
+    setJobsEmptyMenu({ x: event.clientX, y: event.clientY });
   };
 
   // ── Handlers: File area keyboard ─────────────────────────
@@ -625,6 +683,33 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const handleEntryTouchEnd = useCallback(() => { if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; } }, []);
 
   // ── Desktop handlers ─────────────────────────────────────
+
+  const handleDesktopItemContextMenu = useCallback((item: DesktopIconItem, event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    setDesktopContextMenu({ x: event.clientX, y: event.clientY, item });
+  }, []);
+
+  const handleEmptyTrash = () => {
+    setDesktopContextMenu(null);
+    setConfirmDialog({
+      title: 'Empty Trash',
+      message: `Permanently delete all ${trashEntries.length} item${trashEntries.length === 1 ? '' : 's'} in trash? This cannot be undone.`,
+      confirmLabel: 'Empty Trash',
+      danger: true,
+      onConfirm: () => {
+        void runAction(async () => {
+          for (const entry of trashEntries) await deleteTrash(entry.id);
+          const r = await getTrash();
+          setTrashEntries(r.entries ?? []);
+        }, 'Trash emptied');
+      }
+    });
+  };
+
+  const handleRemoveDesktopFavorite = useCallback((path: string) => {
+    removeFavorite(path);
+    showToastObj({ title: 'Removed from desktop', variant: 'success' });
+  }, [removeFavorite, showToastObj]);
 
   const handleDesktopNavigateToTrash = () => {
     setCurrentPath('');
@@ -738,7 +823,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   // ── Context menu close on click/resize ───────────────────
 
   useEffect(() => {
-    const closeMenus = () => { setContextMenu(null); setTrashContextMenu(null); };
+    const closeMenus = () => { setContextMenu(null); setTrashContextMenu(null); setDesktopContextMenu(null); setFilesEmptyMenu(null); setTrashEmptyMenu(null); setJobsEmptyMenu(null); };
     window.addEventListener('click', closeMenus);
     window.addEventListener('resize', closeMenus);
     return () => { window.removeEventListener('click', closeMenus); window.removeEventListener('resize', closeMenus); };
@@ -825,6 +910,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onShowMyPC={setShowingMyPC}
               deviceError={deviceError} onRetryDevices={loadDevices}
               wallpaperStyle={wallpaperStyle}
+              onItemContextMenu={handleDesktopItemContextMenu}
             />
           )}
           {activeView === 'trash' && (
@@ -833,6 +919,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onSelectTrash={handleSelectTrashItem}
               sortedTrashEntries={sortedTrashEntries}
               onTrashContextMenu={handleTrashContextMenu}
+              onTrashEmptyContextMenu={handleTrashEmptyContextMenu}
             />
           )}
           {activeView === 'files' && (
@@ -841,6 +928,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onNavigate={navigateTo}
               onGoUp={() => setCurrentPath('')}
               onRefresh={refresh}
+              onFilesEmptyContextMenu={handleFilesEmptyContextMenu}
               entries={entries} filteredEntries={filteredEntries}
               selectedPaths={selectedPaths}
               viewMode={viewMode}
@@ -897,6 +985,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onCancel={handleCancelJob} onPause={handlePauseJob}
               onResume={handleResumeJob} onRetry={handleRetryJob}
               onClearCompleted={handleClearCompleted} onClearFailed={handleClearFailed}
+              onJobsEmptyContextMenu={handleJobsEmptyContextMenu}
             />
           )}
           {activeView === 'settings' && (
@@ -942,6 +1031,46 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onRestore={() => handleRestoreTrash(trashContextMenu.entry)}
               onDeletePermanently={() => handleDeleteTrash(trashContextMenu.entry)}
               onClose={() => setTrashContextMenu(null)}
+            />
+          )}
+          {desktopContextMenu && (
+            <DesktopContextMenu
+              x={desktopContextMenu.x} y={desktopContextMenu.y}
+              item={desktopContextMenu.item}
+              trashCount={trashEntries.length}
+              onRefresh={handleRefreshDesktop}
+              onEmptyTrash={handleEmptyTrash}
+              onRemoveFavorite={handleRemoveDesktopFavorite}
+              onClose={() => setDesktopContextMenu(null)}
+            />
+          )}
+          {filesEmptyMenu && (
+            <FilesEmptyMenu
+              x={filesEmptyMenu.x} y={filesEmptyMenu.y}
+              canWrite={canWrite}
+              canPaste={canPaste}
+              onCreateFolder={handleCreateFolder}
+              onCreateFile={handleCreateFile}
+              onUpload={() => fileInputRef.current?.click()}
+              onRefresh={refresh}
+              onPaste={() => { setFilesEmptyMenu(null); handlePaste(); }}
+              onClose={() => setFilesEmptyMenu(null)}
+            />
+          )}
+          {trashEmptyMenu && (
+            <TrashEmptyMenu
+              x={trashEmptyMenu.x} y={trashEmptyMenu.y}
+              canPaste={canPaste}
+              onRefresh={() => { refresh(); showToastObj({ title: 'Refreshed', variant: 'success' }); }}
+              onPaste={() => { setTrashEmptyMenu(null); handlePaste(); }}
+              onClose={() => setTrashEmptyMenu(null)}
+            />
+          )}
+          {jobsEmptyMenu && (
+            <JobsEmptyMenu
+              x={jobsEmptyMenu.x} y={jobsEmptyMenu.y}
+              onRefresh={() => { void getJobs().then((r) => setJobs(r.jobs ?? [])); showToastObj({ title: 'Refreshed', variant: 'success' }); }}
+              onClose={() => setJobsEmptyMenu(null)}
             />
           )}
         </section>

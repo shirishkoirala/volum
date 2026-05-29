@@ -47,3 +47,9 @@
 .danger {
   color: var(--color-danger) !important;
 }
+
+.separator {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-xxs) 0;
+}

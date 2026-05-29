@@ -82,6 +82,7 @@ func (s *Server) routes() {
 		r.Group(func(r chi.Router) {
 			r.Use(s.requireUser)
 			r.Use(s.requireAdmin)
+			r.Post("/files/file", s.handleCreateFile)
 			r.Post("/files/folder", s.handleCreateFolder)
 			r.Patch("/files/rename", s.handleRename)
 			r.Post("/files/batch-rename", s.handleBatchRename)

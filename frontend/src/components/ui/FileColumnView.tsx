@@ -11,6 +11,7 @@ type FileColumnViewProps = {
   filteredEntries: FileEntry[];
   selectedPaths: string[];
   onContextMenu: (entry: FileEntry, event: React.MouseEvent<HTMLElement>) => void;
+  onEmptyContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
   onNavigate: (path: string) => void;
   onPreview: (entry: FileEntry) => void;
   renameState: RenameState | null;
@@ -27,7 +28,7 @@ type FileColumnViewProps = {
 
 export function FileColumnView({
   currentPath, filteredEntries, selectedPaths,
-  onContextMenu, onNavigate, onPreview,
+  onContextMenu, onEmptyContextMenu, onNavigate, onPreview,
   renameState,
   draggingUpload, fileGridRef, rubberBandStyle, fileClick,
   onFileAreaDragOver, onFileAreaDragLeave, onFileAreaDrop,
@@ -38,6 +39,7 @@ export function FileColumnView({
       className={`${styles.fileColumns}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
       ref={fileGridRef as RefObject<HTMLDivElement>}
       onClick={fileClick}
+      onContextMenu={onEmptyContextMenu}
       onDragLeave={onFileAreaDragLeave}
       onDragOver={onFileAreaDragOver}
       onDrop={onFileAreaDrop}

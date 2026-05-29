@@ -1,5 +1,7 @@
 # UI Consistency Roadmap
 
+> **Status**: Tracking document — items marked ✓ are complete, ☐ are pending/unverified.
+
 This roadmap tracks UI inconsistencies found in the current frontend after the component reorganization and recent density fixes. Scope is frontend-only unless noted.
 
 ## Phase 1 — Clear Visual Bugs

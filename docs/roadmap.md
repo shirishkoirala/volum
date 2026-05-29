@@ -1,5 +1,7 @@
 # Volum Desktop — Codebase Refactoring Roadmap
 
+> **Historical record** — all 9 phases of the codebase refactoring roadmap are complete. This document is kept for reference only. All tasks listed below have been verified as implemented.
+
 ## Phase 1 — Quick Wins (Safe deletions, small fixes)
 
 | # | Task | Status |

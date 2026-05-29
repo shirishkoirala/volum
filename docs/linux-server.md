@@ -21,7 +21,9 @@ openssl rand -base64 32
 Run from the repository:
 
 ```sh
-docker compose --env-file /opt/docker/volum/.env -f docker-compose.server.yml up --build -d
+docker compose -f docker-compose.server.yml up --build -d
+
+Environment variables are loaded from `.env` in the repository root automatically by Docker Compose. See `.env.example` for all available options.
 ```
 
 This mounts host `/` at `/host` inside the container with `rslave` propagation, but Volum shows host paths in the UI. The root entry appears as `/`, and discovered drives appear as their host mount paths such as `/mnt/media`.

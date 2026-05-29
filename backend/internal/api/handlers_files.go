@@ -21,6 +21,24 @@ func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"entries": entries})
 }
 
+func (s *Server) handleCreateFile(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Path string `json:"path"`
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+
+	entry, err := s.files.CreateFile(req.Path, req.Name)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, entry)
+}
+
 func (s *Server) handleCreateFolder(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Path string `json:"path"`

@@ -149,6 +149,7 @@ type JobsPageProps = {
   onRetry: (id: string) => void;
   onClearCompleted: () => void;
   onClearFailed: () => void;
+  onJobsEmptyContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
 };
 
 function handleJobListKeyDown(e: React.KeyboardEvent) {
@@ -174,10 +175,11 @@ export function JobsPage({
   onRetry,
   onClearCompleted,
   onClearFailed,
+  onJobsEmptyContextMenu,
 }: JobsPageProps) {
   return (
     <>
-      <main className={styles.jobsPage}>
+      <main className={styles.jobsPage} onContextMenu={onJobsEmptyContextMenu}>
         <div className={styles.jobList} onKeyDown={handleJobListKeyDown} role="list">
       {jobs.length === 0 ? (
         <EmptyState icon={jobsIconUrl()} title="No transfers yet" subtitle="File operations like copy, move, and archive will appear here." />

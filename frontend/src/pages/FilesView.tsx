@@ -17,6 +17,7 @@ type FilesViewProps = {
   onNavigate: (path: string) => void;
   onGoUp: () => void;
   onRefresh: () => void;
+  onFilesEmptyContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
   entries: FileEntry[];
   filteredEntries: FileEntry[];
   selectedPaths: string[];
@@ -69,7 +70,7 @@ type FilesViewProps = {
 };
 
 export function FilesView({
-  currentPath, breadcrumbs, onNavigate, onGoUp, onRefresh,
+  currentPath, breadcrumbs, onNavigate, onGoUp, onRefresh, onFilesEmptyContextMenu,
   filteredEntries, selectedPaths,
   viewMode,
   loading, error, onDismissError,
@@ -108,6 +109,7 @@ export function FilesView({
           filteredEntries={filteredEntries}
           selectedPaths={selectedPaths}
           onContextMenu={onContextMenu}
+          onEmptyContextMenu={onFilesEmptyContextMenu}
           onNavigate={onNavigate}
           onPreview={onPreview}
           renameState={renameState}
@@ -129,6 +131,7 @@ export function FilesView({
           filteredEntries={filteredEntries}
           selectedPaths={selectedPaths}
           onContextMenu={onContextMenu}
+          onEmptyContextMenu={onFilesEmptyContextMenu}
           canWrite={canWrite}
           onFileDragStart={onFileDragStart}
           onFolderDragOver={onFolderDragOver}
@@ -163,6 +166,7 @@ export function FilesView({
         filteredEntries={filteredEntries}
         selectedPaths={selectedPaths}
         onContextMenu={onContextMenu}
+        onEmptyContextMenu={onFilesEmptyContextMenu}
         canWrite={canWrite}
         onFileDragStart={onFileDragStart}
         onFolderDragOver={onFolderDragOver}
@@ -195,7 +199,7 @@ export function FilesView({
 
   return (
     <div className={styles.filesViewContainer}>
-      <div className={styles.fileContent}>
+      <div className={styles.fileContent} onContextMenu={onFilesEmptyContextMenu}>
         <BreadcrumbBar crumbs={breadcrumbs} onBack={handleBreadcrumbBack} onNavigate={onNavigate} locationMode={locationMode} onLocationNavigate={onLocationNavigate} onToggleLocationMode={onToggleLocationMode}>
           <FileSearchBar
             query={query} searchOpen={searchOpen} searchResults={searchResults}

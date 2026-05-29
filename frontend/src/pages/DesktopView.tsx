@@ -28,16 +28,17 @@ type DesktopViewProps = {
   deviceError?: string | null;
   onRetryDevices?: () => void;
   wallpaperStyle?: React.CSSProperties;
+  onItemContextMenu: (item: DesktopIconItem, event: React.MouseEvent<HTMLElement>) => void;
 };
 
-type DesktopIconItem = {
+export type DesktopIconItem = {
   id: string;
-  type: 'myPC' | 'trash' | 'settings' | 'jobs' | 'files' | 'folderShortcut';
+  type: 'myPC' | 'trash' | 'settings' | 'jobs' | 'files' | 'folderShortcut' | 'emptySpace';
   label: string;
   ariaLabel: string;
   onClick: () => void;
   badge?: number;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
 };
 
 const ORDER_KEY = 'volum_desktopOrder';
@@ -63,6 +64,7 @@ export function DesktopView({
   onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onSelectDrive,
   showingMyPC, onShowMyPC,
   deviceError, onRetryDevices, wallpaperStyle,
+  onItemContextMenu,
 }: DesktopViewProps) {
   const activeJobCount = jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length;
   const [iconOrder, setIconOrder] = useState<string[]>(loadOrder);
@@ -240,7 +242,13 @@ export function DesktopView({
     const d = devices.find(dd => dd.name === selectedDriveName);
     const driveLabel = d?.model || d?.name || selectedDriveName;
     return (
-      <div className={styles.desktopWrapper} style={wallpaperStyle}>
+      <div
+        className={styles.desktopWrapper}
+        style={wallpaperStyle}
+        onContextMenu={(event) => {
+          onItemContextMenu({ id: '', type: 'emptySpace', label: '', ariaLabel: '', onClick: () => {} }, event);
+        }}
+      >
         <BreadcrumbBar
           crumbs={[{ label: 'Desktop' }, { label: 'My PC' }, { label: driveLabel }]}
           onBack={() => onSelectDrive(null)}
@@ -281,7 +289,13 @@ export function DesktopView({
 
   if (showingMyPC) {
     return (
-      <div className={styles.desktopWrapper} style={wallpaperStyle}>
+      <div
+        className={styles.desktopWrapper}
+        style={wallpaperStyle}
+        onContextMenu={(event) => {
+          onItemContextMenu({ id: '', type: 'emptySpace', label: '', ariaLabel: '', onClick: () => {} }, event);
+        }}
+      >
         <BreadcrumbBar
           crumbs={[{ label: 'Desktop' }, { label: 'My PC' }]}
           onBack={() => onShowMyPC(false)}
@@ -314,7 +328,13 @@ export function DesktopView({
   }
 
   return (
-    <div className={styles.desktopWrapper} style={wallpaperStyle}>
+    <div
+      className={styles.desktopWrapper}
+      style={wallpaperStyle}
+      onContextMenu={(event) => {
+        onItemContextMenu({ id: '', type: 'emptySpace', label: '', ariaLabel: '', onClick: () => {} }, event);
+      }}
+    >
       <div className={styles.desktop}>
         {deviceError && (
           <Notice variant="error" className={styles.desktopError}>
@@ -330,6 +350,7 @@ export function DesktopView({
             key={item.id}
             className={`${styles.desktopIcon}${dragId === item.id ? ` ${styles.desktopDragging}` : ''}${dropTarget === item.id ? ` ${styles.desktopDropTarget}` : ''}`}
             onClick={item.onClick}
+            onContextMenu={(event) => { event.stopPropagation(); onItemContextMenu(item, event); }}
             type="button"
             aria-label={item.ariaLabel}
             draggable

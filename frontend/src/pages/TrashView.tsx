@@ -12,13 +12,14 @@ type TrashViewProps = {
   onSelectTrash: (entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => void;
   sortedTrashEntries: TrashEntry[];
   onTrashContextMenu: (entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => void;
+  onTrashEmptyContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
 };
 
 export function TrashView({
   trashEntries, selectedTrashIds,
   onSelectTrash,
   sortedTrashEntries,
-  onTrashContextMenu,
+  onTrashContextMenu, onTrashEmptyContextMenu,
 }: TrashViewProps) {
   return (
     <>
@@ -29,7 +30,7 @@ export function TrashView({
       ) : (
         <section
           className={styles.trashGrid}
-          onContextMenu={(event) => event.preventDefault()}
+          onContextMenu={onTrashEmptyContextMenu}
           tabIndex={-1}
           role="list"
         >

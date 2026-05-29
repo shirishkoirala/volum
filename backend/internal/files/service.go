@@ -183,6 +183,38 @@ func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
 	return entries, nil
 }
 
+func (s *Service) CreateFile(parentPath, name string) (Entry, error) {
+	if !validBaseName(name) {
+		return Entry{}, ErrInvalidName
+	}
+
+	parent, err := s.guard.Resolve(parentPath)
+	if err != nil {
+		return Entry{}, err
+	}
+
+	targetPublic := filepath.Join(filepath.Clean(parentPath), name)
+	target, err := s.guard.Resolve(targetPublic)
+	if err != nil {
+		return Entry{}, err
+	}
+	if filepath.Dir(target) != parent {
+		return Entry{}, security.ErrPathTraversal
+	}
+	if _, err := os.Stat(target); err == nil {
+		return Entry{}, ErrDestinationExists
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return Entry{}, err
+	}
+
+	f, err := os.Create(target)
+	if err != nil {
+		return Entry{}, err
+	}
+	f.Close()
+	return s.entryFromPath(target)
+}
+
 func (s *Service) CreateFolder(parentPath, name string) (Entry, error) {
 	if !validBaseName(name) {
 		return Entry{}, ErrInvalidName

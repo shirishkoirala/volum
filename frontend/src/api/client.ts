@@ -264,6 +264,13 @@ export function createFolder(path: string, name: string) {
   });
 }
 
+export function createFile(path: string, name: string) {
+  return request<FileEntry>('/api/files/file', {
+    method: 'POST',
+    body: JSON.stringify({ path, name })
+  });
+}
+
 export function renamePath(path: string, newName: string) {
   return request<FileEntry>('/api/files/rename', {
     method: 'PATCH',
