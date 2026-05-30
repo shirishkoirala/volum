@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
 import { Button, MutedText } from '../components/ui/shared';
+import { EmptyState } from '../components/ui/EmptyState';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { ServerInfo } from '../components/ui/ServerInfo';
 import { WallpaperPicker } from '../components/ui/WallpaperPicker';
@@ -131,7 +132,7 @@ export function SettingsPanel({
           <div className={`${styles.skeletonBlock} ${styles.short}`} />
         </div>
       ) : !status ? (
-        <p><MutedText>Failed to load status. <Button variant="link" onClick={() => window.location.reload()}>Retry</Button></MutedText></p>
+        <p><MutedText>Failed to load status. <Button variant="link" onClick={loadStatus}>Retry</Button></MutedText></p>
       ) : (
         <>
           {(!filterQuery.trim() ? activeCategory === 'general' : filteredCategories.some((c) => c.id === 'general')) && (
@@ -254,6 +255,12 @@ export function SettingsPanel({
               </dl>
             </section>
           )}
+
+          {filterQuery.trim() && filteredCategories.length === 0 && (
+            <div className={styles.settingsSection}>
+              <EmptyState compact title="No matching settings" subtitle={`Nothing found for "${filterQuery}"`} />
+            </div>
+          )}
         </>
       )}
     </>
@@ -269,7 +276,7 @@ export function SettingsPanel({
         onChange={(e) => setFilterQuery(e.target.value)}
       />
       <ul className={styles.settingsNavList}>
-        {CATEGORIES.map((cat) => (
+        {(filterQuery.trim() ? filteredCategories : CATEGORIES).map((cat) => (
           <li key={cat.id}>
             <button
               className={`${styles.settingsNavItem}${activeCategory === cat.id ? ` ${styles.active}` : ''}`}

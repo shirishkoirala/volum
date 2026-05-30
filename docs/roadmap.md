@@ -90,39 +90,19 @@ This roadmap tracks the current inconsistency, KISS, YAGNI, and SOLID cleanup wo
 
 ## Phase 5 - Settings And UI Consistency
 
-### 5.1 Fix settings search behavior
+### 5.1 Fix settings search behavior — ✅ Complete
 
-**Problem:** Settings search filters content but not nav, and a no-match query can show blank content with no empty state.
+**Result:**
+- Sidebar nav now renders `filteredCategories` when a search query is active, keeping nav and content in sync.
+- Added compact `EmptyState` when no categories match the search query.
+- Error retry uses `loadStatus()` instead of `window.location.reload()`.
 
-**Files:**
-- `frontend/src/pages/SettingsPanel.tsx`
-- `frontend/src/pages/SettingsPanel.module.css`
+### 5.2 Move `ErrorBoundary` styles to CSS Module — ✅ Complete
 
-**Plan:**
-- Render `filteredCategories` in nav while searching.
-- Add a compact empty state for no matching categories.
-- Use `loadStatus` for retry instead of `window.location.reload()`.
-
-**Acceptance:**
-- Search results are consistent between nav and content.
-- No-match search shows a clear empty state.
-- Failed status retry does not reload the full app.
-
-### 5.2 Move `ErrorBoundary` styles to CSS Module
-
-**Problem:** `ErrorBoundary` uses inline styling, unlike the project CSS Module convention.
-
-**Files:**
-- `frontend/src/components/ui/ErrorBoundary.tsx`
-- New `frontend/src/components/ui/ErrorBoundary.module.css`
-
-**Plan:**
-- Replace inline styles with CSS Module classes.
-- Reuse shared `Button` where practical.
-
-**Acceptance:**
-- No inline layout/theme styles remain in `ErrorBoundary`.
-- Error boundary remains visually equivalent.
+**Result:**
+- Created `ErrorBoundary.module.css` with `.wrapper`, `.title`, `.message` classes using theme CSS vars.
+- Replaced inline styles with CSS Module classes.
+- Replaced inline `<button>` with shared `<Button variant="primary">` component.
 
 ## Phase 6 - Backend Quality Follow-Up
 
