@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getSession, logout, Session } from './api/client';
 import { LoginScreen } from './screens/LoginScreen';
+import { SetupScreen } from './screens/SetupScreen';
 import { Home } from './screens/Home';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import styles from './App.module.css';
@@ -28,25 +29,31 @@ export function App() {
 
   const handleLoggedIn = (nextSession: Session) => setSession(nextSession);
   const handleLogout = () => {
-    void logout().then((nextSession) => setSession(nextSession));
+    void logout().then(setSession).catch(() => setSession(null));
   };
+
+  if (loading) {
+    return <div className={styles.authShell}>Loading...</div>;
+  }
+
+  if (session?.setupRequired) {
+    return <SetupScreen onComplete={handleLoggedIn} />;
+  }
+
+  if (session?.authEnabled && !session.authenticated) {
+    return <LoginScreen onLoggedIn={handleLoggedIn} />;
+  }
 
   return (
     <div onContextMenu={(e) => e.preventDefault()}>
-      {loading ? (
-        <div className={styles.authShell}>Loading...</div>
-      ) : session?.authEnabled && !session.authenticated ? (
-        <LoginScreen onLoggedIn={handleLoggedIn} />
-      ) : (
-        <ErrorBoundary>
-          <Home
-            session={session!}
-            onLogout={handleLogout}
-            theme={theme}
-            onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-          />
-        </ErrorBoundary>
-      )}
+      <ErrorBoundary>
+        <Home
+          session={session!}
+          onLogout={handleLogout}
+          theme={theme}
+          onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+        />
+      </ErrorBoundary>
     </div>
   );
 }

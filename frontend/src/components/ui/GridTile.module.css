@@ -24,7 +24,7 @@
 
 .tile:hover {
   background: var(--color-hover);
-  border-color: var(--color-text-muted);
+  border-color: var(--color-border-light);
 }
 
 .tile.selected {

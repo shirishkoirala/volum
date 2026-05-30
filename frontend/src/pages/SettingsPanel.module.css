@@ -241,6 +241,108 @@
   margin-right: 4px;
 }
 
+.userList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.userRow {
+  align-items: center;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.userInfo {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.userInfo span:first-child {
+  font-weight: 600;
+  font-size: var(--font-size-base);
+}
+
+.userRole {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  padding: 1px 8px;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.userActions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pwdInline {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pwdInline input {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  min-height: 28px;
+  padding: 0 8px;
+  width: 140px;
+  outline: none;
+}
+
+.pwdInline input:focus {
+  border-color: var(--color-brand);
+}
+
+.createUserDetails {
+  margin-top: var(--space-sm);
+}
+
+.createUserDetails summary {
+  cursor: pointer;
+  color: var(--color-brand);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.createUserForm {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.createUserForm input,
+.createUserForm select {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  min-height: 34px;
+  padding: 0 10px;
+  outline: none;
+}
+
+.createUserForm input:focus,
+.createUserForm select:focus {
+  border-color: var(--color-brand);
+}
+
 @media (max-width: 760px) {
   .settingsBodyPage {
     flex-direction: column;

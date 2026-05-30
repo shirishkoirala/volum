@@ -59,6 +59,31 @@ func migrate(db *sql.DB) error {
 			created_at DATETIME NOT NULL
 		)`)
 	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_shares_token ON shares(token)`)
+
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS users (
+			id TEXT PRIMARY KEY,
+			username TEXT NOT NULL UNIQUE,
+			password_hash TEXT NOT NULL,
+			role TEXT NOT NULL DEFAULT 'readonly',
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL
+		)`)
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS desktop_favorites (
+			path TEXT NOT NULL PRIMARY KEY,
+			position INTEGER NOT NULL DEFAULT 0,
+			created_at DATETIME NOT NULL
+		)`)
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS desktop_services (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			url TEXT NOT NULL,
+			icon_url TEXT DEFAULT '',
+			position INTEGER NOT NULL DEFAULT 0,
+			created_at DATETIME NOT NULL
+		)`)
 	return nil
 }
 

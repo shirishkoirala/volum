@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/volum-app/volum/backend/internal/auth"
+	"github.com/volum-app/volum/backend/internal/desktop"
 	"github.com/volum-app/volum/backend/internal/files"
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/security"
@@ -22,19 +23,23 @@ type Server struct {
 	jobs      *jobs.Store
 	guard     *security.RootGuard
 	auth      *auth.Service
+	authStore *auth.Store
 	shares    *shares.Store
+	desktop   *desktop.Store
 	startTime time.Time
 	dbPath    string
 }
 
-func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service, shareStore *shares.Store, dbPath string) *Server {
+func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service, authSt *auth.Store, shareStore *shares.Store, desktopStore *desktop.Store, dbPath string) *Server {
 	s := &Server{
 		router:    chi.NewRouter(),
 		files:     filesService,
 		jobs:      jobStore,
 		guard:     guard,
 		auth:      authService,
+		authStore: authSt,
 		shares:    shareStore,
+		desktop:   desktopStore,
 		startTime: time.Now(),
 		dbPath:    dbPath,
 	}
@@ -60,6 +65,7 @@ func (s *Server) routes() {
 		r.Get("/session", s.handleSession)
 		r.Post("/login", s.handleLogin)
 		r.Post("/logout", s.handleLogout)
+		r.Post("/setup", s.handleSetup)
 		r.Get("/version", s.handleVersion)
 
 		r.Group(func(r chi.Router) {
@@ -77,6 +83,15 @@ func (s *Server) routes() {
 			r.Get("/jobs/events", s.handleJobEvents)
 			r.Get("/jobs/{id}", s.handleJob)
 			r.Get("/status", s.handleStatus)
+			r.Get("/favorites", s.handleListFavorites)
+			r.Post("/favorites", s.handleAddFavorite)
+			r.Delete("/favorites", s.handleRemoveFavorite)
+			r.Put("/favorites/reorder", s.handleReorderFavorites)
+			r.Get("/services", s.handleListServices)
+			r.Post("/services", s.handleCreateService)
+			r.Put("/services/{id}", s.handleUpdateService)
+			r.Delete("/services/{id}", s.handleDeleteService)
+			r.Put("/services/reorder", s.handleReorderServices)
 		})
 
 		r.Group(func(r chi.Router) {
@@ -105,6 +120,11 @@ func (s *Server) routes() {
 			r.Post("/db/vacuum", s.handleVacuum)
 			r.Post("/db/prune-jobs", s.handlePruneJobs)
 			r.Post("/db/prune-audit-logs", s.handlePruneAuditLogs)
+			r.Get("/users", s.handleListUsers)
+			r.Post("/users", s.handleCreateUser)
+			r.Delete("/users/{id}", s.handleDeleteUser)
+			r.Patch("/users/{id}/password", s.handleChangePassword)
+			r.Patch("/users/{id}/role", s.handleChangeRole)
 		})
 	})
 

@@ -1,25 +1,31 @@
 import { FormEvent, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
-import { login } from '../api/client';
+import { setup } from '../api/client';
 import type { Session } from '../api/client';
 import appIcon from '../assets/icon-light.png';
 import styles from './LoginScreen.module.css';
 
-type LoginScreenProps = {
-  onLoggedIn: (session: Session) => void;
+type SetupScreenProps = {
+  onComplete: (session: Session) => void;
 };
 
-export function LoginScreen({ onLoggedIn }: LoginScreenProps) {
-  const [username, setUsername] = useState('');
+export function SetupScreen({ onComplete }: SetupScreenProps) {
+  const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
+    if (password !== confirm) {
+      setError('Passwords do not match');
+      return;
+    }
     setSubmitting(true);
-    login(username, password)
-      .then(onLoggedIn)
+    setError(null);
+    setup(username, password)
+      .then(onComplete)
       .catch((err: Error) => setError(err.message))
       .finally(() => setSubmitting(false));
   };
@@ -28,7 +34,10 @@ export function LoginScreen({ onLoggedIn }: LoginScreenProps) {
     <main className={styles.authShell}>
       <form className={styles.loginPanel} onSubmit={handleSubmit}>
         <img className={styles.brandMark} src={appIcon} alt="" />
-        <h1>Volum Desktop</h1>
+        <h1>Setup Admin Account</h1>
+        <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+          Create the first admin user to get started.
+        </p>
         <input
           autoFocus
           placeholder="Username"
@@ -42,9 +51,15 @@ export function LoginScreen({ onLoggedIn }: LoginScreenProps) {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
+        <input
+          placeholder="Confirm password"
+          type="password"
+          value={confirm}
+          onChange={(event) => setConfirm(event.target.value)}
+        />
         {error && <p className={styles.loginError}>{error}</p>}
-        <button disabled={submitting || username.length === 0 || password.length === 0} type="submit">
-          {submitting ? <><Icon name="view-refresh" size={16} /> Logging in...</> : 'Log in'}
+        <button disabled={submitting || username.length === 0 || password.length === 0 || confirm.length === 0} type="submit">
+          {submitting ? <><Icon name="view-refresh" size={16} /> Creating...</> : 'Create Admin'}
         </button>
       </form>
     </main>

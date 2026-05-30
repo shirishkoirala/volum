@@ -31,7 +31,7 @@ export function DesktopContextMenu({
           <Icon name="document-open" size={16} /> Open {item.label}
         </button>
       )}
-      {item.type === 'myPC' && (
+      {item.type === 'drives' && (
         <button type="button" onClick={() => { onRefresh(); onClose(); }} role="menuitem">
           <Icon name="view-refresh" size={16} /> Refresh drives
         </button>

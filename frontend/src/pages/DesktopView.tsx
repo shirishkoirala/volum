@@ -5,15 +5,14 @@ import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { DriveSection } from '../components/ui/DriveSection';
-import { preferencesIconUrl, jobsIconUrl, driveIconUrl, computerIconUrl, folderBookmarksIconUrl, filesIconUrl, warningIconUrl, homeIconUrl } from '../api/icons';
-import type { BlockDevice, TrashEntry, Job, RootEntry } from '../api/client';
+import { preferencesIconUrl, jobsIconUrl, driveIconUrl, multidiskIconUrl, folderBookmarksIconUrl, filesIconUrl, warningIconUrl } from '../api/icons';
+import type { BlockDevice, TrashEntry, Job } from '../api/client';
 import type { ServiceShortcut } from '../utils/services';
 import { formatDeviceUsage } from '../utils/format';
 import styles from './DesktopView.module.css';
 
 type DesktopViewProps = {
   devices: BlockDevice[];
-  roots: RootEntry[];
   trashEntries: TrashEntry[];
   jobs: Job[];
   favorites: string[];
@@ -35,7 +34,7 @@ type DesktopViewProps = {
 
 export type DesktopIconItem = {
   id: string;
-  type: 'myPC' | 'trash' | 'settings' | 'jobs' | 'files' | 'folderShortcut' | 'serviceShortcut' | 'emptySpace';
+  type: 'drives' | 'trash' | 'settings' | 'jobs' | 'files' | 'folderShortcut' | 'serviceShortcut' | 'emptySpace';
   label: string;
   ariaLabel: string;
   onClick: () => void;
@@ -62,7 +61,7 @@ function saveOrder(ids: string[]) {
 }
 
 export function DesktopView({
-  devices, roots, trashEntries, jobs, favorites, services, selectedDriveName,
+  devices, trashEntries, jobs, favorites, services, selectedDriveName,
   onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onSelectDrive,
   showingMyPC, onShowMyPC,
   deviceError, onRetryDevices, wallpaperStyle,
@@ -76,8 +75,6 @@ export function DesktopView({
   useEffect(() => {
     saveOrder(iconOrder);
   }, [iconOrder]);
-
-  const homeRoot = useMemo(() => roots.find(r => r.isHome), [roots]);
 
   const { internalDrives, externalDrives } = useMemo(() => {
     const internal: BlockDevice[] = [];
@@ -97,15 +94,15 @@ export function DesktopView({
     const items: DesktopIconItem[] = [];
 
     items.push({
-      id: 'myPC',
-      type: 'myPC',
-      label: 'My PC',
+      id: 'drives',
+      type: 'drives',
+      label: 'Drives',
 
-      ariaLabel: `Show My PC, ${devices.length} drive${devices.length === 1 ? '' : 's'}`,
+      ariaLabel: `Show Drives, ${devices.length} drive${devices.length === 1 ? '' : 's'}`,
       onClick: () => onShowMyPC(true),
       icon: (
         <div className={styles.desktopIconWrapper}>
-          <IconImg src={computerIconUrl()} alt="" width={64} height={64} />
+          <IconImg src={multidiskIconUrl()} alt="" width={64} height={64} />
         </div>
       ),
     });
@@ -278,7 +275,7 @@ export function DesktopView({
         }}
       >
         <BreadcrumbBar
-          crumbs={[{ label: 'Desktop' }, { label: 'My PC' }, { label: driveLabel }]}
+          crumbs={[{ label: 'Desktop' }, { label: 'Drives' }, { label: driveLabel }]}
           onBack={() => onSelectDrive(null)}
           onNavigate={() => {}}
         />
@@ -325,11 +322,11 @@ export function DesktopView({
         }}
       >
         <BreadcrumbBar
-          crumbs={[{ label: 'Desktop' }, { label: 'My PC' }]}
+          crumbs={[{ label: 'Desktop' }, { label: 'Drives' }]}
           onBack={() => onShowMyPC(false)}
           onNavigate={() => {}}
         />
-        <div className={styles.myPCContent}>
+        <div className={styles.driveContent}>
           {deviceError && (
             <Notice variant="error" className={styles.desktopError}>
               <IconImg src={warningIconUrl()} alt="" width={18} height={18} />
@@ -339,15 +336,9 @@ export function DesktopView({
               )}
             </Notice>
           )}
-          {homeRoot && (
-            <button className={styles.homeEntry} onClick={() => onNavigateTo(homeRoot.path)} type="button">
-              <IconImg src={homeIconUrl()} alt="" width={64} height={64} />
-              <span>Home</span>
-            </button>
-          )}
           <DriveSection title="Internal" drives={internalDrives} onSelectDrive={onSelectDrive} />
           <DriveSection title="External" drives={externalDrives} onSelectDrive={onSelectDrive} />
-          {internalDrives.length === 0 && externalDrives.length === 0 && !homeRoot && (
+          {internalDrives.length === 0 && externalDrives.length === 0 && (
             <EmptyState icon={driveIconUrl()} title="No drives found" />
           )}
         </div>

@@ -14,23 +14,35 @@ import (
 
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	user, ok := s.auth.UserFromRequest(r)
+
+	setupRequired := false
+	if s.auth.Enabled() {
+		req, err := s.auth.SetupRequired(r.Context())
+		if err == nil {
+			setupRequired = req
+		}
+	}
+
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authEnabled":   s.auth.Enabled(),
 		"authenticated": ok,
+		"setupRequired": setupRequired,
+		"userId":        user.ID,
+		"username":      user.Username,
 		"role":          user.Role,
 	})
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Role     auth.Role `json:"role"`
-		Password string    `json:"password"`
+		Username string `json:"username"`
+		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
 		return
 	}
-	token, user, ok := s.auth.Login(req.Role, req.Password)
+	token, user, ok := s.auth.Login(r.Context(), req.Username, req.Password)
 	if !ok {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
 		return
@@ -48,8 +60,64 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authEnabled":   s.auth.Enabled(),
 		"authenticated": true,
+		"setupRequired": false,
+		"userId":        user.ID,
+		"username":      user.Username,
 		"role":          user.Role,
 	})
+}
+
+func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
+	if !s.auth.Enabled() {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "auth is not enabled"})
+		return
+	}
+	needed, err := s.auth.SetupRequired(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if !needed {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "users already exist"})
+		return
+	}
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+	if req.Username == "" || req.Password == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "username and password are required"})
+		return
+	}
+	record, err := s.authStore.CreateUser(r.Context(), req.Username, req.Password, auth.RoleAdmin)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	token, user, _ := s.auth.Login(r.Context(), req.Username, req.Password)
+	if s.auth.Enabled() {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "volum_session",
+			Value:    token,
+			Path:     "/",
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   60 * 60 * 24 * 7,
+		})
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{
+		"authEnabled":   s.auth.Enabled(),
+		"authenticated": true,
+		"setupRequired": false,
+		"userId":        record.ID,
+		"username":      record.Username,
+		"role":          auth.RoleAdmin,
+	})
+	_ = user // user is unused for setup response
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {

@@ -20,7 +20,7 @@ export function useNavigation(
       const d = devices.find(dd => dd.name === selectedDriveName);
       return d?.model || selectedDriveName;
     }
-    if (showingMyPC) return 'My PC';
+    if (showingMyPC) return 'Drives';
     if (showingTrash) return 'Trash';
     if (showingSettings) return 'Settings';
     if (showingJobs) return 'Transfers';

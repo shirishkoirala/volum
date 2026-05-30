@@ -32,13 +32,13 @@
 }
 
 .item:hover {
-  background: var(--color-surface);
-  border-color: var(--color-border-subtle);
+  background: var(--color-hover);
+  border-color: var(--color-border-light);
 }
 
 .item:focus-visible {
-  background: var(--color-surface);
-  border-color: var(--color-brand);
+  background: var(--color-hover);
+  border-color: var(--color-border-light);
   outline: none;
 }
 

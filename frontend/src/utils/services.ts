@@ -5,30 +5,6 @@ export type ServiceShortcut = {
   iconUrl?: string;
 };
 
-const STORAGE_KEY = 'volum_services';
-
-let idCounter = Date.now();
-
-export function nextServiceId(): string {
-  return `svc_${++idCounter}`;
-}
-
-export function loadServices(): ServiceShortcut[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as ServiceShortcut[];
-  } catch { /* ignore */ }
-  return [];
-}
-
-export function saveServices(services: ServiceShortcut[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
-  } catch (e) {
-    console.warn('Failed to save service shortcuts:', e);
-  }
-}
-
 export function validUrl(str: string): boolean {
   try {
     const u = new URL(str);

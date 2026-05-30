@@ -32,7 +32,7 @@ import { TrashEmptyMenu } from '../components/overlay/TrashEmptyMenu';
 import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
 import type { DesktopIconItem } from '../pages/DesktopView';
 import { useServiceShortcuts } from '../hooks/useServiceShortcuts';
-import { nextServiceId, type ServiceShortcut } from '../utils/services';
+import { type ServiceShortcut } from '../utils/services';
 
 import { useJobs } from '../hooks/useJobs';
 import { useDragDrop } from '../hooks/useDragDrop';
@@ -316,12 +316,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setServiceFormData(svc ? { initial: svc } : {});
   }, []);
 
-  const handleSaveService = useCallback((data: { name: string; url: string; iconUrl?: string }) => {
+  const handleSaveService = useCallback(async (data: { name: string; url: string; iconUrl?: string }) => {
     if (serviceFormData?.initial) {
-      updateService(serviceFormData.initial.id, data);
+      await updateService(serviceFormData.initial.id, data);
       toast.showToastObj({ title: 'Service updated', variant: 'success' });
     } else {
-      addService({ id: nextServiceId(), ...data });
+      await addService({ id: '', ...data });
       toast.showToastObj({ title: 'Service added', variant: 'success' });
     }
   }, [serviceFormData, addService, updateService, toast]);
@@ -417,6 +417,9 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           activeView={nav.activeView}
           title={nav.topBarTitle}
           onGoDesktop={resetToDesktopView}
+          onOpenSettings={() => { nav.setShowingSettings(true); nav.setShowingTrash(false); nav.setShowingJobs(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null); }}
+          session={session}
+          onLogout={onLogout}
           menuHandlers={{
             onCreateFolder: fileCommands.handleCreateFolder,
             onUpload: () => fileInputRef.current?.click(),
@@ -463,7 +466,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         <section className={styles.workspace} onClick={selection.handleWorkspaceClick}>
           {nav.activeView === 'desktop' && (
             <DesktopView
-              devices={browser.devices} roots={browser.roots} trashEntries={browser.trashEntries} jobs={browser.jobs}
+              devices={browser.devices} trashEntries={browser.trashEntries} jobs={browser.jobs}
               favorites={favorites} services={services}
               selectedDriveName={nav.selectedDriveName}
               onNavigateTo={navigateTo}

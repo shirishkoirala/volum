@@ -11,15 +11,13 @@ import (
 )
 
 type Config struct {
-	Roots            []security.Root
-	DB               string
-	Port             string
-	AdminPassword    string
-	ReadonlyPassword string
-	SessionSecret    string
-	AuthRequired     bool
-	HostRoot         string
-	PublicURL        string
+	Roots         []security.Root
+	DB            string
+	Port          string
+	SessionSecret string
+	AuthRequired  bool
+	HostRoot      string
+	PublicURL     string
 }
 
 func Load() (Config, error) {
@@ -47,23 +45,16 @@ func Load() (Config, error) {
 	}
 
 	cfg := Config{
-		Roots:            roots,
-		DB:               db,
-		Port:             port,
-		AdminPassword:    os.Getenv("VOLUM_ADMIN_PASSWORD"),
-		ReadonlyPassword: os.Getenv("VOLUM_READONLY_PASSWORD"),
-		SessionSecret:    os.Getenv("VOLUM_SESSION_SECRET"),
-		AuthRequired:     parseBool(os.Getenv("VOLUM_AUTH_REQUIRED")),
-		HostRoot:         hostRoot,
-		PublicURL:        os.Getenv("VOLUM_PUBLIC_URL"),
+		Roots:         roots,
+		DB:            db,
+		Port:          port,
+		SessionSecret: os.Getenv("VOLUM_SESSION_SECRET"),
+		AuthRequired:  parseBool(os.Getenv("VOLUM_AUTH_REQUIRED")),
+		HostRoot:      hostRoot,
+		PublicURL:     os.Getenv("VOLUM_PUBLIC_URL"),
 	}
-	if cfg.AuthRequired {
-		if strings.TrimSpace(cfg.AdminPassword) == "" {
-			return Config{}, errors.New("VOLUM_ADMIN_PASSWORD is required when VOLUM_AUTH_REQUIRED=true")
-		}
-		if strings.TrimSpace(cfg.SessionSecret) == "" {
-			return Config{}, errors.New("VOLUM_SESSION_SECRET is required when VOLUM_AUTH_REQUIRED=true")
-		}
+	if cfg.AuthRequired && strings.TrimSpace(cfg.SessionSecret) == "" {
+		return Config{}, errors.New("VOLUM_SESSION_SECRET is required when VOLUM_AUTH_REQUIRED=true")
 	}
 	return cfg, nil
 }

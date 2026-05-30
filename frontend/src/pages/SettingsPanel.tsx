@@ -11,9 +11,15 @@ import {
   dbVacuum,
   dbPruneJobs,
   dbPruneAuditLogs,
+  listUsers,
+  createUser,
+  deleteUser,
+  changePassword,
+  changeRole,
   type StatusResponse,
   type RootEntry,
   type Session,
+  type UserInfo,
 } from '../api/client';
 import type { WallpaperConfig } from '../utils/wallpaper';
 import styles from './SettingsPanel.module.css';
@@ -58,6 +64,18 @@ export function SettingsPanel({
   const [activeCategory, setActiveCategory] = useState<CategoryId>('general');
   const [filterQuery, setFilterQuery] = useState('');
 
+  const [users, setUsers] = useState<UserInfo[] | null>(null);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [newRole, setNewRole] = useState<'admin' | 'readonly'>('readonly');
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [pwdChangeUserId, setPwdChangeUserId] = useState<string | null>(null);
+  const [pwdChangeValue, setPwdChangeValue] = useState('');
+  const [userMsg, setUserMsg] = useState<string | null>(null);
+  const [userError, setUserError] = useState<string | null>(null);
+
   const loadStatus = useCallback(() => {
     setLoading(true);
     getStatus()
@@ -69,6 +87,76 @@ export function SettingsPanel({
   useEffect(() => {
     loadStatus();
   }, [loadStatus]);
+
+  const loadUsers = useCallback(() => {
+    setUsersLoading(true);
+    setUsersError(null);
+    listUsers()
+      .then(setUsers)
+      .catch((err) => setUsersError(err.message))
+      .finally(() => setUsersLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (activeCategory === 'admin' && session?.role === 'admin') {
+      loadUsers();
+    }
+  }, [activeCategory, loadUsers, session]);
+
+  const handleCreateUser = async () => {
+    setCreatingUser(true);
+    setUserError(null);
+    setUserMsg(null);
+    try {
+      await createUser(newUsername, newPassword, newRole);
+      setNewUsername('');
+      setNewPassword('');
+      setNewRole('readonly');
+      setUserMsg(`User "${newUsername}" created.`);
+      loadUsers();
+    } catch (err) {
+      setUserError(err instanceof Error ? err.message : 'Failed to create user');
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, username: string) => {
+    setUserError(null);
+    setUserMsg(null);
+    try {
+      await deleteUser(userId);
+      setUserMsg(`User "${username}" deleted.`);
+      loadUsers();
+    } catch (err) {
+      setUserError(err instanceof Error ? err.message : 'Failed to delete user');
+    }
+  };
+
+  const handleChangePassword = async (userId: string) => {
+    setUserError(null);
+    setUserMsg(null);
+    try {
+      await changePassword(userId, pwdChangeValue);
+      setPwdChangeUserId(null);
+      setPwdChangeValue('');
+      setUserMsg('Password updated.');
+    } catch (err) {
+      setUserError(err instanceof Error ? err.message : 'Failed to change password');
+    }
+  };
+
+  const handleChangeRole = async (userId: string, role: 'admin' | 'readonly') => {
+    setUserError(null);
+    setUserMsg(null);
+    try {
+      await changeRole(userId, role);
+      setUserMsg('Role updated.');
+      loadUsers();
+    } catch (err) {
+      setUserError(err instanceof Error ? err.message : 'Failed to change role');
+    }
+  };
 
   const handleVacuum = async () => {
     setMaintenanceBusy('vacuum');
@@ -115,13 +203,13 @@ export function SettingsPanel({
     }
   };
 
-  const hasUnavailableRoot = status?.roots.some((r) => !r.available);
-
   const filteredCategories = useMemo(() => {
     if (!filterQuery.trim()) return CATEGORIES;
     const q = filterQuery.toLowerCase();
     return CATEGORIES.filter((c) => c.label.toLowerCase().includes(q));
   }, [filterQuery]);
+
+  const hasUnavailableRoot = status?.roots.some((r) => !r.available);
 
   const content = (
     <>
@@ -227,6 +315,92 @@ export function SettingsPanel({
                   <dd>{status.jobCounts.failed}</dd>
                 </dl>
               </section>
+
+              {session?.role === 'admin' && (
+                <section className={styles.settingsSection}>
+                  <h4>Users</h4>
+                  {(users === null && !usersLoading) && (
+                    <Button size="compact" onClick={loadUsers}>
+                      Load Users
+                    </Button>
+                  )}
+                  {usersLoading && <MutedText>Loading...</MutedText>}
+                  {usersError && (
+                    <p><MutedText>Error: {usersError}. <Button variant="link" onClick={loadUsers}>Retry</Button></MutedText></p>
+                  )}
+                  {users && (
+                    <div className={styles.userList}>
+                      {users.length === 0 ? (
+                        <MutedText compact>No users found.</MutedText>
+                      ) : (
+                        users.map((u) => (
+                          <div key={u.id} className={styles.userRow}>
+                            <div className={styles.userInfo}>
+                              <span>{u.username}</span>
+                              <span className={styles.userRole}>{u.role}</span>
+                            </div>
+                            {u.id !== session?.userId && (
+                              <div className={styles.userActions}>
+                                {pwdChangeUserId === u.id ? (
+                                  <span className={styles.pwdInline}>
+                                    <input
+                                      type="password"
+                                      placeholder="New password"
+                                      value={pwdChangeValue}
+                                      onChange={(e) => setPwdChangeValue(e.target.value)}
+                                      onKeyDown={(e) => { if (e.key === 'Enter') handleChangePassword(u.id); if (e.key === 'Escape') { setPwdChangeUserId(null); setPwdChangeValue(''); } }}
+                                      autoFocus
+                                    />
+                                    <Button size="compact" disabled={!pwdChangeValue} onClick={() => handleChangePassword(u.id)}>Set</Button>
+                                    <Button size="compact" onClick={() => { setPwdChangeUserId(null); setPwdChangeValue(''); }}>Cancel</Button>
+                                  </span>
+                                ) : (
+                                  <>
+                                    <Button size="compact" onClick={() => { setPwdChangeUserId(u.id); setPwdChangeValue(''); }}>Password</Button>
+                                    <Button size="compact" onClick={() => handleChangeRole(u.id, u.role === 'admin' ? 'readonly' : 'admin')}>
+                                      Make {u.role === 'admin' ? 'readonly' : 'admin'}
+                                    </Button>
+                                    <Button size="compact" onClick={() => handleDeleteUser(u.id, u.username)}>Delete</Button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                  <details className={styles.createUserDetails}>
+                    <summary>Create new user</summary>
+                    <div className={styles.createUserForm}>
+                      <input
+                        placeholder="Username"
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value)}
+                      />
+                      <input
+                        type="password"
+                        placeholder="Password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                      <select value={newRole} onChange={(e) => setNewRole(e.target.value as 'admin' | 'readonly')}>
+                        <option value="readonly">Readonly</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                      <Button
+                        size="compact"
+                        disabled={creatingUser || !newUsername || !newPassword}
+                        onClick={handleCreateUser}
+                      >
+                        {creatingUser ? <><Icon name="view-refresh" size={12} className={styles.spin} /> Creating...</> : 'Create'}
+                      </Button>
+                    </div>
+                  </details>
+                  {userMsg && <p className={styles.maintenanceMsg}>{userMsg}</p>}
+                  {userError && <p className={styles.maintenanceError}>{userError}</p>}
+                </section>
+              )}
 
               {onOpenShares && (
                 <section className={styles.settingsSection}>

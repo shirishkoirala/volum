@@ -112,7 +112,16 @@ export type JobsResponse = {
 export type Session = {
   authEnabled: boolean;
   authenticated: boolean;
+  setupRequired?: boolean;
+  userId?: string;
+  username?: string;
   role?: 'admin' | 'readonly' | '';
+};
+
+export type UserInfo = {
+  id: string;
+  username: string;
+  role: 'admin' | 'readonly';
 };
 
 export type ConflictPolicy = 'ask' | 'skip' | 'overwrite' | 'rename' | 'cancel';
@@ -155,17 +164,54 @@ export function getSession() {
   return request<Session>('/api/session');
 }
 
-export function login(role: 'admin' | 'readonly', password: string) {
+export function login(username: string, password: string) {
   return request<Session>('/api/login', {
     method: 'POST',
-    body: JSON.stringify({ role, password })
+    body: JSON.stringify({ username, password })
   });
 }
 
 export function logout() {
   return request<Session>('/api/logout', {
+    method: 'POST'
+  });
+}
+
+export function setup(username: string, password: string) {
+  return request<Session>('/api/setup', {
     method: 'POST',
-    body: JSON.stringify({})
+    body: JSON.stringify({ username, password })
+  });
+}
+
+export function listUsers() {
+  return request<UserInfo[]>('/api/users');
+}
+
+export function createUser(username: string, password: string, role: 'admin' | 'readonly') {
+  return requestVoid('/api/users', {
+    method: 'POST',
+    body: JSON.stringify({ username, password, role })
+  });
+}
+
+export function deleteUser(userId: string) {
+  return requestVoid(`/api/users/${userId}`, {
+    method: 'DELETE'
+  });
+}
+
+export function changePassword(userId: string, password: string) {
+  return requestVoid(`/api/users/${userId}/password`, {
+    method: 'PATCH',
+    body: JSON.stringify({ newPassword: password })
+  });
+}
+
+export function changeRole(userId: string, role: 'admin' | 'readonly') {
+  return requestVoid(`/api/users/${userId}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role })
   });
 }
 
@@ -415,4 +461,68 @@ export function dbPruneJobs(olderThan?: string) {
 export function dbPruneAuditLogs(olderThan?: string) {
   const params = olderThan ? `?olderThan=${encodeURIComponent(olderThan)}` : '';
   return request<{ removed: number }>(`/api/db/prune-audit-logs${params}`, { method: 'POST' });
+}
+
+export type ServiceInfo = {
+  id: string;
+  name: string;
+  url: string;
+  iconUrl: string;
+  position: number;
+};
+
+export function listFavorites() {
+  return request<string[]>('/api/favorites');
+}
+
+export function addFavorite(path: string) {
+  return requestVoid('/api/favorites', {
+    method: 'POST',
+    body: JSON.stringify({ path }),
+  });
+}
+
+export function removeFavorite(path: string) {
+  return requestVoid('/api/favorites', {
+    method: 'DELETE',
+    body: JSON.stringify({ path }),
+  });
+}
+
+export function reorderFavorites(paths: string[]) {
+  return requestVoid('/api/favorites/reorder', {
+    method: 'PUT',
+    body: JSON.stringify({ paths }),
+  });
+}
+
+export function listServices() {
+  return request<ServiceInfo[]>('/api/services');
+}
+
+export function createService(name: string, url: string, iconUrl?: string) {
+  return request<ServiceInfo>('/api/services', {
+    method: 'POST',
+    body: JSON.stringify({ name, url, iconUrl }),
+  });
+}
+
+export function updateService(id: string, name: string, url: string, iconUrl?: string) {
+  return request<ServiceInfo>(`/api/services/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ name, url, iconUrl }),
+  });
+}
+
+export function deleteService(id: string) {
+  return requestVoid(`/api/services/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}
+
+export function reorderServices(ids: string[]) {
+  return requestVoid('/api/services/reorder', {
+    method: 'PUT',
+    body: JSON.stringify({ ids }),
+  });
 }

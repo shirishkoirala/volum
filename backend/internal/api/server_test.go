@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/volum-app/volum/backend/internal/auth"
+	"github.com/volum-app/volum/backend/internal/desktop"
 	"github.com/volum-app/volum/backend/internal/files"
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/security"
@@ -23,8 +25,9 @@ import (
 
 type testServer struct {
 	*Server
-	root string
-	db   *sql.DB
+	root   string
+	db     *sql.DB
+	cookie string
 }
 
 func setupTestServer(t *testing.T) (*testServer, func()) {
@@ -36,11 +39,6 @@ func setupTestServer(t *testing.T) (*testServer, func()) {
 		t.Fatal(err)
 	}
 
-	authService, err := auth.New("", "", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	filesService := files.NewService(guard, files.NewDirSizeCache(0))
 
 	db, err := storage.Open(filepath.Join(root, "volum.db"))
@@ -48,64 +46,90 @@ func setupTestServer(t *testing.T) (*testServer, func()) {
 		t.Fatal(err)
 	}
 
+	authStore := auth.NewStore(db)
+	authService, err := auth.New(authStore, "test-secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	jobStore := jobs.NewStore(db)
 	shareStore := shares.NewStore(db)
+	desktopStore := desktop.NewStore(db)
 
 	slogger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	workerService := worker.New(jobStore, guard, slogger)
 
 	_ = workerService
 
-	s := New(filesService, jobStore, guard, authService, shareStore, filepath.Join(root, "volum.db"))
+	s := New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, filepath.Join(root, "volum.db"))
 
-	ts := &testServer{Server: s, root: root}
+	ctx := context.Background()
+	_, err = authStore.CreateUser(ctx, "admin", "adminpass", auth.RoleAdmin)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var loginResp struct {
+		Authenticated bool `json:"authenticated"`
+	}
+	loginBody := bytes.NewBufferString(`{"username":"admin","password":"adminpass"}`)
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/login", loginBody)
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginW := httptest.NewRecorder()
+	s.Handler().ServeHTTP(loginW, loginReq)
+	if err := json.NewDecoder(loginW.Result().Body).Decode(&loginResp); err != nil {
+		t.Fatal(err)
+	}
+	if !loginResp.Authenticated {
+		t.Fatal("failed to authenticate test user")
+	}
+	cookie := ""
+	for _, c := range loginW.Result().Cookies() {
+		if c.Name == "volum_session" {
+			cookie = c.Value
+			break
+		}
+	}
+	if cookie == "" {
+		t.Fatal("no session cookie after login")
+	}
+
+	ts := &testServer{Server: s, root: root, cookie: cookie}
 
 	return ts, func() {
 		db.Close()
 	}
 }
 
-func (ts *testServer) get(path string) *http.Response {
-	req := httptest.NewRequest(http.MethodGet, path, nil)
+func (ts *testServer) request(method, path string, body any) *http.Response {
+	var buf bytes.Buffer
+	if body != nil {
+		json.NewEncoder(&buf).Encode(body)
+	}
+	req := httptest.NewRequest(method, path, &buf)
+	req.Header.Set("Content-Type", "application/json")
+	if ts.cookie != "" {
+		req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
+	}
 	w := httptest.NewRecorder()
 	ts.Server.Handler().ServeHTTP(w, req)
 	return w.Result()
+}
+
+func (ts *testServer) get(path string) *http.Response {
+	return ts.request(http.MethodGet, path, nil)
 }
 
 func (ts *testServer) post(path string, body any) *http.Response {
-	var buf bytes.Buffer
-	if body != nil {
-		json.NewEncoder(&buf).Encode(body)
-	}
-	req := httptest.NewRequest(http.MethodPost, path, &buf)
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	ts.Server.Handler().ServeHTTP(w, req)
-	return w.Result()
+	return ts.request(http.MethodPost, path, body)
 }
 
 func (ts *testServer) patch(path string, body any) *http.Response {
-	var buf bytes.Buffer
-	if body != nil {
-		json.NewEncoder(&buf).Encode(body)
-	}
-	req := httptest.NewRequest(http.MethodPatch, path, &buf)
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	ts.Server.Handler().ServeHTTP(w, req)
-	return w.Result()
+	return ts.request(http.MethodPatch, path, body)
 }
 
 func (ts *testServer) del(path string, body any) *http.Response {
-	var buf bytes.Buffer
-	if body != nil {
-		json.NewEncoder(&buf).Encode(body)
-	}
-	req := httptest.NewRequest(http.MethodDelete, path, &buf)
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	ts.Server.Handler().ServeHTTP(w, req)
-	return w.Result()
+	return ts.request(http.MethodDelete, path, body)
 }
 
 func readJSON(t *testing.T, resp *http.Response, dest any) {
@@ -311,11 +335,17 @@ func TestSessionWithoutAuth(t *testing.T) {
 	var body struct {
 		AuthEnabled   bool   `json:"authEnabled"`
 		Authenticated bool   `json:"authenticated"`
+		SetupRequired bool   `json:"setupRequired"`
+		UserId        string `json:"userId"`
+		Username      string `json:"username"`
 		Role          string `json:"role"`
 	}
 	readJSON(t, resp, &body)
-	if body.AuthEnabled || !body.Authenticated || body.Role != "admin" {
+	if body.AuthEnabled != true || !body.Authenticated || body.Role != "admin" {
 		t.Fatalf("unexpected session: %#v", body)
+	}
+	if body.UserId == "" || body.Username != "admin" {
+		t.Fatalf("expected user info in session: %#v", body)
 	}
 }
 

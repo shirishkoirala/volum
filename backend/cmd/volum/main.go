@@ -13,6 +13,7 @@ import (
 	"github.com/volum-app/volum/backend/internal/api"
 	"github.com/volum-app/volum/backend/internal/auth"
 	"github.com/volum-app/volum/backend/internal/config"
+	"github.com/volum-app/volum/backend/internal/desktop"
 	"github.com/volum-app/volum/backend/internal/files"
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/security"
@@ -48,9 +49,19 @@ func run(log *slog.Logger) error {
 
 	jobStore := jobs.NewStore(db)
 	backgroundWorker := worker.New(jobStore, guard, log)
-	authService, err := auth.New(cfg.AdminPassword, cfg.ReadonlyPassword, cfg.SessionSecret)
-	if err != nil {
-		return err
+	authStore := auth.NewStore(db)
+
+	var authService *auth.Service
+	if cfg.AuthRequired {
+		authService, err = auth.New(authStore, cfg.SessionSecret)
+		if err != nil {
+			return err
+		}
+	} else {
+		authService, err = auth.New(nil, "")
+		if err != nil {
+			return err
+		}
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -64,7 +75,8 @@ func run(log *slog.Logger) error {
 	dirSizeCache := files.NewDirSizeCache(5 * time.Minute)
 	filesService := files.NewService(guard, dirSizeCache)
 	shareStore := shares.NewStore(db)
-	server := api.New(filesService, jobStore, guard, authService, shareStore, cfg.DB)
+	desktopStore := desktop.NewStore(db)
+	server := api.New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, cfg.DB)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,

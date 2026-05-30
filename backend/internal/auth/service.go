@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"errors"
 	"net/http"
 	"strings"
 )
@@ -19,25 +18,23 @@ const (
 )
 
 type User struct {
-	Role Role `json:"role"`
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Role     Role   `json:"role"`
 }
 
 type contextKey string
 
 const userKey contextKey = "auth_user"
 
-var ErrUnauthorized = errors.New("authentication required")
-
 type Service struct {
-	adminPassword    string
-	readonlyPassword string
-	secret           []byte
-	enabled          bool
+	store   *Store
+	secret  []byte
+	enabled bool
 }
 
-func New(adminPassword, readonlyPassword, sessionSecret string) (*Service, error) {
-	enabled := adminPassword != "" || readonlyPassword != ""
-	if !enabled {
+func New(store *Store, sessionSecret string) (*Service, error) {
+	if store == nil {
 		return &Service{}, nil
 	}
 	if strings.TrimSpace(sessionSecret) == "" {
@@ -45,18 +42,12 @@ func New(adminPassword, readonlyPassword, sessionSecret string) (*Service, error
 		if _, err := rand.Read(generated); err != nil {
 			return nil, err
 		}
-		return &Service{
-			adminPassword:    adminPassword,
-			readonlyPassword: readonlyPassword,
-			secret:           generated,
-			enabled:          true,
-		}, nil
+		return &Service{secret: generated, enabled: true}, nil
 	}
 	return &Service{
-		adminPassword:    adminPassword,
-		readonlyPassword: readonlyPassword,
-		secret:           []byte(sessionSecret),
-		enabled:          true,
+		store:   store,
+		secret:  []byte(sessionSecret),
+		enabled: true,
 	}, nil
 }
 
@@ -64,17 +55,23 @@ func (s *Service) Enabled() bool {
 	return s.enabled
 }
 
-func (s *Service) Login(role Role, password string) (string, User, bool) {
+func (s *Service) Login(ctx context.Context, username, password string) (string, User, bool) {
 	if !s.enabled {
 		return "", User{Role: RoleAdmin}, true
 	}
-	if role == RoleAdmin && s.adminPassword != "" && password == s.adminPassword {
-		return s.sign(role), User{Role: role}, true
+	record, err := s.store.GetByUsername(ctx, username)
+	if err != nil || record == nil {
+		return "", User{}, false
 	}
-	if role == RoleReadonly && s.readonlyPassword != "" && password == s.readonlyPassword {
-		return s.sign(role), User{Role: role}, true
+	if !s.store.VerifyPassword(record, password) {
+		return "", User{}, false
 	}
-	return "", User{}, false
+	user := User{
+		ID:       record.ID,
+		Username: record.Username,
+		Role:     record.Role,
+	}
+	return s.sign(record.ID, record.Role), user, true
 }
 
 func (s *Service) UserFromRequest(r *http.Request) (User, bool) {
@@ -85,11 +82,33 @@ func (s *Service) UserFromRequest(r *http.Request) (User, bool) {
 	if err != nil {
 		return User{}, false
 	}
-	role, ok := s.verify(cookie.Value)
+	userID, role, ok := s.verify(cookie.Value)
 	if !ok {
 		return User{}, false
 	}
-	return User{Role: role}, true
+	record, err := s.store.GetByID(r.Context(), userID)
+	if err != nil || record == nil {
+		return User{}, false
+	}
+	if record.Role != role {
+		return User{}, false
+	}
+	return User{
+		ID:       record.ID,
+		Username: record.Username,
+		Role:     record.Role,
+	}, true
+}
+
+func (s *Service) SetupRequired(ctx context.Context) (bool, error) {
+	if !s.enabled {
+		return false, nil
+	}
+	n, err := s.store.Count(ctx)
+	if err != nil {
+		return false, err
+	}
+	return n == 0, nil
 }
 
 func (s *Service) WithUser(ctx context.Context, user User) context.Context {
@@ -101,32 +120,36 @@ func UserFromContext(ctx context.Context) (User, bool) {
 	return user, ok
 }
 
-func (s *Service) sign(role Role) string {
-	payload := string(role)
+func (s *Service) sign(userID string, role Role) string {
+	payload := userID + ":" + string(role)
 	mac := hmac.New(sha256.New, s.secret)
 	mac.Write([]byte(payload))
 	signature := mac.Sum(nil)
 	return base64.RawURLEncoding.EncodeToString([]byte(payload)) + "." + base64.RawURLEncoding.EncodeToString(signature)
 }
 
-func (s *Service) verify(value string) (Role, bool) {
+func (s *Service) verify(value string) (string, Role, bool) {
 	payload, signature, ok := strings.Cut(value, ".")
 	if !ok {
-		return "", false
+		return "", "", false
 	}
 	decodedPayload, err := base64.RawURLEncoding.DecodeString(payload)
 	if err != nil {
-		return "", false
+		return "", "", false
 	}
 	decodedSignature, err := base64.RawURLEncoding.DecodeString(signature)
 	if err != nil {
-		return "", false
+		return "", "", false
 	}
 	mac := hmac.New(sha256.New, s.secret)
 	mac.Write(decodedPayload)
 	if !hmac.Equal(decodedSignature, mac.Sum(nil)) {
-		return "", false
+		return "", "", false
 	}
-	role := Role(decodedPayload)
-	return role, role == RoleAdmin || role == RoleReadonly
+	userID, role, ok := strings.Cut(string(decodedPayload), ":")
+	if !ok {
+		return "", "", false
+	}
+	roleTyped := Role(role)
+	return userID, roleTyped, roleTyped == RoleAdmin || roleTyped == RoleReadonly
 }
