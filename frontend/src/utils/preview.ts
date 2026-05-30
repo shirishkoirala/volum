@@ -1,4 +1,5 @@
-import { downloadUrl, isImageExtension, isVideoExtension, isAudioExtension, isTextExtension } from '../api/client';
+import { downloadUrl } from '../api/client';
+import { isImageExtension, isVideoExtension, isAudioExtension, isTextExtension } from './fileTypes';
 
 export function isPreviewableFile(name: string): boolean {
   const ext = name.toLowerCase();

@@ -1,6 +1,7 @@
 import { DragEvent, RefObject } from 'react';
 import { Icon, FileIcon, FolderIcon } from './Icon';
-import { rawUrl, isImageExtension } from '../../api/client';
+import { rawUrl } from '../../api/client';
+import { isImageExtension } from '../../utils/fileTypes';
 import type { FileEntry } from '../../api/client';
 import { formatBytes, formatGridDate } from '../../utils/format';
 import type { RenameState } from '../../types';

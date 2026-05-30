@@ -1,4 +1,4 @@
-import type { Job } from '../api/client';
+import type { Job, JobStatus } from '../api/client';
 import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';
@@ -7,14 +7,14 @@ import { Button, StatusBadge } from '../components/ui/shared';
 import { formatBytes } from '../utils/format';
 import styles from './JobsPage.module.css';
 
-const jobVariant = (status: string): 'success' | 'warning' | 'danger' | 'disabled' => {
+const jobVariant = (status: JobStatus): 'success' | 'warning' | 'danger' | 'disabled' => {
   if (status === 'completed') return 'success';
   if (status === 'running' || status === 'paused') return 'warning';
   if (status === 'failed') return 'danger';
   return 'disabled';
 };
 
-function isActiveStatus(status: string) {
+function isActiveStatus(status: JobStatus) {
   return status === 'queued' || status === 'running' || status === 'paused';
 }
 

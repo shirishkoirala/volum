@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react';
-import {
-  downloadUrl,
-  isAudioExtension,
-  isImageExtension,
-  isTextExtension,
-  isVideoExtension,
-  rawUrl,
-  type FileEntry
-} from '../../api/client';
+import { isAudioExtension, isImageExtension, isTextExtension, isVideoExtension } from '../../utils/fileTypes';
+import { downloadUrl, rawUrl } from '../../api/client';
+import type { FileEntry } from '../../api/client';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/shared';
 import { Dialog } from './Dialog';

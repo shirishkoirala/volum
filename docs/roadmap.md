@@ -4,59 +4,29 @@ This roadmap tracks the current inconsistency, KISS, YAGNI, and SOLID cleanup wo
 
 ## Phase 1 - Correctness
 
-### 1.1 Fix checksum job scheduling
+### 1.1 Fix checksum job scheduling — ✅ Complete
 
-**Problem:** `Worker.runOnce` returns when no archive/extract job is queued, so checksum jobs can starve.
+**Result:**
+- `runOnce` chain: transfer → archive/extract → checksum. Checksum claims when no transfer/archive job exists.
+- `TestRunOnceProcessesChecksumWhenNoArchiveJob` — checksum-only jobs are picked up.
+- `TestRunOnceProcessesOnlyOneJobPerTick` — archive takes priority, checksum runs on next tick.
 
-**Files:**
-- `backend/internal/worker/worker.go`
-- `backend/internal/worker/worker_test.go`
+### 1.2 Complete directory checksum jobs — ✅ Complete
 
-**Plan:**
-- Continue from archive/extract claim to checksum claim when no archive job exists.
-- Keep one-job-per-tick behavior only when a job is actually claimed.
-- Add a test where only a checksum job is queued and `runOnce` processes it.
-
-**Acceptance:**
-- Queued checksum jobs run without requiring an archive/extract job.
-- Worker tests cover transfer, archive/extract, and checksum claim order.
-
-### 1.2 Complete directory checksum jobs
-
-**Problem:** `checksumDir` creates item records but never marks the parent job complete.
-
-**Files:**
-- `backend/internal/worker/checksum.go`
-- `backend/internal/worker/worker_test.go`
-
-**Plan:**
-- Call `CompleteJob` after the directory walk succeeds.
-- Preserve cancellation and pause behavior.
-- Add a test for directory checksum completion.
-
-**Acceptance:**
-- Directory checksum jobs move to `completed`.
-- Cancelled/paused checksum jobs do not incorrectly complete.
+**Result:**
+- `checksumDir` calls `CompleteJob` after the second walkDir succeeds (line 152).
+- Cancellation returns nil without `CompleteJob`; pause returns `errJobPaused`.
+- `TestProcessChecksumDirectoryCompletesJob` + `TestProcessChecksumDirectoryEmptyCompletesJob` verify completion.
 
 ## Phase 2 - Frontend State Ownership
 
-### 2.1 Deduplicate view preference persistence
+### 2.1 Deduplicate view preference persistence — ✅ Complete
 
-**Problem:** Folder preference load/save logic exists in both `useViewPreferences` and `Home`.
-
-**Files:**
-- `frontend/src/hooks/useViewPreferences.ts`
-- `frontend/src/screens/Home.tsx`
-
-**Plan:**
-- Make `useViewPreferences` the single owner of folder preference persistence.
-- Expose a small API for applying preferences during navigation if needed.
-- Remove duplicate effects from `Home`.
-
-**Acceptance:**
-- No duplicated folder preference effects.
-- Switching folders still restores per-folder view, sort field, and sort direction.
-- Trash still restores `columns` mode correctly after exit.
+**Result:**
+- `useViewPreferences` is the single owner of folder preference persistence via `navigateToPath`.
+- Home.tsx has zero direct `setFolderPrefs`/`folderPrefs` calls.
+- Per-folder view, sort field, and sort direction restored on navigation.
+- Trash `columns` restore via `viewModeBeforeTrash` ref works correctly.
 
 ### 2.2 Split `Home` by workflow, not state buckets
 
@@ -102,42 +72,21 @@ This roadmap tracks the current inconsistency, KISS, YAGNI, and SOLID cleanup wo
 
 ## Phase 4 - API And Utility Separation
 
-### 4.1 Split API types, endpoint functions, and file predicates
+### 4.1 Split API types, endpoint functions, and file predicates — ✅ Complete
 
-**Problem:** `client.ts` mixes DTOs, fetch plumbing, endpoint calls, URL builders, disk usage types, and file extension predicates.
+**Result:**
+- Created `utils/fileTypes.ts` with `isImageExtension`, `isVideoExtension`, `isAudioExtension`, `isTextExtension`
+- `client.ts` no longer exports file-type predicates
+- `preview.ts`, `PreviewModal.tsx`, `FileItem.tsx` all import from `utils/fileTypes.ts` instead of `api/client.ts`
+- No behavior change in preview/download flows
 
-**Files:**
-- `frontend/src/api/client.ts`
-- `frontend/src/utils/preview.ts`
-- New files under `frontend/src/api/` or `frontend/src/utils/`
+### 4.2 Tighten job type modeling — ✅ Complete
 
-**Plan:**
-- Keep fetch plumbing and endpoint functions in `api/client.ts`.
-- Move API DTOs to `api/types.ts` if the client remains too large.
-- Move extension predicates to `utils/fileTypes.ts`.
-- Update `preview.ts` to depend on utilities, not API client internals.
-
-**Acceptance:**
-- `client.ts` no longer exports media/file-type predicates.
-- `preview.ts` imports extension checks from `utils/fileTypes.ts`.
-- No behavior change in preview/download flows.
-
-### 4.2 Tighten job type modeling
-
-**Problem:** Frontend job `type` and `status` are plain `string`, reducing type safety around known backend values.
-
-**Files:**
-- `frontend/src/api/client.ts` or `frontend/src/api/types.ts`
-- `frontend/src/utils/jobs.ts`
-- `frontend/src/pages/JobsPage.tsx`
-
-**Plan:**
-- Add frontend union types for known job types and statuses.
-- Keep fallback handling if backend returns an unknown value.
-
-**Acceptance:**
-- Job UI predicates use typed statuses.
-- Unknown statuses do not crash rendering.
+**Result:**
+- Added `JobType` (`'copy' | 'move' | 'upload' | 'extract' | 'archive' | 'checksum'`) and `JobStatus` (`'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'needs_attention'`) union types
+- `Job.type` and `Job.status` use the union types; `createJob` accepts `JobType`
+- `JobsPage.tsx` helper signatures use `JobStatus`
+- Unknown statuses/values from API are handled gracefully at runtime (strict equality checks simply return `false`)
 
 ## Phase 5 - Settings And UI Consistency
 
