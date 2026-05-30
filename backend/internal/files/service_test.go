@@ -75,7 +75,7 @@ func TestComputeDirSizes(t *testing.T) {
 		t.Fatal("expected cached size for /folder")
 	}
 	if got != 5 {
-		t.Fatalf("expected immediate directory size 5, got %d", got)
+		t.Fatalf("expected immediateDirSize 5, got %d", got)
 	}
 }
 

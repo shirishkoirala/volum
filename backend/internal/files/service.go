@@ -379,7 +379,7 @@ func (s *Service) entryFromPath(path string) (Entry, error) {
 		Name:        filepath.Base(path),
 		Path:        publicPath,
 		Type:        entryType,
-		Size:        entrySize(path, info),
+		Size:        immediateDirSize(path, info),
 		ModifiedAt:  info.ModTime(),
 		Permissions: info.Mode().Perm().String(),
 		Owner:       ownerName(info),
@@ -402,7 +402,7 @@ func groupName(info os.FileInfo) string {
 	return ""
 }
 
-func entrySize(path string, info os.FileInfo) int64 {
+func immediateDirSize(path string, info os.FileInfo) int64 {
 	if !info.IsDir() {
 		return info.Size()
 	}
@@ -521,7 +521,7 @@ func (s *Service) computeDirSizes(publicPaths []string) {
 		if err != nil || !info.IsDir() {
 			continue
 		}
-		s.cache.Set(publicPath, entrySize(internalPath, info))
+		s.cache.Set(publicPath, immediateDirSize(internalPath, info))
 	}
 }
 

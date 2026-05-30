@@ -56,7 +56,7 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 		OriginalPath: path,
 		TrashPath:    trashPath,
 		Type:         entryType,
-		Size:         entrySize(resolved, info),
+		Size:         immediateDirSize(resolved, info),
 		DeletedAt:    time.Now().UTC(),
 		RootPath:     root.Path,
 	}

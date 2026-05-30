@@ -106,38 +106,20 @@ This roadmap tracks the current inconsistency, KISS, YAGNI, and SOLID cleanup wo
 
 ## Phase 6 - Backend Quality Follow-Up
 
-### 6.1 Review directory size semantics
+### 6.1 Review directory size semantics — ✅ Complete
 
-**Problem:** `entrySize` only sums immediate files, while the UI polling names imply directory sizes. This may be intentional, but the semantics are unclear.
+**Result:**
+- Renamed `entrySize` → `immediateDirSize` to clarify it sums only immediate file children (one level deep via `os.ReadDir`), not recursive subtree sizes.
+- Test assertion updated to reference the new name.
+- Frontend uses `formatBytes(entry.size)` without misleading labels; no frontend change needed.
 
-**Files:**
-- `backend/internal/files/service.go`
-- `backend/internal/files/service_test.go`
-- `frontend/src/screens/Home.tsx`
+### 6.2 Consolidate claim-next job logic — ✅ Complete
 
-**Plan:**
-- Decide whether directory size should be immediate or recursive.
-- Rename helpers/UI expectations if immediate size is intended.
-- If recursive size is desired, implement with cancellation/backpressure considerations.
-
-**Acceptance:**
-- Directory size behavior is documented by test names and helper names.
-- Frontend labels match backend behavior.
-
-### 6.2 Consolidate claim-next job logic
-
-**Problem:** `ClaimNextTransferJob`, `ClaimNextArchiveJob`, and `ClaimNextChecksumJob` duplicate most SQL/transaction logic.
-
-**Files:**
-- `backend/internal/jobs/store_claiming.go`
-
-**Plan:**
-- Extract a private helper that claims the next queued job by allowed types.
-- Keep public methods if they help preserve worker readability.
-
-**Acceptance:**
-- Claim logic has one implementation.
-- Existing store tests still pass.
+**Result:**
+- Extracted private `claimNextJob(ctx, types...)` helper in `store_claiming.go` — handles the shared transaction + query + update + commit pattern.
+- Public methods (`ClaimNextTransferJob`, `ClaimNextArchiveJob`, `ClaimNextChecksumJob`) are one-liner wrappers.
+- Added `repeatParams` helper for dynamic `IN (?, ?, ...)` placeholders.
+- All existing store tests still pass.
 
 ## Verification Standard
 
