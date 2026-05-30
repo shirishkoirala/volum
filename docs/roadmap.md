@@ -84,50 +84,21 @@ This roadmap tracks the current inconsistency, KISS, YAGNI, and SOLID cleanup wo
 
 ## Phase 3 - Component Boundaries
 
-### 3.1 Reduce `FilesView` prop surface
+### 3.1 Reduce `FilesView` prop surface — ✅ Complete
 
-**Problem:** `FilesViewProps` has 40+ props and includes unused props.
+**Result:**
+- Removed 3 unused props: `entries`, `contextMenu`, `onCloseContextMenu`
+- Grouped remaining 30+ props into 7 cohesive objects: `navigation`, `search`, `selection`, `dragDrop`, `rename`, `context`, `loadError`, `touch`
+- `FilesViewProps` shrunk from 40+ flat props to 15 top-level keys (8 groups + 5 standalone)
+- Home.tsx FilesView JSX fully migrated to grouped props
 
-**Files:**
-- `frontend/src/pages/FilesView.tsx`
-- `frontend/src/screens/Home.tsx`
-- File view child components under `frontend/src/components/ui/`
+### 3.2 Extract shared context menu shell — ✅ Complete
 
-**Plan:**
-- Remove unused props: `entries`, `contextMenu`, `onCloseContextMenu`.
-- Group remaining props into cohesive objects:
-  - `navigation`
-  - `search`
-  - `selection`
-  - `dragDrop`
-  - `rename`
-  - `permissions`
-- Consider moving `renderEntries` selection into a dedicated component.
-
-**Acceptance:**
-- `FilesViewProps` is smaller and grouped by responsibility.
-- No dead props are passed from `Home`.
-- TypeScript catches missing workflow groups cleanly.
-
-### 3.2 Extract shared context menu shell
-
-**Problem:** Context menu components duplicate focus, keyboard navigation, bounds positioning, click handling, and ARIA setup.
-
-**Files:**
-- `frontend/src/components/overlay/FileContextMenu.tsx`
-- `frontend/src/components/overlay/DesktopContextMenu.tsx`
-- `frontend/src/components/overlay/TrashContextMenu.tsx`
-- `frontend/src/components/overlay/FilesEmptyMenu.tsx`
-- `frontend/src/components/overlay/JobsEmptyMenu.tsx`
-- New `frontend/src/components/overlay/ContextMenuShell.tsx`
-
-**Plan:**
-- Add `ContextMenuShell` with x/y positioning, focus, keyboard navigation, role, and click stop.
-- Keep each menu responsible only for its menu items and command wiring.
-
-**Acceptance:**
-- Shared context menu behavior lives in one place.
-- All menus retain keyboard and mouse behavior.
+**Result:**
+- Created `ContextMenuShell.tsx` — handles x/y positioning, focus trap, keyboard nav, Escape, click-outside, role="menu", aria-orientation
+- Migrated 6 context menus: FileContextMenu, DesktopContextMenu, TrashContextMenu, FilesEmptyMenu, JobsEmptyMenu, TrashEmptyMenu
+- Each menu reduced to ~20-40 lines of item list JSX only
+- All menus retain identical keyboard and mouse behavior
 
 ## Phase 4 - API And Utility Separation
 

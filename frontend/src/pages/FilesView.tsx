@@ -8,26 +8,20 @@ import { FileListView } from '../components/ui/FileListView';
 import { folderIconUrl } from '../api/icons';
 import type { FileEntry, SearchResult } from '../api/client';
 import type { ViewMode } from '../utils/view';
-import type { RenameState, ContextMenuState } from '../types';
+import type { RenameState } from '../types';
 import styles from './FilesView.module.css';
 
-type FilesViewProps = {
+type NavigationProps = {
   currentPath: string;
   breadcrumbs: { label: string; path: string }[];
   onNavigate: (path: string) => void;
   onGoUp: () => void;
-  onRefresh: () => void;
-  onFilesEmptyContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
-  entries: FileEntry[];
-  filteredEntries: FileEntry[];
-  selectedPaths: string[];
-  viewMode: ViewMode;
-  loading: boolean;
-  error: string | null;
-  onDismissError: () => void;
-  canWrite: boolean;
-  isFavorited: boolean;
-  onToggleFavorite: () => void;
+  locationMode?: boolean;
+  onLocationNavigate?: (path: string) => void;
+  onToggleLocationMode?: () => void;
+};
+
+type SearchProps = {
   query: string;
   searchOpen: boolean;
   searchResults: SearchResult[] | null;
@@ -37,10 +31,18 @@ type FilesViewProps = {
   searchRef?: React.RefObject<HTMLInputElement | null>;
   fileInputRef?: React.RefObject<HTMLInputElement | null>;
   onUpload: (files: FileList | File[]) => void;
+  onRefresh: () => void;
+  isFavorited: boolean;
+  onToggleFavorite: () => void;
+};
+
+type SelectionProps = {
+  selectedPaths: string[];
+  filteredEntries: FileEntry[];
   fileClick: (event: MouseEvent<HTMLElement>) => void;
-  contextMenu: ContextMenuState;
-  onContextMenu: (entry: FileEntry, event: MouseEvent<HTMLElement>) => void;
-  onCloseContextMenu: () => void;
+};
+
+type DragDropProps = {
   draggingUpload: boolean;
   onFileAreaDragOver: (event: DragEvent<HTMLElement>) => void;
   onFileAreaDragLeave: (event: DragEvent<HTMLElement>) => void;
@@ -52,41 +54,76 @@ type FilesViewProps = {
   onFolderDragLeave: () => void;
   onDropOnFolder: (event: DragEvent<HTMLElement>, path: string) => void;
   dragOverPath: string | null;
+};
+
+type RenameProps = {
   renameState: RenameState;
   renameInputRef?: RefObject<HTMLInputElement | null>;
   onSubmitRename: (entry: FileEntry) => void;
   onCancelRename: () => void;
   onRenameChange: (value: string) => void;
-  rubberBandStyle: React.CSSProperties | null;
-  onPreview: (entry: FileEntry) => void;
-  fileGridRef?: RefObject<HTMLDivElement | null>;
+};
+
+type ContextProps = {
+  onFilesEmptyContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
+  onContextMenu: (entry: FileEntry, event: MouseEvent<HTMLElement>) => void;
+};
+
+type LoadErrorProps = {
+  loading: boolean;
+  error: string | null;
+  onDismissError: () => void;
+};
+
+type TouchProps = {
   onEntryTouchStart?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
   onEntryTouchMove?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
   onEntryTouchEnd?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
+};
+
+type FilesViewProps = {
+  navigation: NavigationProps;
+  search: SearchProps;
+  selection: SelectionProps;
+  dragDrop: DragDropProps;
+  rename: RenameProps;
+  context: ContextProps;
+  loadError: LoadErrorProps;
+  touch?: TouchProps;
+  viewMode: ViewMode;
+  canWrite: boolean;
   favorites: string[];
-  locationMode?: boolean;
-  onLocationNavigate?: (path: string) => void;
-  onToggleLocationMode?: () => void;
+  onPreview: (entry: FileEntry) => void;
+  fileGridRef?: RefObject<HTMLDivElement | null>;
+  rubberBandStyle: React.CSSProperties | null;
 };
 
 export function FilesView({
-  currentPath, breadcrumbs, onNavigate, onGoUp, onRefresh, onFilesEmptyContextMenu,
-  filteredEntries, selectedPaths,
-  viewMode,
-  loading, error, onDismissError,
-  canWrite, isFavorited, onToggleFavorite,
-  query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
-  searchRef, fileInputRef, onUpload,
-  fileClick, onContextMenu,
-  draggingUpload,
-  onFileAreaDragOver, onFileAreaDragLeave, onFileAreaDrop, onFileAreaMouseDown, onFileAreaKeyDown,
-  onFileDragStart, onFolderDragOver, onFolderDragLeave, onDropOnFolder,
-  dragOverPath, renameState, renameInputRef, onSubmitRename, onCancelRename, onRenameChange,
-  rubberBandStyle, onPreview,
-  fileGridRef, onEntryTouchStart, onEntryTouchMove, onEntryTouchEnd,
-  favorites,
-  locationMode, onLocationNavigate, onToggleLocationMode,
+  navigation, search, selection, dragDrop, rename, context, loadError,
+  touch, viewMode, canWrite, favorites, onPreview, fileGridRef, rubberBandStyle,
 }: FilesViewProps) {
+  const {
+    currentPath, breadcrumbs, onNavigate, onGoUp,
+    locationMode, onLocationNavigate, onToggleLocationMode,
+  } = navigation;
+  const {
+    query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
+    searchRef, fileInputRef, onUpload, onRefresh, isFavorited, onToggleFavorite,
+  } = search;
+  const { selectedPaths, filteredEntries, fileClick } = selection;
+  const {
+    draggingUpload, onFileAreaDragOver, onFileAreaDragLeave, onFileAreaDrop,
+    onFileAreaMouseDown, onFileAreaKeyDown, onFileDragStart, onFolderDragOver,
+    onFolderDragLeave, onDropOnFolder, dragOverPath,
+  } = dragDrop;
+  const {
+    renameState, renameInputRef, onSubmitRename, onCancelRename, onRenameChange,
+  } = rename;
+  const { onFilesEmptyContextMenu, onContextMenu } = context;
+  const { loading, error, onDismissError } = loadError;
+  const {
+    onEntryTouchStart, onEntryTouchMove, onEntryTouchEnd,
+  } = touch ?? {};
 
   function handleBreadcrumbBack() {
     const parts = currentPath.split('/').filter(Boolean);
