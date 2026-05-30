@@ -145,11 +145,6 @@ export function AppMenuBar({ handlers }: AppMenuBarProps) {
       icon: 'view-list-tree',
       onClick: () => handlers.onSetViewMode('list'),
     },
-    {
-      label: `Columns${handlers.viewMode === 'columns' ? ' ✓' : ''}`,
-      icon: 'view-columns',
-      onClick: () => handlers.onSetViewMode('columns'),
-    },
     { label: '---', disabled: true, onClick: () => {} },
     {
       label: `${handlers.showHidden ? 'Hide' : 'Show'} Hidden Files`,

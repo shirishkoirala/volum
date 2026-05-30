@@ -1,14 +1,19 @@
 .fileRowGrid,
 .fileRowList {
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    margin var(--transition-fast),
+    width var(--transition-fast),
+    border-color var(--transition-fast),
+    border-radius var(--transition-fast);
   user-select: none;
 }
 
 .fileRowList {
   align-items: center;
   background: var(--color-surface);
-  border: 0;
+  border: 1px solid transparent;
   border-bottom: 1px solid var(--color-border-row);
   color: var(--color-text-secondary);
   display: grid;
@@ -35,6 +40,10 @@
 
 .fileRowList:hover {
   background: var(--color-hover);
+  border-color: var(--color-border-light);
+  border-radius: var(--radius-md);
+  margin: 2px 6px;
+  width: calc(100% - 12px);
 }
 
 .fileRowList.selected {

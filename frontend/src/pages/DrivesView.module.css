@@ -1,0 +1,105 @@
+.drivesWrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.drivesContainer {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  margin: var(--space-md);
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-lg);
+}
+
+.drivesList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.partitionGrid {
+  display: grid;
+  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  align-content: start;
+}
+
+.drivePartitionItem {
+  align-items: center;
+  background: var(--color-bg);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  text-align: left;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.drivePartitionItem:hover {
+  background: var(--color-hover);
+  border-color: var(--color-border-light);
+}
+
+.drivePartitionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  min-width: 0;
+  flex: 1;
+}
+
+.drivePartitionInfo > span:first-child {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.drivePartitionInfo small {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.drivePartitionMeter {
+  background: var(--color-border-subtle);
+  border-radius: var(--radius-pill);
+  height: 4px;
+  margin-top: 4px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.drivePartitionMeter span {
+  background: var(--color-brand);
+  border-radius: var(--radius-pill);
+  display: block;
+  height: 100%;
+  transition: width var(--transition-fast);
+  width: var(--progress, 0%);
+}
+
+.partitionUnmounted {
+  cursor: default;
+  opacity: var(--opacity-disabled);
+}
+
+@media (max-width: 760px) {
+  .partitionGrid {
+    gap: var(--space-md);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .drivePartitionItem {
+    gap: var(--space-md);
+    padding: var(--space-md);
+  }
+
+  .drivesContainer {
+    padding: var(--space-md);
+  }
+}

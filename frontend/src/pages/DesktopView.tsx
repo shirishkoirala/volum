@@ -1,33 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DeviceIcon, TrashIcon } from '../components/ui/Icon';
-import { Button, IconImg, Notice } from '../components/ui/shared';
-import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
-import { ProgressBar } from '../components/ui/ProgressBar';
-import { EmptyState } from '../components/ui/EmptyState';
-import { DriveSection } from '../components/ui/DriveSection';
-import { preferencesIconUrl, jobsIconUrl, driveIconUrl, multidiskIconUrl, folderBookmarksIconUrl, filesIconUrl, warningIconUrl } from '../api/icons';
-import type { BlockDevice, TrashEntry, Job } from '../api/client';
+import { TrashIcon } from '../components/ui/Icon';
+import { IconImg } from '../components/ui/shared';
+import { preferencesIconUrl, jobsIconUrl, multidiskIconUrl, folderBookmarksIconUrl, filesIconUrl } from '../api/icons';
+import type { TrashEntry, Job } from '../api/client';
 import type { ServiceShortcut } from '../utils/services';
-import { formatDeviceUsage } from '../utils/format';
 import styles from './DesktopView.module.css';
 
 type DesktopViewProps = {
-  devices: BlockDevice[];
   trashEntries: TrashEntry[];
   jobs: Job[];
   favorites: string[];
   services: ServiceShortcut[];
-  selectedDriveName: string | null;
   onNavigateTo: (path: string) => void;
   onNavigateToTrash: () => void;
   onOpenSettings: () => void;
   onOpenJobs: () => void;
   onOpenFiles: () => void;
-  onSelectDrive: (name: string | null) => void;
-  showingMyPC: boolean;
-  onShowMyPC: (v: boolean) => void;
-  deviceError?: string | null;
-  onRetryDevices?: () => void;
+  onShowMyPC: () => void;
   wallpaperStyle?: React.CSSProperties;
   onItemContextMenu: (item: DesktopIconItem, event: React.MouseEvent<HTMLElement>) => void;
 };
@@ -61,10 +50,9 @@ function saveOrder(ids: string[]) {
 }
 
 export function DesktopView({
-  devices, trashEntries, jobs, favorites, services, selectedDriveName,
-  onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onSelectDrive,
-  showingMyPC, onShowMyPC,
-  deviceError, onRetryDevices, wallpaperStyle,
+  trashEntries, jobs, favorites, services,
+  onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onShowMyPC,
+  wallpaperStyle,
   onItemContextMenu,
 }: DesktopViewProps) {
   const activeJobCount = jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length;
@@ -76,20 +64,6 @@ export function DesktopView({
     saveOrder(iconOrder);
   }, [iconOrder]);
 
-  const { internalDrives, externalDrives } = useMemo(() => {
-    const internal: BlockDevice[] = [];
-    const external: BlockDevice[] = [];
-    for (const dev of devices) {
-      const t = (dev.transport || '').toLowerCase();
-      if (t === 'usb' || t === 'firewire' || t === 'thunderbolt') {
-        external.push(dev);
-      } else {
-        internal.push(dev);
-      }
-    }
-    return { internalDrives: internal, externalDrives: external };
-  }, [devices]);
-
   const iconItems = useMemo(() => {
     const items: DesktopIconItem[] = [];
 
@@ -97,9 +71,8 @@ export function DesktopView({
       id: 'drives',
       type: 'drives',
       label: 'Drives',
-
-      ariaLabel: `Show Drives, ${devices.length} drive${devices.length === 1 ? '' : 's'}`,
-      onClick: () => onShowMyPC(true),
+      ariaLabel: `Show Drives`,
+      onClick: onShowMyPC,
       icon: (
         <div className={styles.desktopIconWrapper}>
           <IconImg src={multidiskIconUrl()} alt="" width={64} height={64} />
@@ -223,7 +196,7 @@ export function DesktopView({
       if (!used.has(item.id)) ordered.push(item);
     }
     return ordered;
-  }, [devices, trashEntries, favorites, services, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onNavigateTo]);
+  }, [trashEntries, favorites, services, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onNavigateTo]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -263,89 +236,6 @@ export function DesktopView({
     setDropTarget(null);
   }, []);
 
-  if (selectedDriveName) {
-    const d = devices.find(dd => dd.name === selectedDriveName);
-    const driveLabel = d?.model || d?.name || selectedDriveName;
-    return (
-      <div
-        className={styles.desktopWrapper}
-        style={wallpaperStyle}
-        onContextMenu={(event) => {
-          onItemContextMenu({ id: '', type: 'emptySpace', label: '', ariaLabel: '', onClick: () => {} }, event);
-        }}
-      >
-        <BreadcrumbBar
-          crumbs={[{ label: 'Desktop' }, { label: 'Drives' }, { label: driveLabel }]}
-          onBack={() => onSelectDrive(null)}
-          onNavigate={() => {}}
-        />
-        <div className={styles.driveContents}>
-          {d?.partitions?.map((part) =>
-            part.volumPath ? (
-              <button key={part.name} className={styles.drivePartitionItem} onClick={() => onNavigateTo(part.volumPath!)} type="button">
-                <DeviceIcon name="drive-harddisk" size={32} />
-                <span className={styles.drivePartitionInfo}>
-                  <span>{part.label || part.name}</span>
-                  <small>{part.volumPath}</small>
-                  <small>{formatDeviceUsage(part)}</small>
-                  {part.totalBytes != null && part.totalBytes > 0 && (
-                    <ProgressBar value={(part.usedBytes! / part.totalBytes!) * 100} className={styles.drivePartitionMeter} />
-                  )}
-                </span>
-              </button>
-            ) : (
-              <div key={part.name} className={`${styles.drivePartitionItem} ${styles.partitionUnmounted}`}>
-                <IconImg src={driveIconUrl()} alt="" width={32} height={32} />
-                <span className={styles.drivePartitionInfo}>
-                  <span>{part.name}</span>
-                  <small>{part.size || 'Unknown'}</small>
-                  <small>Not mounted</small>
-                </span>
-              </div>
-            )
-          )}
-          {(!d?.partitions?.length) && (
-            <EmptyState icon={driveIconUrl()} title="No partitions found" />
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  if (showingMyPC) {
-    return (
-      <div
-        className={styles.desktopWrapper}
-        style={wallpaperStyle}
-        onContextMenu={(event) => {
-          onItemContextMenu({ id: '', type: 'emptySpace', label: '', ariaLabel: '', onClick: () => {} }, event);
-        }}
-      >
-        <BreadcrumbBar
-          crumbs={[{ label: 'Desktop' }, { label: 'Drives' }]}
-          onBack={() => onShowMyPC(false)}
-          onNavigate={() => {}}
-        />
-        <div className={styles.driveContent}>
-          {deviceError && (
-            <Notice variant="error" className={styles.desktopError}>
-              <IconImg src={warningIconUrl()} alt="" width={18} height={18} />
-              <span>{deviceError}</span>
-              {onRetryDevices && (
-                <Button variant="danger" size="compact" onClick={onRetryDevices}>Retry</Button>
-              )}
-            </Notice>
-          )}
-          <DriveSection title="Internal" drives={internalDrives} onSelectDrive={onSelectDrive} />
-          <DriveSection title="External" drives={externalDrives} onSelectDrive={onSelectDrive} />
-          {internalDrives.length === 0 && externalDrives.length === 0 && (
-            <EmptyState icon={driveIconUrl()} title="No drives found" />
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
       className={styles.desktopWrapper}
@@ -355,15 +245,6 @@ export function DesktopView({
       }}
     >
       <div className={styles.desktop}>
-        {deviceError && (
-          <Notice variant="error" className={styles.desktopError}>
-            <IconImg src={warningIconUrl()} alt="" width={18} height={18} />
-            <span>{deviceError}</span>
-            {onRetryDevices && (
-              <Button variant="danger" size="compact" onClick={onRetryDevices}>Retry</Button>
-            )}
-          </Notice>
-        )}
         {iconItems.map((item) => (
           <button
             key={item.id}

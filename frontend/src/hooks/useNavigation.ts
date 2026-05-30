@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { BlockDevice, Job } from '../api/client';
 import { filesIconUrl, jobsIconUrl, preferencesIconUrl, trashIconUrl, desktopDockIconUrl } from '../api/icons';
-export type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs';
+export type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives';
 
 export function useNavigation(
   devices: BlockDevice[],
@@ -33,8 +33,9 @@ export function useNavigation(
     if (showingJobs) return 'jobs';
     if (showingTrash) return 'trash';
     if (currentPath) return 'files';
+    if (showingMyPC) return 'drives';
     return 'desktop';
-  }, [currentPath, showingTrash, showingSettings, showingJobs]);
+  }, [currentPath, showingTrash, showingSettings, showingJobs, showingMyPC]);
 
   const activeJobCount = useMemo(
     () => jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length,

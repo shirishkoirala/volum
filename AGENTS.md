@@ -277,3 +277,14 @@ frontend/src/
 - **9.4** Added CSS utility classes to `global.css` (`.row`, `.col`, `.gap*`, `.truncate`, `.clickable`, flex helpers, alignment, color utilities)
 - **9.2** (recommendation) OpenAPI/Swagger would improve backend↔frontend type sync but deferred — existing TypeScript types in `client.ts` are already well-maintained
 
+### Session — Columns Removal, Container Styling, Drives View Extraction
+- **Columns removed**: Deleted `FileColumnView.tsx` + `FileColumnView.module.css`; removed `'columns'` from `ViewMode` type; deleted `buildColumnPath` utility; cleaned columns branch from `FilesView.tsx`; removed `viewModeBeforeTrash` ref; removed "Columns" menu item from `AppMenuBar.tsx`; removed `'view-columns': Columns3` icon mapping; cleared columns assertion from test
+- **Container styling**: Added `border: 1px solid var(--color-border-subtle)` + `border-radius: var(--radius-md)` + `margin: var(--space-md)` to both `.fileList` (FileListView.module.css) and `.fileGrid` (FileGridView.module.css) — no background
+- **Skeleton styling**: Updated `.skeletonGrid` (FilesView.module.css) to match — `border`, `border-radius`, `margin: var(--space-md)`, `padding: var(--space-lg)`
+- **Drives extraction**: Created `DrivesView.tsx` + `DrivesView.module.css` — extracted partition grid (Mode 1) and drive list (Mode 2) from `DesktopView.tsx` into own component with bordered container (`border`, `border-radius`, `margin`, `padding` — matches fileList/fileGrid pattern)
+- **ActiveView**: Added `'drives'` to `ActiveView` type in `useNavigation.ts`, `TopBar.tsx`, and `StatusBar.tsx`; excluded `'drives'` from `showStatusBar`
+- **DesktopView simplified**: Removed 8 props (`devices`, `selectedDriveName`, `onSelectDrive`, `showingMyPC`, `onShowMyPC`, `deviceError`, `onRetryDevices`, `driveIconUrl`); removed all drives code, device error handling, BreadcrumbBar, DriveSection, ProgressBar, EmptyState imports
+- **DesktopView.module.css**: Removed `.driveContents`, `.driveContent`, `.drivePartitionItem`, `.drivePartitionInfo`, `.drivePartitionMeter`, `.partitionUnmoved` and their hover/media styles — kept only desktop icon CSS
+- **Home.tsx**: Renders `DrivesView` when `activeView === 'drives'`; passes `handleBackToDesktop` (sets `showingMyPC = false`)
+- TypeScript, ESLint, and production build (`npm run build`) all pass clean
+

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import type { SortField, SortDirection } from '../types';
 import type { ViewMode } from '../utils/view';
@@ -12,7 +12,6 @@ export function useViewPreferences() {
   const [sortDirection, setSortDirection] = useLocalStorage<SortDirection>('volum_sortDirection', 'asc' as SortDirection);
   const [showHidden, setShowHidden] = useLocalStorage('volum_showHidden', false);
   const [folderPrefs, setFolderPrefs] = useLocalStorage<FolderPrefs>('volum_folderPrefs', {});
-  const viewModeBeforeTrash = useRef<ViewMode | null>(null);
 
   const navigateToPath = useCallback((path: string) => {
     if (currentPath && currentPath !== path) {
@@ -42,6 +41,5 @@ export function useViewPreferences() {
     sortField, setSortField,
     sortDirection, setSortDirection,
     showHidden, setShowHidden,
-    viewModeBeforeTrash,
   };
 }

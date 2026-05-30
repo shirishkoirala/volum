@@ -12,6 +12,7 @@ export type Crumb = {
 type BreadcrumbBarProps = {
   crumbs: Crumb[];
   onBack: () => void;
+  onGoUp?: () => void;
   onNavigate: (path: string) => void;
   onLocationNavigate?: (path: string) => void;
   locationMode?: boolean;
@@ -19,7 +20,7 @@ type BreadcrumbBarProps = {
   children?: ReactNode;
 };
 
-export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, locationMode, onToggleLocationMode, children }: BreadcrumbBarProps) {
+export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNavigate, locationMode, onToggleLocationMode, children }: BreadcrumbBarProps) {
   const navRef = useRef<HTMLDivElement>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
@@ -199,6 +200,11 @@ export function BreadcrumbBar({ crumbs, onBack, onNavigate, onLocationNavigate, 
         >
           <RotatedIcon><Icon name="go-next" size={18} /></RotatedIcon>
         </IconButton>
+        {onGoUp && (
+          <IconButton onClick={onGoUp} title="Go up">
+            <Icon name="go-up" size={18} />
+          </IconButton>
+        )}
         <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
           <div ref={navRef} className={styles.breadcrumbsInner}>
             {visibleCrumbs.map((crumb, rawIndex) => {

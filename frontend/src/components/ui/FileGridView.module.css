@@ -1,11 +1,14 @@
 .fileGrid {
   --grid-column: 124px;
   align-content: start;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
   display: grid;
   gap: 22px 28px;
   grid-auto-rows: max-content;
   grid-template-columns: repeat(auto-fill, var(--grid-column));
   justify-content: start;
+  margin: var(--space-md);
   min-height: 0;
   flex: 1;
   overflow-y: auto;

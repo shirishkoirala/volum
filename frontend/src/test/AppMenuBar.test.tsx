@@ -65,7 +65,6 @@ describe('AppMenuBar', () => {
     await user.click(screen.getByText('View'));
     expect(screen.getByText(/Grid/)).toBeInTheDocument();
     expect(screen.getByText(/List/)).toBeInTheDocument();
-    expect(screen.getByText(/Columns/)).toBeInTheDocument();
   });
 
   it('opens Go menu on click', async () => {

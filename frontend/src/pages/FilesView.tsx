@@ -2,7 +2,6 @@ import { DragEvent, KeyboardEvent, MouseEvent, RefObject, TouchEvent } from 'rea
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
-import { FileColumnView } from '../components/ui/FileColumnView';
 import { FileGridView } from '../components/ui/FileGridView';
 import { FileListView } from '../components/ui/FileListView';
 import { folderIconUrl } from '../api/icons';
@@ -15,7 +14,8 @@ type NavigationProps = {
   currentPath: string;
   breadcrumbs: { label: string; path: string }[];
   onNavigate: (path: string) => void;
-  onGoUp: () => void;
+  onBack: () => void;
+  onGoUp?: () => void;
   locationMode?: boolean;
   onLocationNavigate?: (path: string) => void;
   onToggleLocationMode?: () => void;
@@ -103,8 +103,8 @@ export function FilesView({
   touch, viewMode, canWrite, favorites, onPreview, fileGridRef, rubberBandStyle,
 }: FilesViewProps) {
   const {
-    currentPath, breadcrumbs, onNavigate, onGoUp,
-    locationMode, onLocationNavigate, onToggleLocationMode,
+    currentPath, breadcrumbs, onNavigate, onBack,
+    onGoUp, locationMode, onLocationNavigate, onToggleLocationMode,
   } = navigation;
   const {
     query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
@@ -125,10 +125,14 @@ export function FilesView({
     onEntryTouchStart, onEntryTouchMove, onEntryTouchEnd,
   } = touch ?? {};
 
-  function handleBreadcrumbBack() {
-    const parts = currentPath.split('/').filter(Boolean);
-    if (parts.length <= 1) {
+  function handleGoUp() {
+    if (onGoUp) {
       onGoUp();
+      return;
+    }
+    const parts = currentPath.split('/').filter(Boolean);
+    if (parts.length === 0) {
+      onBack();
     } else {
       onNavigate('/' + parts.slice(0, -1).join('/'));
     }
@@ -139,29 +143,6 @@ export function FilesView({
   }
 
   function renderEntries() {
-    if (viewMode === 'columns') {
-      return (
-        <FileColumnView
-          currentPath={currentPath}
-          filteredEntries={filteredEntries}
-          selectedPaths={selectedPaths}
-          onContextMenu={onContextMenu}
-          onEmptyContextMenu={onFilesEmptyContextMenu}
-          onNavigate={onNavigate}
-          onPreview={onPreview}
-          renameState={renameState}
-          draggingUpload={draggingUpload}
-          fileGridRef={fileGridRef}
-          rubberBandStyle={rubberBandStyle}
-          fileClick={fileClick}
-          onFileAreaDragOver={onFileAreaDragOver}
-          onFileAreaDragLeave={onFileAreaDragLeave}
-          onFileAreaDrop={onFileAreaDrop}
-          onFileAreaMouseDown={onFileAreaMouseDown}
-          onFileAreaKeyDown={onFileAreaKeyDown}
-        />
-      );
-    }
     if (viewMode === 'grid') {
       return (
         <FileGridView
@@ -237,7 +218,7 @@ export function FilesView({
   return (
     <div className={styles.filesViewContainer}>
       <div className={styles.fileContent} onContextMenu={onFilesEmptyContextMenu}>
-        <BreadcrumbBar crumbs={breadcrumbs} onBack={handleBreadcrumbBack} onNavigate={onNavigate} locationMode={locationMode} onLocationNavigate={onLocationNavigate} onToggleLocationMode={onToggleLocationMode}>
+        <BreadcrumbBar crumbs={breadcrumbs} onBack={onBack} onGoUp={handleGoUp} onNavigate={onNavigate} locationMode={locationMode} onLocationNavigate={onLocationNavigate} onToggleLocationMode={onToggleLocationMode}>
           <FileSearchBar
             query={query} searchOpen={searchOpen} searchResults={searchResults}
             onSearch={onSearch} onClearSearch={onClearSearch} onSearchResultClick={onSearchResultClick}
@@ -253,8 +234,8 @@ export function FilesView({
           </div>
         )}
         {loading ? (
-          <div className={viewMode === 'columns' ? styles.columnSkeleton : styles.skeletonGrid}>
-            {Array.from({ length: viewMode === 'columns' ? 4 : 12 }).map((_, i) => (
+          <div className={styles.skeletonGrid}>
+            {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className={styles.skeletonCard}>
                 <div className={styles.skeletonIcon} />
                 <div className={styles.skeletonLine} />

@@ -19,6 +19,7 @@ import { Dock } from '../components/layout/Dock';
 import { StatusBar } from '../components/layout/StatusBar';
 import { FilesView } from '../pages/FilesView';
 import { DesktopView } from '../pages/DesktopView';
+import { DrivesView } from '../pages/DrivesView';
 import { TrashView } from '../pages/TrashView';
 import { JobsPage } from '../pages/JobsPage';
 import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
@@ -108,8 +109,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     void getTrash().then((r) => browser.setTrashEntries(r.entries ?? []));
   }, [browser]);
 
+  const backStackRef = useRef<string[]>([]);
+
   // ── Navigation ──
   const navigateTo = useCallback((path: string) => {
+    if (viewPref.currentPath !== path) {
+      backStackRef.current.push(viewPref.currentPath);
+    }
     viewPref.navigateToPath(path);
     nav.setShowingJobs(false);
     browser.setSearchOpen(false);
@@ -127,6 +133,15 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     nav.setShowingMyPC(false);
     nav.setSelectedDriveName(null);
   }, [viewPref, nav]);
+
+  const goBack = useCallback(() => {
+    const prev = backStackRef.current.pop();
+    if (!prev) {
+      resetToDesktopView();
+    } else {
+      viewPref.navigateToPath(prev);
+    }
+  }, [viewPref, resetToDesktopView]);
 
   // ── Hooks that depend on other hooks ──
   const selection = useSelection({
@@ -200,13 +215,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     window.addEventListener('resize', closeMenus);
     return () => { window.removeEventListener('click', closeMenus); window.removeEventListener('resize', closeMenus); };
   }, [fileActions]);
-
-  useEffect(() => {
-    if (!nav.showingTrash && viewPref.viewModeBeforeTrash.current) {
-      viewPref.setViewMode(viewPref.viewModeBeforeTrash.current);
-      viewPref.viewModeBeforeTrash.current = null;
-    }
-  }, [nav.showingTrash, viewPref]);
 
   useEffect(() => { if (typeof Notification !== 'undefined' && Notification.permission === 'default') void Notification.requestPermission(); }, []);
 
@@ -331,6 +339,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     toast.showToastObj({ title: 'Service removed from desktop', variant: 'success' });
   }, [removeService, toast]);
 
+  const handleBackToDesktop = useCallback(() => {
+    nav.setShowingMyPC(false);
+    nav.setSelectedDriveName(null);
+  }, [nav]);
+
   const handleDesktopNavigateToTrash = useCallback(() => {
     viewPref.setCurrentPath('');
     nav.setShowingTrash(true);
@@ -339,8 +352,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     nav.setShowingMyPC(false);
     selection.setSelectedPaths([]);
     nav.setSelectedDriveName(null);
-    if (viewPref.viewMode === 'columns') viewPref.viewModeBeforeTrash.current = viewPref.viewMode;
-    viewPref.setViewMode((prev) => prev === 'columns' ? 'list' : prev);
   }, [viewPref, nav, selection]);
 
   const handleDockActivate = useCallback((id: string) => {
@@ -357,7 +368,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       case 'trash':
         viewPref.setCurrentPath('');
         nav.setShowingTrash(true); nav.setShowingSettings(false); nav.setShowingJobs(false);
-        viewPref.setViewMode((prev) => prev === 'columns' ? 'list' : prev);
         break;
       case 'jobs':
         nav.setShowingJobs(true); nav.setShowingSettings(false);
@@ -377,7 +387,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Derived data ─────────────────────────────────────────
 
-  const showStatusBar = nav.activeView !== 'settings' && nav.activeView !== 'jobs' && nav.activeView !== 'desktop';
+  const showStatusBar = nav.activeView !== 'settings' && nav.activeView !== 'jobs' && nav.activeView !== 'desktop' && nav.activeView !== 'drives';
   const selectedEntryIsFavorited = fileActions.contextMenu?.entry ? favorites.includes(fileActions.contextMenu.entry.path) : selection.isFavorited;
 
   const sortedTrashEntries = useMemo(() => {
@@ -446,7 +456,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             onGoTrash: () => {
               viewPref.setCurrentPath('');
               nav.setShowingTrash(true); nav.setShowingSettings(false); nav.setShowingJobs(false);
-              viewPref.setViewMode((prev) => prev === 'columns' ? 'list' : prev);
             },
             onGoJobs: () => {
               nav.setShowingJobs(true); nav.setShowingSettings(false);
@@ -466,20 +475,28 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         <section className={styles.workspace} onClick={selection.handleWorkspaceClick}>
           {nav.activeView === 'desktop' && (
             <DesktopView
-              devices={browser.devices} trashEntries={browser.trashEntries} jobs={browser.jobs}
+              trashEntries={browser.trashEntries} jobs={browser.jobs}
               favorites={favorites} services={services}
-              selectedDriveName={nav.selectedDriveName}
               onNavigateTo={navigateTo}
               onNavigateToTrash={handleDesktopNavigateToTrash}
               onOpenSettings={() => { nav.setShowingSettings(true); nav.setShowingTrash(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null); }}
               onOpenJobs={() => { nav.setShowingJobs(true); nav.setShowingSettings(false); nav.setShowingTrash(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null); }}
               onOpenFiles={() => handleDockActivate('files')}
-              onSelectDrive={nav.setSelectedDriveName}
-              showingMyPC={nav.showingMyPC}
-              onShowMyPC={nav.setShowingMyPC}
-              deviceError={browser.deviceError} onRetryDevices={browser.loadDevices}
+              onShowMyPC={() => nav.setShowingMyPC(true)}
               wallpaperStyle={wallpaper.wallpaperStyle}
               onItemContextMenu={handleDesktopItemContextMenu}
+            />
+          )}
+          {nav.activeView === 'drives' && (
+            <DrivesView
+              devices={browser.devices}
+              selectedDriveName={nav.selectedDriveName}
+              onSelectDrive={nav.setSelectedDriveName}
+              onBackToDesktop={handleBackToDesktop}
+              onNavigateTo={navigateTo}
+              deviceError={browser.deviceError}
+              onRetryDevices={browser.loadDevices}
+              wallpaperStyle={wallpaper.wallpaperStyle}
             />
           )}
           {nav.activeView === 'trash' && (
@@ -496,7 +513,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               navigation={{
                 currentPath: viewPref.currentPath, breadcrumbs: browser.breadcrumbs,
                 onNavigate: navigateTo,
-                onGoUp: () => viewPref.setCurrentPath(''),
+                onBack: goBack,
                 locationMode: fileActions.locationMode,
                 onLocationNavigate: (path: string) => navigateTo(path.startsWith('/') ? path : `/${path}`),
                 onToggleLocationMode: () => fileActions.setLocationMode((v) => !v),

@@ -1,6 +1,6 @@
 import type { FileEntry } from '../../api/client';
 import {
-  AlertTriangle, Archive, ArrowRight, ArrowUpDown, Bookmark, ChevronDown, ChevronRight, CheckSquare,
+  AlertTriangle, Archive, ArrowRight, ArrowUpDown, Bookmark, ChevronDown, ChevronRight, ChevronUp, CheckSquare,
   CircleUser, Clipboard, Columns3, Copy, Download, Eye, EyeOff, FileInput, Folder,
   FolderPlus, Globe, Grid3X3, HelpCircle, Home, Info, ListChecks, ListTree, LogOut,
   List, ListX, Monitor, Moon, MoreHorizontal, Pause, Pencil, Play, RefreshCw, RotateCcw,
@@ -29,6 +29,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'edit-rename': Pencil,
   'folder-new': FolderPlus,
   'go-next': ChevronRight,
+  'go-up': ChevronUp,
   'go-down': ArrowDown,
   'selection-invert': ListX,
   'selection-select-all': CheckSquare,
@@ -54,7 +55,6 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'weather-clear': Sun,
   'weather-clear-night': Moon,
   'window-close': X,
-  'view-columns': Columns3,
   'sort-desc': ArrowUpDown,
   'go-home': Home,
   'internet-web-browser': Globe,

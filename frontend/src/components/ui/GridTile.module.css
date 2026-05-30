@@ -17,7 +17,8 @@
     background var(--transition-fast),
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
-    color var(--transition-fast);
+    color var(--transition-fast),
+    margin var(--transition-fast);
   user-select: none;
   width: 100%;
 }
@@ -25,6 +26,8 @@
 .tile:hover {
   background: var(--color-hover);
   border-color: var(--color-border-light);
+  margin: 2px;
+  width: calc(100% - 4px);
 }
 
 .tile.selected {

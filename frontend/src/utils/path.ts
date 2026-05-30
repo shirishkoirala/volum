@@ -33,18 +33,4 @@ export function uniquePaths(paths: string[]): string[] {
   return out;
 }
 
-/**
- * Build an array of progressively deeper path segments for the column browser.
- * "/a/b/c" → ["/", "/a", "/a/b", "/a/b/c"]
- */
-export function buildColumnPath(currentPath: string): string[] {
-  if (!currentPath || currentPath === '/') {
-    return ['/'];
-  }
-  const parts = currentPath.split('/').filter(Boolean);
-  const cols: string[] = [];
-  for (let i = 0; i <= parts.length; i++) {
-    cols.push('/' + parts.slice(0, i).join('/'));
-  }
-  return cols;
-}
+

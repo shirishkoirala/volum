@@ -114,7 +114,9 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
   const breadcrumbs = useMemo(() => {
     if (!currentPath) return [];
     const parts = currentPath.split('/').filter(Boolean);
-    return parts.map((part, index) => ({ label: part, path: `/${parts.slice(0, index + 1).join('/')}` }));
+    const crumbs = parts.map((part, index) => ({ label: part, path: `/${parts.slice(0, index + 1).join('/')}` }));
+    if (crumbs.length === 0) return [{ label: '/', path: '/' }];
+    return crumbs;
   }, [currentPath]);
 
   const folderSuggestions = useMemo(

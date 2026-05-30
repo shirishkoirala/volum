@@ -3,6 +3,6 @@
  */
 
 /** The three file/folder display modes used across the app. */
-export type ViewMode = 'list' | 'grid' | 'columns';
+export type ViewMode = 'list' | 'grid';
 
 
