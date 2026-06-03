@@ -105,6 +105,8 @@ func (s *Server) routes() {
 			r.Post("/trash/{id}/restore", s.handleRestoreTrash)
 			r.Delete("/trash/{id}", s.handleDeleteTrash)
 			r.Post("/files/upload", s.handleUpload)
+			r.Get("/files/upload-status", s.handleUploadStatus)
+			r.Post("/files/upload-chunk", s.handleUploadChunk)
 			r.Patch("/files/permissions", s.handleChmod)
 			r.Post("/jobs", s.handleCreateJob)
 			r.Post("/jobs/{id}/cancel", s.handleCancelJob)

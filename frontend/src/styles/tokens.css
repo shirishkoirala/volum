@@ -195,6 +195,7 @@ html {
 
 body {
   background-color: var(--color-bg);
+  color: var(--color-text);
   font-family: var(--font-ui);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   font-optical-sizing: auto;

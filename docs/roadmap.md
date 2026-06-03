@@ -121,6 +121,81 @@ This roadmap tracks the current inconsistency, KISS, YAGNI, and SOLID cleanup wo
 - Added `repeatParams` helper for dynamic `IN (?, ?, ...)` placeholders.
 - All existing store tests still pass.
 
+## Phase X — Transfers Page Redesign (JobsPage)
+
+### X.1 Fix bare `<p>` and UUID fallback — ✅ Complete
+
+**Problem:** Line 72 used a raw `<p>` with browser-default margins (~16px), and fell back to `job.id` (UUID) — useless noise.
+
+**Result:**
+- Added `.jobPath` CSS class in `JobsPage.module.css` with `text-overflow: ellipsis`, controlled `margin: var(--space-xs) 0 0`, and `color: var(--color-text-secondary)`
+- Replaced raw `<p>` with conditional rendering — only renders when `currentItem` or `sourcePath` is present; UUID never shows
+- Long paths are truncated with ellipsis instead of overflowing
+
+### X.2 Add job type icons — ✅ Complete
+
+**Problem:** Jobs were distinguished only by text label ("Copy", "Move", "Archive", "Extract", "Checksum"). No visual differentiation made scanning slow.
+
+**Result:**
+- Added 6 icon mappings in `Icon.tsx` (`job-copy` → `Copy`, `job-move` → `ArrowRight`, `job-archive` → `Archive`, `job-extract` → `FileInput`, `job-upload` → `Upload`, `job-checksum` → `ListChecks`)
+- Rendered 15px icon next to job type label in the title row
+- Added `.jobTitleLabel` flex container with `gap: var(--space-xs)` for proper alignment
+
+### X.3 Move Clear buttons to fixed toolbar — ✅ Complete
+
+**Problem:** "Clear completed" and "Clear failed" were at the bottom of the scrollable list. With many active jobs, the user had to scroll past everything to reach them.
+
+**Result:**
+- Added `.jobToolbar` CSS class — flex row, right-aligned, `border-bottom` separator, `flex-shrink: 0`
+- Extracted Clear buttons from the scrollable `jobList` into a fixed toolbar above the list
+- Buttons only render when applicable (`hasCompleted` / `hasFailed` booleans)
+- Responsive padding on mobile
+
+### X.4 Add visual separator between active and terminal groups — ✅ Complete
+
+**Result:**
+- Wrapped terminal jobs in `.terminalSection` with `border-top: 1px solid var(--color-border-subtle)` and `margin-top/padding-top` spacing
+- Replaced bare text toggle with a styled section header: `.terminalToggle` flex row with `go-next` chevron (rotates 90° on expand), "Completed" label, and pill-shaped `.terminalCount` badge pushed to the right via `margin-left: auto`
+- Chevron uses CSS `transition: transform 150ms ease` for smooth rotation
+
+### X.5 Reserve space for speed/ETA to prevent layout shift — ✅ Complete
+
+**Result:**
+- Replaced conditional rendering (`{showLiveStats && ... ? <span>...</span> : null}`) with always-rendered spans
+- When not running, speed shows `—/s` and ETA shows `— left`
+- Placeholder values use `.mutedPlaceholder` class (`color: var(--color-text-muted)`)
+- Layout no longer shifts between running and paused states
+
+### X.6 Add item count for batch jobs — ✅ Complete
+
+**Result:**
+- When `job.totalItems > 1`, the `.jobMeta` row now prepends `{processedItems} / {totalItems} files` as the first span
+- Single-file jobs show no item count
+- Count updates live during execution via SSE
+
+### X.7 Fix "paused" status color — ✅ Complete
+
+**Result:**
+- Removed `|| status === 'paused'` from the `'warning'` branch in `jobVariant`
+- `'paused'` now falls through to `'disabled'` (neutral gray) instead of yellow warning
+- Running jobs still show `'warning'` (yellow)
+
+### X.8 — Flat job list with pagination — ✅ Complete
+
+**Result:**
+- Removed `renderJobGroup` and active/terminal split entirely
+- All jobs render in a single flat list, sorted by arrival order
+- Added client-side pagination: 25 jobs per page, prev/next buttons with `pan-left`/`pan-right` icons, "Page X of Y" indicator
+- `currentPage` state auto-clamps via `useEffect` when job list changes (SSE refresh)
+- Removed `completedCollapsed` state from Home.tsx and `completedCollapsed`/`setCompletedCollapsed` props
+
+### X.9 — Future: timestamps, error icons, mobile optimizations
+
+Deferred improvements for a later pass:
+- Timestamps: show created/completed time in the job card footer
+- Error icon prefix: add a small warning/danger icon next to error text
+- Mobile: ensure job cards collapse gracefully at narrow widths
+
 ## Verification Standard
 
 After each implementation phase:

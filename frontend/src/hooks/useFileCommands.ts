@@ -2,9 +2,11 @@ import { KeyboardEvent, useRef } from 'react';
 import type { FileEntry, TrashEntry, ConflictPolicy } from '../api/client';
 import {
   createFile, createFolder, createJob, deleteTrash, deletePath,
-  getFiles, getJobs, getTrash, renamePath, restoreTrash, uploadFiles,
+  getFiles, getJobs, getTrash, renamePath, restoreTrash,
   createShare,
+  UploadCancelledError, UploadPausedError,
 } from '../api/client';
+import { uploadFilesWithResume } from '../utils/upload';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
 import { isArchiveFile, archiveBaseName, archiveFileName } from '../utils/archive';
 import { joinPath, normalizeFolderPath } from '../utils/path';
@@ -66,12 +68,11 @@ function useCommandHelpers(deps: FileCommandDeps) {
 }
 
 export function useFileCommands(deps: FileCommandDeps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const { runAction } = useCommandHelpers(deps);
 
   const {
-    currentPath, canWrite, folderSuggestions,
+    currentPath, canWrite, folderSuggestions, setError,
     setTrashEntries, setJobs, selectedEntries,
     setSelectedPaths, setLastSelectedPath,
     renaming, setRenaming, setContextMenu,
@@ -212,14 +213,33 @@ export function useFileCommands(deps: FileCommandDeps) {
   // ── Upload ────────────────────────────────────────────
 
   const handleUploadFiles = (files: FileList | File[]) => {
-    if (!canWrite) return;
+    if (!canWrite) {
+      console.error('Upload blocked: canWrite is false');
+      setError('Upload requires admin permissions');
+      showToastObj({ title: 'Upload failed', message: 'Admin permissions required', variant: 'error' });
+      return;
+    }
     const selectedFiles = Array.from(files);
-    if (selectedFiles.length === 0 || !currentPath) return;
+    if (selectedFiles.length === 0) {
+      console.error('Upload blocked: no files selected');
+      return;
+    }
+    if (!currentPath) {
+      console.error('Upload blocked: currentPath is', currentPath);
+      setError('No destination folder selected');
+      showToastObj({ title: 'Upload failed', message: 'Navigate to a folder first', variant: 'error' });
+      return;
+    }
     void runAction(async () => {
-      await uploadFiles(currentPath, selectedFiles);
+      try {
+        await uploadFilesWithResume(currentPath, selectedFiles);
+      } catch (err) {
+        if (err instanceof UploadCancelledError || err instanceof UploadPausedError) return;
+        throw err;
+      }
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, `${selectedFiles.length} upload${selectedFiles.length === 1 ? '' : 's'} started`);
+    }, `${selectedFiles.length} upload${selectedFiles.length === 1 ? '' : 's'} completed`);
   };
 
   // ── Transfer / Clipboard ──────────────────────────────
@@ -403,7 +423,6 @@ export function useFileCommands(deps: FileCommandDeps) {
   };
 
   return {
-    fileInputRef,
     renameInputRef,
     runAction,
     handleCreateFolder,

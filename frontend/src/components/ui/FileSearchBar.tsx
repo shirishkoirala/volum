@@ -1,6 +1,6 @@
 import { RefObject } from 'react';
 import { Icon, FileIcon } from './Icon';
-import { IconButton } from './shared';
+
 import type { SearchResult } from '../../api/client';
 import styles from './FileSearchBar.module.css';
 
@@ -11,33 +11,15 @@ type FileSearchBarProps = {
   onSearch: (query: string) => void;
   onClearSearch: () => void;
   onSearchResultClick: (result: SearchResult) => void;
-  onRefresh: () => void;
-  isFavorited: boolean;
-  onToggleFavorite: () => void;
   searchRef?: RefObject<HTMLInputElement | null>;
-  fileInputRef?: RefObject<HTMLInputElement | null>;
-  onUpload: (files: FileList) => void;
 };
 
 export function FileSearchBar({
   query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
-  onRefresh, isFavorited, onToggleFavorite,
-  searchRef, fileInputRef, onUpload,
+  searchRef,
 }: FileSearchBarProps) {
   return (
     <div className={styles.toolbar}>
-      <input
-        ref={fileInputRef as RefObject<HTMLInputElement>}
-        className={styles.hiddenFileInput}
-        multiple
-        type="file"
-        onChange={(event) => {
-          if (event.currentTarget.files) {
-            onUpload(event.currentTarget.files);
-            event.currentTarget.value = '';
-          }
-        }}
-      />
       <label className={styles.searchBox}>
         <Icon name="edit-find" size={16} />
         <input
@@ -75,12 +57,6 @@ export function FileSearchBar({
           ))}
         </div>
       )}
-      <IconButton onClick={onRefresh} title="Refresh">
-        <Icon name="view-refresh" size={18} />
-      </IconButton>
-      <IconButton active={isFavorited} onClick={onToggleFavorite} title={isFavorited ? 'Remove from desktop' : 'Add to desktop'}>
-        <Icon name="bookmark-new" size={18} />
-      </IconButton>
     </div>
   );
 }

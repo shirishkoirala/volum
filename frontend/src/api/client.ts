@@ -264,6 +264,61 @@ export async function uploadFiles(path: string, files: File[]) {
   return response.json() as Promise<JobsResponse>;
 }
 
+export async function getUploadStatus(path: string, filename: string) {
+  const params = new URLSearchParams({ path, filename });
+  const response = await fetch(`/api/files/upload-status?${params.toString()}`);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(body.error ?? response.statusText);
+  }
+  return response.json() as Promise<{ filename: string; received: number; complete: boolean; jobId?: string }>;
+}
+
+type UploadChunkResponse = { received: number; complete: boolean; jobId?: string };
+
+export async function uploadChunk(
+  path: string,
+  filename: string,
+  offset: number,
+  totalSize: number,
+  chunk: Blob,
+  jobId?: string,
+  signal?: AbortSignal,
+) {
+  const params = new URLSearchParams({ path, filename, offset: String(offset), totalSize: String(totalSize) });
+  if (jobId) params.set('jobId', jobId);
+  const response = await fetch(`/api/files/upload-chunk?${params.toString()}`, {
+    method: 'POST',
+    body: chunk,
+    signal,
+  });
+  if (response.status === 410) {
+    throw new UploadCancelledError(filename);
+  }
+  if (response.status === 409) {
+    throw new UploadPausedError(filename);
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(body.error ?? response.statusText);
+  }
+  return response.json() as Promise<UploadChunkResponse>;
+}
+
+export class UploadCancelledError extends Error {
+  constructor(filename: string) {
+    super(`Upload cancelled: ${filename}`);
+    this.name = 'UploadCancelledError';
+  }
+}
+
+export class UploadPausedError extends Error {
+  constructor(filename: string) {
+    super(`Upload paused: ${filename}`);
+    this.name = 'UploadPausedError';
+  }
+}
+
 export function cancelJob(id: string) {
   return requestVoid(`/api/jobs/${id}/cancel`, {
     method: 'POST'

@@ -88,7 +88,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const dialogs = useDialogStack();
 
   // ── Local state ──
-  const [completedCollapsed, setCompletedCollapsed] = useState(true);
   const [trashContextMenu, setTrashContextMenu] = useState<{ x: number; y: number; entry: TrashEntry } | null>(null);
   const [desktopContextMenu, setDesktopContextMenu] = useState<{ x: number; y: number; item: DesktopIconItem } | null>(null);
   const [filesEmptyMenu, setFilesEmptyMenu] = useState<{ x: number; y: number } | null>(null);
@@ -98,6 +97,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const fileGridRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const uploadFileInputRef = useRef<HTMLInputElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressEntry = useRef<{ entry: FileEntry; x: number; y: number } | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -401,7 +401,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   }, [browser.trashEntries, viewPref.sortField, viewPref.sortDirection]);
 
   const renameInputRef = fileCommands.renameInputRef;
-  const fileInputRef = fileCommands.fileInputRef;
 
   // ── File area keydown wrapper ──
   const handleFileAreaKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
@@ -423,6 +422,21 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const shell = (
     <>
       <main className={styles.appShell}>
+        <input
+          ref={uploadFileInputRef}
+          type="file"
+          multiple
+          className={styles.hiddenFileInput}
+          onChange={(event) => {
+            if (event.currentTarget.files) {
+              try {
+                fileCommands.handleUploadFiles(event.currentTarget.files);
+              } finally {
+                event.currentTarget.value = '';
+              }
+            }
+          }}
+        />
         <TopBar
           activeView={nav.activeView}
           title={nav.topBarTitle}
@@ -432,7 +446,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           onLogout={onLogout}
           menuHandlers={{
             onCreateFolder: fileCommands.handleCreateFolder,
-            onUpload: () => fileInputRef.current?.click(),
+            onUpload: () => uploadFileInputRef.current?.click(),
             onCut: () => fileCommands.setClipboardFromSelection('move'),
             onCopy: () => fileCommands.setClipboardFromSelection('copy'),
             onPaste: fileCommands.handlePaste,
@@ -527,11 +541,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
                   else { const idx = result.path.lastIndexOf('/'); navigateTo(idx < 0 ? '/' : result.path.substring(0, idx) || '/'); }
                 },
                 searchRef: searchRef as React.RefObject<HTMLInputElement>,
-                fileInputRef: fileInputRef as React.RefObject<HTMLInputElement>,
-                onUpload: fileCommands.handleUploadFiles,
-                onRefresh: refresh,
-                isFavorited: selection.isFavorited,
-                onToggleFavorite: () => selection.isFavorited ? removeFavorite(viewPref.currentPath) : addFavorite(viewPref.currentPath),
               }}
               selection={{
                 selectedPaths: selection.selectedPaths,
@@ -585,7 +594,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           {nav.activeView === 'jobs' && (
             <JobsPage
               jobs={browser.jobs}
-              completedCollapsed={completedCollapsed} setCompletedCollapsed={setCompletedCollapsed}
               onCancel={handleCancelJob} onPause={handlePauseJob}
               onResume={handleResumeJob} onRetry={handleRetryJob}
               onClearCompleted={handleClearCompleted} onClearFailed={handleClearFailed}
@@ -678,8 +686,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               canPaste={selection.canPaste}
               onCreateFolder={fileCommands.handleCreateFolder}
               onCreateFile={fileCommands.handleCreateFile}
-              onUpload={() => fileInputRef.current?.click()}
-              onRefresh={refresh}
+               onUpload={() => uploadFileInputRef.current?.click()}
+               onRefresh={refresh}
               onPaste={() => { setFilesEmptyMenu(null); fileCommands.handlePaste(); }}
               onClose={() => setFilesEmptyMenu(null)}
             />

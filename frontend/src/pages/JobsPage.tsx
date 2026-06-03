@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { Job, JobStatus } from '../api/client';
 import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -9,14 +10,12 @@ import styles from './JobsPage.module.css';
 
 const jobVariant = (status: JobStatus): 'success' | 'warning' | 'danger' | 'disabled' => {
   if (status === 'completed') return 'success';
-  if (status === 'running' || status === 'paused') return 'warning';
+  if (status === 'running') return 'warning';
   if (status === 'failed') return 'danger';
   return 'disabled';
 };
 
-function isActiveStatus(status: JobStatus) {
-  return status === 'queued' || status === 'running' || status === 'paused';
-}
+
 
 
 
@@ -56,20 +55,30 @@ function JobItem({
   return (
     <article className={styles.jobItem} role="listitem" tabIndex={0} data-job-id={job.id} onKeyDown={(e) => { if (e.key === 'Enter') e.stopPropagation(); }}>
       <div className={styles.jobTitleRow}>
-        <strong>{job.type}</strong>
+        <span className={styles.jobTitleLabel}>
+          <Icon name={`job-${job.type}`} size={15} />
+          <strong>{job.type}</strong>
+        </span>
         <StatusBadge variant={jobVariant(job.status)}>{job.status}</StatusBadge>
       </div>
       <ProgressBar value={progress} />
       <div className={styles.jobMeta}>
+        {job.totalItems > 1 && (
+          <span>{job.processedItems} / {job.totalItems} files</span>
+        )}
         <span>
           {hasKnownTotal
             ? `${formatBytes(job.processedBytes)} / ${formatBytes(job.totalBytes)}`
             : `${formatBytes(job.processedBytes)} uploaded`}
         </span>
-        {showLiveStats && job.speedBytesPerSecond ? <span>{formatBytes(job.speedBytesPerSecond)}/s</span> : null}
-        {showLiveStats && job.etaSeconds !== undefined ? <span>{formatDuration(job.etaSeconds)} left</span> : null}
+        <span className={!showLiveStats ? styles.mutedPlaceholder : undefined}>
+          {showLiveStats && job.speedBytesPerSecond ? `${formatBytes(job.speedBytesPerSecond)}/s` : '\u2014/s'}
+        </span>
+        <span className={!showLiveStats ? styles.mutedPlaceholder : undefined}>
+          {showLiveStats && job.etaSeconds !== undefined ? `${formatDuration(job.etaSeconds)} left` : '\u2014 left'}
+        </span>
       </div>
-      <p>{job.currentItem ?? job.sourcePath ?? job.id}</p>
+      {job.currentItem ?? job.sourcePath ? <p className={styles.jobPath}>{job.currentItem ?? job.sourcePath}</p> : null}
       {job.errorMessage && <p className={styles.jobError}>{job.errorMessage}</p>}
       {(canPause || canResume || canCancel || canRetry) && (
         <div className={styles.jobActions}>
@@ -103,46 +112,10 @@ function JobItem({
   );
 }
 
-function renderJobGroup(
-  jobs: Job[],
-  completedCollapsed: boolean,
-  setCompletedCollapsed: (v: boolean) => void,
-  onCancel: (id: string) => void,
-  onPause: (id: string) => void,
-  onResume: (id: string) => void,
-  onRetry: (id: string) => void,
-) {
-  const terminal = ['completed', 'failed', 'cancelled'];
-  const active = jobs.filter((j) => isActiveStatus(j.status));
-  const terminalJobs = jobs.filter((j) => terminal.includes(j.status));
 
-  return (
-    <>
-      {active.map((job) => (
-        <JobItem key={job.id} job={job} onCancel={onCancel} onPause={onPause} onResume={onResume} onRetry={onRetry} />
-      ))}
-      {terminalJobs.length > 0 && (
-        <>
-          <button
-            type="button"
-            className={styles.jobCollapseToggle}
-            onClick={() => setCompletedCollapsed(!completedCollapsed)}
-          >
-            {completedCollapsed ? `Show ${terminalJobs.length} completed` : 'Hide completed'}
-          </button>
-          {!completedCollapsed && terminalJobs.map((job) => (
-            <JobItem key={job.id} job={job} onCancel={onCancel} onPause={onPause} onResume={onResume} onRetry={onRetry} />
-          ))}
-        </>
-      )}
-    </>
-  );
-}
 
 type JobsPageProps = {
   jobs: Job[];
-  completedCollapsed: boolean;
-  setCompletedCollapsed: (v: boolean) => void;
   onCancel: (id: string) => void;
   onPause: (id: string) => void;
   onResume: (id: string) => void;
@@ -167,8 +140,6 @@ function handleJobListKeyDown(e: React.KeyboardEvent) {
 
 export function JobsPage({
   jobs,
-  completedCollapsed,
-  setCompletedCollapsed,
   onCancel,
   onPause,
   onResume,
@@ -177,28 +148,63 @@ export function JobsPage({
   onClearFailed,
   onJobsEmptyContextMenu,
 }: JobsPageProps) {
+  const pageSize = 25;
+  const totalPages = Math.max(1, Math.ceil(jobs.length / pageSize));
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  const startIndex = (currentPage - 1) * pageSize;
+  const pageJobs = jobs.slice(startIndex, startIndex + pageSize);
+
+  const hasCompleted = jobs.some((j) => j.status === 'completed' || j.status === 'cancelled');
+  const hasFailed = jobs.some((j) => j.status === 'failed');
+
   return (
     <>
       <main className={styles.jobsPage} onContextMenu={onJobsEmptyContextMenu}>
+        {jobs.length > 0 && (
+          <div className={styles.jobToolbar}>
+            {hasFailed && (
+              <Button size="compact" onClick={onClearFailed}>
+                Clear failed
+              </Button>
+            )}
+            {hasCompleted && (
+              <Button size="compact" onClick={onClearCompleted}>
+                Clear completed
+              </Button>
+            )}
+          </div>
+        )}
         <div className={styles.jobList} onKeyDown={handleJobListKeyDown} role="list">
-      {jobs.length === 0 ? (
-        <EmptyState icon={jobsIconUrl()} title="No transfers yet" subtitle="File operations like copy, move, and archive will appear here." />
-      ) : (
+          {jobs.length === 0 ? (
+            <EmptyState icon={jobsIconUrl()} title="No transfers yet" subtitle="File operations like copy, move, and archive will appear here." />
+          ) : (
             <>
-              {renderJobGroup(jobs, completedCollapsed, setCompletedCollapsed, onCancel, onPause, onResume, onRetry)}
-              {jobs.some((j) => j.status === 'completed' || j.status === 'cancelled') && (
-                <Button size="compact" onClick={onClearCompleted}>
-                  Clear completed
-                </Button>
-              )}
-              {jobs.some((j) => j.status === 'failed') && (
-                <Button size="compact" onClick={onClearFailed}>
-                  Clear failed
-                </Button>
-              )}
+              {pageJobs.map((job) => (
+                <JobItem key={job.id} job={job} onCancel={onCancel} onPause={onPause} onResume={onResume} onRetry={onRetry} />
+              ))}
             </>
           )}
         </div>
+        {totalPages > 1 && (
+          <div className={styles.pagination}>
+            <span className={styles.paginationInfo}>
+              Page {currentPage} of {totalPages}
+            </span>
+            <div className={styles.paginationButtons}>
+              <Button size="compact" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+                <Icon name="pan-left" size={15} />
+              </Button>
+              <Button size="compact" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
+                <Icon name="pan-right" size={15} />
+              </Button>
+            </div>
+          </div>
+        )}
       </main>
     </>
   );

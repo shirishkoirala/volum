@@ -1,7 +1,7 @@
 import type { FileEntry } from '../../api/client';
 import {
   AlertTriangle, Archive, ArrowRight, ArrowUpDown, Bookmark, ChevronDown, ChevronRight, ChevronUp, CheckSquare,
-  CircleUser, Clipboard, Columns3, Copy, Download, Eye, EyeOff, FileInput, Folder,
+  CircleStop, CircleUser, Clipboard, Columns3, Copy, Download, Eye, EyeOff, FileInput, Folder,
   FolderPlus, Globe, Grid3X3, HelpCircle, Home, Info, ListChecks, ListTree, LogOut,
   List, ListX, Monitor, Moon, MoreHorizontal, Pause, Pencil, Play, RefreshCw, RotateCcw,
   Scissors, Search, Send, Settings, Square, Sun, Trash2, Upload, Usb, X, HardDrive, ArrowDown,
@@ -37,7 +37,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'media-playback-start': Play,
   'media-removable': Usb,
   monitor: Monitor,
-  'process-stop': Square,
+  'process-stop': CircleStop,
   'system-log-out': LogOut,
   'view-grid': Grid3X3,
   'view-hidden': EyeOff,
@@ -63,6 +63,12 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'folder': Folder,
   'document-properties': ListChecks,
   'go-jump': ArrowRight,
+  'job-copy': Copy,
+  'job-move': ArrowRight,
+  'job-archive': Archive,
+  'job-extract': FileInput,
+  'job-upload': Upload,
+  'job-checksum': ListChecks,
 };
 
 export function Icon({ name, size = 22, className }: IconProps) {

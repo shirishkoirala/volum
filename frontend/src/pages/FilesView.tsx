@@ -29,11 +29,6 @@ type SearchProps = {
   onClearSearch: () => void;
   onSearchResultClick: (result: SearchResult) => void;
   searchRef?: React.RefObject<HTMLInputElement | null>;
-  fileInputRef?: React.RefObject<HTMLInputElement | null>;
-  onUpload: (files: FileList | File[]) => void;
-  onRefresh: () => void;
-  isFavorited: boolean;
-  onToggleFavorite: () => void;
 };
 
 type SelectionProps = {
@@ -108,7 +103,7 @@ export function FilesView({
   } = navigation;
   const {
     query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
-    searchRef, fileInputRef, onUpload, onRefresh, isFavorited, onToggleFavorite,
+    searchRef,
   } = search;
   const { selectedPaths, filteredEntries, fileClick } = selection;
   const {
@@ -222,8 +217,7 @@ export function FilesView({
           <FileSearchBar
             query={query} searchOpen={searchOpen} searchResults={searchResults}
             onSearch={onSearch} onClearSearch={onClearSearch} onSearchResultClick={onSearchResultClick}
-            onRefresh={onRefresh} isFavorited={isFavorited} onToggleFavorite={onToggleFavorite}
-            searchRef={searchRef} fileInputRef={fileInputRef} onUpload={onUpload}
+            searchRef={searchRef}
           />
         </BreadcrumbBar>
 

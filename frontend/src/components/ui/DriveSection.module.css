@@ -4,6 +4,11 @@
   gap: var(--space-md);
 }
 
+.section + .section {
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-lg);
+}
+
 .title {
   font-size: var(--font-size-lg);
   font-weight: 600;

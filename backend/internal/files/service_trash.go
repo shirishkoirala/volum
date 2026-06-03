@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -61,11 +62,11 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 		RootPath:     root.Path,
 	}
 
-	if err := os.Rename(resolved, trashPath); err != nil {
+	if err := moveAcrossFS(resolved, trashPath); err != nil {
 		return TrashEntry{}, err
 	}
 	if err := writeTrashEntry(filepath.Join(trashMeta, id+".json"), entry); err != nil {
-		_ = os.Rename(trashPath, resolved)
+		_ = moveAcrossFS(trashPath, resolved)
 		return TrashEntry{}, err
 	}
 	return entry, nil
@@ -122,7 +123,7 @@ func (s *Service) RestoreTrash(id string) (Entry, error) {
 	if err := os.MkdirAll(filepath.Dir(originalPath), 0o755); err != nil {
 		return Entry{}, err
 	}
-	if err := os.Rename(entry.TrashPath, originalPath); err != nil {
+	if err := moveAcrossFS(entry.TrashPath, originalPath); err != nil {
 		return Entry{}, err
 	}
 	if err := os.Remove(metaPath); err != nil {
@@ -181,4 +182,69 @@ func writeTrashEntry(path string, entry TrashEntry) error {
 		return err
 	}
 	return os.WriteFile(path, data, 0o644)
+}
+
+func moveAcrossFS(src, dst string) error {
+	err := os.Rename(src, dst)
+	if err == nil {
+		return nil
+	}
+	var linkErr *os.LinkError
+	if !errors.As(err, &linkErr) {
+		return err
+	}
+	if err := copyPath(src, dst); err != nil {
+		return err
+	}
+	return os.RemoveAll(src)
+}
+
+func copyFile(src, dst string) error {
+	sf, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sf.Close()
+
+	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+		return err
+	}
+	df, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer df.Close()
+
+	if _, err := io.Copy(df, sf); err != nil {
+		return err
+	}
+	return df.Sync()
+}
+
+func copyPath(src, dst string) error {
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return copyFile(src, dst)
+	}
+
+	if err := os.MkdirAll(dst, 0o755); err != nil {
+		return err
+	}
+	return filepath.WalkDir(src, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(dst, rel)
+		if d.IsDir() {
+			return os.MkdirAll(target, 0o755)
+		}
+		return copyFile(path, target)
+	})
 }
