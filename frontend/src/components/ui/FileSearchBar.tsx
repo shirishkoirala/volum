@@ -27,7 +27,7 @@ export function FileSearchBar({
         <Icon name="edit-find" size={16} />
         <input
           ref={searchRef as RefObject<HTMLInputElement>}
-          placeholder="Search files (Ctrl+K)"
+          placeholder="Search files"
           value={query}
           onFocus={() => { }}
           onChange={(event) => onSearch(event.target.value)}

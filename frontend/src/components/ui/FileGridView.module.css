@@ -8,7 +8,6 @@
   grid-auto-rows: max-content;
   grid-template-columns: repeat(auto-fill, var(--grid-column));
   justify-content: start;
-  margin: var(--space-md);
   min-height: 0;
   flex: 1;
   overflow-y: auto;

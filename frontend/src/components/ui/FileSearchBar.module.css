@@ -3,6 +3,7 @@
   display: flex;
   flex-shrink: 0;
   gap: var(--space-sm);
+  min-width: 0;
 }
 
 .searchBox {
@@ -69,12 +70,19 @@
 @media (max-width: 760px) {
   .toolbar {
     gap: var(--space-xs);
+    width: 100%;
   }
 
   .searchBox {
+    flex: 1;
     min-height: 34px;
+    min-width: 0;
     padding: 0 var(--space-sm);
-    width: min(52vw, 220px);
+    width: auto;
+  }
+
+  .searchBox input {
+    font-size: var(--font-size-sm);
   }
 
   .searchResultsDropdown {
