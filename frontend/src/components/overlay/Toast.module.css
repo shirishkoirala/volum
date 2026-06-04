@@ -57,6 +57,10 @@
   border-left-color: var(--color-danger);
 }
 
+.toastWarning {
+  border-left-color: var(--color-warning);
+}
+
 .toastContent {
   flex: 1;
   min-width: 0;

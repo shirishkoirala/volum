@@ -4,7 +4,6 @@ import {
   createFile, createFolder, createJob, deleteTrash, deletePath,
   getFiles, getJobs, getTrash, renamePath, restoreTrash,
   createShare,
-  UploadCancelledError, UploadPausedError,
 } from '../api/client';
 import { uploadFilesWithResume, type UploadProgress } from '../utils/upload';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
@@ -240,17 +239,26 @@ export function useFileCommands(deps: FileCommandDeps) {
       variant: 'success',
     }, 6000);
     void runAction(async () => {
-      let completedUploads = 0;
+      let backendJobsSeen = 0;
       try {
-        await uploadFilesWithResume(currentPath, selectedFiles, undefined, setUploadProgress, () => {
-          completedUploads += 1;
+        const result = await uploadFilesWithResume(currentPath, selectedFiles, undefined, setUploadProgress, undefined, () => {
+          backendJobsSeen += 1;
           setPendingUploadCount((count) => Math.max(0, count - 1));
         });
-      } catch (err) {
-        if (err instanceof UploadCancelledError || err instanceof UploadPausedError) return;
-        throw err;
+        if (result.interrupted) {
+          showToastObj({
+            title: result.interrupted === 'paused' ? 'Upload paused' : result.interrupted === 'cancelled' ? 'Upload cancelled' : 'Upload interrupted',
+            message: `${result.completed} of ${selectedFiles.length} upload${selectedFiles.length === 1 ? '' : 's'} completed`,
+            variant: 'warning',
+          });
+        } else {
+          showToastObj({
+            title: `${result.completed} upload${result.completed === 1 ? '' : 's'} completed`,
+            variant: 'success',
+          });
+        }
       } finally {
-        const remainingUploads = selectedFiles.length - completedUploads;
+        const remainingUploads = selectedFiles.length - backendJobsSeen;
         if (remainingUploads > 0) {
           setPendingUploadCount((count) => Math.max(0, count - remainingUploads));
         }
@@ -258,7 +266,7 @@ export function useFileCommands(deps: FileCommandDeps) {
       }
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, `${selectedFiles.length} upload${selectedFiles.length === 1 ? '' : 's'} completed`);
+    });
   };
 
   // ── Transfer / Clipboard ──────────────────────────────

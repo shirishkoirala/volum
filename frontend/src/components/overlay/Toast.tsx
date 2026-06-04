@@ -6,12 +6,18 @@ export type Toast = {
   id: number;
   title: string;
   message?: string;
-  variant: 'success' | 'error';
+  variant: 'success' | 'error' | 'warning';
   action?: { label: string; onClick: () => void };
 };
 
 export function ToastViewport({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
   const [exitingIds, setExitingIds] = useState(new Set<number>());
+
+  const variantClass = (variant: Toast['variant']) => {
+    if (variant === 'success') return styles.toastSuccess;
+    if (variant === 'warning') return styles.toastWarning;
+    return styles.toastError;
+  };
 
   const handleDismiss = (id: number) => {
     setExitingIds((prev) => new Set(prev).add(id));
@@ -28,7 +34,7 @@ export function ToastViewport({ toasts, onDismiss }: { toasts: Toast[]; onDismis
   return (
     <div className={styles.toastViewport} aria-live="polite" aria-atomic="true">
       {toasts.map((toast) => (
-        <div className={`${styles.toast} ${toast.variant === 'success' ? styles.toastSuccess : styles.toastError}${exitingIds.has(toast.id) ? ` ${styles.toastExiting}` : ''}`} key={toast.id}>
+        <div className={`${styles.toast} ${variantClass(toast.variant)}${exitingIds.has(toast.id) ? ` ${styles.toastExiting}` : ''}`} key={toast.id}>
           <div className={styles.toastContent}>
             <strong>{toast.title}</strong>
             {toast.message && <span>{toast.message}</span>}

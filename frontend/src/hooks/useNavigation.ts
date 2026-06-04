@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { BlockDevice, Job } from '../api/client';
 import { filesIconUrl, jobsIconUrl, preferencesIconUrl, trashIconUrl, desktopDockIconUrl } from '../api/icons';
+import { countActiveTransfers } from '../utils/jobs';
 export type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives';
 
 export function useNavigation(
@@ -38,10 +39,7 @@ export function useNavigation(
     return 'desktop';
   }, [currentPath, showingTrash, showingSettings, showingJobs, showingMyPC]);
 
-  const activeJobCount = useMemo(
-    () => jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length,
-    [jobs]
-  );
+  const activeJobCount = useMemo(() => countActiveTransfers(jobs), [jobs]);
   const transferBadgeCount = activeJobCount + pendingTransferCount;
 
   const dockItems = useMemo(() => [

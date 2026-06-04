@@ -498,20 +498,52 @@ func (s *Server) handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		jobID = job.ID
-		_ = os.WriteFile(jobIDPath, []byte(jobID), 0o644)
-		_ = s.jobs.StartJob(ctx, job.ID)
-		_ = s.jobs.SetJobTotals(ctx, job.ID, totalSize, 1)
-		_, _ = s.jobs.CreateItem(ctx, jobs.Item{
+		if err := os.WriteFile(jobIDPath, []byte(jobID), 0o644); err != nil {
+			_ = os.Remove(partialPath)
+			_ = s.jobs.FailJob(ctx, job.ID, err)
+			writeError(w, err)
+			return
+		}
+		if err := s.jobs.StartJob(ctx, job.ID); err != nil {
+			_ = os.Remove(partialPath)
+			_ = os.Remove(jobIDPath)
+			_ = s.jobs.FailJob(ctx, job.ID, err)
+			writeError(w, err)
+			return
+		}
+		if err := s.jobs.SetJobTotals(ctx, job.ID, totalSize, 1); err != nil {
+			_ = os.Remove(partialPath)
+			_ = os.Remove(jobIDPath)
+			_ = s.jobs.FailJob(ctx, job.ID, err)
+			writeError(w, err)
+			return
+		}
+		if _, err := s.jobs.CreateItem(ctx, jobs.Item{
 			JobID:           job.ID,
 			SourcePath:      filename,
 			DestinationPath: destination,
 			SizeBytes:       totalSize,
 			Status:          jobs.StatusRunning,
 			ProcessedBytes:  received,
-		})
-		_ = s.jobs.UpdateJobProgress(ctx, job.ID, received, 0, filename)
+		}); err != nil {
+			_ = os.Remove(partialPath)
+			_ = os.Remove(jobIDPath)
+			_ = s.jobs.FailJob(ctx, job.ID, err)
+			writeError(w, err)
+			return
+		}
+		if err := s.jobs.UpdateJobProgress(ctx, job.ID, received, 0, filename); err != nil {
+			_ = os.Remove(partialPath)
+			_ = os.Remove(jobIDPath)
+			_ = s.jobs.FailJob(ctx, job.ID, err)
+			writeError(w, err)
+			return
+		}
 	} else {
-		_ = s.jobs.UpdateJobProgress(ctx, jobID, received, 0, filename)
+		if err := s.jobs.UpdateJobProgress(ctx, jobID, received, 0, filename); err != nil {
+			writeError(w, err)
+			return
+		}
 	}
 
 	// ─── Last chunk: finalize ───

@@ -3,6 +3,7 @@ import { TrashIcon } from '../components/ui/Icon';
 import { IconImg } from '../components/ui/shared';
 import { preferencesIconUrl, jobsIconUrl, multidiskIconUrl, folderBookmarksIconUrl, filesIconUrl } from '../api/icons';
 import type { TrashEntry, Job } from '../api/client';
+import { countActiveTransfers } from '../utils/jobs';
 import type { ServiceShortcut } from '../utils/services';
 import styles from './DesktopView.module.css';
 
@@ -56,8 +57,7 @@ export function DesktopView({
   wallpaperStyle,
   onItemContextMenu,
 }: DesktopViewProps) {
-  const activeJobCount = jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length;
-  const activeTransferCount = activeJobCount + pendingTransferCount;
+  const activeTransferCount = countActiveTransfers(jobs, pendingTransferCount);
   const [iconOrder, setIconOrder] = useState<string[]>(loadOrder);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);

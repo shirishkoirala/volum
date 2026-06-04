@@ -11,6 +11,13 @@ export type UploadProgress = {
 export type UploadResult = {
   jobId: string | null;
   completed: number;
+  interrupted?: 'aborted' | 'cancelled' | 'paused';
+};
+
+type UploadFileResult = {
+  jobId: string | null;
+  complete: boolean;
+  interrupted?: UploadResult['interrupted'];
 };
 
 export async function uploadFileWithResume(
@@ -18,27 +25,38 @@ export async function uploadFileWithResume(
   file: File,
   signal?: AbortSignal,
   onProgress?: (p: UploadProgress) => void,
-): Promise<string | null> {
+  onJobStarted?: (jobId: string) => void,
+): Promise<UploadFileResult> {
   const status = await getUploadStatus(path, file.name);
   let jobId = status.jobId ?? null;
   let offset = status.received;
+  let reportedJobId = false;
 
-  if (offset >= file.size) return jobId;
+  const reportJobId = (id: string | null) => {
+    if (!id || reportedJobId) return;
+    reportedJobId = true;
+    onJobStarted?.(id);
+  };
+
+  reportJobId(jobId);
+
+  if (offset >= file.size) return { jobId, complete: true };
 
   while (offset < file.size) {
-    if (signal?.aborted) return jobId;
+    if (signal?.aborted) return { jobId, complete: false, interrupted: 'aborted' };
 
     const end = Math.min(offset + CHUNK_SIZE, file.size);
     const chunk = file.slice(offset, end);
 
     const result = await uploadChunk(path, file.name, offset, file.size, chunk, jobId ?? undefined, signal);
     jobId = result.jobId ?? jobId;
+    reportJobId(jobId);
     offset = result.received;
     onProgress?.({ filename: file.name, received: offset, total: file.size });
-    if (result.complete) return jobId;
+    if (result.complete) return { jobId, complete: true };
   }
 
-  return jobId;
+  return { jobId, complete: true };
 }
 
 export async function uploadFilesWithResume(
@@ -47,17 +65,25 @@ export async function uploadFilesWithResume(
   signal?: AbortSignal,
   onFileProgress?: (p: UploadProgress) => void,
   onFileComplete?: (filename: string) => void,
+  onFileJobStarted?: (filename: string, jobId: string) => void,
 ): Promise<UploadResult> {
   let completed = 0;
   let lastJobId: string | null = null;
   for (const file of files) {
-    if (signal?.aborted) break;
+    if (signal?.aborted) return { jobId: lastJobId, completed, interrupted: 'aborted' };
     try {
-      lastJobId = await uploadFileWithResume(path, file, signal, onFileProgress);
-      completed++;
-      onFileComplete?.(file.name);
+      const result = await uploadFileWithResume(path, file, signal, onFileProgress, (jobId) => {
+        onFileJobStarted?.(file.name, jobId);
+      });
+      lastJobId = result.jobId;
+      if (result.interrupted) return { jobId: lastJobId, completed, interrupted: result.interrupted };
+      if (result.complete) {
+        completed++;
+        onFileComplete?.(file.name);
+      }
     } catch (err) {
-      if (err instanceof UploadCancelledError || err instanceof UploadPausedError) break;
+      if (err instanceof UploadCancelledError) return { jobId: lastJobId, completed, interrupted: 'cancelled' };
+      if (err instanceof UploadPausedError) return { jobId: lastJobId, completed, interrupted: 'paused' };
       throw err;
     }
   }
