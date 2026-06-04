@@ -28,6 +28,8 @@ type SearchProps = {
   onSearch: (query: string) => void;
   onClearSearch: () => void;
   onSearchResultClick: (result: SearchResult) => void;
+  onUploadClick: () => void;
+  canUpload: boolean;
   searchRef?: React.RefObject<HTMLInputElement | null>;
 };
 
@@ -103,7 +105,7 @@ export function FilesView({
   } = navigation;
   const {
     query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
-    searchRef,
+    onUploadClick, canUpload, searchRef,
   } = search;
   const { selectedPaths, filteredEntries, fileClick } = selection;
   const {
@@ -217,7 +219,7 @@ export function FilesView({
           <FileSearchBar
             query={query} searchOpen={searchOpen} searchResults={searchResults}
             onSearch={onSearch} onClearSearch={onClearSearch} onSearchResultClick={onSearchResultClick}
-            searchRef={searchRef}
+            onUploadClick={onUploadClick} canUpload={canUpload} searchRef={searchRef}
           />
         </BreadcrumbBar>
 
@@ -238,7 +240,14 @@ export function FilesView({
             ))}
           </div>
         ) : filteredEntries.length === 0 ? (
-          <EmptyState icon={folderIconUrl('64')} title="This folder is empty" subtitle={currentPath} />
+          <div
+            className={`${styles.emptyDropZone}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
+            onDragOver={onFileAreaDragOver}
+            onDragLeave={onFileAreaDragLeave}
+            onDrop={onFileAreaDrop}
+          >
+            <EmptyState icon={folderIconUrl('64')} title="This folder is empty" subtitle={currentPath} />
+          </div>
         ) : (
           renderEntries()
         )}

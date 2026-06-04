@@ -43,7 +43,6 @@ Volum Desktop is a self-hosted web file manager for Ubuntu and Docker home serve
 
 2. Create `.env`:
    ```env
-   VOLUM_ADMIN_PASSWORD=your-strong-password
    VOLUM_SESSION_SECRET=$(openssl rand -base64 32)
    VOLUM_AUTH_REQUIRED=true
    VOLUM_ROOTS=/mnt/storage,/mnt/data,/opt/docker
@@ -163,13 +162,11 @@ VOLUM_HOST_ROOT=                     # Docker server mode: host mount target
 VOLUM_DB=/data/volum.db              # SQLite database path
 VOLUM_PORT=8090                      # HTTP listen port
 VOLUM_AUTH_REQUIRED=false            # Enable authentication
-VOLUM_ADMIN_PASSWORD=change-me       # Admin role password
-VOLUM_READONLY_PASSWORD=             # Optional readonly role password
 VOLUM_SESSION_SECRET=replace-with... # HMAC session signing key
 VOLUM_PUBLIC_URL=                    # Public URL for share links
 ```
 
-Authentication is disabled when both password variables are empty. Set `VOLUM_ADMIN_PASSWORD` to require login and allow write operations only for the admin role. Set `VOLUM_READONLY_PASSWORD` to allow a browse/download-only account. Use a long random `VOLUM_SESSION_SECRET` so sessions survive restarts.
+Authentication is controlled by `VOLUM_AUTH_REQUIRED`. When it is true, set a long random `VOLUM_SESSION_SECRET`; the first admin user is created from the setup screen.
 
 ## Docker Compose
 

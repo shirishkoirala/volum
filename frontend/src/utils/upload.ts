@@ -1,6 +1,6 @@
 import { getUploadStatus, uploadChunk, UploadCancelledError, UploadPausedError } from '../api/client';
 
-export const CHUNK_SIZE = 4 * 1024 * 1024;
+export const CHUNK_SIZE = 1024 * 1024;
 
 export type UploadProgress = {
   filename: string;

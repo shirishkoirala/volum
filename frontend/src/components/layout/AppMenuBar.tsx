@@ -28,6 +28,7 @@ export type AppMenuHandlers = {
   onGoSettings: () => void;
   onToggleLocation: () => void;
   canWrite: boolean;
+  canUpload: boolean;
   selectedCount: number;
 };
 
@@ -117,7 +118,7 @@ export function AppMenuBar({ handlers }: AppMenuBarProps) {
 
    const fileItems: MenuItem[] = [
      { label: 'New Folder', icon: 'folder-new', disabled: !handlers.canWrite, onClick: handlers.onCreateFolder },
-     { label: 'Upload', icon: 'document-import', disabled: !handlers.canWrite, onClick: handlers.onUpload },
+     { label: 'Upload', icon: 'document-import', disabled: !handlers.canUpload, onClick: handlers.onUpload },
      { label: '---', disabled: true, onClick: () => {} },
      { label: 'Close', icon: 'window-close', onClick: handlers.onGoDesktop },
    ];

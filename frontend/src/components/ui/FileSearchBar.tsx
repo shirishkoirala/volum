@@ -1,5 +1,6 @@
 import { RefObject } from 'react';
 import { Icon, FileIcon } from './Icon';
+import { IconButton } from './shared';
 
 import type { SearchResult } from '../../api/client';
 import styles from './FileSearchBar.module.css';
@@ -11,12 +12,14 @@ type FileSearchBarProps = {
   onSearch: (query: string) => void;
   onClearSearch: () => void;
   onSearchResultClick: (result: SearchResult) => void;
+  onUploadClick: () => void;
   searchRef?: RefObject<HTMLInputElement | null>;
+  canUpload: boolean;
 };
 
 export function FileSearchBar({
   query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
-  searchRef,
+  onUploadClick, searchRef, canUpload,
 }: FileSearchBarProps) {
   return (
     <div className={styles.toolbar}>
@@ -26,7 +29,7 @@ export function FileSearchBar({
           ref={searchRef as RefObject<HTMLInputElement>}
           placeholder="Search files (Ctrl+K)"
           value={query}
-          onFocus={() => {}}
+          onFocus={() => { }}
           onChange={(event) => onSearch(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
@@ -57,6 +60,14 @@ export function FileSearchBar({
           ))}
         </div>
       )}
+      <IconButton
+        disabled={!canUpload}
+        onClick={onUploadClick}
+        title={canUpload ? 'Upload' : 'Open a writable folder to upload'}
+        aria-label="Upload"
+      >
+        <Icon name="document-import" size={18} />
+      </IconButton>
     </div>
   );
 }

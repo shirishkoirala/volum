@@ -8,6 +8,7 @@ export function useDragDrop(
   selectedPaths: string[],
   setTransferDialog: React.Dispatch<React.SetStateAction<TransferDialogState>>,
   handleUploadFiles: (files: FileList | File[]) => void,
+  onUnsupportedDrop?: (message: string) => void,
 ) {
   const [draggingPaths, setDraggingPaths] = useState<string[] | null>(null);
   const [dragOverPath, setDragOverPath] = useState<string | null>(null);
@@ -18,6 +19,23 @@ export function useDragDrop(
   filteredRef.current = filteredEntries;
 
   const isDraggingSelection = useRef(false);
+
+  const hasDroppedDirectory = useCallback((items: DataTransferItemList) => {
+    return Array.from(items).some((item) => {
+      const maybeEntry = item as DataTransferItem & {
+        webkitGetAsEntry?: () => { isDirectory?: boolean } | null;
+      };
+      return maybeEntry.webkitGetAsEntry?.()?.isDirectory === true;
+    });
+  }, []);
+
+  const uploadDroppedFiles = useCallback((event: DragEvent<HTMLElement>) => {
+    if (hasDroppedDirectory(event.dataTransfer.items)) {
+      onUnsupportedDrop?.('Folder and app-bundle uploads are not supported yet');
+      return;
+    }
+    handleUploadFiles(event.dataTransfer.files);
+  }, [handleUploadFiles, hasDroppedDirectory, onUnsupportedDrop]);
 
   const handleFileDragStart = useCallback((event: DragEvent<HTMLElement>, entry: FileEntry) => {
     const paths = selectedRef.current.length > 0 ? selectedRef.current : [entry.path];
@@ -64,9 +82,9 @@ export function useDragDrop(
       return;
     }
     if (canWrite && event.dataTransfer.files.length > 0) {
-      handleUploadFiles(event.dataTransfer.files);
+      uploadDroppedFiles(event);
     }
-  }, [draggingPaths, canWrite, handleUploadFiles, setTransferDialog]);
+  }, [draggingPaths, canWrite, uploadDroppedFiles, setTransferDialog]);
 
   const handleFileAreaDragOver = useCallback((event: DragEvent<HTMLElement>) => {
     event.preventDefault();
@@ -85,8 +103,8 @@ export function useDragDrop(
     event.preventDefault();
     setDraggingUpload(false);
     if (!canWrite) return;
-    handleUploadFiles(event.dataTransfer.files);
-  }, [canWrite, handleUploadFiles]);
+    uploadDroppedFiles(event);
+  }, [canWrite, uploadDroppedFiles]);
 
   return {
     draggingPaths,

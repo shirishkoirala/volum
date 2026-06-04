@@ -6,6 +6,7 @@ set -euo pipefail
 
 PORT="${1:-8091}"
 ADMIN_PASS="${2:-smoke-test-password}"
+ADMIN_USER="admin"
 COMPOSE="docker-compose.smoke.yml"
 TEST_DIR="$(mktemp -d)"
 COOKIE_JAR="${TEST_DIR}/cookies.txt"
@@ -35,7 +36,6 @@ services:
       - VOLUM_DB=/data/volum.db
       - VOLUM_PORT=8090
       - VOLUM_AUTH_REQUIRED=true
-      - VOLUM_ADMIN_PASSWORD=${ADMIN_PASS}
       - VOLUM_SESSION_SECRET=smoke-test-secret-do-not-use-in-prod
 YAML
 
@@ -70,12 +70,12 @@ if [ "${HTTP_CODE}" != "401" ]; then
 fi
 echo "       Got 401 -- OK"
 
-echo "  4/5  Login"
-curl -s -c "${COOKIE_JAR}" "${BASE}/api/login" \
+echo "  4/5  Initial admin setup"
+curl -s -c "${COOKIE_JAR}" "${BASE}/api/setup" \
   -H "Content-Type: application/json" \
-  -d "{\"role\":\"admin\",\"password\":\"${ADMIN_PASS}\"}" > /dev/null
+  -d "{\"username\":\"${ADMIN_USER}\",\"password\":\"${ADMIN_PASS}\"}" > /dev/null
 if ! grep -q "volum_session" "${COOKIE_JAR}" 2>/dev/null; then
-  echo "FAIL: no volum_session cookie after login"
+  echo "FAIL: no volum_session cookie after setup"
   cat "${COOKIE_JAR}"
   exit 1
 fi

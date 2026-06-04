@@ -22,6 +22,7 @@ import { DesktopView } from '../pages/DesktopView';
 import { DrivesView } from '../pages/DrivesView';
 import { TrashView } from '../pages/TrashView';
 import { JobsPage } from '../pages/JobsPage';
+import { ProgressBar } from '../components/ui/ProgressBar';
 import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
 import { ToastViewport } from '../components/overlay/Toast';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
@@ -48,6 +49,8 @@ import { useToasts } from '../hooks/useToasts';
 import { useFileBrowser } from '../hooks/useFileBrowser';
 import { useSelection } from '../hooks/useSelection';
 import { useFileCommands } from '../hooks/useFileCommands';
+import type { UploadProgress } from '../utils/upload';
+import { formatBytes } from '../utils/format';
 import styles from './Home.module.css';
 
 
@@ -94,6 +97,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const [trashEmptyMenu, setTrashEmptyMenu] = useState<{ x: number; y: number } | null>(null);
   const [jobsEmptyMenu, setJobsEmptyMenu] = useState<{ x: number; y: number } | null>(null);
   const [serviceFormData, setServiceFormData] = useState<{ initial?: ServiceShortcut } | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
 
   const fileGridRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -177,6 +181,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setTransferDialog: dialogs.setTransferDialog,
     setTrashContextMenu,
     setFilesEmptyMenu,
+    setUploadProgress,
     showToastObj: toast.showToastObj,
     contextMenu: fileActions.contextMenu,
     navigateTo,
@@ -382,13 +387,24 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Drag & Drop / Rubber band ────────────────────────────
 
-  const dragDrop = useDragDrop(browser.canWrite, browser.filteredEntries, selection.selectedPaths, dialogs.setTransferDialog, fileCommands.handleUploadFiles);
+  const dragDrop = useDragDrop(
+    browser.canWrite,
+    browser.filteredEntries,
+    selection.selectedPaths,
+    dialogs.setTransferDialog,
+    fileCommands.handleUploadFiles,
+    (message) => {
+      browser.setError(message);
+      toast.showToastObj({ title: 'Upload failed', message, variant: 'error' });
+    },
+  );
   const { rubberBandStyle, handleFileAreaMouseDown } = useRubberBand(browser.filteredEntries, selection.setSelectedPaths, selection.setLastSelectedPath, fileGridRef);
 
   // ── Derived data ─────────────────────────────────────────
 
   const showStatusBar = nav.activeView !== 'settings' && nav.activeView !== 'jobs' && nav.activeView !== 'desktop' && nav.activeView !== 'drives';
   const selectedEntryIsFavorited = fileActions.contextMenu?.entry ? favorites.includes(fileActions.contextMenu.entry.path) : selection.isFavorited;
+  const canUpload = nav.activeView === 'files' && browser.canWrite && Boolean(viewPref.currentPath);
 
   const sortedTrashEntries = useMemo(() => {
     return [...browser.trashEntries].sort((a, b) => {
@@ -401,6 +417,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   }, [browser.trashEntries, viewPref.sortField, viewPref.sortDirection]);
 
   const renameInputRef = fileCommands.renameInputRef;
+
+  const openUploadPicker = useCallback(() => {
+    const input = uploadFileInputRef.current;
+    if (!input) return;
+    input.value = '';
+    input.click();
+  }, []);
 
   // ── File area keydown wrapper ──
   const handleFileAreaKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
@@ -446,7 +469,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           onLogout={onLogout}
           menuHandlers={{
             onCreateFolder: fileCommands.handleCreateFolder,
-            onUpload: () => uploadFileInputRef.current?.click(),
+            onUpload: openUploadPicker,
             onCut: () => fileCommands.setClipboardFromSelection('move'),
             onCopy: () => fileCommands.setClipboardFromSelection('copy'),
             onPaste: fileCommands.handlePaste,
@@ -481,6 +504,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             },
             onToggleLocation: () => fileActions.setLocationMode((v) => !v),
             canWrite: browser.canWrite,
+            canUpload,
             selectedCount: nav.showingTrash ? selection.selectedTrashIds.length : selection.selectedPaths.length,
           }}
         />
@@ -540,6 +564,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
                   if (result.type === 'directory') navigateTo(result.path);
                   else { const idx = result.path.lastIndexOf('/'); navigateTo(idx < 0 ? '/' : result.path.substring(0, idx) || '/'); }
                 },
+                onUploadClick: openUploadPicker,
+                canUpload,
                 searchRef: searchRef as React.RefObject<HTMLInputElement>,
               }}
               selection={{
@@ -683,11 +709,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             <FilesEmptyMenu
               x={filesEmptyMenu.x} y={filesEmptyMenu.y}
               canWrite={browser.canWrite}
+              canUpload={canUpload}
               canPaste={selection.canPaste}
               onCreateFolder={fileCommands.handleCreateFolder}
               onCreateFile={fileCommands.handleCreateFile}
-               onUpload={() => uploadFileInputRef.current?.click()}
-               onRefresh={refresh}
+              onUpload={openUploadPicker}
+              onRefresh={refresh}
               onPaste={() => { setFilesEmptyMenu(null); fileCommands.handlePaste(); }}
               onClose={() => setFilesEmptyMenu(null)}
             />
@@ -723,6 +750,22 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           trashCount={browser.trashEntries.length}
         />
       </main>
+      {uploadProgress && (
+        <div className={styles.uploadProgress} role="status" aria-live="polite">
+          <div className={styles.uploadProgressHeader}>
+            <strong>Uploading</strong>
+            <span>{Math.round(uploadProgress.total > 0 ? (uploadProgress.received / uploadProgress.total) * 100 : 0)}%</span>
+          </div>
+          <span className={styles.uploadProgressName}>{uploadProgress.filename}</span>
+          <ProgressBar
+            value={uploadProgress.total > 0 ? (uploadProgress.received / uploadProgress.total) * 100 : 0}
+            ariaLabel="Upload progress"
+          />
+          <span className={styles.uploadProgressMeta}>
+            {formatBytes(uploadProgress.received)} of {formatBytes(uploadProgress.total)}
+          </span>
+        </div>
+      )}
       <ToastViewport toasts={toast.toasts} onDismiss={toast.dismissToast} />
     </>
   );

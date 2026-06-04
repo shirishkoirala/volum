@@ -29,6 +29,7 @@ const baseHandlers: AppMenuHandlers = {
   onGoSettings: noop,
   onToggleLocation: noop,
   canWrite: true,
+  canUpload: true,
   selectedCount: 0,
 };
 

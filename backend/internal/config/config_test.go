@@ -46,17 +46,11 @@ func TestLoadRootsMergesDiscoveredAndExplicit(t *testing.T) {
 	}
 }
 
-func TestLoadRequiresAdminPasswordAndSessionSecretWhenAuthRequired(t *testing.T) {
+func TestLoadRequiresSessionSecretWhenAuthRequired(t *testing.T) {
 	t.Setenv("VOLUM_ROOTS", "/tmp")
 	t.Setenv("VOLUM_AUTH_REQUIRED", "true")
-	t.Setenv("VOLUM_ADMIN_PASSWORD", "")
 	t.Setenv("VOLUM_SESSION_SECRET", "")
 
-	if _, err := Load(); err == nil {
-		t.Fatal("expected auth-required config to reject missing admin password")
-	}
-
-	t.Setenv("VOLUM_ADMIN_PASSWORD", "secret")
 	if _, err := Load(); err == nil {
 		t.Fatal("expected auth-required config to reject missing session secret")
 	}

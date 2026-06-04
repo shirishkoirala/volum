@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -108,6 +109,31 @@ func (ts *testServer) request(method, path string, body any) *http.Response {
 	}
 	req := httptest.NewRequest(method, path, &buf)
 	req.Header.Set("Content-Type", "application/json")
+	if ts.cookie != "" {
+		req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
+	}
+	w := httptest.NewRecorder()
+	ts.Server.Handler().ServeHTTP(w, req)
+	return w.Result()
+}
+
+func (ts *testServer) upload(path string, files map[string]string) *http.Response {
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+	manifest := make([]map[string]any, 0, len(files))
+	for name, content := range files {
+		manifest = append(manifest, map[string]any{"name": name, "size": len(content)})
+	}
+	manifestBytes, _ := json.Marshal(manifest)
+	_ = writer.WriteField("manifest", string(manifestBytes))
+	for name, content := range files {
+		part, _ := writer.CreateFormFile("files", name)
+		_, _ = part.Write([]byte(content))
+	}
+	_ = writer.Close()
+
+	req := httptest.NewRequest(http.MethodPost, "/api/files/upload?path="+path, &buf)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
 	if ts.cookie != "" {
 		req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
 	}
@@ -218,6 +244,23 @@ func TestCreateFolder(t *testing.T) {
 	}
 	if !info.IsDir() {
 		t.Fatal("expected directory")
+	}
+}
+
+func TestUploadFile(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	resp := ts.upload(ts.root, map[string]string{"upload.txt": "uploaded content"})
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("expected 201, got %d; body: %s", resp.StatusCode, readBody(resp))
+	}
+	content, err := os.ReadFile(filepath.Join(ts.root, "upload.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(content) != "uploaded content" {
+		t.Fatalf("unexpected uploaded content: %q", content)
 	}
 }
 
