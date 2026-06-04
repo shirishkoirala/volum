@@ -9,6 +9,7 @@ import styles from './DesktopView.module.css';
 type DesktopViewProps = {
   trashEntries: TrashEntry[];
   jobs: Job[];
+  pendingTransferCount?: number;
   favorites: string[];
   services: ServiceShortcut[];
   onNavigateTo: (path: string) => void;
@@ -50,12 +51,13 @@ function saveOrder(ids: string[]) {
 }
 
 export function DesktopView({
-  trashEntries, jobs, favorites, services,
+  trashEntries, jobs, pendingTransferCount = 0, favorites, services,
   onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onShowMyPC,
   wallpaperStyle,
   onItemContextMenu,
 }: DesktopViewProps) {
   const activeJobCount = jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length;
+  const activeTransferCount = activeJobCount + pendingTransferCount;
   const [iconOrder, setIconOrder] = useState<string[]>(loadOrder);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
@@ -115,14 +117,14 @@ export function DesktopView({
       type: 'jobs',
       label: 'Transfers',
 
-      ariaLabel: `Open Transfers${activeJobCount > 0 ? `, ${activeJobCount} active` : ', no active transfers'}`,
+      ariaLabel: `Open Transfers${activeTransferCount > 0 ? `, ${activeTransferCount} active` : ', no active transfers'}`,
       onClick: onOpenJobs,
-      badge: activeJobCount > 0 ? activeJobCount : undefined,
+      badge: activeTransferCount > 0 ? activeTransferCount : undefined,
       icon: (
         <div className={styles.desktopIconWrapper}>
           <IconImg src={jobsIconUrl()} alt="" width={64} height={64} />
-          {activeJobCount > 0 && (
-            <span className={styles.desktopTrashBadge}>{activeJobCount}</span>
+          {activeTransferCount > 0 && (
+            <span className={styles.desktopTrashBadge}>{activeTransferCount}</span>
           )}
         </div>
       ),
@@ -196,7 +198,7 @@ export function DesktopView({
       if (!used.has(item.id)) ordered.push(item);
     }
     return ordered;
-  }, [trashEntries, favorites, services, activeJobCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onNavigateTo]);
+  }, [trashEntries, favorites, services, activeTransferCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onNavigateTo]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';

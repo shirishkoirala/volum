@@ -42,6 +42,7 @@ interface FileCommandDeps {
   setTrashContextMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number; entry: TrashEntry } | null>>;
   setFilesEmptyMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
   setUploadProgress: React.Dispatch<React.SetStateAction<UploadProgress | null>>;
+  setPendingUploadCount: React.Dispatch<React.SetStateAction<number>>;
   showToastObj: (toast: Omit<Toast, 'id'>, timeout?: number) => void;
   contextMenu: ContextMenuState;
   navigateTo: (path: string) => void;
@@ -80,7 +81,7 @@ export function useFileCommands(deps: FileCommandDeps) {
     setPreviewEntry, setInfoEntry, setBatchRenameOpen, setAnalyzePath,
     fileClipboard, setFileClipboard,
     setConfirmDialog, setTextInputDialog, setTransferDialog,
-    setTrashContextMenu, setFilesEmptyMenu, setUploadProgress,
+    setTrashContextMenu, setFilesEmptyMenu, setUploadProgress, setPendingUploadCount,
     showToastObj, contextMenu,
     navigateTo,
     selectedTrashIds, setSelectedTrashIds, setLastSelectedTrashId,
@@ -231,6 +232,7 @@ export function useFileCommands(deps: FileCommandDeps) {
       showToastObj({ title: 'Upload failed', message: 'Navigate to a folder first', variant: 'error' });
       return;
     }
+    setPendingUploadCount((count) => count + selectedFiles.length);
     setUploadProgress({ filename: selectedFiles[0]?.name ?? 'Upload', received: 0, total: selectedFiles[0]?.size ?? 0 });
     showToastObj({
       title: 'Upload started',
@@ -238,12 +240,20 @@ export function useFileCommands(deps: FileCommandDeps) {
       variant: 'success',
     }, 6000);
     void runAction(async () => {
+      let completedUploads = 0;
       try {
-        await uploadFilesWithResume(currentPath, selectedFiles, undefined, setUploadProgress);
+        await uploadFilesWithResume(currentPath, selectedFiles, undefined, setUploadProgress, () => {
+          completedUploads += 1;
+          setPendingUploadCount((count) => Math.max(0, count - 1));
+        });
       } catch (err) {
         if (err instanceof UploadCancelledError || err instanceof UploadPausedError) return;
         throw err;
       } finally {
+        const remainingUploads = selectedFiles.length - completedUploads;
+        if (remainingUploads > 0) {
+          setPendingUploadCount((count) => Math.max(0, count - remainingUploads));
+        }
         setUploadProgress(null);
       }
       const response = await getJobs();

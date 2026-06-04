@@ -82,8 +82,9 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     handleCancelJob, handleRetryJob,
     handlePauseJob, handleResumeJob, handleClearCompleted, handleClearFailed,
   } = jobHandlers;
+  const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
-  const nav = useNavigation(browser.devices, browser.jobs, browser.trashEntries.length, viewPref.currentPath);
+  const nav = useNavigation(browser.devices, browser.jobs, browser.trashEntries.length, viewPref.currentPath, pendingUploadCount);
   const { favorites, addFavorite, removeFavorite } = useFavorites(viewPref.currentPath);
   const wallpaper = useWallpaper();
   const { services, addService, updateService, removeService } = useServiceShortcuts();
@@ -182,6 +183,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setTrashContextMenu,
     setFilesEmptyMenu,
     setUploadProgress,
+    setPendingUploadCount,
     showToastObj: toast.showToastObj,
     contextMenu: fileActions.contextMenu,
     navigateTo,
@@ -514,6 +516,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           {nav.activeView === 'desktop' && (
             <DesktopView
               trashEntries={browser.trashEntries} jobs={browser.jobs}
+              pendingTransferCount={pendingUploadCount}
               favorites={favorites} services={services}
               onNavigateTo={navigateTo}
               onNavigateToTrash={handleDesktopNavigateToTrash}

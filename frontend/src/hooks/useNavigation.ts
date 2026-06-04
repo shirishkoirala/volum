@@ -8,6 +8,7 @@ export function useNavigation(
   jobs: Job[],
   trashCount: number,
   currentPath: string,
+  pendingTransferCount = 0,
 ) {
   const [showingTrash, setShowingTrash] = useState(false);
   const [showingSettings, setShowingSettings] = useState(false);
@@ -41,14 +42,15 @@ export function useNavigation(
     () => jobs.filter((j) => j.status === 'running' || j.status === 'queued' || j.status === 'paused').length,
     [jobs]
   );
+  const transferBadgeCount = activeJobCount + pendingTransferCount;
 
   const dockItems = useMemo(() => [
     { id: 'desktop', label: 'Desktop', icon: desktopDockIconUrl(), active: activeView === 'desktop' },
     { id: 'files', label: 'Files', icon: filesIconUrl(), active: activeView === 'files' },
     { id: 'trash', label: 'Trash', icon: trashIconUrl(trashCount > 0), badge: trashCount > 0 ? trashCount : undefined, active: activeView === 'trash' },
-    { id: 'jobs', label: 'Transfers', icon: jobsIconUrl(), badge: activeJobCount > 0 ? activeJobCount : undefined, active: activeView === 'jobs' },
+    { id: 'jobs', label: 'Transfers', icon: jobsIconUrl(), badge: transferBadgeCount > 0 ? transferBadgeCount : undefined, active: activeView === 'jobs' },
     { id: 'settings', label: 'Settings', icon: preferencesIconUrl(), active: activeView === 'settings' },
-  ], [activeView, trashCount, activeJobCount]);
+  ], [activeView, trashCount, transferBadgeCount]);
 
   return {
     showingTrash, setShowingTrash,
