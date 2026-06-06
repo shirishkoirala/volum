@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import type { FileEntry, SearchResult } from '../api/client';
+import type { FileEntry } from '../api/client';
 import type { ContextMenuState, RenameState } from '../types';
 
 type ClipboardState = { mode: 'copy' | 'move'; entries: FileEntry[] } | null;
 
 export function useFileActions() {
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
   const [renaming, setRenaming] = useState<RenameState>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [previewEntry, setPreviewEntry] = useState<FileEntry | null>(null);
@@ -18,8 +16,6 @@ export function useFileActions() {
   const [locationMode, setLocationMode] = useState(false);
 
   return {
-    searchOpen, setSearchOpen,
-    searchResults, setSearchResults,
     renaming, setRenaming,
     contextMenu, setContextMenu,
     previewEntry, setPreviewEntry,

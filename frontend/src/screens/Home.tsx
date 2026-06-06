@@ -1,7 +1,7 @@
 import { KeyboardEvent, MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FileEntry, TrashEntry,
-  deleteTrash, getJobs, getTrash,
+  FileEntry,
+  getJobs,
 } from '../api/client';
 import type { SortField, SortDirection } from '../types';
 import type { Session } from '../api/client';
@@ -34,7 +34,7 @@ import { TrashEmptyMenu } from '../components/overlay/TrashEmptyMenu';
 import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
 import type { DesktopIconItem } from '../pages/DesktopView';
 import { useServiceShortcuts } from '../hooks/useServiceShortcuts';
-import { type ServiceShortcut } from '../utils/services';
+
 
 import { useJobs } from '../hooks/useJobs';
 import { useDragDrop } from '../hooks/useDragDrop';
@@ -49,6 +49,9 @@ import { useToasts } from '../hooks/useToasts';
 import { useFileBrowser } from '../hooks/useFileBrowser';
 import { useSelection } from '../hooks/useSelection';
 import { useFileCommands } from '../hooks/useFileCommands';
+import { useContextMenus } from '../hooks/useContextMenus';
+import { useNavStack } from '../hooks/useNavStack';
+import { useDesktopActions } from '../hooks/useDesktopActions';
 import type { UploadProgress } from '../utils/upload';
 import { formatBytes } from '../utils/format';
 import styles from './Home.module.css';
@@ -91,64 +94,18 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
 
-  // ── Local state ──
-  const [trashContextMenu, setTrashContextMenu] = useState<{ x: number; y: number; entry: TrashEntry } | null>(null);
-  const [desktopContextMenu, setDesktopContextMenu] = useState<{ x: number; y: number; item: DesktopIconItem } | null>(null);
-  const [filesEmptyMenu, setFilesEmptyMenu] = useState<{ x: number; y: number } | null>(null);
-  const [trashEmptyMenu, setTrashEmptyMenu] = useState<{ x: number; y: number } | null>(null);
-  const [jobsEmptyMenu, setJobsEmptyMenu] = useState<{ x: number; y: number } | null>(null);
-  const [serviceFormData, setServiceFormData] = useState<{ initial?: ServiceShortcut } | null>(null);
+  // ── Local state and refs ──
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
-
   const fileGridRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const uploadFileInputRef = useRef<HTMLInputElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
   const longPressEntry = useRef<{ entry: FileEntry; x: number; y: number } | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const emptyMenuBlockedRef = useRef(false);
 
-  // ── Refresh callback ──
-  const refresh = useCallback(() => {
-    browser.refresh();
-    void getTrash().then((r) => browser.setTrashEntries(r.entries ?? []));
-  }, [browser]);
-
-  const backStackRef = useRef<string[]>([]);
-
-  // ── Navigation ──
-  const navigateTo = useCallback((path: string) => {
-    if (viewPref.currentPath !== path) {
-      backStackRef.current.push(viewPref.currentPath);
-    }
-    viewPref.navigateToPath(path);
-    nav.setShowingJobs(false);
-    browser.setSearchOpen(false);
-    browser.setSearchResults(null);
-    browser.setQuery('');
-    nav.setSelectedDriveName(null);
-    nav.setShowingMyPC(false);
-  }, [viewPref, nav, browser]);
-
-  const resetToDesktopView = useCallback(() => {
-    viewPref.setCurrentPath('');
-    nav.setShowingTrash(false);
-    nav.setShowingSettings(false);
-    nav.setShowingJobs(false);
-    nav.setShowingMyPC(false);
-    nav.setSelectedDriveName(null);
-  }, [viewPref, nav]);
-
-  const goBack = useCallback(() => {
-    const prev = backStackRef.current.pop();
-    if (!prev) {
-      resetToDesktopView();
-    } else {
-      viewPref.navigateToPath(prev);
-    }
-  }, [viewPref, resetToDesktopView]);
-
-  // ── Hooks that depend on other hooks ──
+  // ── Extracted behavior hooks ──
+  const menus = useContextMenus();
+  const navActions = useNavStack({ viewPref, nav, browser });
   const selection = useSelection({
     filteredEntries: browser.filteredEntries,
     trashEntries: browser.trashEntries,
@@ -157,11 +114,24 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     currentPath: viewPref.currentPath,
   });
 
+  const desktopActions = useDesktopActions({
+    browser, dialogs, toast, nav,
+    viewPref: { currentPath: viewPref.currentPath, setCurrentPath: viewPref.setCurrentPath },
+    selection,
+    removeFavorite, addService, updateService, removeService,
+    serviceFormData: menus.serviceFormData,
+    setDesktopContextMenu: menus.setDesktopContextMenu,
+    setServiceFormData: menus.setServiceFormData,
+    refresh: navActions.refresh,
+    navigateTo: navActions.navigateTo,
+    resetToDesktopView: navActions.resetToDesktopView,
+  });
+
   const fileCommands = useFileCommands({
     currentPath: viewPref.currentPath,
     canWrite: browser.canWrite,
     folderSuggestions: browser.folderSuggestions,
-    refresh: browser.refresh,
+    refresh: navActions.refresh,
     setError: browser.setError,
     setTrashEntries: browser.setTrashEntries,
     setJobs: browser.setJobs,
@@ -180,17 +150,17 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     setConfirmDialog: dialogs.setConfirmDialog,
     setTextInputDialog: dialogs.setTextInputDialog,
     setTransferDialog: dialogs.setTransferDialog,
-    setTrashContextMenu,
-    setFilesEmptyMenu,
+    setTrashContextMenu: menus.setTrashContextMenu,
+    setFilesEmptyMenu: menus.setFilesEmptyMenu,
     setUploadProgress,
     setPendingUploadCount,
     showToastObj: toast.showToastObj,
     contextMenu: fileActions.contextMenu,
-    navigateTo,
+    navigateTo: navActions.navigateTo,
     selectedTrashIds: selection.selectedTrashIds,
     setSelectedTrashIds: selection.setSelectedTrashIds,
     setLastSelectedTrashId: selection.setLastSelectedTrashId,
-    emptyMenuBlockedRef,
+    emptyMenuBlockedRef: menus.emptyMenuBlockedRef,
   });
 
   // ── Effects ──────────────────────────────────────────────
@@ -212,62 +182,56 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   useEffect(() => {
     const closeMenus = () => {
       fileActions.setContextMenu(null);
-      setTrashContextMenu(null);
-      setDesktopContextMenu(null);
-      setFilesEmptyMenu(null);
-      setTrashEmptyMenu(null);
-      setJobsEmptyMenu(null);
+      menus.setTrashContextMenu(null);
+      menus.setDesktopContextMenu(null);
+      menus.setFilesEmptyMenu(null);
+      menus.setTrashEmptyMenu(null);
+      menus.setJobsEmptyMenu(null);
     };
     window.addEventListener('click', closeMenus);
     window.addEventListener('resize', closeMenus);
     return () => { window.removeEventListener('click', closeMenus); window.removeEventListener('resize', closeMenus); };
-  }, [fileActions]);
+  }, [fileActions, menus]);
 
   useEffect(() => { if (typeof Notification !== 'undefined' && Notification.permission === 'default') void Notification.requestPermission(); }, []);
 
   // ── Handlers ─────────────────────────────────────────────
 
-  const handleRefreshDesktop = useCallback(() => {
-    browser.loadDevices();
-    refresh();
-    toast.showToastObj({ title: 'Refreshed', variant: 'success' });
-  }, [browser, refresh, toast]);
-
   const handleContextMenuEvent = useCallback((entry: FileEntry, event: MouseEvent<HTMLElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    emptyMenuBlockedRef.current = true;
-    queueMicrotask(() => { emptyMenuBlockedRef.current = false; });
+    menus.emptyMenuBlockedRef.current = true;
+    queueMicrotask(() => { menus.emptyMenuBlockedRef.current = false; });
     if (fileActions.renaming) return;
     if (!selection.selectedPaths.includes(entry.path)) {
       selection.setSelectedPaths([entry.path]);
       selection.setLastSelectedPath(entry.path);
     }
     fileActions.setContextMenu({ x: event.clientX, y: event.clientY, entry });
-  }, [fileActions, selection]);
+  }, [fileActions, selection, menus]);
 
   const handleFilesEmptyContextMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    if (emptyMenuBlockedRef.current) { emptyMenuBlockedRef.current = false; return; }
+    if (menus.emptyMenuBlockedRef.current) { menus.emptyMenuBlockedRef.current = false; return; }
     event.preventDefault();
     event.stopPropagation();
     fileActions.setContextMenu(null);
-    setFilesEmptyMenu({ x: event.clientX, y: event.clientY });
-  }, [fileActions]);
+    menus.setFilesEmptyMenu({ x: event.clientX, y: event.clientY });
+  }, [fileActions, menus]);
 
   const handleTrashEmptyContextMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    if (emptyMenuBlockedRef.current) { emptyMenuBlockedRef.current = false; return; }
+    if (menus.emptyMenuBlockedRef.current) { menus.emptyMenuBlockedRef.current = false; return; }
     event.preventDefault();
     event.stopPropagation();
-    setTrashContextMenu(null);
-    setTrashEmptyMenu({ x: event.clientX, y: event.clientY });
-  }, []);
+    menus.setTrashContextMenu(null);
+    menus.setTrashEmptyMenu({ x: event.clientX, y: event.clientY });
+  }, [menus]);
 
   const handleJobsEmptyContextMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    if (emptyMenuBlockedRef.current) { emptyMenuBlockedRef.current = false; return; }
+    if (menus.emptyMenuBlockedRef.current) { menus.emptyMenuBlockedRef.current = false; return; }
     event.preventDefault();
     event.stopPropagation();
-    setJobsEmptyMenu({ x: event.clientX, y: event.clientY });
-  }, []);
+    menus.setJobsEmptyMenu({ x: event.clientX, y: event.clientY });
+  }, [menus]);
 
   // ── Touch handlers ──
   const handleEntryTouchStart = useCallback((entry: FileEntry, event: React.TouchEvent<HTMLElement>) => {
@@ -291,101 +255,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   // ── Desktop handlers ─────────────────────────────────────
   const handleDesktopItemContextMenu = useCallback((item: DesktopIconItem, event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    setDesktopContextMenu({ x: event.clientX, y: event.clientY, item });
-  }, []);
-
-  const handleEmptyTrash = useCallback(() => {
-    setDesktopContextMenu(null);
-    dialogs.setConfirmDialog({
-      title: 'Empty Trash',
-      message: `Permanently delete all ${browser.trashEntries.length} item${browser.trashEntries.length === 1 ? '' : 's'} in trash? This cannot be undone.`,
-      confirmLabel: 'Empty Trash',
-      danger: true,
-      onConfirm: () => {
-        void (async () => {
-          try {
-            for (const entry of browser.trashEntries) await deleteTrash(entry.id);
-            const r = await getTrash();
-            browser.setTrashEntries(r.entries ?? []);
-            browser.setError(null);
-            toast.showToastObj({ title: 'Trash emptied', variant: 'success' });
-            refresh();
-          } catch (err) {
-            const message = err instanceof Error ? err.message : 'Action failed';
-            browser.setError(message);
-            toast.showToastObj({ title: 'Action failed', message, variant: 'error' });
-          }
-        })();
-      }
-    });
-  }, [browser, dialogs, toast, refresh]);
-
-  const handleRemoveDesktopFavorite = useCallback((path: string) => {
-    removeFavorite(path);
-    toast.showToastObj({ title: 'Removed from desktop', variant: 'success' });
-  }, [removeFavorite, toast]);
-
-  // ── Service shortcuts ──
-  const handleOpenServiceForm = useCallback((svc?: ServiceShortcut) => {
-    setDesktopContextMenu(null);
-    setServiceFormData(svc ? { initial: svc } : {});
-  }, []);
-
-  const handleSaveService = useCallback(async (data: { name: string; url: string; iconUrl?: string }) => {
-    if (serviceFormData?.initial) {
-      await updateService(serviceFormData.initial.id, data);
-      toast.showToastObj({ title: 'Service updated', variant: 'success' });
-    } else {
-      await addService({ id: '', ...data });
-      toast.showToastObj({ title: 'Service added', variant: 'success' });
-    }
-  }, [serviceFormData, addService, updateService, toast]);
-
-  const handleRemoveService = useCallback((id: string) => {
-    removeService(id);
-    toast.showToastObj({ title: 'Service removed from desktop', variant: 'success' });
-  }, [removeService, toast]);
-
-  const handleBackToDesktop = useCallback(() => {
-    nav.setShowingMyPC(false);
-    nav.setSelectedDriveName(null);
-  }, [nav]);
-
-  const handleDesktopNavigateToTrash = useCallback(() => {
-    viewPref.setCurrentPath('');
-    nav.setShowingTrash(true);
-    nav.setShowingSettings(false);
-    nav.setShowingJobs(false);
-    nav.setShowingMyPC(false);
-    selection.setSelectedPaths([]);
-    nav.setSelectedDriveName(null);
-  }, [viewPref, nav, selection]);
-
-  const handleDockActivate = useCallback((id: string) => {
-    switch (id) {
-      case 'desktop': resetToDesktopView(); break;
-      case 'files':
-        nav.setShowingTrash(false); nav.setShowingSettings(false); nav.setShowingJobs(false);
-        nav.setShowingMyPC(false); nav.setSelectedDriveName(null);
-        if (!viewPref.currentPath) {
-          const target = browser.roots.find((r) => r.available)?.path;
-          if (target) navigateTo(target);
-        }
-        break;
-      case 'trash':
-        viewPref.setCurrentPath('');
-        nav.setShowingTrash(true); nav.setShowingSettings(false); nav.setShowingJobs(false);
-        break;
-      case 'jobs':
-        nav.setShowingJobs(true); nav.setShowingSettings(false);
-        nav.setShowingTrash(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null);
-        break;
-      case 'settings':
-        nav.setShowingSettings(true); nav.setShowingTrash(false);
-        nav.setShowingJobs(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null);
-        break;
-    }
-  }, [viewPref, nav, browser.roots, navigateTo, resetToDesktopView]);
+    menus.setDesktopContextMenu({ x: event.clientX, y: event.clientY, item });
+  }, [menus]);
 
   // ── Drag & Drop / Rubber band ────────────────────────────
 
@@ -466,7 +337,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         <TopBar
           activeView={nav.activeView}
           title={nav.topBarTitle}
-          onGoDesktop={resetToDesktopView}
+          onGoDesktop={navActions.resetToDesktopView}
           onOpenSettings={() => { nav.setShowingSettings(true); nav.setShowingTrash(false); nav.setShowingJobs(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null); }}
           session={session}
           onLogout={onLogout}
@@ -491,8 +362,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               viewPref.setSortField(f);
               viewPref.setSortDirection(d);
             },
-            onGoDesktop: resetToDesktopView,
-            onGoFiles: () => { nav.setShowingMyPC(false); handleDockActivate('files'); },
+            onGoDesktop: navActions.resetToDesktopView,
+            onGoFiles: () => { nav.setShowingMyPC(false); desktopActions.handleDockActivate('files'); },
             onGoTrash: () => {
               viewPref.setCurrentPath('');
               nav.setShowingTrash(true); nav.setShowingSettings(false); nav.setShowingJobs(false);
@@ -511,7 +382,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             selectedCount: nav.showingTrash ? selection.selectedTrashIds.length : selection.selectedPaths.length,
           }}
         />
-        <Dock items={nav.dockItems} onActivate={handleDockActivate} />
+        <Dock items={nav.dockItems} onActivate={desktopActions.handleDockActivate} />
 
         <section className={styles.workspace} onClick={selection.handleWorkspaceClick}>
           {nav.activeView === 'desktop' && (
@@ -519,11 +390,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               trashEntries={browser.trashEntries} jobs={browser.jobs}
               pendingTransferCount={pendingUploadCount}
               favorites={favorites} services={services}
-              onNavigateTo={navigateTo}
-              onNavigateToTrash={handleDesktopNavigateToTrash}
+              onNavigateTo={navActions.navigateTo}
+              onNavigateToTrash={desktopActions.handleDesktopNavigateToTrash}
               onOpenSettings={() => { nav.setShowingSettings(true); nav.setShowingTrash(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null); }}
               onOpenJobs={() => { nav.setShowingJobs(true); nav.setShowingSettings(false); nav.setShowingTrash(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null); }}
-              onOpenFiles={() => handleDockActivate('files')}
+              onOpenFiles={() => desktopActions.handleDockActivate('files')}
               onShowMyPC={() => nav.setShowingMyPC(true)}
               wallpaperStyle={wallpaper.wallpaperStyle}
               onItemContextMenu={handleDesktopItemContextMenu}
@@ -534,8 +405,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               devices={browser.devices}
               selectedDriveName={nav.selectedDriveName}
               onSelectDrive={nav.setSelectedDriveName}
-              onBackToDesktop={handleBackToDesktop}
-              onNavigateTo={navigateTo}
+              onBackToDesktop={desktopActions.handleBackToDesktop}
+              onNavigateTo={navActions.navigateTo}
               deviceError={browser.deviceError}
               onRetryDevices={browser.loadDevices}
               wallpaperStyle={wallpaper.wallpaperStyle}
@@ -554,10 +425,10 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             <FilesView
               navigation={{
                 currentPath: viewPref.currentPath, breadcrumbs: browser.breadcrumbs,
-                onNavigate: navigateTo,
-                onBack: goBack,
+                onNavigate: navActions.navigateTo,
+                onBack: navActions.goBack,
                 locationMode: fileActions.locationMode,
-                onLocationNavigate: (path: string) => navigateTo(path.startsWith('/') ? path : `/${path}`),
+                onLocationNavigate: (path: string) => navActions.navigateTo(path.startsWith('/') ? path : `/${path}`),
                 onToggleLocationMode: () => fileActions.setLocationMode((v) => !v),
               }}
               search={{
@@ -565,8 +436,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
                 onSearch: (q) => { browser.setQuery(q); if (searchTimerRef.current) clearTimeout(searchTimerRef.current); searchTimerRef.current = setTimeout(() => browser.handleGlobalSearch(q), 200); browser.setSearchOpen(true); },
                 onClearSearch: () => { browser.setQuery(''); browser.setSearchResults(null); browser.setSearchOpen(false); },
                 onSearchResultClick: (result) => {
-                  if (result.type === 'directory') navigateTo(result.path);
-                  else { const idx = result.path.lastIndexOf('/'); navigateTo(idx < 0 ? '/' : result.path.substring(0, idx) || '/'); }
+                  if (result.type === 'directory') navActions.navigateTo(result.path);
+                  else { const idx = result.path.lastIndexOf('/'); navActions.navigateTo(idx < 0 ? '/' : result.path.substring(0, idx) || '/'); }
                 },
                 onUploadClick: openUploadPicker,
                 canUpload,
@@ -684,59 +555,59 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onClose={() => fileActions.setContextMenu(null)}
             />
           )}
-          {trashContextMenu && browser.canWrite && (
+          {menus.trashContextMenu && browser.canWrite && (
             <TrashContextMenu
-              x={trashContextMenu.x} y={trashContextMenu.y}
-              onRestore={() => fileCommands.handleRestoreTrash(trashContextMenu.entry)}
-              onDeletePermanently={() => fileCommands.handleDeleteTrash(trashContextMenu.entry)}
-              onClose={() => setTrashContextMenu(null)}
+              x={menus.trashContextMenu.x} y={menus.trashContextMenu.y}
+              onRestore={() => fileCommands.handleRestoreTrash(menus.trashContextMenu!.entry)}
+              onDeletePermanently={() => fileCommands.handleDeleteTrash(menus.trashContextMenu!.entry)}
+              onClose={() => menus.setTrashContextMenu(null)}
             />
           )}
-          {desktopContextMenu && (
+          {menus.desktopContextMenu && (
             <DesktopContextMenu
-              x={desktopContextMenu.x} y={desktopContextMenu.y}
-              item={desktopContextMenu.item}
+              x={menus.desktopContextMenu.x} y={menus.desktopContextMenu.y}
+              item={menus.desktopContextMenu.item}
               trashCount={browser.trashEntries.length}
-              onRefresh={handleRefreshDesktop}
-              onEmptyTrash={handleEmptyTrash}
-              onRemoveFavorite={handleRemoveDesktopFavorite}
-              onAddService={() => handleOpenServiceForm()}
+              onRefresh={desktopActions.handleRefreshDesktop}
+              onEmptyTrash={desktopActions.handleEmptyTrash}
+              onRemoveFavorite={desktopActions.handleRemoveDesktopFavorite}
+              onAddService={() => desktopActions.handleOpenServiceForm()}
               onEditService={(id) => {
                 const svc = services.find((s) => s.id === id);
-                if (svc) handleOpenServiceForm(svc);
+                if (svc) desktopActions.handleOpenServiceForm(svc);
               }}
-              onRemoveService={handleRemoveService}
-              onClose={() => setDesktopContextMenu(null)}
+              onRemoveService={desktopActions.handleRemoveService}
+              onClose={() => menus.setDesktopContextMenu(null)}
             />
           )}
-          {filesEmptyMenu && (
+          {menus.filesEmptyMenu && (
             <FilesEmptyMenu
-              x={filesEmptyMenu.x} y={filesEmptyMenu.y}
+              x={menus.filesEmptyMenu.x} y={menus.filesEmptyMenu.y}
               canWrite={browser.canWrite}
               canUpload={canUpload}
               canPaste={selection.canPaste}
               onCreateFolder={fileCommands.handleCreateFolder}
               onCreateFile={fileCommands.handleCreateFile}
               onUpload={openUploadPicker}
-              onRefresh={refresh}
-              onPaste={() => { setFilesEmptyMenu(null); fileCommands.handlePaste(); }}
-              onClose={() => setFilesEmptyMenu(null)}
+              onRefresh={navActions.refresh}
+              onPaste={() => { menus.setFilesEmptyMenu(null); fileCommands.handlePaste(); }}
+              onClose={() => menus.setFilesEmptyMenu(null)}
             />
           )}
-          {trashEmptyMenu && (
+          {menus.trashEmptyMenu && (
             <TrashEmptyMenu
-              x={trashEmptyMenu.x} y={trashEmptyMenu.y}
+              x={menus.trashEmptyMenu.x} y={menus.trashEmptyMenu.y}
               canPaste={selection.canPaste}
-              onRefresh={() => { refresh(); toast.showToastObj({ title: 'Refreshed', variant: 'success' }); }}
-              onPaste={() => { setTrashEmptyMenu(null); fileCommands.handlePaste(); }}
-              onClose={() => setTrashEmptyMenu(null)}
+              onRefresh={() => { navActions.refresh(); toast.showToastObj({ title: 'Refreshed', variant: 'success' }); }}
+              onPaste={() => { menus.setTrashEmptyMenu(null); fileCommands.handlePaste(); }}
+              onClose={() => menus.setTrashEmptyMenu(null)}
             />
           )}
-          {jobsEmptyMenu && (
+          {menus.jobsEmptyMenu && (
             <JobsEmptyMenu
-              x={jobsEmptyMenu.x} y={jobsEmptyMenu.y}
+              x={menus.jobsEmptyMenu.x} y={menus.jobsEmptyMenu.y}
               onRefresh={() => { void getJobs().then((r) => browser.setJobs(r.jobs ?? [])); toast.showToastObj({ title: 'Refreshed', variant: 'success' }); }}
-              onClose={() => setJobsEmptyMenu(null)}
+              onClose={() => menus.setJobsEmptyMenu(null)}
             />
           )}
         </section>
@@ -780,8 +651,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     <>
       {shell}
       {fileActions.previewEntry && <PreviewModal entry={fileActions.previewEntry} onClose={() => fileActions.setPreviewEntry(null)} onDownload={() => fileCommands.handleDownload(fileActions.previewEntry!)} />}
-      {fileActions.infoEntry && <InfoPanel entry={fileActions.infoEntry} onClose={() => fileActions.setInfoEntry(null)} onRefresh={refresh} />}
-      {fileActions.batchRenameOpen && <BatchRenameModal entries={selection.selectedEntries} onClose={() => fileActions.setBatchRenameOpen(false)} onDone={() => { toast.showToastObj({ title: 'Items renamed', variant: 'success' }); refresh(); }} />}
+      {fileActions.infoEntry && <InfoPanel entry={fileActions.infoEntry} onClose={() => fileActions.setInfoEntry(null)} onRefresh={navActions.refresh} />}
+      {fileActions.batchRenameOpen && <BatchRenameModal entries={selection.selectedEntries} onClose={() => fileActions.setBatchRenameOpen(false)} onDone={() => { toast.showToastObj({ title: 'Items renamed', variant: 'success' }); navActions.refresh(); }} />}
       {dialogs.confirmDialog && <ConfirmDialog dialog={dialogs.confirmDialog} onClose={() => dialogs.setConfirmDialog(null)} />}
       {dialogs.textInputDialog && <TextInputDialog dialog={dialogs.textInputDialog} onClose={() => dialogs.setTextInputDialog(null)} />}
       {dialogs.transferDialog && <TransferDialog dialog={dialogs.transferDialog} folderSuggestions={browser.folderSuggestions} onClose={() => dialogs.setTransferDialog(null)} onSubmit={fileCommands.handleTransferSubmit} />}
@@ -789,11 +660,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       {fileActions.shortcutsOpen && <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />}
       {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
       {fileActions.analyzePath && <DiskUsageAnalyzer path={fileActions.analyzePath} onClose={() => fileActions.setAnalyzePath(null)} />}
-      {serviceFormData && (
+      {menus.serviceFormData && (
         <ServiceFormModal
-          initial={serviceFormData.initial}
-          onSave={handleSaveService}
-          onClose={() => setServiceFormData(null)}
+          initial={menus.serviceFormData.initial}
+          onSave={desktopActions.handleSaveService}
+          onClose={() => menus.setServiceFormData(null)}
         />
       )}
     </>

@@ -5,7 +5,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { Button, StatusBadge } from '../components/ui/shared';
-import { formatBytes } from '../utils/format';
+import { formatBytes, formatGridDate } from '../utils/format';
 import styles from './JobsPage.module.css';
 
 const jobVariant = (status: JobStatus): 'success' | 'warning' | 'danger' | 'disabled' => {
@@ -78,8 +78,14 @@ function JobItem({
           {showLiveStats && job.etaSeconds !== undefined ? `${formatDuration(job.etaSeconds)} left` : '\u2014 left'}
         </span>
       </div>
+      <div className={styles.jobFooter}>
+        <span className={styles.jobTimestamp}>Created {formatGridDate(job.createdAt)}</span>
+        {job.updatedAt !== job.createdAt && (
+          <span className={styles.jobTimestamp}>Updated {formatGridDate(job.updatedAt)}</span>
+        )}
+      </div>
       {job.currentItem ?? job.sourcePath ? <p className={styles.jobPath}>{job.currentItem ?? job.sourcePath}</p> : null}
-      {job.errorMessage && <p className={styles.jobError}>{job.errorMessage}</p>}
+      {job.errorMessage && <p className={styles.jobError}><Icon name="dialog-warning" size={14} /> {job.errorMessage}</p>}
       {(canPause || canResume || canCancel || canRetry) && (
         <div className={styles.jobActions}>
           {canPause && (

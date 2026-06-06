@@ -78,9 +78,23 @@
 }
 
 .jobError {
+  align-items: center;
   color: var(--color-danger);
+  display: flex;
   font-size: 0.78rem;
+  gap: var(--space-xs);
   margin: var(--space-xs) 0 0;
+}
+
+.jobFooter {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-xs);
+}
+
+.jobTimestamp {
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
 }
 
 .jobActions {
