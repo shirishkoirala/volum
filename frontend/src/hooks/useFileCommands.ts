@@ -5,7 +5,7 @@ import {
   getFiles, getJobs, getTrash, renamePath, restoreTrash,
   createShare,
 } from '../api/client';
-import { uploadFilesWithResume, type UploadProgress } from '../utils/upload';
+import { unsupportedUploadReason, uploadFilesWithResume, type UploadProgress } from '../utils/upload';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
 import { isArchiveFile, archiveBaseName, archiveFileName } from '../utils/archive';
 import { joinPath, normalizeFolderPath } from '../utils/path';
@@ -229,6 +229,12 @@ export function useFileCommands(deps: FileCommandDeps) {
       console.error('Upload blocked: currentPath is', currentPath);
       setError('No destination folder selected');
       showToastObj({ title: 'Upload failed', message: 'Navigate to a folder first', variant: 'error' });
+      return;
+    }
+    const unsupportedMessage = selectedFiles.map(unsupportedUploadReason).find(Boolean);
+    if (unsupportedMessage) {
+      setError(unsupportedMessage);
+      showToastObj({ title: 'Upload not supported', message: unsupportedMessage, variant: 'error' });
       return;
     }
     setPendingUploadCount((count) => count + selectedFiles.length);

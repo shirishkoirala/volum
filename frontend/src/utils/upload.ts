@@ -14,6 +14,13 @@ export type UploadResult = {
   interrupted?: 'aborted' | 'cancelled' | 'paused';
 };
 
+export function unsupportedUploadReason(file: File): string | null {
+  if (file.name.toLowerCase().endsWith('.app')) {
+    return 'Folder and app-bundle uploads are not supported yet';
+  }
+  return null;
+}
+
 type UploadFileResult = {
   jobId: string | null;
   complete: boolean;

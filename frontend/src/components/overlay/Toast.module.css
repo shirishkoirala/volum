@@ -2,9 +2,9 @@
   display: grid;
   gap: var(--space-sm);
   max-width: min(360px, calc(100vw - 32px));
+  bottom: calc(28px + var(--space-md));
   position: fixed;
   right: var(--space-xl);
-  top: var(--space-xl);
   width: 360px;
   z-index: 140;
 }
@@ -127,4 +127,14 @@
 
 .toast button:hover {
   color: var(--color-text-secondary);
+}
+
+@media (max-width: 760px) {
+  .toastViewport {
+    bottom: calc(64px + 24px + var(--space-md));
+    left: var(--space-md);
+    max-width: none;
+    right: var(--space-md);
+    width: auto;
+  }
 }

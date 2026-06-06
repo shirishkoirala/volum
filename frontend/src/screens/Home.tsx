@@ -453,12 +453,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           multiple
           className={styles.hiddenFileInput}
           onChange={(event) => {
-            if (event.currentTarget.files) {
-              try {
-                fileCommands.handleUploadFiles(event.currentTarget.files);
-              } finally {
-                event.currentTarget.value = '';
+            const { files } = event.currentTarget;
+            try {
+              if (files && files.length > 0) {
+                fileCommands.handleUploadFiles(files);
               }
+            } finally {
+              event.currentTarget.value = '';
             }
           }}
         />
