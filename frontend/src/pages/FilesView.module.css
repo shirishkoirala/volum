@@ -48,7 +48,6 @@
   gap: 18px 24px;
   grid-template-columns: repeat(auto-fill, 124px);
   justify-content: start;
-  margin: var(--space-md);
   padding: var(--space-lg);
 }
 
@@ -96,7 +95,6 @@
   display: flex;
   flex: 1;
   justify-content: center;
-  margin: var(--space-md);
   min-height: 0;
   overflow-y: auto;
   padding: var(--space-lg);

@@ -4,7 +4,6 @@
   overflow-y: auto;
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-md);
-  margin: var(--space-md);
   overflow-x: hidden;
   outline: 0;
   padding: var(--space-lg);

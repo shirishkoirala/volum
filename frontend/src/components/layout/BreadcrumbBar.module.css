@@ -249,10 +249,14 @@
     display: grid;
     gap: var(--space-sm);
     grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "left location";
+    min-height: 0;
+  }
+
+  .header.withToolbar {
     grid-template-areas:
       "left location"
       "right right";
-    min-height: 0;
   }
 
   .left {

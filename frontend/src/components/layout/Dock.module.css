@@ -72,15 +72,15 @@
     flex-direction: row;
     grid-column: 1;
     grid-row: 4;
-    height: 48px;
+    height: 64px;
     justify-content: center;
     overflow-x: auto;
-    padding: 4px;
+    padding: 6px;
   }
 
   .dockItem {
-    height: 40px;
-    width: 40px;
+    height: 52px;
+    width: 52px;
   }
 
   .dockItem.active::before {

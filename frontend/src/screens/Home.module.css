@@ -73,7 +73,7 @@
 @media (max-width: 760px) {
   .appShell {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: 38px minmax(0, 1fr) 24px 48px;
+    grid-template-rows: 44px minmax(0, 1fr) 24px 64px;
   }
 
   .workspace {

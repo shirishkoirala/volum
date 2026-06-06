@@ -4,6 +4,7 @@
   flex-shrink: 0;
   gap: var(--space-sm);
   min-width: 0;
+  position: relative;
 }
 
 .searchBox {

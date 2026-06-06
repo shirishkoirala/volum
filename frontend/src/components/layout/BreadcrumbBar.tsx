@@ -34,6 +34,8 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
   const [locationValue, setLocationValue] = useState('');
 
   const childrenArray = useMemo(() => Children.toArray(children), [children]);
+  const hasToolbar = childrenArray.length > 0 && !locationMode;
+  const headerClassName = `${styles.header}${hasToolbar ? ` ${styles.withToolbar}` : ''}`;
 
   useEffect(() => {
     if (locationMode && locationInputRef.current) {
@@ -169,7 +171,7 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
 
   if (locationMode) {
     return (
-      <header className={styles.header}>
+      <header className={headerClassName}>
         <div className={styles.left}>
           <IconButton onClick={onToggleLocationMode} title="Cancel">
             <Icon name="window-close" size={18} />
@@ -192,7 +194,7 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
   }
 
   return (
-    <header className={styles.header}>
+    <header className={headerClassName}>
       <div className={styles.left}>
         <IconButton
           onClick={onBack}
@@ -275,7 +277,7 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
           </div>
         </nav>
       </div>
-      {childrenArray.length > 0 && (
+      {hasToolbar && (
         <div className={styles.right} ref={rightRef}>
           {visibleToolbarItems}
           {toolbarOverflowIdx > 0 && (
@@ -303,7 +305,7 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
       </div>
       {onToggleLocationMode && (
         <button className={styles.locationToggle} onClick={onToggleLocationMode} title="Enter path (Ctrl+L)" type="button">
-          <Icon name="edit-find" size={16} />
+          <Icon name="go-jump" size={16} />
         </button>
       )}
     </header>
