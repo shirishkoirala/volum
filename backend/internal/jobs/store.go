@@ -171,6 +171,16 @@ func (s *Store) SetJobTotals(ctx context.Context, jobID string, totalBytes, tota
 	return err
 }
 
+func (s *Store) UpdateJobPaths(ctx context.Context, jobID, sourcePath, destinationPath string) error {
+	now := time.Now().UTC()
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET source_path = ?, destination_path = ?, updated_at = ?
+		WHERE id = ?
+	`, sourcePath, destinationPath, now, jobID)
+	return err
+}
+
 func (s *Store) UpdateJobProgress(ctx context.Context, jobID string, processedBytes, processedItems int64, currentItem string) error {
 	now := time.Now().UTC()
 	_, err := s.db.ExecContext(ctx, `

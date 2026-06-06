@@ -88,6 +88,7 @@ func (s *Server) uploadPart(ctx context.Context, targetPublic, targetDir string,
 	if !validUploadName(name) {
 		return jobs.Job{}, files.ErrInvalidName
 	}
+	uploadName := name
 
 	destinationPublic := filepath.Join(filepath.Clean(targetPublic), name)
 	destination, err := s.guard.Resolve(destinationPublic)
@@ -229,6 +230,19 @@ func (s *Server) uploadPart(ctx context.Context, targetPublic, targetDir string,
 		return jobs.Job{}, err
 	}
 	_ = os.Remove(filepath.Dir(tempPath))
+
+	if appBundle, converted, err := s.finalizeAppBundleArchive(destination, uploadName, conflictPolicy); err != nil {
+		_ = s.jobs.FailJob(ctx, job.ID, err)
+		return jobs.Job{}, err
+	} else if converted {
+		destination = appBundle.path
+		destinationPublic = appBundle.publicPath
+		name = appBundle.filename
+		if err := s.jobs.UpdateJobPaths(ctx, job.ID, name, destinationPublic); err != nil {
+			_ = s.jobs.FailJob(ctx, job.ID, err)
+			return jobs.Job{}, err
+		}
+	}
 
 	if err := s.jobs.SetJobTotals(ctx, job.ID, written, 1); err != nil {
 		return jobs.Job{}, err
@@ -581,6 +595,21 @@ func (s *Server) handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = os.Remove(jobIDPath)
 		_ = os.Remove(tempDir)
+
+		if appBundle, converted, err := s.finalizeAppBundleArchive(destination, filename, uploadConflictPolicy(r)); err != nil {
+			_ = s.jobs.FailJob(ctx, jobID, err)
+			writeError(w, err)
+			return
+		} else if converted {
+			destination = appBundle.path
+			destinationPublic = appBundle.publicPath
+			filename = appBundle.filename
+			if err := s.jobs.UpdateJobPaths(ctx, jobID, filename, destinationPublic); err != nil {
+				_ = s.jobs.FailJob(ctx, jobID, err)
+				writeError(w, err)
+				return
+			}
+		}
 
 		_ = s.jobs.SetJobTotals(ctx, jobID, totalSize, 1)
 		_ = s.jobs.UpdateJobProgress(ctx, jobID, totalSize, 1, filename)
