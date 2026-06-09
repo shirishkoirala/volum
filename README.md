@@ -7,8 +7,8 @@ Volum Desktop is a self-hosted web file manager for Ubuntu and Docker home serve
 
 ## Features
 
-- **Desktop view** — GNOME Nautilus-style desktop with drive "My Computer" icons, trash with badge count, favorite folder shortcuts, settings/jobs/files icons, customizable wallpaper/background, and draggable icon reordering
-- **File browsing** — Grid, list, and column (macOS Finder-style) views with sorting, hidden file toggle, per-folder view preferences
+- **Desktop view** — GNOME Nautilus-style desktop with Drives, Trash, Settings, Transfers, Files, favorite folder shortcuts, customizable wallpaper/background, and draggable icon reordering
+- **File browsing** — Grid and list views with sorting, hidden file toggle, per-folder view preferences
 - **File actions** — Create folder, rename, batch rename, copy, move, trash with restore, permanent delete
 - **Background jobs** — Persistent SQLite-backed jobs with real-time SSE progress, cancel, retry (including per-item retry), pause/resume
 - **Upload & download** — Upload with size verification, single-file download, streamed directory zip download
@@ -22,15 +22,15 @@ Volum Desktop is a self-hosted web file manager for Ubuntu and Docker home serve
 
 ## Screenshots
 
-| Desktop view | File grid | Column browser |
+| Desktop view | File grid | Drives view |
 |---|---|---|
-| ![Desktop](docs/screenshots/desktop.png) | ![File grid](docs/screenshots/file-grid.png) | ![Column browser](docs/screenshots/columns.png) |
+| ![Desktop](docs/screenshots/desktop.png) | ![File grid](docs/screenshots/file-grid.png) | ![Drives view](docs/screenshots/columns.png) |
 
-| Preview modal | Settings | Job drawer |
+| Preview modal | Settings | Transfers |
 |---|---|---|
 | ![Preview](docs/screenshots/preview.png) | ![Settings](docs/screenshots/settings.png) | ![Jobs](docs/screenshots/jobs.png) |
 
-*To regenerate: `node scripts/capture-screenshots.mjs` (requires Puppeteer)*
+*Refresh screenshots from the running app when UI changes.*
 
 ## Quick Start — Home Server
 
