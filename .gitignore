@@ -21,3 +21,6 @@ frontend/.vite
 
 # Logs
 *.log
+
+# CodeGraph local index
+.codegraph/
