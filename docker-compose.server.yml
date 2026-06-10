@@ -11,7 +11,7 @@ services:
         bind:
           propagation: rslave
       - type: bind
-        source: /opt/docker/volum
+        source: ./data
         target: /data
     environment:
       - VOLUM_AUTH_REQUIRED=${VOLUM_AUTH_REQUIRED:-true}
