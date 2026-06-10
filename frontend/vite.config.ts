@@ -24,5 +24,17 @@ export default defineConfig({
         url: 'http://localhost',
       },
     },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/test/**',
+        'src/api/icons.ts',
+        'src/assets/**',
+        'src/**/*.d.ts',
+      ],
+    },
   }
 });

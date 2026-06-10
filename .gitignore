@@ -18,6 +18,7 @@ storage/*
 frontend/dist
 frontend/node_modules
 frontend/.vite
+frontend/coverage
 
 # Logs
 *.log
