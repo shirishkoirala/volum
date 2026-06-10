@@ -44,5 +44,11 @@ jobs:
           cache: true
       - run: go mod download
       - run: go vet ./...
-      - run: go test ./...
+      - run: go test -coverprofile=coverage.out -covermode=atomic ./...
+      - run: go tool cover -func=coverage.out
       - run: go build -o /dev/null ./cmd/volum
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-backend
+          path: backend/coverage.out
