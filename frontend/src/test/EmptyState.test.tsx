@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { EmptyState } from '../components/ui/EmptyState';
-import * as icons from '../api/icons';
 
 vi.mock('../api/icons', () => ({
   emptyIconUrl: vi.fn(() => '/assets/empty.svg'),

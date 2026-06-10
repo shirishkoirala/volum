@@ -3,21 +3,19 @@ import { isActiveTransferJob, countActiveTransfers, refreshesFiles } from '../ut
 import type { Job } from '../api/client';
 
 const makeJob = (overrides: Partial<Job> = {}): Job => ({
-  id: 1,
+  id: '1',
   type: 'copy',
   sourcePath: '/src',
-  destPath: '/dst',
+  destinationPath: '/dst',
   status: 'completed',
-  progress: 100,
   totalBytes: 1000,
   processedBytes: 1000,
   totalItems: 1,
   processedItems: 1,
-  message: '',
+  conflictPolicy: 'ask',
+  verifyMode: 'none',
   createdAt: '2026-06-10T10:00:00Z',
-  startedAt: null,
-  completedAt: '2026-06-10T10:01:00Z',
-  claimedBy: '',
+  updatedAt: '2026-06-10T10:01:00Z',
   ...overrides,
 });
 
@@ -55,8 +53,8 @@ describe('countActiveTransfers', () => {
   it('counts multiple active jobs', () => {
     const jobs = [
       makeJob({ status: 'running' }),
-      makeJob({ id: 2, status: 'queued' }),
-      makeJob({ id: 3, status: 'completed' }),
+      makeJob({ id: '2', status: 'queued' }),
+      makeJob({ id: '3', status: 'completed' }),
     ];
     expect(countActiveTransfers(jobs)).toBe(2);
   });
@@ -93,9 +91,5 @@ describe('refreshesFiles', () => {
 
   it('returns false for checksum', () => {
     expect(refreshesFiles(makeJob({ type: 'checksum' }))).toBe(false);
-  });
-
-  it('returns false for delete', () => {
-    expect(refreshesFiles(makeJob({ type: 'delete' }))).toBe(false);
   });
 });

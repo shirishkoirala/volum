@@ -16,7 +16,7 @@ vi.mock('../api/client', () => ({
 }));
 
 function mockEventSource() {
-  let listeners: Record<string, ((event: { data: string }) => void)[]> = {};
+  const listeners: Record<string, ((event: { data: string }) => void)[]> = {};
   const es = {
     addEventListener: vi.fn((event: string, handler: (event: { data: string }) => void) => {
       if (!listeners[event]) listeners[event] = [];
@@ -35,24 +35,22 @@ function mockEventSource() {
   return es;
 }
 
-const fakeSession: Session = { authEnabled: true, authenticated: true, user: null };
+const fakeSession: Session = { authEnabled: true, authenticated: true };
 
 const makeJob = (overrides: Partial<Job> = {}): Job => ({
   id: '1',
   type: 'copy',
   sourcePath: '/src',
-  destPath: '/dst',
+  destinationPath: '/dst',
   status: 'completed',
-  progress: 100,
   totalBytes: 1000,
   processedBytes: 1000,
   totalItems: 1,
   processedItems: 1,
-  message: '',
+  conflictPolicy: 'ask',
+  verifyMode: 'none',
   createdAt: '2026-06-10T10:00:00Z',
-  startedAt: null,
-  completedAt: '2026-06-10T10:01:00Z',
-  claimedBy: '',
+  updatedAt: '2026-06-10T10:01:00Z',
   ...overrides,
 });
 
@@ -102,7 +100,7 @@ describe('useJobs', () => {
     const showToast = vi.fn();
 
     renderHook(() => useJobs(setJobs, {
-      session: { authEnabled: true, authenticated: false, user: null },
+      session: { authEnabled: true, authenticated: false },
       sessionLoading: false, onRefresh, showToast,
     }));
 

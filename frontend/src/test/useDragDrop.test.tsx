@@ -2,49 +2,31 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDragDrop } from '../hooks/useDragDrop';
 import type { FileEntry } from '../api/client';
-import type { TransferDialogState } from '../components/overlay/Dialogs';
 
 const entry: FileEntry = {
   name: 'test.txt', path: '/src/test.txt', type: 'file',
   size: 100, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false,
 };
 
-const folder: FileEntry = {
-  name: 'folder', path: '/src/folder', type: 'folder',
-  size: 0, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false,
-};
+function mockDataTransfer(overrides: Record<string, unknown> = {}): DataTransfer {
+  return {
+    effectAllowed: 'uninitialized',
+    dropEffect: 'none',
+    setData: vi.fn(),
+    files: [] as unknown as FileList,
+    types: [] as string[],
+    items: [] as unknown as DataTransferItemList,
+    ...overrides,
+  } as unknown as DataTransfer;
+}
 
-function createDragEvent(overrides: Partial<DragEvent> = {}): DragEvent {
+function createDragEvent(overrides: Record<string, unknown> = {}): React.DragEvent<HTMLElement> {
   return {
     preventDefault: vi.fn(),
     stopPropagation: vi.fn(),
-    dataTransfer: {
-      effectAllowed: '',
-      setData: vi.fn(),
-      files: [] as unknown as FileList,
-      types: [] as string[],
-      items: [] as unknown as DataTransferItemList,
-      dropEffect: '',
-    },
+    dataTransfer: mockDataTransfer(),
     ...overrides,
-  } as unknown as DragEvent;
-}
-
-function mockDataTransferFile(files: File[]): Partial<DragEvent> {
-  return {
-    dataTransfer: {
-      effectAllowed: '',
-      setData: vi.fn(),
-      files: files as unknown as FileList,
-      types: ['Files'],
-      items: files.map((f) => ({
-        kind: 'file',
-        type: f.type,
-        webkitGetAsEntry: () => null,
-      })) as unknown as DataTransferItemList,
-      dropEffect: '',
-    },
-  };
+  } as unknown as React.DragEvent<HTMLElement>;
 }
 
 describe('useDragDrop', () => {
@@ -144,7 +126,7 @@ describe('useDragDrop', () => {
       useDragDrop(true, [], [], setTransferDialog, handleUploadFiles)
     );
 
-    const event = createDragEvent({ dataTransfer: { ...createDragEvent().dataTransfer, types: ['Files'] } });
+    const event = createDragEvent({ dataTransfer: mockDataTransfer({ types: ['Files'] }) });
 
     act(() => {
       result.current.handleFileAreaDragOver(event);
@@ -160,7 +142,7 @@ describe('useDragDrop', () => {
       useDragDrop(false, [], [], setTransferDialog, handleUploadFiles)
     );
 
-    const event = createDragEvent({ dataTransfer: { ...createDragEvent().dataTransfer, types: ['Files'] } });
+    const event = createDragEvent({ dataTransfer: mockDataTransfer({ types: ['Files'] }) });
 
     act(() => {
       result.current.handleFileAreaDragOver(event);
@@ -177,7 +159,7 @@ describe('useDragDrop', () => {
     );
 
     const file = new File(['content'], 'file.txt');
-    const event = createDragEvent(mockDataTransferFile([file]));
+    const event = createDragEvent({ dataTransfer: mockDataTransfer({ files: [file] as unknown as FileList, types: ['Files'] }) });
 
     act(() => {
       result.current.handleFileAreaDrop(event);
@@ -195,7 +177,7 @@ describe('useDragDrop', () => {
     );
 
     const file = new File(['content'], 'file.txt');
-    const event = createDragEvent(mockDataTransferFile([file]));
+    const event = createDragEvent({ dataTransfer: mockDataTransfer({ files: [file] as unknown as FileList, types: ['Files'] }) });
 
     act(() => {
       result.current.handleFileAreaDrop(event);
@@ -213,24 +195,19 @@ describe('useDragDrop', () => {
     );
 
     const dirEntry = { isDirectory: true };
-    const event: Partial<DragEvent> = {
-      preventDefault: vi.fn(),
-      dataTransfer: {
-        effectAllowed: '',
-        setData: vi.fn(),
-        files: [] as unknown as FileList,
+    const event = createDragEvent({
+      dataTransfer: mockDataTransfer({
         types: ['Files'],
         items: [{
           kind: 'file',
           type: '',
           webkitGetAsEntry: () => dirEntry,
         }] as unknown as DataTransferItemList,
-        dropEffect: '',
-      },
-    };
+      }),
+    });
 
     act(() => {
-      result.current.handleFileAreaDrop(event as DragEvent);
+      result.current.handleFileAreaDrop(event);
     });
 
     expect(onUnsupportedDrop).toHaveBeenCalledWith('Folder and app-bundle uploads are not supported yet');

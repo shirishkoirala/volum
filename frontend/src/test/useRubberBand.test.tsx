@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useRubberBand } from '../hooks/useRubberBand';
-import type { FileEntry } from '../api/client';
 import { createRef } from 'react';
 
 describe('useRubberBand', () => {

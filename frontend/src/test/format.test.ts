@@ -76,6 +76,9 @@ describe('formatGridDate', () => {
 describe('formatDeviceUsage', () => {
   const basePart: BlockDevice = {
     name: 'sda1',
+    size: '100G',
+    type: 'disk',
+    rotational: false,
     mountPoint: '/mnt/data',
     totalBytes: 1_000_000_000,
     usedBytes: 400_000_000,
@@ -94,8 +97,8 @@ describe('formatDeviceUsage', () => {
     expect(result).toContain('ntfs');
   });
 
-  it('shows usage without fsType when null', () => {
-    const result = formatDeviceUsage({ ...basePart, fsType: null });
+  it('shows usage without fsType when undefined', () => {
+    const result = formatDeviceUsage({ ...basePart, fsType: undefined });
     expect(result).not.toContain('·');
   });
 
@@ -105,7 +108,7 @@ describe('formatDeviceUsage', () => {
   });
 
   it('returns "Not mounted" when no mountPoint and no totalBytes', () => {
-    const result = formatDeviceUsage({ ...basePart, mountPoint: null, totalBytes: 0 });
+    const result = formatDeviceUsage({ ...basePart, mountPoint: undefined, totalBytes: 0 });
     expect(result).toBe('Not mounted');
   });
 });
