@@ -1,6 +1,14 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  vi.stubGlobal('ResizeObserver', vi.fn(() => ({
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  })));
+}
+
 if (typeof globalThis.localStorage === 'undefined') {
   const store = new Map<string, string>();
   vi.stubGlobal('localStorage', {
