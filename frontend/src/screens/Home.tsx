@@ -137,7 +137,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       case 'files':
         return (
           <FilesView
-            currentPath={(win.params.path as string) ?? viewPref.currentPath}
+            currentPath={(win.params.path as string) ?? '/'}
             session={session}
             favorites={favorites}
             onNavigate={navActions.navigateTo}
