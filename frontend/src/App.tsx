@@ -4,6 +4,7 @@ import { LoginScreen } from './screens/LoginScreen';
 import { SetupScreen } from './screens/SetupScreen';
 import { Home } from './screens/Home';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { WindowManagerProvider } from './contexts/WindowManagerProvider';
 import styles from './App.module.css';
 
 export function App() {
@@ -47,12 +48,14 @@ export function App() {
   return (
     <div onContextMenu={(e) => e.preventDefault()}>
       <ErrorBoundary>
-        <Home
-          session={session!}
-          onLogout={handleLogout}
-          theme={theme}
-          onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-        />
+        <WindowManagerProvider>
+          <Home
+            session={session!}
+            onLogout={handleLogout}
+            theme={theme}
+            onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+          />
+        </WindowManagerProvider>
       </ErrorBoundary>
     </div>
   );

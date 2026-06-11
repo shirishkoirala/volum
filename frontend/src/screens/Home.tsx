@@ -15,6 +15,7 @@ import { DrivesView } from '../pages/DrivesView';
 import { TrashView } from '../pages/TrashView';
 import { JobsPage } from '../pages/JobsPage';
 import { ToastViewport } from '../components/overlay/Toast';
+import { WindowHost } from '../components/window/WindowHost';
 import { DesktopContextMenu } from '../components/overlay/DesktopContextMenu';
 import type { DesktopIconItem } from '../pages/DesktopView';
 import { useServiceShortcuts } from '../hooks/useServiceShortcuts';
@@ -32,6 +33,7 @@ import { useFileCommands } from '../hooks/useFileCommands';
 import { useContextMenus } from '../hooks/useContextMenus';
 import { useNavStack } from '../hooks/useNavStack';
 import { useDesktopActions } from '../hooks/useDesktopActions';
+import { useWindowManager } from '../contexts/WindowManager';
 import styles from './Home.module.css';
 
 
@@ -82,6 +84,32 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     canWrite: browser.canWrite,
     currentPath: viewPref.currentPath,
   });
+
+  const wm = useWindowManager();
+
+  // Auto-open Files window when on desktop
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (nav.activeView === 'desktop' && !autoOpenedRef.current) {
+      autoOpenedRef.current = true;
+      wm.openWindow({
+        id: 'files', title: 'Files',
+        view: (
+          <FilesView
+            currentPath={viewPref.currentPath}
+            session={session}
+            favorites={favorites}
+            onNavigate={navActions.navigateTo}
+            onBack={navActions.goBack}
+            onAddFavorite={addFavorite}
+            onRemoveFavorite={removeFavorite}
+          />
+        ),
+        x: 60, y: 40,
+        width: 900, height: 600,
+      });
+    }
+  }, [nav.activeView, wm, viewPref.currentPath, session, favorites, navActions, addFavorite, removeFavorite]);
 
   const desktopActions = useDesktopActions({
     browser, dialogs, toast, nav,
@@ -292,6 +320,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             />
           )}
         </section>
+
+        <WindowHost />
 
         <StatusBar
           visible={showStatusBar}
