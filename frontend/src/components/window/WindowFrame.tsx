@@ -111,13 +111,15 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
 
   const style: React.CSSProperties = isMaximized ? {
     position: 'fixed',
-    top: 0,
+    top: 44,
     left: 0,
-    width: '100%',
-    height: '100%',
+    right: 0,
+    bottom: 56,
     zIndex,
     display: isMinimized ? 'none' : 'flex',
     flexDirection: 'column',
+    border: 'none',
+    borderRadius: 0,
   } : {
     position: 'fixed',
     top: win.y,
