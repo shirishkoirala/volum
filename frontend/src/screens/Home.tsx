@@ -96,10 +96,10 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       title: 'Files',
       icon: filesIconUrl(),
       winType: 'files',
-      params: { path },
+      params: { path: path ?? browser.roots[0]?.path ?? '/' },
       width: 900, height: 600,
     });
-  }, [wm]);
+  }, [wm, browser.roots]);
 
   const openTrashWindow = useCallback(() => {
     wm.toggleWindow('trash', {
