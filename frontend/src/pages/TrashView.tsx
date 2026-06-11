@@ -1,26 +1,90 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FolderIcon, FileIcon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { trashIconUrl } from '../api/icons';
 import type { TrashEntry } from '../api/client';
+import { getTrash, restoreTrash, deleteTrash } from '../api/client';
 import { formatBytes, formatGridDate } from '../utils/format';
+import { useToasts } from '../hooks/useToasts';
 import { GRID_ICON_SIZE, GridTile } from '../components/ui/GridTile';
+import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
+import { TrashEmptyMenu } from '../components/overlay/TrashEmptyMenu';
 import styles from './TrashView.module.css';
 
-type TrashViewProps = {
-  trashEntries: TrashEntry[];
-  selectedTrashIds: string[];
-  onSelectTrash: (entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => void;
-  sortedTrashEntries: TrashEntry[];
-  onTrashContextMenu: (entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => void;
-  onTrashEmptyContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
-};
+export function TrashView() {
+  const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([]);
+  const [selectedTrashIds, setSelectedTrashIds] = useState<Set<string>>(new Set());
+  const [trashContextMenu, setTrashContextMenu] = useState<{ entry: TrashEntry; x: number; y: number } | null>(null);
+  const [trashEmptyMenu, setTrashEmptyMenu] = useState<{ x: number; y: number } | null>(null);
+  const toast = useToasts();
 
-export function TrashView({
-  trashEntries, selectedTrashIds,
-  onSelectTrash,
-  sortedTrashEntries,
-  onTrashContextMenu, onTrashEmptyContextMenu,
-}: TrashViewProps) {
+  const loadTrash = useCallback(() => {
+    getTrash().then((res) => {
+      setTrashEntries(res.entries ?? []);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    loadTrash();
+  }, [loadTrash]);
+
+  const handleSelectTrashItem = useCallback((entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => {
+    setSelectedTrashIds((prev) => {
+      const next = new Set(prev);
+      if (event.ctrlKey || event.metaKey) {
+        if (next.has(entry.id)) next.delete(entry.id);
+        else next.add(entry.id);
+      } else if (event.shiftKey && prev.size > 0) {
+        const ids = trashEntries.map((e) => e.id);
+        const lastIdx = ids.indexOf(Array.from(prev).pop()!);
+        const curIdx = ids.indexOf(entry.id);
+        if (lastIdx !== -1 && curIdx !== -1) {
+          const [start, end] = lastIdx < curIdx ? [lastIdx, curIdx] : [curIdx, lastIdx];
+          for (let i = start; i <= end; i++) next.add(ids[i]!);
+        }
+      } else {
+        next.clear();
+        next.add(entry.id);
+      }
+      return next;
+    });
+  }, [trashEntries]);
+
+  const handleTrashContextMenu = useCallback((entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setTrashEmptyMenu(null);
+    setTrashContextMenu({ entry, x: event.clientX, y: event.clientY });
+  }, []);
+
+  const handleTrashEmptyContextMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setTrashContextMenu(null);
+    setTrashEmptyMenu({ x: event.clientX, y: event.clientY });
+  }, []);
+
+  const handleRestore = useCallback((entry: TrashEntry) => {
+    restoreTrash(entry.id)
+      .then(() => { toast.showToastObj({ title: 'Restored', variant: 'success' }); loadTrash(); })
+      .catch((err) => toast.showToastObj({ title: 'Failed to restore', variant: 'error', message: err.message }));
+  }, [toast, loadTrash]);
+
+  const handleDeletePermanently = useCallback((entry: TrashEntry) => {
+    deleteTrash(entry.id)
+      .then(() => { toast.showToastObj({ title: 'Deleted permanently', variant: 'success' }); loadTrash(); })
+      .catch((err) => toast.showToastObj({ title: 'Failed to delete', variant: 'error', message: err.message }));
+  }, [toast, loadTrash]);
+
+  const handleRefresh = useCallback(() => {
+    loadTrash();
+    toast.showToastObj({ title: 'Refreshed', variant: 'success' });
+  }, [loadTrash, toast]);
+
+  const sortedTrashEntries = useMemo(() => {
+    return [...trashEntries].sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
+  }, [trashEntries]);
+
   return (
     <>
       {trashEntries.length === 0 ? (
@@ -30,17 +94,17 @@ export function TrashView({
       ) : (
         <section
           className={styles.trashGrid}
-          onContextMenu={onTrashEmptyContextMenu}
+          onContextMenu={handleTrashEmptyContextMenu}
           tabIndex={-1}
           role="list"
         >
           {sortedTrashEntries.map((entry, idx) => {
-            const isSelected = selectedTrashIds.includes(entry.id);
+            const isSelected = selectedTrashIds.has(entry.id);
 
             function handleTrashKeyDown(e: React.KeyboardEvent) {
               if (e.key === 'Enter') {
                 e.preventDefault();
-                onSelectTrash(entry, e as unknown as React.MouseEvent<HTMLElement>);
+                handleSelectTrashItem(entry, e as unknown as React.MouseEvent<HTMLElement>);
                 return;
               }
               if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -79,14 +143,30 @@ export function TrashView({
                 role="listitem"
                 tabIndex={idx === 0 ? 0 : -1}
                 data-trash-id={entry.id}
-                onClick={(event) => onSelectTrash(entry, event)}
-                onContextMenu={(event) => onTrashContextMenu(entry, event)}
+                onClick={(event) => handleSelectTrashItem(entry, event)}
+                onContextMenu={(event) => handleTrashContextMenu(entry, event)}
                 onKeyDown={handleTrashKeyDown}
               />
             );
-          })
-          }
+          })}
         </section>
+      )}
+      {trashContextMenu && (
+        <TrashContextMenu
+          x={trashContextMenu.x} y={trashContextMenu.y}
+          onRestore={() => handleRestore(trashContextMenu.entry)}
+          onDeletePermanently={() => handleDeletePermanently(trashContextMenu.entry)}
+          onClose={() => setTrashContextMenu(null)}
+        />
+      )}
+      {trashEmptyMenu && (
+        <TrashEmptyMenu
+          x={trashEmptyMenu.x} y={trashEmptyMenu.y}
+          canPaste={false}
+          onRefresh={handleRefresh}
+          onPaste={() => {}}
+          onClose={() => setTrashEmptyMenu(null)}
+        />
       )}
     </>
   );

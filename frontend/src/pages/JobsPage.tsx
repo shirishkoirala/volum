@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
-import type { Job, JobStatus } from '../api/client';
+import type { Job, JobStatus, Session } from '../api/client';
+import { getJobs } from '../api/client';
 import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { Button, StatusBadge } from '../components/ui/shared';
 import { formatBytes, formatGridDate } from '../utils/format';
+import { useJobs } from '../hooks/useJobs';
+import { useToasts } from '../hooks/useToasts';
+import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
 import styles from './JobsPage.module.css';
 
 const jobVariant = (status: JobStatus): 'success' | 'warning' | 'danger' | 'disabled' => {
@@ -14,10 +18,6 @@ const jobVariant = (status: JobStatus): 'success' | 'warning' | 'danger' | 'disa
   if (status === 'failed') return 'danger';
   return 'disabled';
 };
-
-
-
-
 
 function formatDuration(seconds: number) {
   if (seconds < 0) return '';
@@ -118,17 +118,9 @@ function JobItem({
   );
 }
 
-
-
 type JobsPageProps = {
-  jobs: Job[];
-  onCancel: (id: string) => void;
-  onPause: (id: string) => void;
-  onResume: (id: string) => void;
-  onRetry: (id: string) => void;
-  onClearCompleted: () => void;
-  onClearFailed: () => void;
-  onJobsEmptyContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
+  session: Session | null;
+  sessionLoading: boolean;
 };
 
 function handleJobListKeyDown(e: React.KeyboardEvent) {
@@ -144,16 +136,22 @@ function handleJobListKeyDown(e: React.KeyboardEvent) {
   }
 }
 
-export function JobsPage({
-  jobs,
-  onCancel,
-  onPause,
-  onResume,
-  onRetry,
-  onClearCompleted,
-  onClearFailed,
-  onJobsEmptyContextMenu,
-}: JobsPageProps) {
+export function JobsPage({ session, sessionLoading }: JobsPageProps) {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobsEmptyMenu, setJobsEmptyMenu] = useState<{ x: number; y: number } | null>(null);
+  const toast = useToasts();
+
+  const {
+    handleCancelJob, handleRetryJob,
+    handlePauseJob, handleResumeJob,
+    handleClearCompleted, handleClearFailed,
+  } = useJobs(setJobs, {
+    session,
+    sessionLoading,
+    onRefresh: () => {},
+    showToast: (title, variant, message) => toast.showToastObj({ title, variant: variant ?? 'success', message }),
+  });
+
   const pageSize = 25;
   const totalPages = Math.max(1, Math.ceil(jobs.length / pageSize));
   const [currentPage, setCurrentPage] = useState(1);
@@ -168,18 +166,24 @@ export function JobsPage({
   const hasCompleted = jobs.some((j) => j.status === 'completed' || j.status === 'cancelled');
   const hasFailed = jobs.some((j) => j.status === 'failed');
 
+  const handleJobsEmptyContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setJobsEmptyMenu({ x: event.clientX, y: event.clientY });
+  };
+
   return (
     <>
-      <main className={styles.jobsPage} onContextMenu={onJobsEmptyContextMenu}>
+      <main className={styles.jobsPage} onContextMenu={handleJobsEmptyContextMenu}>
         {jobs.length > 0 && (
           <div className={styles.jobToolbar}>
             {hasFailed && (
-              <Button size="compact" onClick={onClearFailed}>
+              <Button size="compact" onClick={handleClearFailed}>
                 Clear failed
               </Button>
             )}
             {hasCompleted && (
-              <Button size="compact" onClick={onClearCompleted}>
+              <Button size="compact" onClick={handleClearCompleted}>
                 Clear completed
               </Button>
             )}
@@ -191,7 +195,7 @@ export function JobsPage({
           ) : (
             <>
               {pageJobs.map((job) => (
-                <JobItem key={job.id} job={job} onCancel={onCancel} onPause={onPause} onResume={onResume} onRetry={onRetry} />
+                <JobItem key={job.id} job={job} onCancel={handleCancelJob} onPause={handlePauseJob} onResume={handleResumeJob} onRetry={handleRetryJob} />
               ))}
             </>
           )}
@@ -212,6 +216,16 @@ export function JobsPage({
           </div>
         )}
       </main>
+      {jobsEmptyMenu && (
+        <JobsEmptyMenu
+          x={jobsEmptyMenu.x} y={jobsEmptyMenu.y}
+          onRefresh={() => {
+            getJobs().then((r) => setJobs(r.jobs ?? []));
+            toast.showToastObj({ title: 'Refreshed', variant: 'success' });
+          }}
+          onClose={() => setJobsEmptyMenu(null)}
+        />
+      )}
     </>
   );
 }
