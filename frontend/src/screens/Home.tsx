@@ -137,7 +137,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       case 'files':
         return (
           <FilesView
-            currentPath={(win.params.path as string) ?? '/'}
+            currentPath={(win.params.path as string) || browser.roots[0]?.path || '/'}
             session={session}
             favorites={favorites}
             onNavigate={navActions.navigateTo}
@@ -166,7 +166,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       default:
         return null;
     }
-  }, [viewPref, session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions]);
+  }, [viewPref, session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, browser.roots]);
 
   const desktopActions = useDesktopActions({
     browser, dialogs, toast, nav,

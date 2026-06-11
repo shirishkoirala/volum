@@ -65,11 +65,12 @@ export type FilesViewHandle = {
 export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function FilesView({ currentPath, session, favorites, onNavigate, onBack, onAddFavorite, onRemoveFavorite }, ref) {
   const shell = useShellContext();
   const viewPref = useViewPreferences();
-  const browser = useFileBrowser({ currentPath: viewPref.currentPath, showHidden: viewPref.showHidden, session });
+  const windowId = useWindowId();
+  const effectivePath = windowId ? (currentPath || '/') : viewPref.currentPath;
+  const browser = useFileBrowser({ currentPath: effectivePath, showHidden: viewPref.showHidden, session });
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
   const menus = useContextMenus();
-  const windowId = useWindowId();
   const { register: registerCommands, unregister: unregisterCommands } = useCommandsContext();
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const setPendingUploadCount = useCallback(() => {}, []);
