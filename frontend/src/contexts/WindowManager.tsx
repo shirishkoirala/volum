@@ -30,6 +30,14 @@ export type WindowManagerType = {
   toggleMaximize: (id: string) => void;
   updatePosition: (id: string, x: number, y: number) => void;
   updateSize: (id: string, width: number, height: number) => void;
+  toggleWindow: (type: string, opts: {
+    title: string;
+    view: React.ReactNode;
+    x?: number;
+    y?: number;
+    width?: number;
+    height?: number;
+  }) => string;
 };
 
 export const WindowManagerContext = createContext<WindowManagerType>({
@@ -41,6 +49,7 @@ export const WindowManagerContext = createContext<WindowManagerType>({
   toggleMaximize: () => {},
   updatePosition: () => {},
   updateSize: () => {},
+  toggleWindow: () => '',
 });
 
 export function useWindowManager() {

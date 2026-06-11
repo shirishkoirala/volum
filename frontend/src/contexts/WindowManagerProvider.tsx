@@ -2,18 +2,23 @@ import { useCallback, useRef, useState } from 'react';
 import { WindowManagerContext, type WindowState } from './WindowManager';
 
 let nextZIndex = 100;
+const WINDOW_OFFSET = 24;
 
 export function WindowManagerProvider({ children }: { children: React.ReactNode }) {
   const [windows, setWindows] = useState<WindowState[]>([]);
-  const viewCache = useRef<Map<string, React.ReactNode>>(new Map());
+  const windowCounts = useRef<Record<string, number>>({});
+  const cascadeIndex = useRef(0);
 
   const openWindow = useCallback((opts: {
     id: string; title: string; view: React.ReactNode;
     x?: number; y?: number; width?: number; height?: number;
   }) => {
-    viewCache.current.set(opts.id, opts.view);
     setWindows((prev) => {
-      if (prev.some((w) => w.id === opts.id)) return prev;
+      if (prev.some((w) => w.id === opts.id)) {
+        // Window already exists — just focus it
+        const z = nextZIndex++;
+        return prev.map((w) => w.id === opts.id ? { ...w, minimized: false, zIndex: z } : w);
+      }
       const z = nextZIndex++;
       return [...prev, {
         id: opts.id,
@@ -36,7 +41,7 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
 
   const focusWindow = useCallback((id: string) => {
     const z = nextZIndex++;
-    setWindows((prev) => prev.map((w) => w.id === id ? { ...w, zIndex: z } : w));
+    setWindows((prev) => prev.map((w) => w.id === id ? { ...w, minimized: false, zIndex: z } : w));
   }, []);
 
   const toggleMinimize = useCallback((id: string) => {
@@ -55,10 +60,45 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
     setWindows((prev) => prev.map((w) => w.id === id ? { ...w, width, height } : w));
   }, []);
 
+  const toggleWindow = useCallback((type: string, opts: {
+    title: string; view: React.ReactNode;
+    x?: number; y?: number; width?: number; height?: number;
+  }): string => {
+    // Try to find existing window of this type
+    const existing = windows.find((w) => w.id.startsWith(`${type}-`));
+    if (existing) {
+      const z = nextZIndex++;
+      setWindows((prev) => prev.map((w) => w.id === existing.id ? { ...w, minimized: false, zIndex: z } : w));
+      return existing.id;
+    }
+    // Generate unique ID
+    const count = (windowCounts.current[type] ?? 0) + 1;
+    windowCounts.current[type] = count;
+    const id = `${type}-${count}`;
+    const ci = cascadeIndex.current;
+    cascadeIndex.current = ci + 1;
+    const x = 60 + (ci % 6) * WINDOW_OFFSET;
+    const y = 40 + (ci % 6) * WINDOW_OFFSET;
+    const z = nextZIndex++;
+    setWindows((prev) => [...prev, {
+      id,
+      title: opts.title,
+      view: opts.view,
+      x: opts.x ?? x,
+      y: opts.y ?? y,
+      width: opts.width ?? 800,
+      height: opts.height ?? 500,
+      minimized: false,
+      maximized: false,
+      zIndex: z,
+    }]);
+    return id;
+  }, [windows]);
+
   return (
     <WindowManagerContext.Provider value={{
       windows, openWindow, closeWindow, focusWindow,
-      toggleMinimize, toggleMaximize, updatePosition, updateSize,
+      toggleMinimize, toggleMaximize, updatePosition, updateSize, toggleWindow,
     }}>
       {children}
     </WindowManagerContext.Provider>

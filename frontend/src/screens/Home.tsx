@@ -87,29 +87,59 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const wm = useWindowManager();
 
-  // Auto-open Files window when on desktop
-  const autoOpenedRef = useRef(false);
-  useEffect(() => {
-    if (nav.activeView === 'desktop' && !autoOpenedRef.current) {
-      autoOpenedRef.current = true;
-      wm.openWindow({
-        id: 'files', title: 'Files',
-        view: (
-          <FilesView
-            currentPath={viewPref.currentPath}
-            session={session}
-            favorites={favorites}
-            onNavigate={navActions.navigateTo}
-            onBack={navActions.goBack}
-            onAddFavorite={addFavorite}
-            onRemoveFavorite={removeFavorite}
-          />
-        ),
-        x: 60, y: 40,
-        width: 900, height: 600,
-      });
-    }
-  }, [nav.activeView, wm, viewPref.currentPath, session, favorites, navActions, addFavorite, removeFavorite]);
+  // ── Window openers ───────────────────────────────────────
+  const openFilesWindow = useCallback((path?: string) => {
+    wm.toggleWindow('files', {
+      title: 'Files',
+      view: (
+        <FilesView
+          currentPath={path ?? viewPref.currentPath}
+          session={session}
+          favorites={favorites}
+          onNavigate={navActions.navigateTo}
+          onBack={navActions.goBack}
+          onAddFavorite={addFavorite}
+          onRemoveFavorite={removeFavorite}
+        />
+      ),
+      width: 900, height: 600,
+    });
+  }, [wm, viewPref.currentPath, session, favorites, navActions, addFavorite, removeFavorite]);
+
+  const openTrashWindow = useCallback(() => {
+    wm.toggleWindow('trash', {
+      title: 'Trash',
+      view: <TrashView />,
+      width: 700, height: 500,
+    });
+  }, [wm]);
+
+  const openJobsWindow = useCallback(() => {
+    wm.toggleWindow('jobs', {
+      title: 'Transfers',
+      view: <JobsPage session={session} sessionLoading={false} />,
+      width: 700, height: 500,
+    });
+  }, [wm, session]);
+
+  const openSettingsWindow = useCallback(() => {
+    wm.toggleWindow('settings', {
+      title: 'Settings',
+      view: (
+        <SettingsPanel
+          onOpenShares={() => dialogs.setSharesOpen(true)}
+          wallpaper={wallpaper.wallpaper}
+          onWallpaperChange={wallpaper.setWallpaper}
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          onOpenShortcuts={() => fileActions.setShortcutsOpen(true)}
+          onLogout={onLogout}
+          session={session}
+        />
+      ),
+      width: 800, height: 550,
+    });
+  }, [wm, theme, onToggleTheme, onLogout, session, wallpaper, dialogs, fileActions]);
 
   const desktopActions = useDesktopActions({
     browser, dialogs, toast, nav,
@@ -231,26 +261,23 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               viewPref.setSortDirection(d);
             },
             onGoDesktop: navActions.resetToDesktopView,
-            onGoFiles: () => { nav.setShowingMyPC(false); desktopActions.handleDockActivate('files'); },
-            onGoTrash: () => {
-              viewPref.setCurrentPath('');
-              nav.setShowingTrash(true); nav.setShowingSettings(false); nav.setShowingJobs(false);
-            },
-            onGoJobs: () => {
-              nav.setShowingJobs(true); nav.setShowingSettings(false);
-              nav.setShowingTrash(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null);
-            },
-            onGoSettings: () => {
-              nav.setShowingSettings(true); nav.setShowingTrash(false);
-              nav.setShowingJobs(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null);
-            },
+            onGoFiles: () => openFilesWindow(),
+            onGoTrash: openTrashWindow,
+            onGoJobs: openJobsWindow,
+            onGoSettings: openSettingsWindow,
             onToggleLocation: () => filesViewRef.current?.handleToggleLocation(),
             canWrite: browser.canWrite,
             canUpload: true,
             selectedCount: nav.showingTrash ? selection.selectedTrashIds.length : selection.selectedPaths.length,
           }}
         />
-        <Dock items={nav.dockItems} onActivate={desktopActions.handleDockActivate} />
+        <Dock items={nav.dockItems} onActivate={(id) => {
+          if (id === 'files') openFilesWindow();
+          else if (id === 'trash') openTrashWindow();
+          else if (id === 'jobs') openJobsWindow();
+          else if (id === 'settings') openSettingsWindow();
+          else desktopActions.handleDockActivate(id);
+        }} />
 
         <section className={styles.workspace} onClick={selection.handleWorkspaceClick}>
           {nav.activeView === 'desktop' && (
@@ -258,11 +285,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               trashEntries={browser.trashEntries} jobs={browser.jobs}
               pendingTransferCount={pendingUploadCount}
               favorites={favorites} services={services}
-              onNavigateTo={navActions.navigateTo}
-              onNavigateToTrash={desktopActions.handleDesktopNavigateToTrash}
-              onOpenSettings={() => { nav.setShowingSettings(true); nav.setShowingTrash(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null); }}
-              onOpenJobs={() => { nav.setShowingJobs(true); nav.setShowingSettings(false); nav.setShowingTrash(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null); }}
-              onOpenFiles={() => desktopActions.handleDockActivate('files')}
+              onNavigateTo={(path) => openFilesWindow(path)}
+              onNavigateToTrash={openTrashWindow}
+              onOpenSettings={openSettingsWindow}
+              onOpenJobs={openJobsWindow}
+              onOpenFiles={() => openFilesWindow()}
               onShowMyPC={() => nav.setShowingMyPC(true)}
               wallpaperStyle={wallpaper.wallpaperStyle}
               onItemContextMenu={handleDesktopItemContextMenu}
