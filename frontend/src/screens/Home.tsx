@@ -35,6 +35,7 @@ import { useNavStack } from '../hooks/useNavStack';
 import { useDesktopActions } from '../hooks/useDesktopActions';
 import { useWindowManager, type WindowState } from '../contexts/WindowManager';
 import { CommandsContext, type WindowCommands } from '../contexts/WindowCommands';
+import { ShellContext } from '../contexts/ShellContext';
 import { Taskbar } from '../components/layout/Taskbar';
 import { filesIconUrl, trashIconUrl, jobsIconUrl, preferencesIconUrl } from '../api/icons';
 import styles from './Home.module.css';
@@ -279,7 +280,22 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   // ── Focused window & reactive commands ──────────────────
   const [commandsMap, setCommandsMap] = useState<Record<string, WindowCommands>>({});
   const registerCommands = useCallback((id: string, cmds: WindowCommands) => {
-    setCommandsMap(prev => ({ ...prev, [id]: cmds }));
+    setCommandsMap(prev => {
+      const existing = prev[id];
+      if (existing &&
+          existing.onCreateFolder === cmds.onCreateFolder &&
+          existing.onUpload === cmds.onUpload &&
+          existing.onCut === cmds.onCut &&
+          existing.onCopy === cmds.onCopy &&
+          existing.onPaste === cmds.onPaste &&
+          existing.onSelectAll === cmds.onSelectAll &&
+          existing.onInvertSelection === cmds.onInvertSelection &&
+          existing.onRename === cmds.onRename &&
+          existing.onDelete === cmds.onDelete) {
+        return prev;
+      }
+      return { ...prev, [id]: cmds };
+    });
   }, []);
   const unregisterCommands = useCallback((id: string) => {
     setCommandsMap(prev => {
@@ -299,12 +315,21 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     ? (focusedWindow?.title ?? 'Desktop')
     : (nav.topBarTitle);
 
+  // ── Shell context value ────────────────────────────────
+  const shellContext = useMemo(() => ({
+    showToast: toast.showToast,
+    showToastObj: toast.showToastObj,
+    navigateTo: navActions.navigateTo,
+    refresh: browser.refresh,
+  }), [toast.showToast, toast.showToastObj, navActions.navigateTo, browser.refresh]);
+
   // ── Shell JSX ────────────────────────────────────────────
 
   const shell = (
     <>
       <main className={styles.appShell}>
         <CommandsContext.Provider value={{ commands: commandsMap, register: registerCommands, unregister: unregisterCommands }}>
+        <ShellContext.Provider value={shellContext}>
         <TopBar
           activeView={nav.activeView}
           title={topBarTitle}
@@ -433,6 +458,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           viewContext={nav.activeView}
           trashCount={browser.trashEntries.length}
         />
+        </ShellContext.Provider>
         </CommandsContext.Provider>
       </main>
       <ToastViewport toasts={toast.toasts} onDismiss={toast.dismissToast} />

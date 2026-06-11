@@ -1,21 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { useWindowManager, type WindowState } from '../../contexts/WindowManager';
+import { useIsMobile } from '../../hooks/useIsMobile';
 import styles from './WindowFrame.module.css';
 
 type ResizeDir = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
-
-function useIsMobile() {
-  const [mobile, setMobile] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches,
-  );
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 760px)');
-    const handler = (e: MediaQueryListEvent) => setMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-  return mobile;
-}
 
 // Height of shell chrome that maximized windows stay between
 const TOPBAR_H = 44;
@@ -42,7 +30,9 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
     const handleMouseMove = (ev: MouseEvent) => {
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
-      updatePosition(win.id, startLeft + dx, startTop + dy);
+      const newX = Math.max(-win.width + 80, Math.min(window.innerWidth - 80, startLeft + dx));
+      const newY = Math.max(-win.height + 80, Math.min(window.innerHeight - TASKBAR_H - 40, startTop + dy));
+      updatePosition(win.id, newX, newY);
     };
     const handleMouseUp = () => {
       window.removeEventListener('mousemove', handleMouseMove);
@@ -50,7 +40,7 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
     };
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-  }, [focusWindow, win.id, win.x, win.y, isMobile, isMaximized, updatePosition]);
+  }, [focusWindow, win.id, win.x, win.y, win.width, win.height, isMobile, isMaximized, updatePosition]);
 
   const handleResizeStart = useCallback((dir: ResizeDir, e: React.MouseEvent) => {
     if (isMobile || isMaximized) return;
@@ -73,9 +63,9 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
       let h = startH;
 
       if (dir.includes('e')) w = Math.max(300, startW + dx);
-      if (dir.includes('w')) { w = Math.max(300, startW - dx); x = startL + dx; }
+      if (dir.includes('w')) { w = Math.max(300, startW - dx); x = startL + startW - w; }
       if (dir.includes('s')) h = Math.max(200, startH + dy);
-      if (dir.includes('n')) { h = Math.max(200, startH - dy); y = startT + dy; }
+      if (dir.includes('n')) { h = Math.max(200, startH - dy); y = startT + startH - h; }
 
       updatePosition(win.id, x, y);
       updateSize(win.id, w, h);

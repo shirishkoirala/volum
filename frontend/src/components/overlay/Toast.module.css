@@ -6,7 +6,7 @@
   position: fixed;
   right: var(--space-xl);
   width: 360px;
-  z-index: 140;
+  z-index: 600;
 }
 
 .toast {

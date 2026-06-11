@@ -71,6 +71,7 @@
     overflow-x: auto;
     padding: 6px;
     z-index: 10000;
+    position: relative;
   }
 
   .dockItem {

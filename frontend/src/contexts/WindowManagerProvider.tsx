@@ -2,7 +2,14 @@ import { useCallback, useRef, useState } from 'react';
 import { WindowManagerContext, type WindowState } from './WindowManager';
 
 let nextZIndex = 100;
+const MAX_Z_INDEX = 9990;
 const WINDOW_OFFSET = 24;
+
+function nextZ(): number {
+  const z = nextZIndex;
+  if (nextZIndex < MAX_Z_INDEX) nextZIndex++;
+  return z;
+}
 
 export function WindowManagerProvider({ children }: { children: React.ReactNode }) {
   const [windows, setWindows] = useState<WindowState[]>([]);
@@ -11,16 +18,23 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
   const windowCounts = useRef<Record<string, number>>({});
   const cascadeIndex = useRef(0);
 
+  // Reset cascadeIndex when all windows close
+  const prevLenRef = useRef(0);
+  if (windows.length === 0 && prevLenRef.current > 0) {
+    cascadeIndex.current = 0;
+  }
+  prevLenRef.current = windows.length;
+
   const openWindow = useCallback((opts: {
     id: string; title: string; icon: string; winType: string; params: Record<string, unknown>;
     x?: number; y?: number; width?: number; height?: number;
   }) => {
     setWindows((prev) => {
       if (prev.some((w) => w.id === opts.id)) {
-        const z = nextZIndex++;
+        const z = nextZ();
         return prev.map((w) => w.id === opts.id ? { ...w, minimized: false, zIndex: z } : w);
       }
-      const z = nextZIndex++;
+      const z = nextZ();
       return [...prev, {
         id: opts.id,
         title: opts.title,
@@ -43,7 +57,7 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
   }, []);
 
   const focusWindow = useCallback((id: string) => {
-    const z = nextZIndex++;
+    const z = nextZ();
     setWindows((prev) => prev.map((w) => w.id === id ? { ...w, minimized: false, zIndex: z } : w));
   }, []);
 
@@ -70,7 +84,7 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
     const currentWindows = windowsRef.current;
     const existing = currentWindows.find((w) => w.id.startsWith(`${windowType}-`));
     if (existing) {
-      const z = nextZIndex++;
+      const z = nextZ();
       setWindows((prev) => prev.map((w) => w.id === existing.id ? { ...w, minimized: false, zIndex: z } : w));
       return existing.id;
     }
@@ -81,7 +95,7 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
     cascadeIndex.current = ci + 1;
     const x = 60 + (ci % 6) * WINDOW_OFFSET;
     const y = 40 + (ci % 6) * WINDOW_OFFSET;
-    const z = nextZIndex++;
+    const z = nextZ();
     setWindows((prev) => [...prev, {
       id,
       title: opts.title,

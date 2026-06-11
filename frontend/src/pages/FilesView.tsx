@@ -66,7 +66,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const shell = useShellContext();
   const viewPref = useViewPreferences();
   const windowId = useWindowId();
-  const effectivePath = windowId ? (currentPath || '/') : viewPref.currentPath;
+  const effectivePath = windowId ? (viewPref.currentPath || currentPath || '/') : viewPref.currentPath;
   const browser = useFileBrowser({ currentPath: effectivePath, showHidden: viewPref.showHidden, session });
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
@@ -123,8 +123,8 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
 
   const handleNavigate = useCallback((path: string) => {
     navActions.navigateTo(path);
-    onNavigate(path);
-  }, [navActions, onNavigate]);
+    if (!windowId) onNavigate(path);
+  }, [navActions, onNavigate, windowId]);
 
   const refresh = useCallback(() => {
     navActions.refresh();
@@ -314,7 +314,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
 
   function handleGoBack() {
     navActions.goBack();
-    onBack();
+    if (!windowId) onBack();
   }
 
   function handleGoUp() {
