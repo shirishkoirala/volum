@@ -77,7 +77,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const longPressEntry = useRef<{ entry: FileEntry; x: number; y: number } | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const prevPropPath = useRef(currentPath);
+  const prevPropPath = useRef<string | null>(null);
   useEffect(() => {
     if (currentPath !== prevPropPath.current) {
       prevPropPath.current = currentPath;

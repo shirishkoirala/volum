@@ -49,7 +49,7 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
   useEffect(() => { loadDevices(); }, [session, loadDevices]);
 
   useEffect(() => {
-    if (!currentPath) return;
+    if (!currentPath) { setLoading(false); return; }
     setLoading(true);
     setError(null);
     getFiles(currentPath, showHidden)
