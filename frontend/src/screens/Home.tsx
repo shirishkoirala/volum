@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SortField, SortDirection } from '../types';
 import type { Session } from '../api/client';
 import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
@@ -34,6 +34,7 @@ import { useContextMenus } from '../hooks/useContextMenus';
 import { useNavStack } from '../hooks/useNavStack';
 import { useDesktopActions } from '../hooks/useDesktopActions';
 import { useWindowManager, type WindowState } from '../contexts/WindowManager';
+import { CommandsContext, type WindowCommands } from '../contexts/WindowCommands';
 import { Taskbar } from '../components/layout/Taskbar';
 import { filesIconUrl, trashIconUrl, jobsIconUrl, preferencesIconUrl } from '../api/icons';
 import styles from './Home.module.css';
@@ -275,28 +276,54 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const showStatusBar = !isMobile ? false : (nav.activeView !== 'settings' && nav.activeView !== 'jobs' && nav.activeView !== 'desktop' && nav.activeView !== 'drives');
 
+  // ── Focused window & reactive commands ──────────────────
+  const [commandsMap, setCommandsMap] = useState<Record<string, WindowCommands>>({});
+  const registerCommands = useCallback((id: string, cmds: WindowCommands) => {
+    setCommandsMap(prev => ({ ...prev, [id]: cmds }));
+  }, []);
+  const unregisterCommands = useCallback((id: string) => {
+    setCommandsMap(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
+
+  const focusedWindow = useMemo(() => {
+    if (wm.windows.length === 0) return null;
+    return wm.windows.reduce((a, b) => (a.zIndex > b.zIndex ? a : b));
+  }, [wm.windows]);
+
+  const focusedCommands = focusedWindow ? (commandsMap[focusedWindow.id] ?? {}) : {} as WindowCommands;
+  const topBarTitle = !isMobile
+    ? (focusedWindow?.title ?? 'Desktop')
+    : (nav.topBarTitle);
+
   // ── Shell JSX ────────────────────────────────────────────
 
   const shell = (
     <>
       <main className={styles.appShell}>
+        <CommandsContext.Provider value={{ commands: commandsMap, register: registerCommands, unregister: unregisterCommands }}>
         <TopBar
           activeView={nav.activeView}
-          title={nav.topBarTitle}
+          title={topBarTitle}
           onGoDesktop={navActions.resetToDesktopView}
           onOpenSettings={() => { nav.setShowingSettings(true); nav.setShowingTrash(false); nav.setShowingJobs(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null); }}
           session={session}
           onLogout={onLogout}
-            menuHandlers={{
-            onCreateFolder: () => filesViewRef.current?.handleCreateFolder(),
-            onUpload: () => filesViewRef.current?.handleUpload(),
-            onCut: () => filesViewRef.current?.handleCut(),
-            onCopy: () => filesViewRef.current?.handleCopy(),
-            onPaste: () => filesViewRef.current?.handlePaste(),
-            onSelectAll: () => filesViewRef.current?.handleSelectAll(),
-            onInvertSelection: () => filesViewRef.current?.handleInvertSelection(),
-            onRename: () => filesViewRef.current?.handleRename(),
-            onDelete: () => filesViewRef.current?.handleDelete(),
+          focusedWindowType={focusedWindow?.winType ?? null}
+          focusedWindowExists={!isMobile && focusedWindow !== null}
+          menuHandlers={{
+            onCreateFolder: focusedCommands.onCreateFolder ?? (() => filesViewRef.current?.handleCreateFolder()),
+            onUpload: focusedCommands.onUpload ?? (() => filesViewRef.current?.handleUpload()),
+            onCut: focusedCommands.onCut ?? (() => filesViewRef.current?.handleCut()),
+            onCopy: focusedCommands.onCopy ?? (() => filesViewRef.current?.handleCopy()),
+            onPaste: focusedCommands.onPaste ?? (() => filesViewRef.current?.handlePaste()),
+            onSelectAll: focusedCommands.onSelectAll ?? (() => filesViewRef.current?.handleSelectAll()),
+            onInvertSelection: focusedCommands.onInvertSelection ?? (() => filesViewRef.current?.handleInvertSelection()),
+            onRename: focusedCommands.onRename ?? (() => filesViewRef.current?.handleRename()),
+            onDelete: focusedCommands.onDelete ?? (() => filesViewRef.current?.handleDelete()),
             viewMode: viewPref.viewMode,
             onSetViewMode: viewPref.setViewMode,
             showHidden: viewPref.showHidden,
@@ -406,6 +433,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           viewContext={nav.activeView}
           trashCount={browser.trashEntries.length}
         />
+        </CommandsContext.Provider>
       </main>
       <ToastViewport toasts={toast.toasts} onDismiss={toast.dismissToast} />
     </>

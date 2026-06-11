@@ -15,6 +15,8 @@ type TopBarProps = {
   title?: string;
   session?: Session | null;
   onLogout?: () => void;
+  focusedWindowType?: string | null;
+  focusedWindowExists?: boolean;
 };
 
 function formatDateTime(date: Date) {
@@ -24,7 +26,7 @@ function formatDateTime(date: Date) {
   return `${weekday}, ${dayMonth}, ${time}`;
 }
 
-export function TopBar({ activeView, onGoDesktop, onOpenSettings, menuHandlers, title, session, onLogout }: TopBarProps) {
+export function TopBar({ activeView, onGoDesktop, onOpenSettings, menuHandlers, title, session, onLogout, focusedWindowType, focusedWindowExists }: TopBarProps) {
   const [dateTime, setDateTime] = useState(() => formatDateTime(new Date()));
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -56,7 +58,7 @@ export function TopBar({ activeView, onGoDesktop, onOpenSettings, menuHandlers, 
           <img className={styles.brandIcon} src={appIcon} alt="" />
           <span className={styles.brandName}>{title ?? 'Volum Desktop'}</span>
         </button>
-        {activeView === 'files' && menuHandlers && <AppMenuBar handlers={menuHandlers} />}
+        {((focusedWindowExists && focusedWindowType === 'files') || activeView === 'files') && menuHandlers && <AppMenuBar handlers={menuHandlers} />}
       </div>
       <div className={styles.clock}>
         <span>{dateTime}</span>

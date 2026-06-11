@@ -70,7 +70,7 @@
     justify-content: center;
     overflow-x: auto;
     padding: 6px;
-    z-index: 20;
+    z-index: 10000;
   }
 
   .dockItem {

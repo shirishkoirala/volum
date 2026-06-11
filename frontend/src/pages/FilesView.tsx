@@ -17,6 +17,7 @@ import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
 import { FilesEmptyMenu } from '../components/overlay/FilesEmptyMenu';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { folderIconUrl } from '../api/icons';
+import { useWindowId, useCommandsContext } from '../contexts/WindowCommands';
 import type { FileEntry, Session } from '../api/client';
 import { isPreviewableFile } from '../utils/preview';
 import { useFileBrowser } from '../hooks/useFileBrowser';
@@ -68,6 +69,8 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
   const menus = useContextMenus();
+  const windowId = useWindowId();
+  const { register: registerCommands, unregister: unregisterCommands } = useCommandsContext();
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const setPendingUploadCount = useCallback(() => {}, []);
   const fileGridRef = useRef<HTMLDivElement>(null);
@@ -284,6 +287,23 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     handleGoUp,
     handleGoBack,
   }));
+
+  // Register window commands when inside a window
+  useEffect(() => {
+    if (!windowId) return;
+    registerCommands(windowId, {
+      onCreateFolder: fileCommands.handleCreateFolder,
+      onUpload: openUploadPicker,
+      onCut: () => fileCommands.setClipboardFromSelection('move'),
+      onCopy: () => fileCommands.setClipboardFromSelection('copy'),
+      onPaste: fileCommands.handlePaste,
+      onSelectAll: selection.handleSelectAll,
+      onInvertSelection: selection.handleInvertSelection,
+      onRename: fileCommands.handleRename,
+      onDelete: fileCommands.handleDelete,
+    });
+    return () => unregisterCommands(windowId);
+  }, [windowId, fileCommands, openUploadPicker, selection, registerCommands, unregisterCommands]);
 
   const selectedEntryIsFavorited = fileActions.contextMenu?.entry ? favorites.includes(fileActions.contextMenu.entry.path) : selection.isFavorited;
 

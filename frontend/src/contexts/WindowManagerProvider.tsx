@@ -6,6 +6,8 @@ const WINDOW_OFFSET = 24;
 
 export function WindowManagerProvider({ children }: { children: React.ReactNode }) {
   const [windows, setWindows] = useState<WindowState[]>([]);
+  const windowsRef = useRef(windows);
+  windowsRef.current = windows;
   const windowCounts = useRef<Record<string, number>>({});
   const cascadeIndex = useRef(0);
 
@@ -65,7 +67,8 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
     title: string; icon: string; winType: string; params: Record<string, unknown>;
     x?: number; y?: number; width?: number; height?: number;
   }): string => {
-    const existing = windows.find((w) => w.id.startsWith(`${windowType}-`));
+    const currentWindows = windowsRef.current;
+    const existing = currentWindows.find((w) => w.id.startsWith(`${windowType}-`));
     if (existing) {
       const z = nextZIndex++;
       setWindows((prev) => prev.map((w) => w.id === existing.id ? { ...w, minimized: false, zIndex: z } : w));
@@ -94,7 +97,7 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
       zIndex: z,
     }]);
     return id;
-  }, [windows]);
+  }, []);
 
   return (
     <WindowManagerContext.Provider value={{
