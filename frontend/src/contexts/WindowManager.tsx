@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react';
 export type WindowState = {
   id: string;
   title: string;
+  icon: string;
   view: React.ReactNode;
   x: number;
   y: number;
@@ -18,6 +19,7 @@ export type WindowManagerType = {
   openWindow: (opts: {
     id: string;
     title: string;
+    icon: string;
     view: React.ReactNode;
     x?: number;
     y?: number;
@@ -32,6 +34,7 @@ export type WindowManagerType = {
   updateSize: (id: string, width: number, height: number) => void;
   toggleWindow: (type: string, opts: {
     title: string;
+    icon: string;
     view: React.ReactNode;
     x?: number;
     y?: number;
@@ -42,13 +45,13 @@ export type WindowManagerType = {
 
 export const WindowManagerContext = createContext<WindowManagerType>({
   windows: [],
-  openWindow: () => {},
-  closeWindow: () => {},
-  focusWindow: () => {},
-  toggleMinimize: () => {},
-  toggleMaximize: () => {},
-  updatePosition: () => {},
-  updateSize: () => {},
+  openWindow: () => undefined,
+  closeWindow: () => undefined,
+  focusWindow: () => undefined,
+  toggleMinimize: () => undefined,
+  toggleMaximize: () => undefined,
+  updatePosition: () => undefined,
+  updateSize: () => undefined,
   toggleWindow: () => '',
 });
 

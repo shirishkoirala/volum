@@ -10,12 +10,11 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
   const cascadeIndex = useRef(0);
 
   const openWindow = useCallback((opts: {
-    id: string; title: string; view: React.ReactNode;
+    id: string; title: string; icon: string; view: React.ReactNode;
     x?: number; y?: number; width?: number; height?: number;
   }) => {
     setWindows((prev) => {
       if (prev.some((w) => w.id === opts.id)) {
-        // Window already exists — just focus it
         const z = nextZIndex++;
         return prev.map((w) => w.id === opts.id ? { ...w, minimized: false, zIndex: z } : w);
       }
@@ -23,6 +22,7 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
       return [...prev, {
         id: opts.id,
         title: opts.title,
+        icon: opts.icon,
         view: opts.view,
         x: opts.x ?? 100,
         y: opts.y ?? 80,
@@ -61,17 +61,15 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
   }, []);
 
   const toggleWindow = useCallback((type: string, opts: {
-    title: string; view: React.ReactNode;
+    title: string; icon: string; view: React.ReactNode;
     x?: number; y?: number; width?: number; height?: number;
   }): string => {
-    // Try to find existing window of this type
     const existing = windows.find((w) => w.id.startsWith(`${type}-`));
     if (existing) {
       const z = nextZIndex++;
       setWindows((prev) => prev.map((w) => w.id === existing.id ? { ...w, minimized: false, zIndex: z } : w));
       return existing.id;
     }
-    // Generate unique ID
     const count = (windowCounts.current[type] ?? 0) + 1;
     windowCounts.current[type] = count;
     const id = `${type}-${count}`;
@@ -83,6 +81,7 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
     setWindows((prev) => [...prev, {
       id,
       title: opts.title,
+      icon: opts.icon,
       view: opts.view,
       x: opts.x ?? x,
       y: opts.y ?? y,

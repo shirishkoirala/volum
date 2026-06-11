@@ -1,8 +1,21 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWindowManager, type WindowState } from '../../contexts/WindowManager';
 import styles from './WindowFrame.module.css';
 
 type ResizeDir = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 760px)');
+    const handler = (e: MediaQueryListEvent) => setMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return mobile;
+}
 
 export function WindowFrame({ win }: { win: WindowState }) {
   const { focusWindow, closeWindow, toggleMinimize, toggleMaximize, updatePosition, updateSize } = useWindowManager();
@@ -10,12 +23,14 @@ export function WindowFrame({ win }: { win: WindowState }) {
   const dragRef = useRef<{ startX: number; startY: number; startLeft: number; startTop: number } | null>(null);
   const resizeRef = useRef<{ dir: ResizeDir; startX: number; startY: number; startW: number; startH: number; startL: number; startT: number } | null>(null);
   const prevRectRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  const isMobile = useIsMobile();
 
   const zIndex = win.zIndex;
   const isMaximized = win.maximized;
   const isMinimized = win.minimized;
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isMobile) return;
     e.preventDefault();
     focusWindow(win.id);
     dragRef.current = {
@@ -24,7 +39,7 @@ export function WindowFrame({ win }: { win: WindowState }) {
       startLeft: win.x,
       startTop: win.y,
     };
-  }, [focusWindow, win.id, win.x, win.y]);
+  }, [focusWindow, win.id, win.x, win.y, isMobile]);
 
   useEffect(() => {
     if (!dragRef.current) return;
@@ -45,6 +60,7 @@ export function WindowFrame({ win }: { win: WindowState }) {
   }, [win.id, isMaximized, updatePosition]);
 
   const handleResizeStart = useCallback((dir: ResizeDir, e: React.MouseEvent) => {
+    if (isMobile) return;
     e.preventDefault();
     e.stopPropagation();
     focusWindow(win.id);
@@ -57,7 +73,7 @@ export function WindowFrame({ win }: { win: WindowState }) {
       startL: win.x,
       startT: win.y,
     };
-  }, [focusWindow, win.id, win.width, win.height, win.x, win.y]);
+  }, [focusWindow, win.id, win.width, win.height, win.x, win.y, isMobile]);
 
   useEffect(() => {
     if (!resizeRef.current) return;
@@ -86,6 +102,7 @@ export function WindowFrame({ win }: { win: WindowState }) {
   }, [win.id, updatePosition, updateSize]);
 
   const handleTitleDoubleClick = useCallback(() => {
+    if (isMobile) return;
     if (isMaximized) {
       if (prevRectRef.current) {
         updatePosition(win.id, prevRectRef.current.x, prevRectRef.current.y);
@@ -96,9 +113,10 @@ export function WindowFrame({ win }: { win: WindowState }) {
       prevRectRef.current = { x: win.x, y: win.y, width: win.width, height: win.height };
       toggleMaximize(win.id);
     }
-  }, [isMaximized, toggleMaximize, win.id, win.x, win.y, win.width, win.height, updatePosition, updateSize]);
+  }, [isMaximized, toggleMaximize, win.id, win.x, win.y, win.width, win.height, updatePosition, updateSize, isMobile]);
 
   const handleMaximizeClick = useCallback(() => {
+    if (isMobile) return;
     if (!isMaximized) {
       prevRectRef.current = { x: win.x, y: win.y, width: win.width, height: win.height };
     } else if (prevRectRef.current) {
@@ -106,7 +124,7 @@ export function WindowFrame({ win }: { win: WindowState }) {
       updateSize(win.id, prevRectRef.current.width, prevRectRef.current.height);
     }
     toggleMaximize(win.id);
-  }, [isMaximized, toggleMaximize, win.id, win.x, win.y, win.width, win.height, updatePosition, updateSize]);
+  }, [isMaximized, toggleMaximize, win.id, win.x, win.y, win.width, win.height, updatePosition, updateSize, isMobile]);
 
   const style: React.CSSProperties = isMaximized ? {
     position: 'fixed',
@@ -140,15 +158,17 @@ export function WindowFrame({ win }: { win: WindowState }) {
       <div className={styles.titleBar} onMouseDown={handleMouseDown} onDoubleClick={handleTitleDoubleClick}>
         <span className={styles.titleText}>{win.title}</span>
         <div className={styles.controls}>
-          <button className={styles.controlBtn} onClick={(e) => { e.stopPropagation(); toggleMinimize(win.id); }} aria-label="Minimize">─</button>
-          <button className={styles.controlBtn} onClick={(e) => { e.stopPropagation(); handleMaximizeClick(); }} aria-label={isMaximized ? 'Restore' : 'Maximize'}>{isMaximized ? '❐' : '□'}</button>
+          {!isMobile && <>
+            <button className={styles.controlBtn} onClick={(e) => { e.stopPropagation(); toggleMinimize(win.id); }} aria-label="Minimize">─</button>
+            <button className={styles.controlBtn} onClick={(e) => { e.stopPropagation(); handleMaximizeClick(); }} aria-label={isMaximized ? 'Restore' : 'Maximize'}>{isMaximized ? '❐' : '□'}</button>
+          </>}
           <button className={`${styles.controlBtn} ${styles.closeBtn}`} onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }} aria-label="Close">✕</button>
         </div>
       </div>
       <div className={styles.content}>
         {win.view}
       </div>
-      {!isMaximized && <>
+      {!isMaximized && !isMobile && <>
         {resizeHandle('n')}
         {resizeHandle('s')}
         {resizeHandle('e')}

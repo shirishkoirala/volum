@@ -34,6 +34,8 @@ import { useContextMenus } from '../hooks/useContextMenus';
 import { useNavStack } from '../hooks/useNavStack';
 import { useDesktopActions } from '../hooks/useDesktopActions';
 import { useWindowManager } from '../contexts/WindowManager';
+import { Taskbar } from '../components/layout/Taskbar';
+import { filesIconUrl, trashIconUrl, jobsIconUrl, preferencesIconUrl } from '../api/icons';
 import styles from './Home.module.css';
 
 
@@ -91,6 +93,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const openFilesWindow = useCallback((path?: string) => {
     wm.toggleWindow('files', {
       title: 'Files',
+      icon: filesIconUrl(),
       view: (
         <FilesView
           currentPath={path ?? viewPref.currentPath}
@@ -104,19 +107,21 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       ),
       width: 900, height: 600,
     });
-  }, [wm, viewPref.currentPath, session, favorites, navActions, addFavorite, removeFavorite]);
+    }, [wm, viewPref.currentPath, session, favorites, navActions, addFavorite, removeFavorite]);
 
   const openTrashWindow = useCallback(() => {
     wm.toggleWindow('trash', {
       title: 'Trash',
+      icon: trashIconUrl(browser.trashEntries.length > 0),
       view: <TrashView />,
       width: 700, height: 500,
     });
-  }, [wm]);
+  }, [wm, browser.trashEntries.length]);
 
   const openJobsWindow = useCallback(() => {
     wm.toggleWindow('jobs', {
       title: 'Transfers',
+      icon: jobsIconUrl(),
       view: <JobsPage session={session} sessionLoading={false} />,
       width: 700, height: 500,
     });
@@ -125,6 +130,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const openSettingsWindow = useCallback(() => {
     wm.toggleWindow('settings', {
       title: 'Settings',
+      icon: preferencesIconUrl(),
       view: (
         <SettingsPanel
           onOpenShares={() => dialogs.setSharesOpen(true)}
@@ -349,6 +355,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         </section>
 
         <WindowHost />
+
+        <Taskbar />
 
         <StatusBar
           visible={showStatusBar}

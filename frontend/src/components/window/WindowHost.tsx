@@ -1,9 +1,31 @@
+import { useEffect, useState } from 'react';
 import { useWindowManager } from '../../contexts/WindowManager';
 import { WindowFrame } from './WindowFrame';
 
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 760px)');
+    const handler = (e: MediaQueryListEvent) => setMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return mobile;
+}
+
 export function WindowHost() {
   const { windows } = useWindowManager();
+  const isMobile = useIsMobile();
+
   if (windows.length === 0) return null;
+
+  if (isMobile) {
+    const focused = windows.reduce((a, b) => (a.zIndex > b.zIndex ? a : b));
+    return <WindowFrame key={focused.id} win={focused} />;
+  }
+
   return (
     <>
       {windows.map((win) => (

@@ -133,3 +133,29 @@
   height: 12px;
   cursor: sw-resize;
 }
+
+@media (max-width: 760px) {
+  .windowFrame {
+    position: fixed;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+    border-radius: 0;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .resizeHandle {
+    display: none;
+  }
+
+  .titleBar {
+    height: 44px;
+    padding: 0 var(--space-md);
+  }
+
+  .titleText {
+    font-size: 15px;
+  }
+}
