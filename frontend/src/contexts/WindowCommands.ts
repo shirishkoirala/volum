@@ -10,6 +10,9 @@ export type WindowCommands = {
   onInvertSelection?: () => void;
   onRename?: () => void;
   onDelete?: () => void;
+  onRestore?: () => void;
+  onDeleteForever?: () => void;
+  onEmptyTrash?: () => void;
 };
 
 export type CommandsMap = Record<string, WindowCommands>;

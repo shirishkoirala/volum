@@ -50,6 +50,8 @@ export function TopBar({ activeView, onGoDesktop, onOpenSettings, menuHandlers, 
   }, [userMenuOpen]);
 
   const showUserMenu = session?.authEnabled && session.authenticated;
+  const showMenu = ((focusedWindowExists && (focusedWindowType === 'files' || focusedWindowType === 'trash')) || activeView === 'files' || activeView === 'trash') && menuHandlers;
+  const appMenuWindowType = !focusedWindowExists ? activeView : (focusedWindowType ?? activeView);
 
   return (
     <header className={styles.topbar}>
@@ -58,7 +60,7 @@ export function TopBar({ activeView, onGoDesktop, onOpenSettings, menuHandlers, 
           <img className={styles.brandIcon} src={appIcon} alt="" />
           <span className={styles.brandName}>{title ?? 'Volum Desktop'}</span>
         </button>
-        {((focusedWindowExists && focusedWindowType === 'files') || activeView === 'files') && menuHandlers && <AppMenuBar handlers={menuHandlers} />}
+        {showMenu && <AppMenuBar handlers={menuHandlers} windowType={appMenuWindowType} />}
       </div>
       <div className={styles.clock}>
         <span>{dateTime}</span>

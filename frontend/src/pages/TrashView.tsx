@@ -9,6 +9,7 @@ import { useToasts } from '../hooks/useToasts';
 import { GRID_ICON_SIZE, GridTile } from '../components/ui/GridTile';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
 import { TrashEmptyMenu } from '../components/overlay/TrashEmptyMenu';
+import { useWindowId, useCommandsContext } from '../contexts/WindowCommands';
 import styles from './TrashView.module.css';
 
 export function TrashView() {
@@ -80,6 +81,69 @@ export function TrashView() {
     loadTrash();
     toast.showToastObj({ title: 'Refreshed', variant: 'success' });
   }, [loadTrash, toast]);
+
+  const windowId = useWindowId();
+  const { register: registerCommands, unregister: unregisterCommands } = useCommandsContext();
+
+  const handleSelectAllTrash = useCallback(() => {
+    setSelectedTrashIds(new Set(trashEntries.map((e) => e.id)));
+  }, [trashEntries]);
+
+  const handleInvertSelectionTrash = useCallback(() => {
+    setSelectedTrashIds((prev) => {
+      const ids = new Set(trashEntries.map((e) => e.id));
+      for (const id of prev) ids.delete(id);
+      return ids;
+    });
+  }, [trashEntries]);
+
+  const handleRestoreSelected = useCallback(() => {
+    if (selectedTrashIds.size === 0) return;
+    const ids = Array.from(selectedTrashIds);
+    Promise.all(ids.map((id) => restoreTrash(id)))
+      .then(() => {
+        toast.showToastObj({ title: 'Restored', variant: 'success' });
+        setSelectedTrashIds(new Set());
+        loadTrash();
+      })
+      .catch((err) => toast.showToastObj({ title: 'Failed to restore', variant: 'error', message: err.message }));
+  }, [selectedTrashIds, toast, loadTrash]);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedTrashIds.size === 0) return;
+    const ids = Array.from(selectedTrashIds);
+    Promise.all(ids.map((id) => deleteTrash(id)))
+      .then(() => {
+        toast.showToastObj({ title: 'Deleted permanently', variant: 'success' });
+        setSelectedTrashIds(new Set());
+        loadTrash();
+      })
+      .catch((err) => toast.showToastObj({ title: 'Failed to delete', variant: 'error', message: err.message }));
+  }, [selectedTrashIds, toast, loadTrash]);
+
+  const handleEmptyTrash = useCallback(() => {
+    if (trashEntries.length === 0) return;
+    Promise.all(trashEntries.map((e) => deleteTrash(e.id)))
+      .then(() => {
+        toast.showToastObj({ title: 'Trash emptied', variant: 'success' });
+        setSelectedTrashIds(new Set());
+        loadTrash();
+      })
+      .catch((err) => toast.showToastObj({ title: 'Failed to empty trash', variant: 'error', message: err.message }));
+  }, [trashEntries, toast, loadTrash]);
+
+  // Register window commands when inside a window
+  useEffect(() => {
+    if (!windowId) return;
+    registerCommands(windowId, {
+      onSelectAll: handleSelectAllTrash,
+      onInvertSelection: handleInvertSelectionTrash,
+      onRestore: handleRestoreSelected,
+      onDeleteForever: handleDeleteSelected,
+      onEmptyTrash: handleEmptyTrash,
+    });
+    return () => unregisterCommands(windowId);
+  }, [windowId, handleSelectAllTrash, handleInvertSelectionTrash, handleRestoreSelected, handleDeleteSelected, handleEmptyTrash, registerCommands, unregisterCommands]);
 
   const sortedTrashEntries = useMemo(() => {
     return [...trashEntries].sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));

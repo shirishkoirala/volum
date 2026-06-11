@@ -251,18 +251,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     menus.setDesktopContextMenu({ x: event.clientX, y: event.clientY, item });
   }, [menus]);
 
-  // ── Taskbar launcher handler ─────────────────────────────
-  const handleTaskbarLauncher = useCallback((id: string) => {
-    if (id === 'files') openFilesWindow();
-    else if (id === 'trash') openTrashWindow();
-    else if (id === 'jobs') openJobsWindow();
-    else if (id === 'settings') openSettingsWindow();
-    else if (id === 'desktop') {
-      wm.windows.forEach((w) => { if (!w.minimized) wm.toggleMinimize(w.id); });
-    }
-    else desktopActions.handleDockActivate(id);
-  }, [openFilesWindow, openTrashWindow, openJobsWindow, openSettingsWindow, wm, desktopActions]);
-
   // ── Derived data ─────────────────────────────────────────
 
   const [isMobile, setIsMobile] = useState(() =>
@@ -276,6 +264,26 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   }, []);
 
   const showStatusBar = !isMobile ? false : (nav.activeView !== 'settings' && nav.activeView !== 'jobs' && nav.activeView !== 'desktop' && nav.activeView !== 'drives');
+
+  // ── Taskbar launcher handler ─────────────────────────────
+  const handleTaskbarLauncher = useCallback((id: string) => {
+    if (isMobile) {
+      if (id === 'files') navActions.navigateTo(browser.roots[0]?.path ?? '/');
+      else if (id === 'trash') nav.setShowingTrash(true);
+      else if (id === 'jobs') nav.setShowingJobs(true);
+      else if (id === 'settings') nav.setShowingSettings(true);
+      else if (id === 'desktop') navActions.resetToDesktopView();
+      return;
+    }
+    if (id === 'files') openFilesWindow();
+    else if (id === 'trash') openTrashWindow();
+    else if (id === 'jobs') openJobsWindow();
+    else if (id === 'settings') openSettingsWindow();
+    else if (id === 'desktop') {
+      wm.windows.forEach((w) => { if (!w.minimized) wm.toggleMinimize(w.id); });
+    }
+    else desktopActions.handleDockActivate(id);
+  }, [isMobile, navActions, browser.roots, nav, openFilesWindow, openTrashWindow, openJobsWindow, openSettingsWindow, wm, desktopActions]);
 
   // ── Focused window & reactive commands ──────────────────
   const [commandsMap, setCommandsMap] = useState<Record<string, WindowCommands>>({});
@@ -349,6 +357,9 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             onInvertSelection: focusedCommands.onInvertSelection ?? (() => filesViewRef.current?.handleInvertSelection()),
             onRename: focusedCommands.onRename ?? (() => filesViewRef.current?.handleRename()),
             onDelete: focusedCommands.onDelete ?? (() => filesViewRef.current?.handleDelete()),
+            onRestore: focusedCommands.onRestore,
+            onDeleteForever: focusedCommands.onDeleteForever,
+            onEmptyTrash: focusedCommands.onEmptyTrash,
             viewMode: viewPref.viewMode,
             onSetViewMode: viewPref.setViewMode,
             showHidden: viewPref.showHidden,
