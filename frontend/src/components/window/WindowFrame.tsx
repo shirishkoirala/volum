@@ -20,7 +20,6 @@ function useIsMobile() {
 // Height of shell chrome that maximized windows stay between
 const TOPBAR_H = 44;
 const TASKBAR_H = 56;
-const STATUSBAR_H = 28;
 
 export function WindowFrame({ win, children }: { win: WindowState; children?: React.ReactNode }) {
   const { focusWindow, closeWindow, toggleMinimize, toggleMaximize, updatePosition, updateSize } = useWindowManager();
@@ -122,7 +121,7 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
     top: TOPBAR_H,
     left: 0,
     right: 0,
-    bottom: TASKBAR_H + STATUSBAR_H, // sit above the taskbar
+    bottom: TASKBAR_H,
     zIndex: displayZIndex,
     display: isMinimized ? 'none' : 'flex',
     flexDirection: 'column',
