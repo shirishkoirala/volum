@@ -4,7 +4,8 @@ export type WindowState = {
   id: string;
   title: string;
   icon: string;
-  view: React.ReactNode;
+  winType: string;
+  params: Record<string, unknown>;
   x: number;
   y: number;
   width: number;
@@ -20,7 +21,8 @@ export type WindowManagerType = {
     id: string;
     title: string;
     icon: string;
-    view: React.ReactNode;
+    winType: string;
+    params: Record<string, unknown>;
     x?: number;
     y?: number;
     width?: number;
@@ -32,10 +34,11 @@ export type WindowManagerType = {
   toggleMaximize: (id: string) => void;
   updatePosition: (id: string, x: number, y: number) => void;
   updateSize: (id: string, width: number, height: number) => void;
-  toggleWindow: (type: string, opts: {
+  toggleWindow: (windowType: string, opts: {
     title: string;
     icon: string;
-    view: React.ReactNode;
+    winType: string;
+    params: Record<string, unknown>;
     x?: number;
     y?: number;
     width?: number;

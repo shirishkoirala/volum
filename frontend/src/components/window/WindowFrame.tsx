@@ -17,7 +17,7 @@ function useIsMobile() {
   return mobile;
 }
 
-export function WindowFrame({ win }: { win: WindowState }) {
+export function WindowFrame({ win, children }: { win: WindowState; children?: React.ReactNode }) {
   const { focusWindow, closeWindow, toggleMinimize, toggleMaximize, updatePosition, updateSize } = useWindowManager();
   const frameRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; startLeft: number; startTop: number } | null>(null);
@@ -166,7 +166,7 @@ export function WindowFrame({ win }: { win: WindowState }) {
         </div>
       </div>
       <div className={styles.content}>
-        {win.view}
+        {children}
       </div>
       {!isMaximized && !isMobile && <>
         {resizeHandle('n')}

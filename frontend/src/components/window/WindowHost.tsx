@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useWindowManager } from '../../contexts/WindowManager';
+import { useWindowManager, type WindowState } from '../../contexts/WindowManager';
 import { WindowFrame } from './WindowFrame';
 
 function useIsMobile() {
@@ -15,7 +15,7 @@ function useIsMobile() {
   return mobile;
 }
 
-export function WindowHost() {
+export function WindowHost({ renderWindow }: { renderWindow: (win: WindowState) => React.ReactNode }) {
   const { windows } = useWindowManager();
   const isMobile = useIsMobile();
 
@@ -24,7 +24,9 @@ export function WindowHost() {
   return (
     <>
       {windows.map((win) => (
-        <WindowFrame key={win.id} win={win} />
+        <WindowFrame key={win.id} win={win}>
+          {renderWindow(win)}
+        </WindowFrame>
       ))}
     </>
   );

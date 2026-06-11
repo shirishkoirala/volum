@@ -33,7 +33,7 @@ import { useFileCommands } from '../hooks/useFileCommands';
 import { useContextMenus } from '../hooks/useContextMenus';
 import { useNavStack } from '../hooks/useNavStack';
 import { useDesktopActions } from '../hooks/useDesktopActions';
-import { useWindowManager } from '../contexts/WindowManager';
+import { useWindowManager, type WindowState } from '../contexts/WindowManager';
 import { Taskbar } from '../components/layout/Taskbar';
 import { filesIconUrl, trashIconUrl, jobsIconUrl, preferencesIconUrl } from '../api/icons';
 import styles from './Home.module.css';
@@ -94,26 +94,18 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     wm.toggleWindow('files', {
       title: 'Files',
       icon: filesIconUrl(),
-      view: (
-        <FilesView
-          currentPath={path ?? viewPref.currentPath}
-          session={session}
-          favorites={favorites}
-          onNavigate={navActions.navigateTo}
-          onBack={navActions.goBack}
-          onAddFavorite={addFavorite}
-          onRemoveFavorite={removeFavorite}
-        />
-      ),
+      winType: 'files',
+      params: { path },
       width: 900, height: 600,
     });
-    }, [wm, viewPref.currentPath, session, favorites, navActions, addFavorite, removeFavorite]);
+  }, [wm]);
 
   const openTrashWindow = useCallback(() => {
     wm.toggleWindow('trash', {
       title: 'Trash',
       icon: trashIconUrl(browser.trashEntries.length > 0),
-      view: <TrashView />,
+      winType: 'trash',
+      params: {},
       width: 700, height: 500,
     });
   }, [wm, browser.trashEntries.length]);
@@ -122,30 +114,58 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     wm.toggleWindow('jobs', {
       title: 'Transfers',
       icon: jobsIconUrl(),
-      view: <JobsPage session={session} sessionLoading={false} />,
+      winType: 'jobs',
+      params: {},
       width: 700, height: 500,
     });
-  }, [wm, session]);
+  }, [wm]);
 
   const openSettingsWindow = useCallback(() => {
     wm.toggleWindow('settings', {
       title: 'Settings',
       icon: preferencesIconUrl(),
-      view: (
-        <SettingsPanel
-          onOpenShares={() => dialogs.setSharesOpen(true)}
-          wallpaper={wallpaper.wallpaper}
-          onWallpaperChange={wallpaper.setWallpaper}
-          theme={theme}
-          onToggleTheme={onToggleTheme}
-          onOpenShortcuts={() => fileActions.setShortcutsOpen(true)}
-          onLogout={onLogout}
-          session={session}
-        />
-      ),
+      winType: 'settings',
+      params: {},
       width: 800, height: 550,
     });
-  }, [wm, theme, onToggleTheme, onLogout, session, wallpaper, dialogs, fileActions]);
+  }, [wm]);
+
+  // ── Render window content from type+params ──────────────
+  const renderWindow = useCallback((win: WindowState) => {
+    switch (win.winType) {
+      case 'files':
+        return (
+          <FilesView
+            currentPath={(win.params.path as string) ?? viewPref.currentPath}
+            session={session}
+            favorites={favorites}
+            onNavigate={navActions.navigateTo}
+            onBack={navActions.goBack}
+            onAddFavorite={addFavorite}
+            onRemoveFavorite={removeFavorite}
+          />
+        );
+      case 'trash':
+        return <TrashView />;
+      case 'jobs':
+        return <JobsPage session={session} sessionLoading={false} />;
+      case 'settings':
+        return (
+          <SettingsPanel
+            onOpenShares={() => dialogs.setSharesOpen(true)}
+            wallpaper={wallpaper.wallpaper}
+            onWallpaperChange={wallpaper.setWallpaper}
+            theme={theme}
+            onToggleTheme={onToggleTheme}
+            onOpenShortcuts={() => fileActions.setShortcutsOpen(true)}
+            onLogout={onLogout}
+            session={session}
+          />
+        );
+      default:
+        return null;
+    }
+  }, [viewPref, session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions]);
 
   const desktopActions = useDesktopActions({
     browser, dialogs, toast, nav,
@@ -354,7 +374,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           )}
         </section>
 
-        <WindowHost />
+        <WindowHost renderWindow={renderWindow} />
 
         <Taskbar />
 

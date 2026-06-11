@@ -10,7 +10,7 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
   const cascadeIndex = useRef(0);
 
   const openWindow = useCallback((opts: {
-    id: string; title: string; icon: string; view: React.ReactNode;
+    id: string; title: string; icon: string; winType: string; params: Record<string, unknown>;
     x?: number; y?: number; width?: number; height?: number;
   }) => {
     setWindows((prev) => {
@@ -23,7 +23,8 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
         id: opts.id,
         title: opts.title,
         icon: opts.icon,
-        view: opts.view,
+        winType: opts.winType,
+        params: opts.params,
         x: opts.x ?? 100,
         y: opts.y ?? 80,
         width: opts.width ?? 800,
@@ -60,19 +61,19 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
     setWindows((prev) => prev.map((w) => w.id === id ? { ...w, width, height } : w));
   }, []);
 
-  const toggleWindow = useCallback((type: string, opts: {
-    title: string; icon: string; view: React.ReactNode;
+  const toggleWindow = useCallback((windowType: string, opts: {
+    title: string; icon: string; winType: string; params: Record<string, unknown>;
     x?: number; y?: number; width?: number; height?: number;
   }): string => {
-    const existing = windows.find((w) => w.id.startsWith(`${type}-`));
+    const existing = windows.find((w) => w.id.startsWith(`${windowType}-`));
     if (existing) {
       const z = nextZIndex++;
       setWindows((prev) => prev.map((w) => w.id === existing.id ? { ...w, minimized: false, zIndex: z } : w));
       return existing.id;
     }
-    const count = (windowCounts.current[type] ?? 0) + 1;
-    windowCounts.current[type] = count;
-    const id = `${type}-${count}`;
+    const count = (windowCounts.current[windowType] ?? 0) + 1;
+    windowCounts.current[windowType] = count;
+    const id = `${windowType}-${count}`;
     const ci = cascadeIndex.current;
     cascadeIndex.current = ci + 1;
     const x = 60 + (ci % 6) * WINDOW_OFFSET;
@@ -82,7 +83,8 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
       id,
       title: opts.title,
       icon: opts.icon,
-      view: opts.view,
+      winType: opts.winType,
+      params: opts.params,
       x: opts.x ?? x,
       y: opts.y ?? y,
       width: opts.width ?? 800,
