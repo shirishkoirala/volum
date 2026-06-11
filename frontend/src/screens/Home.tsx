@@ -249,6 +249,18 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     menus.setDesktopContextMenu({ x: event.clientX, y: event.clientY, item });
   }, [menus]);
 
+  // ── Taskbar launcher handler ─────────────────────────────
+  const handleTaskbarLauncher = useCallback((id: string) => {
+    if (id === 'files') openFilesWindow();
+    else if (id === 'trash') openTrashWindow();
+    else if (id === 'jobs') openJobsWindow();
+    else if (id === 'settings') openSettingsWindow();
+    else if (id === 'desktop') {
+      wm.windows.forEach((w) => { if (!w.minimized) wm.toggleMinimize(w.id); });
+    }
+    else desktopActions.handleDockActivate(id);
+  }, [openFilesWindow, openTrashWindow, openJobsWindow, openSettingsWindow, wm, desktopActions]);
+
   // ── Derived data ─────────────────────────────────────────
 
   const showStatusBar = nav.activeView !== 'settings' && nav.activeView !== 'jobs' && nav.activeView !== 'desktop' && nav.activeView !== 'drives';
@@ -297,13 +309,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             selectedCount: nav.showingTrash ? selection.selectedTrashIds.length : selection.selectedPaths.length,
           }}
         />
-        <Dock items={nav.dockItems} onActivate={(id) => {
-          if (id === 'files') openFilesWindow();
-          else if (id === 'trash') openTrashWindow();
-          else if (id === 'jobs') openJobsWindow();
-          else if (id === 'settings') openSettingsWindow();
-          else desktopActions.handleDockActivate(id);
-        }} />
+        <Dock items={nav.dockItems} onActivate={handleTaskbarLauncher} />
 
         <section className={styles.workspace} onClick={selection.handleWorkspaceClick}>
           {nav.activeView === 'desktop' && (
@@ -376,7 +382,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
         <WindowHost renderWindow={renderWindow} />
 
-        <Taskbar />
+        <Taskbar launcherItems={nav.dockItems} onActivateLauncher={handleTaskbarLauncher} />
 
         <StatusBar
           visible={showStatusBar}

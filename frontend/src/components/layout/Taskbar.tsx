@@ -3,7 +3,19 @@ import { useWindowManager } from '../../contexts/WindowManager';
 import { IconImg } from '../ui/shared';
 import styles from './Taskbar.module.css';
 
-export function Taskbar() {
+export type LauncherItem = {
+  id: string;
+  label: string;
+  icon: string;
+  badge?: number;
+};
+
+type TaskbarProps = {
+  launcherItems: LauncherItem[];
+  onActivateLauncher: (id: string) => void;
+};
+
+export function Taskbar({ launcherItems, onActivateLauncher }: TaskbarProps) {
   const { windows, focusWindow, toggleMinimize, closeWindow } = useWindowManager();
 
   const focusedId = useMemo(() => {
@@ -11,7 +23,7 @@ export function Taskbar() {
     return windows.reduce((a, b) => (a.zIndex > b.zIndex ? a : b)).id;
   }, [windows]);
 
-  const handleClick = (id: string) => {
+  const handleWindowClick = (id: string) => {
     const win = windows.find((w) => w.id === id);
     if (!win) return;
     if (win.minimized) {
@@ -23,17 +35,43 @@ export function Taskbar() {
     }
   };
 
-  if (windows.length === 0) return null;
+  const isLauncherOpen = (id: string) => windows.some((w) => w.id.startsWith(`${id}-`));
+  const isLauncherFocused = (id: string) => {
+    if (!focusedId) return false;
+    return focusedId.startsWith(`${id}-`);
+  };
 
   return (
-    <div className={styles.taskbar} role="toolbar" aria-label="Open windows">
+    <div className={styles.taskbar} role="toolbar" aria-label="Taskbar">
+      {launcherItems.map((item) => {
+        const open = isLauncherOpen(item.id);
+        const focused = isLauncherFocused(item.id);
+        return (
+          <button
+            key={item.id}
+            className={`${styles.launcher}${open ? ` ${styles.hasWindow}` : ''}${focused ? ` ${styles.focused}` : ''}`}
+            onClick={() => onActivateLauncher(item.id)}
+            type="button"
+            title={item.label}
+            aria-label={item.label}
+          >
+            <IconImg src={item.icon} alt="" width={22} height={22} />
+            {item.badge != null && item.badge > 0 && (
+              <span className={styles.badge}>{item.badge}</span>
+            )}
+          </button>
+        );
+      })}
+
+      {windows.length > 0 && <div className={styles.divider} />}
+
       {windows.map((win) => {
         const isFocused = focusedId === win.id && !win.minimized;
         return (
           <button
             key={win.id}
             className={`${styles.item}${isFocused ? ` ${styles.focused}` : ''}${win.minimized ? ` ${styles.minimized}` : ''}`}
-            onClick={() => handleClick(win.id)}
+            onClick={() => handleWindowClick(win.id)}
             type="button"
             title={win.title}
             aria-label={`${win.title}${win.minimized ? ' (minimized)' : ''}`}
