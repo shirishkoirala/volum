@@ -17,6 +17,11 @@ function useIsMobile() {
   return mobile;
 }
 
+// Height of shell chrome that maximized windows stay between
+const TOPBAR_H = 44;
+const TASKBAR_H = 56;
+const STATUSBAR_H = 28;
+
 export function WindowFrame({ win, children }: { win: WindowState; children?: React.ReactNode }) {
   const { focusWindow, closeWindow, toggleMinimize, toggleMaximize, updatePosition, updateSize } = useWindowManager();
   const prevRectRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
@@ -109,13 +114,16 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
     toggleMaximize(win.id);
   }, [isMaximized, toggleMaximize, win.id, win.x, win.y, win.width, win.height, updatePosition, updateSize, isMobile]);
 
+  // Maximized windows stack below shell chrome (z-index ~30-50)
+  const displayZIndex = isMaximized ? Math.min(zIndex, 20) : zIndex;
+
   const style: React.CSSProperties = isMaximized ? {
     position: 'fixed',
-    top: 44,
+    top: TOPBAR_H,
     left: 0,
     right: 0,
-    bottom: 56,
-    zIndex,
+    bottom: TASKBAR_H + STATUSBAR_H, // sit above the taskbar
+    zIndex: displayZIndex,
     display: isMinimized ? 'none' : 'flex',
     flexDirection: 'column',
     border: 'none',
@@ -126,7 +134,7 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
     left: win.x,
     width: win.width,
     height: win.height,
-    zIndex,
+    zIndex: displayZIndex,
     display: isMinimized ? 'none' : 'flex',
     flexDirection: 'column',
   };
