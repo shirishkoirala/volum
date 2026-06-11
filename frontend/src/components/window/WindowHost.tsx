@@ -19,12 +19,7 @@ export function WindowHost() {
   const { windows } = useWindowManager();
   const isMobile = useIsMobile();
 
-  if (windows.length === 0) return null;
-
-  if (isMobile) {
-    const focused = windows.reduce((a, b) => (a.zIndex > b.zIndex ? a : b));
-    return <WindowFrame key={focused.id} win={focused} />;
-  }
+  if (isMobile || windows.length === 0) return null;
 
   return (
     <>

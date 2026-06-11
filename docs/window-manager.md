@@ -1,55 +1,85 @@
 # Volum Web Desktop — Window Manager Roadmap
 
-Transform Volum from a single-view web file manager into a GNOME-replacement web desktop with a floating window manager.
+Transform Volum from a single-view web file manager into a desktop experience with a floating window manager on desktop, while keeping the simple full-page app switcher on mobile.
 
 ---
 
-## Architecture Overview
+## Two-Mode Architecture
 
-### Two Modes, One Codebase
+The codebase supports two fundamentally different interaction models depending on viewport width:
 
 | Aspect | Desktop (≥760px) | Mobile (<760px) |
 |---|---|---|
-| Window behavior | Floating, draggable, resizable | Always full-screen (maximized), no drag/resize |
-| Multiple windows | Visible simultaneously, overlapping | One at a time, hidden behind taskbar |
-| Title bar | Drag handle + minimize/maximize/close | Simple header with back arrow + title + close |
-| Resize handles | 8-point (N,S,E,W,NE,NW,SE,SW) | Hidden |
-| Taskbar | Horizontal list of open windows at bottom | Bottom tab bar, tap to switch windows |
-| Dock | Left sidebar, app launcher only | Merged into taskbar (launcher + running) |
-| Desktop wallpaper | Visible as background behind windows | Hidden (views are always maximized over desktop) |
+| **Windowing** | Floating windows managed by WindowManager | No windows — classic full-page views |
+| **Taskbar** | Bottom bar shows open windows, click to focus/minimize | Hidden |
+| **Dock** | Left sidebar app launcher | Bottom tab bar (app switcher) |
+| **Desktop background** | Always visible wallpaper | Hidden when a view is active |
+| **Navigation** | Open/close/focus windows via Dock, desktop icons, menus | Dock tab switches full-page views |
+| **View state** | `WindowState[]` array | `activeView` + `showing*` booleans |
 
-### Current Component Tree (Home.tsx)
-```
-<WindowManagerProvider>
-  <Home>
-    <main.appShell>                    ← grid: 56px sidebar | 44px topbar / 1fr content / 28px status
-      <TopBar />                      ← menu bar + title + navigation
-      <Dock />                        ← left sidebar: desktop, files, trash, jobs, settings
-      <section.workspace>
-        <DesktopView />              ← wallpaper + desktop icons + drives
-        | <DrivesView />             ← (old full-page drives mode)
-        | <TrashView />              ← (old full-page trash mode)
-        | <FilesView />              ← (old full-page files mode)
-        | <JobsPage />               ← (old full-page jobs mode)
-        | <SettingsPanel />          ← (old full-page settings mode)
-        <DesktopContextMenu />       ← right-click on desktop
+### How the Bifurcation Works
+
+```typescript
+// Home.tsx rendering logic (Phase 5 end state)
+
+if (isMobile) {
+  // Mobile: old full-page view system
+  return (
+    <main className={styles.appShellMobile}>
+      <TopBar />
+      <section className={styles.workspace}>
+        {nav.activeView === 'files' && <FilesView ... />}
+        {nav.activeView === 'trash' && <TrashView />}
+        {nav.activeView === 'jobs' && <JobsPage ... />}
+        {nav.activeView === 'settings' && <SettingsPanel ... />}
+        {nav.activeView === 'drives' && <DrivesView />}
+        {nav.activeView === 'desktop' && <DesktopView ... />}
       </section>
-      <WindowHost />                  ← floating windows on top
-      <StatusBar />                   ← bottom status bar (hidden on some views)
+      <StatusBar />
+      <Dock />  {/* bottom tab bar on mobile */}
     </main>
-  </Home>
-</WindowManagerProvider>
+  );
+} else {
+  // Desktop: window-based
+  return (
+    <main className={styles.appShellDesktop}>
+      <TopBar />
+      <Dock />  {/* left sidebar launcher */}
+      <DesktopView />  {/* always the background */}
+      <WindowHost />   {/* floating windows on top */}
+      <Taskbar />      {/* open window list */}
+      <StatusBar />
+    </main>
+  );
+}
+```
+
+### `isMobile` Detection
+
+```typescript
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() =>
+    window.matchMedia('(max-width: 760px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 760px)');
+    const handler = (e: MediaQueryListEvent) => setMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return mobile;
+}
 ```
 
 ---
 
 ## Phase 0 — Self-Contained Views ✅
 
-**Goal:** Each view owns its own data fetching, state, and visual rendering so it can be opened as a standalone window.
+**Goal:** Each view owns its own data fetching and state so it can be opened as a standalone window or full-page view interchangeably.
 
 ### Done
 
-| Component | Self-contained? | Data source | Notes |
+| Component | Self-contained? | Data | Notes |
 |---|---|---|---|
 | FilesView | ✅ | `useFileBrowser` hook | `forwardRef` for shell command proxy |
 | TrashView | ✅ | `getTrash()` API | Own selection + restore/delete |
@@ -59,46 +89,33 @@ Transform Volum from a single-view web file manager into a GNOME-replacement web
 
 ### Key Decisions
 - Each view calls its own API endpoints instead of receiving data as props
-- SSE connection duplicated between shell and JobsPage — acceptable for now
-- `forwardRef`/`useImperativeHandle` pattern for shell→view communication
+- SSE connection duplicated between shell and JobsPage — acceptable waste
+- `forwardRef`/`useImperativeHandle` for shell→view communication (AppMenuBar → FilesView)
 - ShellContext provides toast, navigate, refresh to all self-contained views
 
 ---
 
 ## Phase 1 — Window Frame System ✅
 
-**Goal:** Core windowing primitives.
+**Goal:** Core windowing primitives — draggable, resizable, minimizable windows with title bars.
 
-### Done: Types (`WindowManager.tsx`)
+### Types (`contexts/WindowManager.tsx`)
 
 ```typescript
 type WindowState = {
-  id: string;              // unique, e.g. "files-1", "trash-1"
-  title: string;           // displayed in title bar
-  view: React.ReactNode;   // captured on creation (stale closure — fixed in Phase 4)
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  id: string;             // e.g. "files-1", "trash-1"
+  title: string;
+  icon: string;           // icon URL for taskbar
+  render: () => React.ReactNode;
+  x: number; y: number;
+  width: number; height: number;
   minimized: boolean;
   maximized: boolean;
   zIndex: number;
 };
-
-type WindowManagerType = {
-  windows: WindowState[];
-  openWindow(opts: { id, title, view, x?, y?, width?, height? }): void;
-  closeWindow(id: string): void;
-  focusWindow(id: string): void;
-  toggleMinimize(id: string): void;
-  toggleMaximize(id: string): void;
-  updatePosition(id: string, x, y): void;
-  updateSize(id: string, width, height): void;
-  toggleWindow(type: string, opts: { title, view, x?, y?, width?, height? }): string;
-};
 ```
 
-### Done: Files
+### Files
 
 | File | Purpose |
 |---|---|
@@ -108,491 +125,334 @@ type WindowManagerType = {
 | `components/window/WindowFrame.module.css` | Styles for title bar, resize handles, content |
 | `components/window/WindowHost.tsx` | Maps `windows` to `<WindowFrame>` instances |
 
-### WindowFrame Behavior
-- **Title bar drag**: `onMouseDown` on title bar, track delta on `window.mousemove`, call `updatePosition`. Blocked when maximized.
-- **8-point resize**: N/S/E/W/NE/NW/SE/SW handles on edges/corners. Min 300×200. Calls `updatePosition` + `updateSize`.
-- **Double-click title bar**: Toggle maximize, save/restore previous rect via `prevRectRef`.
-- **Minimize**: Sets `minimized: true`, `display: none` on frame.
-- **Maximize**: Sets `position: fixed; top: 0; left: 0; width: 100%; height: 100%`.
-- **Z-order**: Click on any part of window calls `focusWindow(id)` → increments z-index.
-
-### Limitations (addressed in later phases)
-- Old full-page `activeView` system still exists alongside windows
-- Windows capture initial props via closure — don't react to shell state changes
-- No taskbar — minimized windows have no way to restore
-- No mobile responsiveness in `WindowFrame`
-- No keyboard shortcuts
+### Mobile: WindowFrame is NOT rendered (WindowHost returns null)
 
 ---
 
-## Phase 2 — Window Lifecycle & Multiple Windows ✅
+## Phase 2 — Window Lifecycle ✅
 
-**Goal:** Open views as windows from dock, desktop, and menus. Toggle behavior (focus existing or open new). Unique window IDs per instance.
+**Goal:** Open views as windows from dock, desktop, and menus. Toggle behavior. Unique IDs.
 
 ### Done
 
-| Feature | Implementation |
+| Feature | Detail |
 |---|---|
-| `toggleWindow(type, opts)` | Finds existing window by `id.startsWith(type + '-')`, focuses it, or opens new |
-| Unique window IDs | `{type}-{n}` via `windowCounts` ref counter |
-| Cascade positioning | Each new window offset by `WINDOW_OFFSET = 24px` mod 6 |
-| Dock opens windows | Fires `toggleWindow` for files, trash, jobs, settings |
-| Desktop icons open windows | `onNavigateTo` → `openFilesWindow(path)`, others → respective toggle |
-| TopBar menu opens windows | `onGoFiles`/`onGoTrash`/`onGoJobs`/`onGoSettings` all call window openers |
-
-### Window Openers in Home.tsx
-
-```typescript
-const openFilesWindow = useCallback((path?: string) => {
-  wm.toggleWindow('files', {
-    title: 'Files',
-    view: <FilesView currentPath={path ?? viewPref.currentPath} ... />,
-    width: 900, height: 600,
-  });
-}, [wm, viewPref.currentPath, session, favorites, ...]);
-
-const openTrashWindow = useCallback(() => {
-  wm.toggleWindow('trash', { title: 'Trash', view: <TrashView />, width: 700, height: 500 });
-}, [wm]);
-
-// etc for jobs, settings
-```
+| `toggleWindow(type, opts)` | Find existing by prefix (`files-*`), focus, or open new |
+| Unique IDs | `{type}-{n}` via `windowCounts` ref |
+| Cascade | Offset 24px per window, mod 6 |
+| Dock opens windows | `openFilesWindow()`, `openTrashWindow()`, etc. |
+| Desktop icons open windows | `onNavigateTo` → `openFilesWindow(path)` |
+| TopBar menu opens windows | All view navigation calls window openers |
 
 ---
 
-## Phase 3 — Taskbar / Window List
+## Phase 3 — Taskbar ✅
 
-**Goal:** Show running windows so users can see what's open, restore minimized windows, and close windows from a taskbar. Responsive: horizontal list on desktop, bottom tab bar on mobile.
+**Goal:** Show open windows in a taskbar so users can see what's open and switch between them.
 
-### Design
+### Done
 
-#### Desktop (≥760px)
-- **Taskbar** is a horizontal bar at the bottom of the screen, above the StatusBar
-- Each taskbar entry shows: icon (from DockItem type), window title, active indicator, close button
-- Left-aligned, scrollable if too many windows
-- Click behavior:
-  - Window is focused → minimize it
-  - Window is minimized → restore + focus it
-  - Window is unfocused → focus it
-- Right-click on taskbar item → context menu (Close, Minimize, Maximize, Close All)
-- **Dock remains** as launcher (left sidebar). Taskbar shows *running* windows, dock shows *available* apps.
+| Feature | Desktop | Mobile |
+|---|---|---|
+| Taskbar | Bottom horizontal bar showing open windows | Hidden |
+| Click behavior | Focused → minimize, minimized → restore, unfocused → focus | N/A |
+| Close button | On hover (x) | N/A |
+| Icon + title | Each item shows both | N/A |
+| Active indicator | Blue underline for focused window | N/A |
 
-#### Mobile (<760px)
-- **Dock is hidden** (no left sidebar on mobile)
-- **Taskbar becomes a bottom tab bar** replacing the dock's grid-row 4 position
-- Each open window = one tab icon
-- Tapping a tab: same focus/minimize/restore logic as desktop
-- No close button on tabs (swipe to close, or long-press for context menu)
-- Only one window visible at a time (the focused/most-recently-active one)
-- No desktop background visible — windows fill the full screen
-- "Windows" are always maximized (no drag, no resize, just the Frame header + content)
-
-### Files to Create
+### Files
 
 | File | Purpose |
 |---|---|
-| `components/layout/Taskbar.tsx` | Taskbar component (desktop horizontal + mobile tab bar) |
-| `components/layout/Taskbar.module.css` | Styles: desktop bottom bar, mobile bottom tabs |
-| `components/layout/TaskbarItem.tsx` | Single taskbar entry (icon + title + close) |
-| `components/layout/TaskbarItem.module.css` | Item styles |
+| `components/layout/Taskbar.tsx` | Taskbar component |
+| `components/layout/Taskbar.module.css` | Styles: desktop bottom bar, mobile hidden |
 
-### Files to Modify
+### Mobile: Taskbar not rendered
 
-| File | Change |
-|---|---|
-| `contexts/WindowManager.tsx` | Add `minimizeAll?`, `closeAllWindowsOfType?`, `windowCount` getter |
-| `contexts/WindowManagerProvider.tsx` | Add helper methods if needed (closeAllWindowsOfType for right-click) |
-| `screens/Home.tsx` | Add `<Taskbar>` to shell; conditionally hide `<Dock>` on mobile |
-| `components/layout/Dock.tsx` | No change needed (stays on desktop, hidden on mobile) |
-| `App.tsx` | Wrap in `<TaskbarProvider>` if needed (could use WindowManager directly) |
+### Fix needed: Restore Dock on mobile
+Phase 3 currently hides the Dock on mobile (`display: none`) — this was premature. Now that mobile uses the old view system, the Dock MUST be restored on mobile as a bottom tab bar.
 
-### Types (`Taskbar.tsx`)
-
-```typescript
-type TaskbarItemProps = {
-  id: string;
-  title: string;
-  icon: string;          // icon URL from DockItem mapping
-  minimized: boolean;
-  focused: boolean;
-  onClick: () => void;
-  onClose: () => void;
-  onContextMenu?: (e: React.MouseEvent) => void;
-};
-
-type TaskbarProps = {
-  items: TaskbarItemProps[];
-  onActivate: (id: string) => void;  // toggle focus/minimize
-  onClose: (id: string) => void;
-};
-```
-
-### CSS Strategy (`Taskbar.module.css`)
-
-```css
-/* Desktop: horizontal bottom bar */
-.taskbar {
-  grid-column: 2;        /* next to dock */
-  grid-row: 3;           /* above status bar */
-  display: flex;
-  align-items: stretch;
-  height: 36px;
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border-light);
-  overflow-x: auto;
-  z-index: 30;
-}
-
-/* Mobile: bottom tab bar (replaces dock position) */
-@media (max-width: 760px) {
-  .taskbar {
-    grid-column: 1;
-    grid-row: 4;          /* same as dock on mobile */
-    height: 56px;
-    border-top: 1px solid var(--color-border-light);
-    justify-content: center;
-  }
-}
-```
-
-### Edge Cases
-
-| Case | Behavior |
-|---|---|
-| All windows closed | Taskbar shows "No open windows" or is empty/hidden |
-| Minimize last visible window | Desktop background shows behind empty workspace |
-| Open window closes | Taskbar item removed, next window focused (or desktop if none left) |
-| 20+ windows open | Taskbar scrolls horizontally; mobile shows dots indicator |
-| Mobile: window closed from within | Taskbar tab removed, switch to next tab or show desktop |
-| Mobile: close last window | Return to desktop (which is hidden behind windows on mobile — Phase 5 removes this) |
-
-### Acceptance Criteria
-- [ ] Clicking dock icon → opens window → appears in taskbar
-- [ ] Minimized windows can be restored from taskbar
-- [ ] Focused window ↔ active taskbar item highlight
-- [ ] Close button on taskbar item closes window
-- [ ] Mobile: taskbar = bottom tab bar, one full-screen window at a time
-- [ ] Mobile: no floating/dragging/resizing
+**Change**: Revert Dock.module.css mobile breakpoint to show the dock as a bottom tab bar (horizontal, centered, at grid-row 4).
 
 ---
 
 ## Phase 4 — Reactive Window Content
 
-**Goal:** Windows re-render when shared shell state changes (session, path, favorites, wallpaper, theme) instead of capturing stale closures.
+**Goal:** Windows re-render when shared shell state changes instead of capturing stale closures.
 
 ### Problem
 
-Currently, `WindowManagerProvider` stores `React.ReactNode` in `WindowState.view`. The JSX is evaluated once when the window is opened, so changes to `viewPref.currentPath`, `favorites`, `wallpaper`, etc. do not propagate to already-open windows.
+`WindowState.render` is stored as a function, but if `render` captures variables that change (like `viewPref.currentPath`, `favorites`, `wallpaper`), the captured closure becomes stale. The window content doesn't update when shell state changes because `render` is only evaluated once.
 
-### Solution: Render Function Pattern
-
-Replace `view: React.ReactNode` with `render: () => React.ReactNode`:
+### Solution
 
 ```typescript
-// WindowManager.tsx
-type WindowState = {
-  id: string;
-  title: string;
-  render: () => React.ReactNode;   // ← was `view: React.ReactNode`
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  minimized: boolean;
-  maximized: boolean;
-  zIndex: number;
-};
-
-type WindowManagerType = {
-  // ...
-  openWindow(opts: {
-    id: string;
-    title: string;
-    render: () => React.ReactNode;  // ← changed
-    x?, y?, width?, height?
-  }): void;
-  toggleWindow(type: string, opts: {
-    title: string;
-    render: () => React.ReactNode;  // ← changed
-    x?, y?, width?, height?
-  }): string;
-};
+// In Home.tsx — window openers
+const openFilesWindow = useCallback((path?: string) => {
+  wm.toggleWindow('files', {
+    title: 'Files',
+    icon: filesIconUrl(),
+    render: () => (                          // ← render function, not JSX
+      <FilesView
+        currentPath={path ?? viewPref.currentPath}
+        session={session}
+        favorites={favorites}
+        onNavigate={navActions.navigateTo}
+        onBack={navActions.goBack}
+        onAddFavorite={addFavorite}
+        onRemoveFavorite={removeFavorite}
+      />
+    ),
+    width: 900, height: 600,
+  });
+  // NOTE: `wm` is a stable reference. The render() function will be called
+  // by WindowHost on every shell re-render, so it always gets fresh values.
+  // However, `path` is captured locally. If `openFilesWindow` is called again
+  // with a different path, a NEW window opens (toggleWindow maps by type).
+  // The open window's path stays at the value from when it was opened.
+}, [wm, viewPref.currentPath, session, favorites, navActions, addFavorite, removeFavorite]);
 ```
 
-### How It Works
+### How It Actually Works
 
-1. `openWindow()` stores a `render` function (not JSX result)
-2. `WindowHost` calls `win.render()` on every render of `WindowManagerProvider`
-   - **But wait**: If `openWindow` captures `render` in a callback that has stable deps (`useCallback(..., [])`), it won't re-evaluate
-   - **Better**: The `WindowManagerProvider` itself needs to call `render()` during its own render pass
-3. `WindowHost` renders `<>{windows.map(w => <WindowFrame key={w.id} win={w} />)}</>`
-4. `WindowFrame` calls `win.render()` inside its JSX: `<div className={styles.content}>{win.render()}</div>`
-5. Because `WindowFrame` re-renders when its parent re-renders (or when `win` changes), the `render()` function is called fresh each time
+1. `WindowManagerProvider` stores `render: () => ReactNode` instead of `view: ReactNode`
+2. `WindowHost` renders `<WindowFrame key={win.id} win={win} />` for each window
+3. `WindowFrame.content` calls `{win.render()}`
+4. Because `WindowFrame` re-renders when `WindowHost` re-renders (window list changes, focus changes, etc.), `render()` is called fresh
+5. However, `render()` is the SAME function reference captured at creation time — it closes over the values at the time `toggleWindow` was called
+6. **Key insight**: `win.render` IS called fresh on each `WindowManagerProvider` render... but wait. The `render` is stored as a field on the state object. React state updates cause re-render of the provider, which re-renders WindowHost, which re-renders WindowFrame, which calls `win.render()`. So the function IS re-evaluated.
 
-### Optimization
+BUT: If the `render` function closes over `viewPref.currentPath` from when `toggleWindow` was called, then even if `viewPref.currentPath` changes later, the captured closure still has the old value. That's the stale closure problem.
 
-- Since `render()` is called on every shell render (window open/close/focus/any state change), wrap expensive views in `React.memo`:
-  - `React.memo(FilesView)` — already the heaviest component
-  - `React.memo(TrashView)`
-  - `React.memo(JobsPage)`
-  - `React.memo(SettingsPanel)`
-- The `render` callback itself should be `useCallback`-wrapped in Home.tsx to avoid unnecessary re-renders
-- Keep `WindowState` fields (`x`, `y`, `width`, `height`, `minimized`, `maximized`, `zIndex`) stable — they shouldn't trigger re-renders via identity changes
+**The fix**: Ensure the `render` function doesn't close over specific values but instead reads from React context or gets recreated. The simplest fix is to NOT memoize `openFilesWindow` with stale values, or to use a ref to access the latest values.
+
+#### Approach: Store unstable `render` in a ref
+
+Instead of storing `render: () => ReactNode` in state, the provider stores it in a ref that gets replaced on every render:
+
+```typescript
+// WindowManagerProvider
+const renderersRef = useRef<Record<string, () => ReactNode>>({});
+
+// Each render cycle — re-create render fns with up-to-date closures
+// Called from Home.tsx effect or passed via context
+function setRenderer(id: string, render: () => ReactNode) {
+  renderersRef.current[id] = render;
+}
+```
+
+Actually, this is getting complicated. The simplest KISS solution:
+
+**Use keys on WindowFrame** — when a window's render function changes, the key needs to change too. Or, use the window's identity as the key and pass a `version` counter that increments when the window config changes.
+
+Actually the SIMPLEST approach is:
+
+1. Don't store `view` or `render` in window state at all
+2. Instead, store `type` and `params` (a config object)
+3. WindowHost maps `{type, params}` → actual component rendering
+
+```typescript
+type WindowState = {
+  id: string;
+  type: 'files' | 'trash' | 'jobs' | 'settings';
+  params: Record<string, any>;   // path, etc.
+  // ... geometry fields
+};
+
+// In Home.tsx (renders dynamically based on all windows)
+function renderWindow(win: WindowState): ReactNode {
+  switch (win.type) {
+    case 'files': return <FilesView currentPath={win.params.path ?? viewPref.currentPath} ... />;
+    case 'trash': return <TrashView />;
+    // etc.
+  }
+}
+```
+
+This way, every time Home re-renders, ALL windows get freshly generated JSX with current prop values. No stale closures. This is the cleanest approach.
 
 ### Files to Modify
 
 | File | Change |
 |---|---|
-| `contexts/WindowManager.tsx` | Change `view: ReactNode` → `render: () => ReactNode` in both `WindowState` and all API types |
-| `contexts/WindowManagerProvider.tsx` | Store `render` instead of `view` in `WindowState` |
-| `components/window/WindowFrame.tsx` | Change `{win.view}` → `{win.render()}` |
-| `components/window/WindowHost.tsx` | No change needed |
-| `screens/Home.tsx` | Change `view: <FilesView .../>` → `render: () => <FilesView .../>` in all 4 window openers |
-| `App.tsx` or wrap level | Add `React.memo` to heavy views |
+| `contexts/WindowManager.tsx` | Change `view`/`render` → `type: string` + `params: Record<string, unknown>` |
+| `contexts/WindowManagerProvider.tsx` | Store type/params instead of view/render |
+| `components/window/WindowFrame.tsx` | Change `{win.view}` → `{win.render?.()}` or take render as prop |
+| `components/window/WindowHost.tsx` | Take `renderWindow: (win) => ReactNode` prop; call it for each window |
+| `screens/Home.tsx` | Write `renderWindow` switch; pass to WindowHost |
 
-### Acceptance Criteria
-- [ ] Changing wallpaper reflects in open Settings window
-- [ ] Adding/removing favorites reflects in open FilesView windows
-- [ ] Navigating in one FilesView window doesn't affect another
-- [ ] No stale closure bugs after Phase 4
+### Alternative (Simpler but Less Clean)
 
----
+Just replace `view: ReactNode` with `render: () => ReactNode` everywhere, and accept that the render function closes over the values at creation time. For views like JobsPage and SettingsPanel that don't take dynamic props from the shell, this is fine. For FilesView (which takes `currentPath`, `favorites`, etc.), the stale closure means opening a window captures the path — which is actually desired behavior (each FilesView window should be independent). The wallpaper/theme changes would still be stale, but we can fix those separately.
 
-## Phase 5 — Remove Old View System
-
-**Goal:** The full-page `activeView`/`showingTrash`/`showingSettings` system is dead. Windows are the only way to view content. The desktop is always the background.
-
-### What to Remove
-
-| Symbol | Location | Lines |
-|---|---|---|
-| `showingTrash` state | `useNavigation.ts` | Implementation + export |
-| `showingSettings` state | `useNavigation.ts` | Implementation + export |
-| `showingJobs` state | `useNavigation.ts` | Implementation + export |
-| `showingMyPC` state | `useNavigation.ts` | Implementation + export |
-| `selectedDriveName` state | `useNavigation.ts` | Implementation + export |
-| `activeView` computed | `useNavigation.ts` | Implementation + export |
-| `topBarTitle` computed | `useNavigation.ts` | Entire function |
-| `ActiveView` type | `useNavigation.ts` | Type definition |
-| Conditional view rendering | `Home.tsx` lines 283-330 | `nav.activeView === 'desktop' ? <DesktopView> : ...` |
-| `showStatusBar` derivation | `Home.tsx` line 228 | No longer needed — always visible or always hidden |
-| `nav.setShowingTrash/setShowingSettings/setShowingJobs/setShowingMyPC` | `Home.tsx` | All callsites |
-| `DrivesView` full-page render | `Home.tsx` | `nav.activeView === 'drives'` branch |
-| `useNavStack` | `Home.tsx`, `hooks/useNavStack.ts` | Navigation now window-based |
-| `StatusBar` visibility prop | `StatusBar.tsx` | `visible` prop + its logic |
-
-### What to Keep
-
-| Symbol | Why |
-|---|---|
-| `DesktopView` | Always rendered as the background |
-| `Dock` items array + badge logic | Used for window launcher badges |
-| `StatusBar` component | Show file/storage info for focused window |
-| `DrivesView` component | Still usable via ShellContext or as a window |
-| `FilesView` full-page render | Remove — windows replace this |
-| `viewPref.currentPath` | Still needed for dock "Desktop → Files" button |
-
-### After Removal: Home.tsx Structure
-
-```
-<main.appShell>
-  <TopBar />                  {/* simpler — no conditional menus based on activeView */}
-  <Dock />                    {/* always launcher, always visible on desktop */}
-  <DesktopView />             {/* always the background */}
-  <WindowHost />              {/* windows floating on top */}
-  <Taskbar />                 {/* window list at bottom */}
-  <StatusBar />               {/* always visible, shows info for focused window */}
-</main>
-```
-
-### Edge Cases
-
-| Case | Behavior |
-|---|---|
-| No windows open | DesktopView visible full screen, Taskbar shows empty |
-| Browser refresh | Desktop only (no full-page view restored). Window state lost unless persisted (Phase 6) |
-| Mobile | DesktopView hidden behind maximized windows; empty state shows desktop with launcher |
-
-### Acceptance Criteria
-- [ ] No `activeView` or `showing*` state exists
-- [ ] Desktop is always the background
-- [ ] All content access is through windows
-- [ ] `nav.activeView` and `useNavigation` conditional rendering completely removed
-- [ ] TypeScript + lint + build pass
+**Decision**: Go with the `type`+`params` pattern. It's KISS, handles all cases, no closure bugs.
 
 ---
 
-## Phase 6 — Keyboard & UX Polish
+## Phase 5 — Remove Old View System from Desktop
 
-**Goal:** Keyboard shortcuts for window management and general UX polish.
+**Goal:** Desktop uses windows exclusively. Mobile keeps the old full-page view system.
+
+### Desktop: What to Change
+
+| State/Variable | Action |
+|---|---|
+| `showingTrash` / `setShowingTrash` | **Keep** (for mobile) |
+| `showingSettings` / `setShowingSettings` | **Keep** (for mobile) |
+| `showingJobs` / `setShowingJobs` | **Keep** (for mobile) |
+| `showingMyPC` / `setShowingMyPC` | **Keep** (for mobile) |
+| `selectedDriveName` | **Keep** (for mobile) |
+| `activeView` computed | **Keep** (for mobile) |
+| `topBarTitle` computed | **Keep** (for mobile) |
+| `ActiveView` type | **Keep** (for mobile) |
+| `showStatusBar` derivation | **Keep** (for mobile) |
+| `useNavStack` | **Keep** (for mobile) |
+| Desktop: conditional view rendering | **Remove** — DesktopView always background |
+| Desktop: full-page FilesView, TrashView etc. | **Remove** — use windows |
+| Desktop: `StatusBar` visibility logic | **Remove** — always visible on desktop |
+| `nav.setShowingTrash` calls from desktop | **Remove** — desktop uses openTrashWindow |
+| `DesktopContextMenu` | **Keep** — still used on desktop |
+
+### Desktop Home.tsx Structure (after Phase 5)
+
+```typescript
+if (isMobile) {
+  // ═══ MOBILE: old full-page views ═══
+  return (
+    <main className={styles.appShellMobile}>
+      <TopBar ... />
+      <Dock items={nav.dockItems} onActivate={handleDockActivate} />
+      <section className={styles.workspace} onClick={selection.handleWorkspaceClick}>
+        {nav.activeView === 'desktop' && <DesktopView ... />}
+        {nav.activeView === 'drives' && <DrivesView />}
+        {nav.activeView === 'files' && <FilesView ref={filesViewRef} ... />}
+        {nav.activeView === 'trash' && <TrashView />}
+        {nav.activeView === 'jobs' && <JobsPage ... />}
+        {nav.activeView === 'settings' && <SettingsPanel ... />}
+        {menus.desktopContextMenu && <DesktopContextMenu ... />}
+      </section>
+      <StatusBar visible={isMobile ? showStatusBar : false} ... />
+    </main>
+  );
+} else {
+  // ═══ DESKTOP: window-based ═══
+  return (
+    <main className={styles.appShellDesktop}>
+      <TopBar ... menuHandlers={{...}} />
+      <Dock items={nav.dockItems} onActivate={handleDesktopDockActivate} />
+      <DesktopView wallpaperStyle={wallpaper.wallpaperStyle} ... />
+      <WindowHost renderWindow={renderWindow} />
+      <Taskbar />
+      <StatusBar visible={true} ... />
+    </main>
+  );
+}
+```
+
+### Mobile Home.tsx Structure (after Phase 5)
+
+Identical to current Home.tsx with old view system. The dock stays as a bottom tab bar. No windows, no taskbar.
+
+### Other Changes
+
+| File | Change |
+|---|---|
+| `hooks/useNavigation.ts` | Keep all state (used by mobile) |
+| `hooks/useNavStack.ts` | Keep (used by mobile) |
+| `hooks/useDesktopActions.ts` | Simplify — mobile-only dock actions |
+| `components/layout/Dock.module.css` | Restore mobile breakpoint (Phase 3 hid it) |
+| `components/layout/Taskbar.tsx` | Already hidden on mobile via CSS |
+| `components/window/WindowHost.tsx` | Return null on mobile |
+| `screens/Home.tsx` | Major refactor — bifurcate render path |
+| `screens/Home.module.css` | `.appShellDesktop` and `.appShellMobile` grids |
+
+### Desktop Grid (`Home.module.css`)
+
+```css
+.appShellDesktop {
+  grid-template-rows: 44px 1fr 36px 28px;
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+.workspaceDesktop {
+  grid-column: 2;
+  grid-row: 2;
+}
+```
+
+### Mobile Grid
+
+```css
+.appShellMobile {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 44px minmax(0, 1fr) 24px 64px;
+}
+```
+
+### Acceptance
+- [ ] Desktop: no full-page view switching
+- [ ] Desktop: all content accessed through windows
+- [ ] Desktop: DesktopView always visible as background
+- [ ] Mobile: Dock at bottom, tap to switch views
+- [ ] Mobile: no windows, no taskbar
+- [ ] Mobile: everything works as before Phase 1
+
+---
+
+## Phase 6 — Keyboard & UX Polish (Desktop Only)
+
+**Goal:** Keyboard shortcuts for window management. No mobile shortcuts (no keyboard).
 
 ### Shortcuts
 
-| Shortcut | Action | Context |
-|---|---|---|
-| `Ctrl+W` / `Cmd+W` | Close focused window | Always |
-| `Alt+F4` | Close focused window | Always |
-| `Alt+Tab` | Cycle through open windows (next) | Always |
-| `Alt+Shift+Tab` | Cycle through open windows (prev) | Always |
-| `Win+↑` | Maximize focused window | Always |
-| `Win+↓` | Restore / minimize focused window | Always |
-| `Win+←` | Snap to left half | ≥760px |
-| `Win+→` | Snap to right half | ≥760px |
-| `Escape` | Close context menus, deselect | Always |
-| `F5` / `Ctrl+R` | Refresh focused window content | Always |
-| `Ctrl+N` | New file window | Always |
-| `Ctrl+Shift+N` | New folder (delegates to focused FilesView) | When FilesView focused |
+| Shortcut | Action |
+|---|---|
+| `Ctrl+W` / `Cmd+W` | Close focused window |
+| `Alt+F4` | Close focused window |
+| `Alt+Tab` | Cycle forward through windows |
+| `Alt+Shift+Tab` | Cycle backward through windows |
+| `Win+↑` | Maximize focused window |
+| `Win+↓` | Restore / minimize focused window |
+| `Win+←` | Snap to left half |
+| `Win+→` | Snap to right half |
+| `Escape` | Close context menus, deselect |
+| `F5` / `Ctrl+R` | Refresh focused window content |
 
 ### Implementation
 
-- Single `useWindowShortcuts(session?)` hook in Home.tsx
-- Reads `wm.windows` + `wm.focusedWindowId` (need to track focused window)
-- Listens on `window.keydown`, checks for modifiers
+- `hooks/useWindowShortcuts.ts` — single hook
+- Reads `windowManager.windows` + `focusedWindowId`
+- Listens on `window.keydown`, checks modifiers
+- Desktop only (check `isMobile` in hook)
 
-### Additional State Needed
+### Additional Types Needed
 
 ```typescript
-// Add to WindowManager context
+// Add to WindowManager
 focusedWindowId: string | null;
+updateWindowTitle: (id: string, title: string) => void;
 ```
-
-Already somewhat tracked via z-order (highest zIndex is focused), but need explicit tracking for keyboard-accessible focus cycling.
-
-### Snap Behavior
-
-- `Win+←`: Set `x=0, width=50vw`
-- `Win+→`: Set `x=50vw, width=50vw`
-- Save previous rect for restore on `Win+↑` or manual resize
 
 ### Window State Persistence
 
 ```typescript
 const STORAGE_KEY = 'volum_window_state';
-
-type PersistedWindowState = {
-  id: string;
-  title: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+type PersistedWindow = {
+  type: string; title: string; icon: string;
+  x: number; y: number; width: number; height: number;
   maximized: boolean;
 };
-
-// Save on window close / position change (debounced)
-function saveWindowState(windows: WindowState[]) {
-  const data = windows.map(w => ({
-    id: w.id, title: w.title, x: w.x, y: w.y,
-    width: w.width, height: w.height, maximized: w.maximized,
-  }));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
-
-// Load on startup
-function loadWindowState(): PersistedWindowState[] {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  return raw ? JSON.parse(raw) : [];
-}
-```
-
-Only persist **window geometry**, not content (content is restored via `toggleWindow` on demand). On page load, restore desktop + taskbar but don't reopen content windows unless user re-launches them.
-
-### Window Title Updates
-
-- FilesView should update `WindowState.title` when navigating to a new path
-- Need: `updateWindowTitle(id, title)` in WindowManager
-
-```typescript
-// WindowManager type
-updateWindowTitle: (id: string, title: string) => void;
-```
-
-- FilesView calls this via ShellContext or direct `useWindowManager()` inside
-
-### Mobile Considerations
-
-- No keyboard shortcuts on mobile (no keyboard)
-- Alt+Tab not applicable — taskbar tap serves same purpose
-- Window state persistence applies on mobile too (geometry meaningless but saved anyway)
-
-### Files to Create/Modify
-
-| File | Action |
-|---|---|
-| `hooks/useWindowShortcuts.ts` | Create: keyboard shortcut handler |
-| `contexts/WindowManager.tsx` | Add `focusedWindowId`, `updateWindowTitle` |
-| `contexts/WindowManagerProvider.tsx` | Implement focused tracking, persistence, title updates |
-| `screens/Home.tsx` | Add `useWindowShortcuts` |
-| `pages/FilesView.tsx` | Call `updateWindowTitle` on navigation |
-| `components/layout/StatusBar.tsx` | Show info for focused window instead of `activeView` |
-
-### Acceptance Criteria
-- [ ] Ctrl+W closes focused window
-- [ ] Alt+Tab cycles windows
-- [ ] Win+↑/↓/←/→ work for window management
-- [ ] Window positions restored after refresh
-- [ ] File window title shows current directory name
-- [ ] All shortcuts work without interfering with file input shortcuts
-
----
-
-## Phase 7 — Desktop App Launcher
-
-**Goal:** GNOME-style Activities Overview — press Super key to see all available apps as a grid, search to filter, click to launch as window.
-
-### Design
-
-- **Trigger**: Super/Windows key, hot corner (top-left), or dedicated "Launcher" dock item
-- **Overlay**: Full-screen transparent backdrop with centered app grid
-- **Apps**: Desktop (return to desktop), Files, Trash, Transfers, Settings, Drives
-- **Each app**: Large icon (64px) + label below, arranged in responsive grid
-- **Search**: Auto-focused input at top, filters apps by name
-- **Click on app**: Opens as window (calls `toggleWindow(type, ...)`)
-- **Click on desktop with no open window**: Launch the app directly
-- **Escape**: Close launcher
-- **Recent files** (future): Recently accessed files shown below apps
-
-### Implementation
-
-```
-components/overlay/AppLauncher.tsx
-components/overlay/AppLauncher.module.css
-```
-
-### State
-
-```typescript
-type LauncherApp = {
-  id: string;
-  label: string;
-  icon: string;           // icon URL
-  description: string;    // tooltip
-};
-
-type AppLauncherProps = {
-  open: boolean;
-  onClose: () => void;
-  onLaunchApp: (id: string) => void;
-  apps: LauncherApp[];
-};
+// Save debounced on position/size changes
+// Load on startup — restore geometry data only (no content)
+// User re-launches content via dock/desktop icons
 ```
 
 ### Mobile
-
-- No app launcher overlay on mobile (no Super key, no hot corner)
-- Dock/taskbar serves as launcher on mobile
-- Could be triggered by a "Show all apps" button in the taskbar
-
-### Acceptance Criteria
-- [ ] Pressing Super key opens launcher
-- [ ] Typing filters apps
-- [ ] Click launches window
-- [ ] Escape closes
-- [ ] Window opens in default position (or cascade)
+- No keyboard shortcuts (no physical keyboard)
+- Window state persistence irrelevant (no windows)
 
 ---
 
-## Phase 8 — Window Manager Tests
+## Phase 7 — Tests
 
 **Goal:** Ensure window manager doesn't regress.
 
@@ -600,23 +460,74 @@ type AppLauncherProps = {
 
 | Area | Tests |
 |---|---|
-| `WindowManagerProvider` | Open window, close window, focus, toggleMinimize, toggleMaximize, updatePosition, updateSize, toggleWindow |
-| `toggleWindow` | Unique IDs, find existing, cascade positioning |
-| `WindowFrame` | Drag calls updatePosition, resize calls updateSize, minimize sets display:none, maximize fills screen |
-| `Taskbar` | Renders items, click focuses, close button works, active indicator |
-| Mobile | Taskbar renders as tabs, cannot drag, cannot resize |
-| Shortcuts | Ctrl+W closes, Alt+Tab cycles, Win+arrows snap |
+| `WindowManagerProvider` | Open, close, focus, minimize, maximize, position, size, toggleWindow |
+| `toggleWindow` | Unique IDs, find existing, cascade |
+| `WindowFrame` | Drag calls updatePosition, resize calls updateSize, maximize/minimize buttons |
+| `Taskbar` | Renders items, click focuses, close button, active indicator |
+| `useIsMobile` | Returns correct boolean, reacts to viewport changes |
+| Desktop mode | No full-page views, windows only |
+| Mobile mode | No windows, dock-only, full-page views work |
+| Mixed | Resize from mobile to desktop and back — graceful transition |
 
-### Test Framework
-- Vitest + jsdom (existing setup in `frontend/src/test/`)
-- React Testing Library for component tests
-- `window.getComputedStyle` checks for CSS
+### Files
+- `frontend/src/test/window-manager/*.test.ts`
 
-### Files to Create
-- `frontend/src/test/window-manager/WindowManagerProvider.test.ts`
-- `frontend/src/test/window-manager/WindowFrame.test.ts`
-- `frontend/src/test/window-manager/Taskbar.test.ts`
-- `frontend/src/test/window-manager/useWindowShortcuts.test.ts`
+---
+
+## File Map (Complete)
+
+### Core (Phases 1-2)
+
+| File | Status |
+|---|---|
+| `contexts/WindowManager.tsx` | ✅ Done |
+| `contexts/WindowManagerProvider.tsx` | ✅ Done |
+| `components/window/WindowFrame.tsx` | ✅ Done |
+| `components/window/WindowFrame.module.css` | ✅ Done |
+| `components/window/WindowHost.tsx` | ✅ Done |
+
+### Taskbar (Phase 3)
+
+| File | Status |
+|---|---|
+| `components/layout/Taskbar.tsx` | ✅ Done |
+| `components/layout/Taskbar.module.css` | ✅ Done |
+
+### Phase 4
+
+| File | Change |
+|---|---|
+| `contexts/WindowManager.tsx` | Replace `view`/`render` with `type: string` + `params` |
+| `contexts/WindowManagerProvider.tsx` | Store type/params; remove view/render |
+| `components/window/WindowFrame.tsx` | Content calls `win.render()` or window host passes render |
+| `components/window/WindowHost.tsx` | Take `renderWindow` prop |
+| `screens/Home.tsx` | `renderWindow` switch function |
+
+### Phase 5
+
+| File | Change |
+|---|---|
+| `screens/Home.tsx` | Bifurcate desktop vs mobile render paths |
+| `screens/Home.module.css` | `.appShellDesktop` + `.appShellMobile` grids |
+| `components/layout/Dock.module.css` | Restore mobile breakpoint |
+| `components/layout/Dock.tsx` | No change needed |
+| `components/layout/StatusBar.tsx` | `visible` prop controlled by mode |
+| `hooks/useNavigation.ts` | No change (still used by mobile) |
+
+### Phase 6
+
+| File | Action |
+|---|---|
+| `hooks/useWindowShortcuts.ts` | Create |
+| `contexts/WindowManager.tsx` | Add `focusedWindowId`, `updateWindowTitle` |
+| `contexts/WindowManagerProvider.tsx` | Focus tracking, persistence |
+| `screens/Home.tsx` | Wire shortcuts hook |
+
+### Phase 7
+
+| File | Action |
+|---|---|
+| `frontend/src/test/window-manager/*.test.ts` | Create test files |
 
 ---
 
@@ -625,51 +536,10 @@ type AppLauncherProps = {
 1. **KISS** — straightforward solutions, no over-engineering
 2. **YAGNI** — implement only what's currently needed
 3. **Progressive enhancement** — each phase builds on the previous without breaking it
-4. **CSS Modules** — every component has `*.module.css`, Vite auto-hashes class names
+4. **CSS Modules** — every component has `*.module.css`
 5. **No runtime CSS-in-JS** — all styling via CSS Modules + CSS custom properties
-6. **Mobile-first responsive** — the 760px breakpoint governs two fundamentally different window modes
-7. **No drag/resize on mobile** — windows are always full-screen, taskbar provides navigation
-
----
-
-## Complete File Map
-
-### Current Files
-
-| File | Phase | Notes |
-|---|---|---|
-| `contexts/WindowManager.tsx` | 1 | Types + context + hook |
-| `contexts/WindowManagerProvider.tsx` | 1 | State management |
-| `components/window/WindowFrame.tsx` | 1 | Window chrome + drag + resize |
-| `components/window/WindowFrame.module.css` | 1 | Window chrome styles |
-| `components/window/WindowHost.tsx` | 1 | Renders all windows |
-| `screens/Home.tsx` | 0, 2 | Shell + window openers |
-
-### Future Files
-
-| File | Phase | Purpose |
-|---|---|---|
-| `components/layout/Taskbar.tsx` | 3 | Window list (desktop + mobile) |
-| `components/layout/Taskbar.module.css` | 3 | Taskbar styles |
-| `components/layout/TaskbarItem.tsx` | 3 | Single taskbar entry |
-| `components/layout/TaskbarItem.module.css` | 3 | Item styles |
-| `hooks/useWindowShortcuts.ts` | 6 | Keyboard shortcuts |
-| `components/overlay/AppLauncher.tsx` | 7 | Super key app grid |
-| `components/overlay/AppLauncher.module.css` | 7 | Launcher styles |
-| `test/window-manager/*.test.ts` | 8 | Tests |
-
-### Files to Modify (Future Phases)
-
-| File | Phase | Change |
-|---|---|---|
-| `contexts/WindowManager.tsx` | 4, 6 | `view`→`render()`, add `focusedWindowId`, `updateWindowTitle` |
-| `contexts/WindowManagerProvider.tsx` | 4, 6 | Render functions, focus tracking, persistence |
-| `components/window/WindowFrame.tsx` | 3, 4, 6 | Mobile: no drag/resize; `view`→`render()`; title updates |
-| `components/window/WindowFrame.module.css` | 3 | Mobile: no resize handles, simplified title bar |
-| `components/window/WindowHost.tsx` | 3 | Mobile: one window at a time |
-| `screens/Home.tsx` | 3, 5 | Add Taskbar, remove old view system |
-| `hooks/useNavigation.ts` | 5 | Gut old view switching state |
-| `components/layout/Dock.module.css` | 3 | Hide on mobile |
+6. **Bifurcated mobile/desktop** — windows are desktop-only; mobile keeps simple full-page views
+7. **Mobile uses the simplest path** — no window management, no floating, no resizing
 
 ---
 
@@ -679,10 +549,12 @@ type AppLauncherProps = {
 |---|---|
 | Window | A Frame (chrome) + Content (view) managed by WindowManager |
 | WindowFrame | The draggable title bar + resize handles + content area |
-| WindowHost | Container that renders all WindowFrames (desktop) or one (mobile) |
-| Taskbar | Bottom bar showing open windows (desktop list / mobile tabs) |
-| Dock | Left sidebar app launcher (desktop only) |
+| WindowHost | Container that renders all WindowFrame instances |
+| Taskbar | Bottom bar showing open windows (desktop only) |
+| Dock | Launcher — left sidebar on desktop, bottom tab bar on mobile |
 | toggleWindow | Opens a new window or focuses an existing one of the same type |
-| Cascade | Offset successive windows by 24px to avoid perfect overlap |
-| Self-contained view | A view that owns its data fetching, state, and overlays (no parent props) |
-| ShellContext | Shared context providing toast, navigate, refresh to self-contained views |
+| Cascade | Offset successive windows by 24px |
+| Self-contained view | A view that owns its data fetching, state, and overlays |
+| ShellContext | Shared context: toast, navigate, refresh for views |
+| `isMobile` | `window.matchMedia('(max-width: 760px)')` — controls the bifurcation |
+| ActiveView | Mobile-only: which full-page view is currently shown |
