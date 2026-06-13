@@ -90,18 +90,21 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   });
 
   const wm = useWindowManager();
+  const defaultRootPath = useMemo(
+    () => browser.roots.find((root) => root.available)?.path ?? browser.roots[0]?.path ?? '/',
+    [browser.roots],
+  );
 
   // ── Window openers ───────────────────────────────────────
   const openFilesWindow = useCallback((path?: string) => {
-    const defaultPath = browser.roots.find((root) => root.available)?.path ?? browser.roots[0]?.path ?? '/';
     wm.toggleWindow('files', {
       title: 'Files',
       icon: filesIconUrl(),
       winType: 'files',
-      params: { path: path ?? defaultPath },
+      params: { path: path ?? defaultRootPath },
       width: 900, height: 600,
     });
-  }, [wm, browser.roots]);
+  }, [wm, defaultRootPath]);
 
   const openDrivesWindow = useCallback(() => {
     wm.toggleWindow('drives', {
@@ -149,7 +152,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       case 'files':
         return (
           <FilesView
-            currentPath={(win.params.path as string) || browser.roots[0]?.path || '/'}
+            currentPath={(win.params.path as string) || defaultRootPath}
             session={session}
             favorites={favorites}
             onNavigate={navActions.navigateTo}
@@ -180,7 +183,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       default:
         return null;
     }
-  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, browser.roots, wm]);
+  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm]);
 
   const desktopActions = useDesktopActions({
     browser, dialogs, toast, nav,
@@ -281,7 +284,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   // ── Taskbar launcher handler ─────────────────────────────
   const handleTaskbarLauncher = useCallback((id: string) => {
     if (isMobile) {
-      if (id === 'files') navActions.navigateTo(browser.roots[0]?.path ?? '/');
+      if (id === 'files') navActions.navigateTo(defaultRootPath);
       else if (id === 'trash') nav.setShowingTrash(true);
       else if (id === 'jobs') nav.setShowingJobs(true);
       else if (id === 'settings') nav.setShowingSettings(true);
@@ -298,7 +301,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       wm.windows.forEach((w) => { if (!w.minimized) wm.toggleMinimize(w.id); });
     }
     else desktopActions.handleDockActivate(id);
-  }, [isMobile, navActions, browser.roots, nav, openFilesWindow, openTrashWindow, openJobsWindow, openSettingsWindow, openDrivesWindow, wm, desktopActions]);
+  }, [isMobile, navActions, defaultRootPath, nav, openFilesWindow, openTrashWindow, openJobsWindow, openSettingsWindow, openDrivesWindow, wm, desktopActions]);
 
   // ── Focused window & reactive commands ──────────────────
   const [commandsMap, setCommandsMap] = useState<Record<string, WindowCommands>>({});
@@ -335,8 +338,9 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   }, []);
 
   const focusedWindow = useMemo(() => {
-    if (wm.windows.length === 0) return null;
-    return wm.windows.reduce((a, b) => (a.zIndex > b.zIndex ? a : b));
+    const visibleWindows = wm.windows.filter((win) => !win.minimized);
+    if (visibleWindows.length === 0) return null;
+    return visibleWindows.reduce((a, b) => (a.zIndex > b.zIndex ? a : b));
   }, [wm.windows]);
 
   const focusedCommands = focusedWindow ? (commandsMap[focusedWindow.id] ?? {}) : {} as WindowCommands;

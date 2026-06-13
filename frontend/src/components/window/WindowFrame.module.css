@@ -10,7 +10,7 @@
 
 .snapPreview {
   position: fixed;
-  z-index: 18;
+  z-index: 9995;
   pointer-events: none;
   border: 2px solid var(--color-brand);
   border-radius: var(--radius-md);
