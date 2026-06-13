@@ -12,7 +12,11 @@ import { formatDeviceUsage } from '../utils/format';
 import { useShellContext } from '../contexts/ShellContext';
 import styles from './DrivesView.module.css';
 
-export function DrivesView() {
+type DrivesViewProps = {
+  onBackToDesktop?: () => void;
+};
+
+export function DrivesView({ onBackToDesktop }: DrivesViewProps) {
   const [devices, setDevices] = useState<BlockDevice[]>([]);
   const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
   const [deviceError, setDeviceError] = useState<string | null>(null);
@@ -45,8 +49,12 @@ export function DrivesView() {
   }, [devices]);
 
   const handleBackToDesktop = useCallback(() => {
+    if (onBackToDesktop) {
+      onBackToDesktop();
+      return;
+    }
     shell.navigateTo('desktop');
-  }, [shell]);
+  }, [onBackToDesktop, shell]);
 
   const handleNavigateTo = useCallback((path: string) => {
     shell.navigateTo(path);

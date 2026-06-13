@@ -37,7 +37,7 @@ import { useWindowManager, type WindowState } from '../contexts/WindowManager';
 import { CommandsContext, type WindowCommands } from '../contexts/WindowCommands';
 import { ShellContext } from '../contexts/ShellContext';
 import { Taskbar } from '../components/layout/Taskbar';
-import { filesIconUrl, trashIconUrl, jobsIconUrl, preferencesIconUrl } from '../api/icons';
+import { filesIconUrl, trashIconUrl, jobsIconUrl, preferencesIconUrl, multidiskIconUrl } from '../api/icons';
 import styles from './Home.module.css';
 
 
@@ -93,14 +93,25 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Window openers ───────────────────────────────────────
   const openFilesWindow = useCallback((path?: string) => {
+    const defaultPath = browser.roots.find((root) => root.available)?.path ?? browser.roots[0]?.path ?? '/';
     wm.toggleWindow('files', {
       title: 'Files',
       icon: filesIconUrl(),
       winType: 'files',
-      params: { path: path ?? browser.roots[0]?.path ?? '/' },
+      params: { path: path ?? defaultPath },
       width: 900, height: 600,
     });
   }, [wm, browser.roots]);
+
+  const openDrivesWindow = useCallback(() => {
+    wm.toggleWindow('drives', {
+      title: 'Drives',
+      icon: multidiskIconUrl(),
+      winType: 'drives',
+      params: {},
+      width: 820, height: 560,
+    });
+  }, [wm]);
 
   const openTrashWindow = useCallback(() => {
     wm.toggleWindow('trash', {
@@ -149,6 +160,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         );
       case 'trash':
         return <TrashView />;
+      case 'drives':
+        return <DrivesView onBackToDesktop={() => wm.closeWindow(win.id)} />;
       case 'jobs':
         return <JobsPage session={session} sessionLoading={false} />;
       case 'settings':
@@ -167,7 +180,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       default:
         return null;
     }
-  }, [viewPref, session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, browser.roots]);
+  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, browser.roots, wm]);
 
   const desktopActions = useDesktopActions({
     browser, dialogs, toast, nav,
@@ -272,6 +285,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       else if (id === 'trash') nav.setShowingTrash(true);
       else if (id === 'jobs') nav.setShowingJobs(true);
       else if (id === 'settings') nav.setShowingSettings(true);
+      else if (id === 'drives') nav.setShowingMyPC(true);
       else if (id === 'desktop') navActions.resetToDesktopView();
       return;
     }
@@ -279,11 +293,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     else if (id === 'trash') openTrashWindow();
     else if (id === 'jobs') openJobsWindow();
     else if (id === 'settings') openSettingsWindow();
+    else if (id === 'drives') openDrivesWindow();
     else if (id === 'desktop') {
       wm.windows.forEach((w) => { if (!w.minimized) wm.toggleMinimize(w.id); });
     }
     else desktopActions.handleDockActivate(id);
-  }, [isMobile, navActions, browser.roots, nav, openFilesWindow, openTrashWindow, openJobsWindow, openSettingsWindow, wm, desktopActions]);
+  }, [isMobile, navActions, browser.roots, nav, openFilesWindow, openTrashWindow, openJobsWindow, openSettingsWindow, openDrivesWindow, wm, desktopActions]);
 
   // ── Focused window & reactive commands ──────────────────
   const [commandsMap, setCommandsMap] = useState<Record<string, WindowCommands>>({});
@@ -299,7 +314,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           existing.onSelectAll === cmds.onSelectAll &&
           existing.onInvertSelection === cmds.onInvertSelection &&
           existing.onRename === cmds.onRename &&
-          existing.onDelete === cmds.onDelete) {
+          existing.onDelete === cmds.onDelete &&
+          existing.onRestore === cmds.onRestore &&
+          existing.onDeleteForever === cmds.onDeleteForever &&
+          existing.onEmptyTrash === cmds.onEmptyTrash &&
+          existing.canWrite === cmds.canWrite &&
+          existing.canUpload === cmds.canUpload &&
+          existing.selectedCount === cmds.selectedCount) {
         return prev;
       }
       return { ...prev, [id]: cmds };
@@ -320,7 +341,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const focusedCommands = focusedWindow ? (commandsMap[focusedWindow.id] ?? {}) : {} as WindowCommands;
   const topBarTitle = !isMobile
-    ? (focusedWindow?.title ?? 'Desktop')
+    ? (focusedWindow?.title ?? nav.topBarTitle ?? 'Desktop')
     : (nav.topBarTitle);
 
   // ── Shell context value ────────────────────────────────
@@ -342,7 +363,17 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           activeView={nav.activeView}
           title={topBarTitle}
           onGoDesktop={navActions.resetToDesktopView}
-          onOpenSettings={() => { nav.setShowingSettings(true); nav.setShowingTrash(false); nav.setShowingJobs(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null); }}
+          onOpenSettings={() => {
+            if (isMobile) {
+              nav.setShowingSettings(true);
+              nav.setShowingTrash(false);
+              nav.setShowingJobs(false);
+              nav.setShowingMyPC(false);
+              nav.setSelectedDriveName(null);
+              return;
+            }
+            openSettingsWindow();
+          }}
           session={session}
           onLogout={onLogout}
           focusedWindowType={focusedWindow?.winType ?? null}
@@ -360,6 +391,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             onRestore: focusedCommands.onRestore,
             onDeleteForever: focusedCommands.onDeleteForever,
             onEmptyTrash: focusedCommands.onEmptyTrash,
+            onClose: focusedWindow ? () => wm.closeWindow(focusedWindow.id) : navActions.resetToDesktopView,
             viewMode: viewPref.viewMode,
             onSetViewMode: viewPref.setViewMode,
             showHidden: viewPref.showHidden,
@@ -377,9 +409,9 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             onGoJobs: openJobsWindow,
             onGoSettings: openSettingsWindow,
             onToggleLocation: () => filesViewRef.current?.handleToggleLocation(),
-            canWrite: browser.canWrite,
-            canUpload: true,
-            selectedCount: nav.showingTrash ? selection.selectedTrashIds.length : selection.selectedPaths.length,
+            canWrite: focusedCommands.canWrite ?? browser.canWrite,
+            canUpload: focusedCommands.canUpload ?? browser.canWrite,
+            selectedCount: focusedCommands.selectedCount ?? (nav.showingTrash ? selection.selectedTrashIds.length : selection.selectedPaths.length),
           }}
         />
         <Dock items={nav.dockItems} onActivate={handleTaskbarLauncher} />
@@ -395,7 +427,10 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onOpenSettings={openSettingsWindow}
               onOpenJobs={openJobsWindow}
               onOpenFiles={() => openFilesWindow()}
-              onShowMyPC={() => nav.setShowingMyPC(true)}
+              onShowMyPC={() => {
+                if (isMobile) nav.setShowingMyPC(true);
+                else openDrivesWindow();
+              }}
               wallpaperStyle={wallpaper.wallpaperStyle}
               onItemContextMenu={handleDesktopItemContextMenu}
             />

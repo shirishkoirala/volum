@@ -13,6 +13,9 @@ export type WindowCommands = {
   onRestore?: () => void;
   onDeleteForever?: () => void;
   onEmptyTrash?: () => void;
+  canWrite?: boolean;
+  canUpload?: boolean;
+  selectedCount?: number;
 };
 
 export type CommandsMap = Record<string, WindowCommands>;

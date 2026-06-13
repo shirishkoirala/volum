@@ -141,9 +141,12 @@ export function TrashView() {
       onRestore: handleRestoreSelected,
       onDeleteForever: handleDeleteSelected,
       onEmptyTrash: handleEmptyTrash,
+      canWrite: true,
+      canUpload: false,
+      selectedCount: selectedTrashIds.size,
     });
     return () => unregisterCommands(windowId);
-  }, [windowId, handleSelectAllTrash, handleInvertSelectionTrash, handleRestoreSelected, handleDeleteSelected, handleEmptyTrash, registerCommands, unregisterCommands]);
+  }, [windowId, handleSelectAllTrash, handleInvertSelectionTrash, handleRestoreSelected, handleDeleteSelected, handleEmptyTrash, selectedTrashIds.size, registerCommands, unregisterCommands]);
 
   const sortedTrashEntries = useMemo(() => {
     return [...trashEntries].sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));

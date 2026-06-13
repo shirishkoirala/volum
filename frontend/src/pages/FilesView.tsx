@@ -66,7 +66,8 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const shell = useShellContext();
   const viewPref = useViewPreferences();
   const windowId = useWindowId();
-  const effectivePath = windowId ? (viewPref.currentPath || currentPath || '/') : viewPref.currentPath;
+  const [windowPath, setWindowPath] = useState(currentPath || '/');
+  const effectivePath = windowId ? windowPath : viewPref.currentPath;
   const browser = useFileBrowser({ currentPath: effectivePath, showHidden: viewPref.showHidden, session });
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
@@ -85,16 +86,17 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   useEffect(() => {
     if (currentPath !== prevPropPath.current) {
       prevPropPath.current = currentPath;
-      viewPref.setCurrentPath(currentPath);
+      if (windowId) setWindowPath(currentPath || '/');
+      else viewPref.setCurrentPath(currentPath);
     }
-  }, [currentPath, viewPref]);
+  }, [currentPath, viewPref, windowId]);
 
   const selection = useSelection({
     filteredEntries: browser.filteredEntries,
     trashEntries: browser.trashEntries,
     favorites,
     canWrite: browser.canWrite,
-    currentPath: viewPref.currentPath,
+    currentPath: effectivePath,
   });
 
   const selfNav = useMemo(() => ({
@@ -107,9 +109,9 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
 
   const navActions = useNavStack({
     viewPref: {
-      currentPath: viewPref.currentPath,
-      setCurrentPath: viewPref.setCurrentPath,
-      navigateToPath: viewPref.navigateToPath,
+      currentPath: effectivePath,
+      setCurrentPath: windowId ? setWindowPath : viewPref.setCurrentPath,
+      navigateToPath: windowId ? setWindowPath : viewPref.navigateToPath,
     },
     nav: selfNav,
     browser: {
@@ -131,7 +133,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   }, [navActions]);
 
   const fileCommands = useFileCommands({
-    currentPath: viewPref.currentPath,
+    currentPath: effectivePath,
     canWrite: browser.canWrite,
     folderSuggestions: browser.folderSuggestions,
     refresh,
@@ -270,7 +272,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     input.click();
   }, []);
 
-  const canUpload = browser.canWrite && Boolean(viewPref.currentPath);
+  const canUpload = browser.canWrite && Boolean(effectivePath);
 
   useImperativeHandle(ref, () => ({
     handleSelectAll: selection.handleSelectAll,
@@ -302,13 +304,16 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
       onInvertSelection: selection.handleInvertSelection,
       onRename: fileCommands.handleRename,
       onDelete: fileCommands.handleDelete,
+      canWrite: browser.canWrite,
+      canUpload,
+      selectedCount: selection.selectedPaths.length,
     });
     return () => unregisterCommands(windowId);
-  }, [windowId, fileCommands, openUploadPicker, selection, registerCommands, unregisterCommands]);
+  }, [windowId, fileCommands, openUploadPicker, selection, browser.canWrite, canUpload, registerCommands, unregisterCommands]);
 
   const selectedEntryIsFavorited = fileActions.contextMenu?.entry ? favorites.includes(fileActions.contextMenu.entry.path) : selection.isFavorited;
 
-  const curPath = viewPref.currentPath;
+  const curPath = effectivePath;
   const breadcrumbs = browser.breadcrumbs;
   const locationMode = fileActions.locationMode;
 

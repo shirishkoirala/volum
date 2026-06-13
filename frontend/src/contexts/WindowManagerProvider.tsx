@@ -85,7 +85,15 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
     const existing = currentWindows.find((w) => w.id.startsWith(`${windowType}-`));
     if (existing) {
       const z = nextZ();
-      setWindows((prev) => prev.map((w) => w.id === existing.id ? { ...w, minimized: false, zIndex: z } : w));
+      setWindows((prev) => prev.map((w) => w.id === existing.id ? {
+        ...w,
+        title: opts.title,
+        icon: opts.icon,
+        winType: opts.winType,
+        params: opts.params,
+        minimized: false,
+        zIndex: z,
+      } : w));
       return existing.id;
     }
     const count = (windowCounts.current[windowType] ?? 0) + 1;
