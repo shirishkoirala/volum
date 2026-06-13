@@ -77,6 +77,16 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
 
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 760px)');
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   // ── Refs ──
   const filesViewRef = useRef<import('../pages/FilesView').FilesViewHandle>(null);
 
@@ -298,16 +308,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Derived data ─────────────────────────────────────────
 
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches,
-  );
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 760px)');
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
   const showStatusBar = !isMobile ? false : (nav.activeView !== 'settings' && nav.activeView !== 'jobs' && nav.activeView !== 'desktop' && nav.activeView !== 'drives');
 
   // ── Taskbar launcher handler ─────────────────────────────
@@ -455,11 +455,26 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               trashEntries={browser.trashEntries} jobs={browser.jobs}
               pendingTransferCount={pendingUploadCount}
               favorites={favorites} services={services}
-              onNavigateTo={(path) => openFilesWindow(path)}
-              onNavigateToTrash={openTrashWindow}
-              onOpenSettings={openSettingsWindow}
-              onOpenJobs={openJobsWindow}
-              onOpenFiles={() => openFilesWindow()}
+              onNavigateTo={(path) => {
+                if (isMobile) navActions.navigateTo(path);
+                else openFilesWindow(path);
+              }}
+              onNavigateToTrash={() => {
+                if (isMobile) nav.setShowingTrash(true);
+                else openTrashWindow();
+              }}
+              onOpenSettings={() => {
+                if (isMobile) nav.setShowingSettings(true);
+                else openSettingsWindow();
+              }}
+              onOpenJobs={() => {
+                if (isMobile) nav.setShowingJobs(true);
+                else openJobsWindow();
+              }}
+              onOpenFiles={() => {
+                if (isMobile) navActions.navigateTo(defaultRootPath);
+                else openFilesWindow();
+              }}
               onShowMyPC={() => {
                 if (isMobile) nav.setShowingMyPC(true);
                 else openDrivesWindow();
