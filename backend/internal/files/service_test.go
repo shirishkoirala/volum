@@ -42,7 +42,7 @@ func TestListReturnsDirectoryEntry(t *testing.T) {
 	}
 }
 
-func TestComputeDirSizes(t *testing.T) {
+func TestListReturnsImmediateDirectorySize(t *testing.T) {
 	root := t.TempDir()
 	folder := filepath.Join(root, "folder")
 	nested := filepath.Join(folder, "nested")
@@ -65,17 +65,15 @@ func TestComputeDirSizes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cache := testCache()
-	svc := NewService(guard, cache)
-
-	svc.computeDirSizes([]string{"/folder"})
-
-	got, ok := cache.Get("/folder")
-	if !ok {
-		t.Fatal("expected cached size for /folder")
+	entries, err := NewService(guard, testCache()).List("/", false)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if got != 5 {
-		t.Fatalf("expected immediateDirSize 5, got %d", got)
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 entry, got %d", len(entries))
+	}
+	if entries[0].Size != 5 {
+		t.Fatalf("expected immediateDirSize 5, got %d", entries[0].Size)
 	}
 }
 

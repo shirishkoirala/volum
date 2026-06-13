@@ -76,7 +76,6 @@ func (s *Server) routes() {
 			r.Get("/files/download", s.handleDownload)
 			r.Get("/files/raw", s.handleRaw)
 			r.Get("/files/search", s.handleSearch)
-			r.Get("/files/sizes", s.handleDirSizes)
 			r.Get("/files/analyze", s.handleAnalyzeDiskUsage)
 			r.Get("/trash", s.handleTrash)
 			r.Get("/jobs", s.handleJobs)

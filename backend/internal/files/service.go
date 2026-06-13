@@ -119,8 +119,6 @@ func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
 		return nil, err
 	}
 
-	var pendingDirs []string
-
 	entries := make([]Entry, 0, len(items))
 	for _, item := range items {
 		name := item.Name()
@@ -150,7 +148,7 @@ func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
 			if cached, ok := s.cache.Get(publicPath); ok {
 				size = cached
 			} else {
-				pendingDirs = append(pendingDirs, publicPath)
+				size = immediateDirSize(itemPath, info)
 			}
 		} else {
 			size = info.Size()
@@ -167,10 +165,6 @@ func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
 			Group:       groupName(info),
 			Hidden:      hidden,
 		})
-	}
-
-	if len(pendingDirs) > 0 {
-		go s.computeDirSizes(pendingDirs)
 	}
 
 	sort.Slice(entries, func(i, j int) bool {
@@ -509,24 +503,6 @@ var textExtensions = map[string]bool{
 func isTextFile(name string) bool {
 	ext := strings.ToLower(filepath.Ext(name))
 	return textExtensions[ext]
-}
-
-func (s *Service) computeDirSizes(publicPaths []string) {
-	for _, publicPath := range publicPaths {
-		internalPath, err := s.guard.Resolve(publicPath)
-		if err != nil {
-			continue
-		}
-		info, err := os.Stat(internalPath)
-		if err != nil || !info.IsDir() {
-			continue
-		}
-		s.cache.Set(publicPath, immediateDirSize(internalPath, info))
-	}
-}
-
-func (s *Service) GetDirSizes(publicPaths []string) map[string]int64 {
-	return s.cache.GetMap(publicPaths)
 }
 
 func validBaseName(name string) bool {

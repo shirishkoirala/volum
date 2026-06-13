@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileEntry, Job, BlockDevice, RootEntry, Session, TrashEntry, SearchResult,
-  getDevices, getFiles, getRoots, getTrash, searchFiles, getDirSizes,
+  getDevices, getFiles, getRoots, getTrash, searchFiles,
 } from '../api/client';
 import { uniquePaths } from '../utils/path';
 
@@ -27,7 +27,6 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
 
   const entriesRef = useRef(entries);
   entriesRef.current = entries;
-  const pollingPathRef = useRef<string | null>(null);
 
   const canWrite = session.role === 'admin';
 
@@ -57,33 +56,6 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, [currentPath, refreshKey, showHidden]);
-
-  useEffect(() => {
-    if (!currentPath || loading) { pollingPathRef.current = null; return; }
-    if (pollingPathRef.current === currentPath) return;
-    const hasPendingDir = entriesRef.current.some((e) => e.type === 'directory' && e.size === 0);
-    if (!hasPendingDir) { pollingPathRef.current = null; return; }
-    pollingPathRef.current = currentPath;
-    const interval = setInterval(async () => {
-      try {
-        const response = await getDirSizes(currentPath);
-        const sizes = response.sizes ?? {};
-        setEntries((prev) => {
-          let changed = false;
-          const next = prev.map((e) => {
-            const newSize = sizes[e.path];
-            if (newSize !== undefined && e.size !== newSize) { changed = true; return { ...e, size: newSize }; }
-            return e;
-          });
-          if (!changed) return prev;
-          const allDone = !next.some((e) => e.type === 'directory' && e.size === 0);
-          if (allDone && pollingPathRef.current === currentPath) pollingPathRef.current = null;
-          return next;
-        });
-      } catch (e) { console.error('Dir sizes polling failed:', e); }
-    }, 500);
-    return () => { clearInterval(interval); if (pollingPathRef.current === currentPath) pollingPathRef.current = null; };
-  }, [currentPath, loading]);
 
   useEffect(() => {
     getTrash()

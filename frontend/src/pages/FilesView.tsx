@@ -70,6 +70,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const effectivePath = windowId ? windowPath : viewPref.currentPath;
   const browser = useFileBrowser({ currentPath: effectivePath, showHidden: viewPref.showHidden, session });
   const fileActions = useFileActions();
+  const { setPreviewEntry } = fileActions;
   const dialogs = useDialogStack();
   const menus = useContextMenus();
   const { register: registerCommands, unregister: unregisterCommands } = useCommandsContext();
@@ -90,6 +91,10 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
       else viewPref.setCurrentPath(currentPath);
     }
   }, [currentPath, viewPref, windowId]);
+
+  useEffect(() => {
+    setPreviewEntry(null);
+  }, [effectivePath, setPreviewEntry]);
 
   const selection = useSelection({
     filteredEntries: browser.filteredEntries,

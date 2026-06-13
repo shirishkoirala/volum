@@ -26,12 +26,20 @@ export function PreviewModal({ entry, onClose, onDownload }: PreviewModalProps) 
 
   useEffect(() => {
     if (!showText) return;
-    fetch(fileUrl)
+    const controller = new AbortController();
+    setTextContent(null);
+    setTextError(null);
+
+    fetch(fileUrl, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Failed to read file (${response.status})`);
         setTextContent(await response.text());
       })
-      .catch((err: Error) => setTextError(err.message));
+      .catch((err: Error) => {
+        if (err.name !== 'AbortError') setTextError(err.message);
+      });
+
+    return () => controller.abort();
   }, [fileUrl, showText]);
 
   return (

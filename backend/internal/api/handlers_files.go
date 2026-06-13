@@ -209,41 +209,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"results": results})
 }
 
-func (s *Server) handleDirSizes(w http.ResponseWriter, r *http.Request) {
-	parentPath := r.URL.Query().Get("path")
-	if parentPath == "" {
-		writeJSON(w, http.StatusOK, map[string]any{"sizes": map[string]int64{}})
-		return
-	}
-
-	resolved, err := s.guard.Resolve(parentPath)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	items, err := os.ReadDir(resolved)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-
-	publicPaths := make([]string, 0, len(items))
-	for _, item := range items {
-		if !item.IsDir() {
-			continue
-		}
-		itemPath := filepath.Join(resolved, item.Name())
-		publicPath, err := s.guard.PublicPath(itemPath)
-		if err != nil {
-			continue
-		}
-		publicPaths = append(publicPaths, publicPath)
-	}
-
-	sizes := s.files.GetDirSizes(publicPaths)
-	writeJSON(w, http.StatusOK, map[string]any{"sizes": sizes})
-}
-
 func (s *Server) handleAnalyzeDiskUsage(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Query().Get("path")
 	if path == "" {
@@ -289,5 +254,3 @@ func (s *Server) handleChmod(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, entry)
 }
-
-

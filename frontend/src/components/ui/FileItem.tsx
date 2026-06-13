@@ -1,4 +1,4 @@
-import { DragEvent, RefObject } from 'react';
+import { DragEvent, RefObject, useEffect, useRef, useState } from 'react';
 import { Icon, FileIcon, FolderIcon } from './Icon';
 import { rawUrl } from '../../api/client';
 import { isImageExtension } from '../../utils/fileTypes';
@@ -31,6 +31,73 @@ type FileItemProps = {
   onRenameChange: (value: string) => void;
   className?: string;
 };
+
+function FileThumbnail({ entry, className, size }: { entry: FileEntry; className?: string; size: number }) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    setSrc(null);
+    setFailed(false);
+
+    const img = imgRef.current;
+    if (!img) return;
+
+    let objectUrl: string | null = null;
+    let observer: IntersectionObserver | null = null;
+    let controller: AbortController | null = null;
+    let cancelled = false;
+
+    const load = () => {
+      controller = new AbortController();
+      fetch(rawUrl(entry.path), { signal: controller.signal })
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`Failed to load preview (${response.status})`);
+          return response.blob();
+        })
+        .then((blob) => {
+          if (cancelled) return;
+          objectUrl = URL.createObjectURL(blob);
+          setSrc(objectUrl);
+        })
+        .catch((error: Error) => {
+          if (!cancelled && error.name !== 'AbortError') setFailed(true);
+        });
+    };
+
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver((observedEntries) => {
+        if (!observedEntries.some((observed) => observed.isIntersecting)) return;
+        observer?.disconnect();
+        load();
+      }, { rootMargin: '160px' });
+      observer.observe(img);
+    } else {
+      load();
+    }
+
+    return () => {
+      cancelled = true;
+      observer?.disconnect();
+      controller?.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [entry.path]);
+
+  if (failed) return <FileIcon entry={entry} size={size} />;
+
+  return (
+    <img
+      ref={imgRef}
+      className={className}
+      src={src ?? undefined}
+      alt={entry.name}
+      loading="lazy"
+      decoding="async"
+    />
+  );
+}
 
 export function FileItem({
   entry, viewMode, isSelected, isDragOver, canWrite, isFavorited,
@@ -72,11 +139,10 @@ export function FileItem({
           )}
         </span>
       ) : isImageExtension(entry.name.toLowerCase()) ? (
-        <img
+        <FileThumbnail
+          entry={entry}
           className={viewMode === 'grid' ? styles.fileThumb : undefined}
-          src={rawUrl(entry.path)}
-          alt={entry.name}
-          loading="lazy"
+          size={fileIconSize}
         />
       ) : (
         <FileIcon entry={entry} size={fileIconSize} />

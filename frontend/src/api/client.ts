@@ -395,11 +395,6 @@ export function rawUrl(path: string) {
   return `/api/files/raw?${params.toString()}`;
 }
 
-export function getDirSizes(path: string) {
-  const params = new URLSearchParams({ path });
-  return request<{ sizes: Record<string, number> }>(`/api/files/sizes?${params.toString()}`);
-}
-
 export type DiskUsageNode = {
   name: string;
   path: string;
