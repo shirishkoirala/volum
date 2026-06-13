@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import type { FileEntry } from '../api/client';
 import { fileTypeIconUrl, filesIconUrl, jobsIconUrl, multidiskIconUrl, preferencesIconUrl, trashIconUrl } from '../api/icons';
 import type { WindowManagerType } from '../contexts/WindowManager';
+import type { ServiceShortcut } from '../utils/services';
 
 type WorkspaceNav = {
   setShowingTrash: (value: boolean) => void;
@@ -135,6 +136,26 @@ export function useWorkspaceOpeners({
     });
   }, [isMobile, setPreviewEntry, wm]);
 
+  const openService = useCallback((service: ServiceShortcut) => {
+    if (isMobile) {
+      window.open(service.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    wm.openWindow({
+      id: `service-${service.id}`,
+      title: service.name,
+      icon: service.iconUrl ?? '',
+      winType: 'service',
+      params: {
+        name: service.name,
+        url: service.url,
+      },
+      width: 980,
+      height: 640,
+    });
+  }, [isMobile, wm]);
+
   const openDesktop = useCallback(() => {
     if (isMobile) {
       navActions.resetToDesktopView();
@@ -152,6 +173,7 @@ export function useWorkspaceOpeners({
     openFiles,
     openJobs,
     openPreview,
+    openService,
     openSettings,
     openTrash,
   };

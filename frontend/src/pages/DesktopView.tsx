@@ -18,6 +18,7 @@ type DesktopViewProps = {
   onOpenSettings: () => void;
   onOpenJobs: () => void;
   onOpenFiles: () => void;
+  onOpenService: (service: ServiceShortcut) => void;
   onShowMyPC: () => void;
   wallpaperStyle?: React.CSSProperties;
   onItemContextMenu: (item: DesktopIconItem, event: React.MouseEvent<HTMLElement>) => void;
@@ -53,7 +54,7 @@ function saveOrder(ids: string[]) {
 
 export function DesktopView({
   trashEntries, jobs, pendingTransferCount = 0, favorites, services,
-  onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onShowMyPC,
+  onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onOpenService, onShowMyPC,
   wallpaperStyle,
   onItemContextMenu,
 }: DesktopViewProps) {
@@ -168,7 +169,7 @@ export function DesktopView({
         label: svc.name,
 
         ariaLabel: `Open ${svc.name}`,
-        onClick: () => window.open(svc.url, '_blank', 'noopener,noreferrer'),
+        onClick: () => onOpenService(svc),
         icon: (
           <div className={styles.desktopIconWrapper}>
             {svc.iconUrl ? (
@@ -198,7 +199,7 @@ export function DesktopView({
       if (!used.has(item.id)) ordered.push(item);
     }
     return ordered;
-  }, [trashEntries, favorites, services, activeTransferCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onNavigateTo]);
+  }, [trashEntries, favorites, services, activeTransferCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onOpenService, onNavigateTo]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';

@@ -41,6 +41,7 @@ import { CommandsContext, type WindowCommands } from '../contexts/WindowCommands
 import { ShellContext } from '../contexts/ShellContext';
 import { Taskbar } from '../components/layout/Taskbar';
 import { PreviewWindow } from '../components/window/PreviewWindow';
+import { ServiceWindow } from '../components/window/ServiceWindow';
 import { openFileExternally } from '../utils/preview';
 import styles from './Home.module.css';
 
@@ -150,6 +151,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         const entry = win.params.entry as FileEntry | undefined;
         if (!entry) return null;
         return <PreviewWindow entry={entry} />;
+      }
+      case 'service': {
+        const name = typeof win.params.name === 'string' ? win.params.name : win.title;
+        const url = typeof win.params.url === 'string' ? win.params.url : '';
+        if (!url) return null;
+        return <ServiceWindow name={name} url={url} />;
       }
       default:
         return null;
@@ -371,6 +378,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onOpenSettings={workspaceOpeners.openSettings}
               onOpenJobs={workspaceOpeners.openJobs}
               onOpenFiles={() => workspaceOpeners.openFiles()}
+              onOpenService={workspaceOpeners.openService}
               onShowMyPC={workspaceOpeners.openDrives}
               wallpaperStyle={wallpaper.wallpaperStyle}
               onItemContextMenu={handleDesktopItemContextMenu}
