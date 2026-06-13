@@ -8,6 +8,16 @@
   min-height: 240px;
 }
 
+.snapPreview {
+  position: fixed;
+  z-index: 18;
+  pointer-events: none;
+  border: 2px solid var(--color-brand);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-brand) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-brand) 30%, transparent);
+}
+
 .titleBar {
   display: flex;
   align-items: center;
