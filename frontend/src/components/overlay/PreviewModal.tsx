@@ -13,7 +13,13 @@ type PreviewModalProps = {
   onDownload?: () => void;
 };
 
-export function PreviewModal({ entry, onClose, onDownload }: PreviewModalProps) {
+type PreviewContentProps = {
+  entry: FileEntry;
+  onClose?: () => void;
+  onDownload?: () => void;
+};
+
+export function PreviewContent({ entry, onClose, onDownload }: PreviewContentProps) {
   const [textContent, setTextContent] = useState<string | null>(null);
   const [textError, setTextError] = useState<string | null>(null);
 
@@ -43,7 +49,7 @@ export function PreviewModal({ entry, onClose, onDownload }: PreviewModalProps) 
   }, [fileUrl, showText]);
 
   return (
-    <Dialog hideHeader onClose={onClose}>
+    <div className={styles.previewShell}>
       <div className={styles.previewHeader}>
         <span className={styles.previewTitle}>{entry.name}</span>
         <div className={styles.previewActions}>
@@ -53,9 +59,11 @@ export function PreviewModal({ entry, onClose, onDownload }: PreviewModalProps) 
           <IconButton onClick={() => window.open(fileUrl, '_blank')} title="Open raw">
             <Icon name="document-open" size={18} />
           </IconButton>
-          <IconButton onClick={onClose} title="Close">
-            <Icon name="window-close" size={18} />
-          </IconButton>
+          {onClose && (
+            <IconButton onClick={onClose} title="Close">
+              <Icon name="window-close" size={18} />
+            </IconButton>
+          )}
         </div>
       </div>
 
@@ -84,6 +92,14 @@ export function PreviewModal({ entry, onClose, onDownload }: PreviewModalProps) 
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+export function PreviewModal({ entry, onClose, onDownload }: PreviewModalProps) {
+  return (
+    <Dialog hideHeader onClose={onClose}>
+      <PreviewContent entry={entry} onClose={onClose} onDownload={onDownload} />
     </Dialog>
   );
 }

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SortField, SortDirection } from '../types';
-import type { Session } from '../api/client';
+import type { FileEntry, Session } from '../api/client';
 import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
 import { ShareDialog } from '../components/overlay/ShareDialog';
 import { ShareManager } from '../components/overlay/ShareManager';
 import { ServiceFormModal } from '../components/overlay/ServiceFormModal';
+import { PreviewContent, PreviewModal } from '../components/overlay/PreviewModal';
 import { SettingsPanel } from '../pages/SettingsPanel';
 import { TopBar } from '../components/layout/TopBar';
 import { Dock } from '../components/layout/Dock';
@@ -37,7 +38,8 @@ import { useWindowManager, type WindowState } from '../contexts/WindowManager';
 import { CommandsContext, type WindowCommands } from '../contexts/WindowCommands';
 import { ShellContext } from '../contexts/ShellContext';
 import { Taskbar } from '../components/layout/Taskbar';
-import { filesIconUrl, trashIconUrl, jobsIconUrl, preferencesIconUrl, multidiskIconUrl } from '../api/icons';
+import { filesIconUrl, trashIconUrl, jobsIconUrl, preferencesIconUrl, multidiskIconUrl, fileTypeIconUrl } from '../api/icons';
+import { openFileExternally } from '../utils/preview';
 import styles from './Home.module.css';
 
 
@@ -146,6 +148,22 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     });
   }, [wm]);
 
+  const openPreviewWindow = useCallback((entry: FileEntry) => {
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches) {
+      fileActions.setPreviewEntry(entry);
+      return;
+    }
+
+    wm.toggleWindow('preview', {
+      title: entry.name,
+      icon: fileTypeIconUrl(entry),
+      winType: 'preview',
+      params: { entry },
+      width: 760,
+      height: 560,
+    });
+  }, [fileActions, wm]);
+
   // ── Render window content from type+params ──────────────
   const renderWindow = useCallback((win: WindowState) => {
     switch (win.winType) {
@@ -159,6 +177,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             onBack={navActions.goBack}
             onAddFavorite={addFavorite}
             onRemoveFavorite={removeFavorite}
+            onPreview={openPreviewWindow}
           />
         );
       case 'trash':
@@ -180,10 +199,20 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             session={session}
           />
         );
+      case 'preview': {
+        const entry = win.params.entry as FileEntry | undefined;
+        if (!entry) return null;
+        return (
+          <PreviewContent
+            entry={entry}
+            onDownload={() => openFileExternally(entry.path)}
+          />
+        );
+      }
       default:
         return null;
     }
-  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm]);
+  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, openPreviewWindow]);
 
   const desktopActions = useDesktopActions({
     browser, dialogs, toast, nav,
@@ -455,6 +484,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onBack={navActions.goBack}
               onAddFavorite={addFavorite}
               onRemoveFavorite={removeFavorite}
+              onPreview={openPreviewWindow}
             />
           )}
           {nav.activeView === 'jobs' && (
@@ -521,6 +551,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     <>
       {shell}
       {dialogs.shareDialogPath && <ShareDialog path={dialogs.shareDialogPath.path} name={dialogs.shareDialogPath.name} onClose={() => dialogs.setShareDialogPath(null)} />}
+      {fileActions.previewEntry && (
+        <PreviewModal
+          entry={fileActions.previewEntry}
+          onClose={() => fileActions.setPreviewEntry(null)}
+          onDownload={() => openFileExternally(fileActions.previewEntry!.path)}
+        />
+      )}
       {fileActions.shortcutsOpen && <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />}
       {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
       {menus.serviceFormData && (

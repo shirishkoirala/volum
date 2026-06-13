@@ -43,6 +43,7 @@ type FilesViewProps = {
   onBack: () => void;
   onAddFavorite: (path: string) => void;
   onRemoveFavorite: (path: string) => void;
+  onPreview?: (entry: FileEntry) => void;
 };
 
 export type FilesViewHandle = {
@@ -62,7 +63,7 @@ export type FilesViewHandle = {
   handleGoBack: () => void;
 };
 
-export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function FilesView({ currentPath, session, favorites, onNavigate, onBack, onAddFavorite, onRemoveFavorite }, ref) {
+export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function FilesView({ currentPath, session, favorites, onNavigate, onBack, onAddFavorite, onRemoveFavorite, onPreview }, ref) {
   const shell = useShellContext();
   const viewPref = useViewPreferences();
   const windowId = useWindowId();
@@ -95,6 +96,17 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   useEffect(() => {
     setPreviewEntry(null);
   }, [effectivePath, setPreviewEntry]);
+
+  const openPreview = useCallback((entry: FileEntry) => {
+    if (onPreview) onPreview(entry);
+    else setPreviewEntry(entry);
+  }, [onPreview, setPreviewEntry]);
+
+  const setPreviewTarget = useCallback((value: React.SetStateAction<FileEntry | null>) => {
+    const next = typeof value === 'function' ? value(fileActions.previewEntry) : value;
+    if (next) openPreview(next);
+    else setPreviewEntry(null);
+  }, [fileActions.previewEntry, openPreview, setPreviewEntry]);
 
   const selection = useSelection({
     filteredEntries: browser.filteredEntries,
@@ -151,7 +163,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     renaming: fileActions.renaming,
     setRenaming: fileActions.setRenaming,
     setContextMenu: fileActions.setContextMenu,
-    setPreviewEntry: fileActions.setPreviewEntry,
+    setPreviewEntry: setPreviewTarget,
     setInfoEntry: fileActions.setInfoEntry,
     setBatchRenameOpen: fileActions.setBatchRenameOpen,
     setAnalyzePath: fileActions.setAnalyzePath,
@@ -372,7 +384,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           onEntryTouchEnd={handleEntryTouchEnd}
           onNavigate={handleNavigate}
           onPreview={(entry) => {
-            if (isPreviewableFile(entry.name)) fileActions.setPreviewEntry(entry);
+            if (isPreviewableFile(entry.name)) openPreview(entry);
             else fileCommands.handleDownload(entry);
           }}
         />
@@ -410,7 +422,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         onEntryTouchEnd={handleEntryTouchEnd}
         onNavigate={handleNavigate}
         onPreview={(entry) => {
-          if (isPreviewableFile(entry.name)) fileActions.setPreviewEntry(entry);
+          if (isPreviewableFile(entry.name)) openPreview(entry);
           else fileCommands.handleDownload(entry);
         }}
       />
