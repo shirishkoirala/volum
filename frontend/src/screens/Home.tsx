@@ -5,7 +5,7 @@ import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
 import { ShareDialog } from '../components/overlay/ShareDialog';
 import { ShareManager } from '../components/overlay/ShareManager';
 import { ServiceFormModal } from '../components/overlay/ServiceFormModal';
-import { PreviewContent, PreviewModal } from '../components/overlay/PreviewModal';
+import { PreviewModal } from '../components/overlay/PreviewModal';
 import { SettingsPanel } from '../pages/SettingsPanel';
 import { TopBar } from '../components/layout/TopBar';
 import { Dock } from '../components/layout/Dock';
@@ -34,11 +34,13 @@ import { useFileCommands } from '../hooks/useFileCommands';
 import { useContextMenus } from '../hooks/useContextMenus';
 import { useNavStack } from '../hooks/useNavStack';
 import { useDesktopActions } from '../hooks/useDesktopActions';
+import { useWorkspaceOpeners } from '../hooks/useWorkspaceOpeners';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { useWindowManager, type WindowState } from '../contexts/WindowManager';
 import { CommandsContext, type WindowCommands } from '../contexts/WindowCommands';
 import { ShellContext } from '../contexts/ShellContext';
 import { Taskbar } from '../components/layout/Taskbar';
-import { filesIconUrl, trashIconUrl, jobsIconUrl, preferencesIconUrl, multidiskIconUrl, fileTypeIconUrl } from '../api/icons';
+import { PreviewWindow } from '../components/window/PreviewWindow';
 import { openFileExternally } from '../utils/preview';
 import styles from './Home.module.css';
 
@@ -77,15 +79,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
 
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches,
-  );
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 760px)');
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
+  const isMobile = useIsMobile();
 
   // ── Refs ──
   const filesViewRef = useRef<import('../pages/FilesView').FilesViewHandle>(null);
@@ -107,72 +101,15 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     [browser.roots],
   );
 
-  // ── Window openers ───────────────────────────────────────
-  const openFilesWindow = useCallback((path?: string) => {
-    wm.toggleWindow('files', {
-      title: 'Files',
-      icon: filesIconUrl(),
-      winType: 'files',
-      params: { path: path ?? defaultRootPath },
-      width: 900, height: 600,
-    });
-  }, [wm, defaultRootPath]);
-
-  const openDrivesWindow = useCallback(() => {
-    wm.toggleWindow('drives', {
-      title: 'Drives',
-      icon: multidiskIconUrl(),
-      winType: 'drives',
-      params: {},
-      width: 820, height: 560,
-    });
-  }, [wm]);
-
-  const openTrashWindow = useCallback(() => {
-    wm.toggleWindow('trash', {
-      title: 'Trash',
-      icon: trashIconUrl(browser.trashEntries.length > 0),
-      winType: 'trash',
-      params: {},
-      width: 700, height: 500,
-    });
-  }, [wm, browser.trashEntries.length]);
-
-  const openJobsWindow = useCallback(() => {
-    wm.toggleWindow('jobs', {
-      title: 'Transfers',
-      icon: jobsIconUrl(),
-      winType: 'jobs',
-      params: {},
-      width: 700, height: 500,
-    });
-  }, [wm]);
-
-  const openSettingsWindow = useCallback(() => {
-    wm.toggleWindow('settings', {
-      title: 'Settings',
-      icon: preferencesIconUrl(),
-      winType: 'settings',
-      params: {},
-      width: 800, height: 550,
-    });
-  }, [wm]);
-
-  const openPreviewWindow = useCallback((entry: FileEntry) => {
-    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches) {
-      fileActions.setPreviewEntry(entry);
-      return;
-    }
-
-    wm.toggleWindow('preview', {
-      title: entry.name,
-      icon: fileTypeIconUrl(entry),
-      winType: 'preview',
-      params: { entry },
-      width: 760,
-      height: 560,
-    });
-  }, [fileActions, wm]);
+  const workspaceOpeners = useWorkspaceOpeners({
+    defaultRootPath,
+    isMobile,
+    nav,
+    navActions,
+    setPreviewEntry: fileActions.setPreviewEntry,
+    trashCount: browser.trashEntries.length,
+    wm,
+  });
 
   // ── Render window content from type+params ──────────────
   const renderWindow = useCallback((win: WindowState) => {
@@ -187,7 +124,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             onBack={navActions.goBack}
             onAddFavorite={addFavorite}
             onRemoveFavorite={removeFavorite}
-            onPreview={openPreviewWindow}
+            onPreview={workspaceOpeners.openPreview}
           />
         );
       case 'trash':
@@ -212,17 +149,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       case 'preview': {
         const entry = win.params.entry as FileEntry | undefined;
         if (!entry) return null;
-        return (
-          <PreviewContent
-            entry={entry}
-            onDownload={() => openFileExternally(entry.path)}
-          />
-        );
+        return <PreviewWindow entry={entry} />;
       }
       default:
         return null;
     }
-  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, openPreviewWindow]);
+  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, workspaceOpeners.openPreview]);
 
   const desktopActions = useDesktopActions({
     browser, dialogs, toast, nav,
@@ -312,25 +244,14 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Taskbar launcher handler ─────────────────────────────
   const handleTaskbarLauncher = useCallback((id: string) => {
-    if (isMobile) {
-      if (id === 'files') navActions.navigateTo(defaultRootPath);
-      else if (id === 'trash') nav.setShowingTrash(true);
-      else if (id === 'jobs') nav.setShowingJobs(true);
-      else if (id === 'settings') nav.setShowingSettings(true);
-      else if (id === 'drives') nav.setShowingMyPC(true);
-      else if (id === 'desktop') navActions.resetToDesktopView();
-      return;
-    }
-    if (id === 'files') openFilesWindow();
-    else if (id === 'trash') openTrashWindow();
-    else if (id === 'jobs') openJobsWindow();
-    else if (id === 'settings') openSettingsWindow();
-    else if (id === 'drives') openDrivesWindow();
-    else if (id === 'desktop') {
-      wm.windows.forEach((w) => { if (!w.minimized) wm.toggleMinimize(w.id); });
-    }
+    if (id === 'files') workspaceOpeners.openFiles();
+    else if (id === 'trash') workspaceOpeners.openTrash();
+    else if (id === 'jobs') workspaceOpeners.openJobs();
+    else if (id === 'settings') workspaceOpeners.openSettings();
+    else if (id === 'drives') workspaceOpeners.openDrives();
+    else if (id === 'desktop') workspaceOpeners.openDesktop();
     else desktopActions.handleDockActivate(id);
-  }, [isMobile, navActions, defaultRootPath, nav, openFilesWindow, openTrashWindow, openJobsWindow, openSettingsWindow, openDrivesWindow, wm, desktopActions]);
+  }, [workspaceOpeners, desktopActions]);
 
   // ── Focused window & reactive commands ──────────────────
   const [commandsMap, setCommandsMap] = useState<Record<string, WindowCommands>>({});
@@ -396,17 +317,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           activeView={nav.activeView}
           title={topBarTitle}
           onGoDesktop={navActions.resetToDesktopView}
-          onOpenSettings={() => {
-            if (isMobile) {
-              nav.setShowingSettings(true);
-              nav.setShowingTrash(false);
-              nav.setShowingJobs(false);
-              nav.setShowingMyPC(false);
-              nav.setSelectedDriveName(null);
-              return;
-            }
-            openSettingsWindow();
-          }}
+          onOpenSettings={workspaceOpeners.openSettings}
           session={session}
           onLogout={onLogout}
           focusedWindowType={focusedWindow?.winType ?? null}
@@ -437,10 +348,10 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               viewPref.setSortDirection(d);
             },
             onGoDesktop: navActions.resetToDesktopView,
-            onGoFiles: () => openFilesWindow(),
-            onGoTrash: openTrashWindow,
-            onGoJobs: openJobsWindow,
-            onGoSettings: openSettingsWindow,
+            onGoFiles: () => workspaceOpeners.openFiles(),
+            onGoTrash: workspaceOpeners.openTrash,
+            onGoJobs: workspaceOpeners.openJobs,
+            onGoSettings: workspaceOpeners.openSettings,
             onToggleLocation: () => filesViewRef.current?.handleToggleLocation(),
             canWrite: focusedCommands.canWrite ?? browser.canWrite,
             canUpload: focusedCommands.canUpload ?? browser.canWrite,
@@ -455,30 +366,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               trashEntries={browser.trashEntries} jobs={browser.jobs}
               pendingTransferCount={pendingUploadCount}
               favorites={favorites} services={services}
-              onNavigateTo={(path) => {
-                if (isMobile) navActions.navigateTo(path);
-                else openFilesWindow(path);
-              }}
-              onNavigateToTrash={() => {
-                if (isMobile) nav.setShowingTrash(true);
-                else openTrashWindow();
-              }}
-              onOpenSettings={() => {
-                if (isMobile) nav.setShowingSettings(true);
-                else openSettingsWindow();
-              }}
-              onOpenJobs={() => {
-                if (isMobile) nav.setShowingJobs(true);
-                else openJobsWindow();
-              }}
-              onOpenFiles={() => {
-                if (isMobile) navActions.navigateTo(defaultRootPath);
-                else openFilesWindow();
-              }}
-              onShowMyPC={() => {
-                if (isMobile) nav.setShowingMyPC(true);
-                else openDrivesWindow();
-              }}
+              onNavigateTo={workspaceOpeners.openFiles}
+              onNavigateToTrash={workspaceOpeners.openTrash}
+              onOpenSettings={workspaceOpeners.openSettings}
+              onOpenJobs={workspaceOpeners.openJobs}
+              onOpenFiles={() => workspaceOpeners.openFiles()}
+              onShowMyPC={workspaceOpeners.openDrives}
               wallpaperStyle={wallpaper.wallpaperStyle}
               onItemContextMenu={handleDesktopItemContextMenu}
             />
@@ -499,7 +392,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onBack={navActions.goBack}
               onAddFavorite={addFavorite}
               onRemoveFavorite={removeFavorite}
-              onPreview={openPreviewWindow}
+              onPreview={workspaceOpeners.openPreview}
             />
           )}
           {nav.activeView === 'jobs' && (

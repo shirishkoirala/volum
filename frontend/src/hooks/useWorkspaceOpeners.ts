@@ -1,0 +1,158 @@
+import { useCallback } from 'react';
+import type { FileEntry } from '../api/client';
+import { fileTypeIconUrl, filesIconUrl, jobsIconUrl, multidiskIconUrl, preferencesIconUrl, trashIconUrl } from '../api/icons';
+import type { WindowManagerType } from '../contexts/WindowManager';
+
+type WorkspaceNav = {
+  setShowingTrash: (value: boolean) => void;
+  setShowingSettings: (value: boolean) => void;
+  setShowingJobs: (value: boolean) => void;
+  setShowingMyPC: (value: boolean) => void;
+  setSelectedDriveName: (value: string | null) => void;
+};
+
+type WorkspaceNavActions = {
+  navigateTo: (path: string) => void;
+  resetToDesktopView: () => void;
+};
+
+type UseWorkspaceOpenersParams = {
+  defaultRootPath: string;
+  isMobile: boolean;
+  nav: WorkspaceNav;
+  navActions: WorkspaceNavActions;
+  setPreviewEntry: (entry: FileEntry | null) => void;
+  trashCount: number;
+  wm: WindowManagerType;
+};
+
+export function useWorkspaceOpeners({
+  defaultRootPath,
+  isMobile,
+  nav,
+  navActions,
+  setPreviewEntry,
+  trashCount,
+  wm,
+}: UseWorkspaceOpenersParams) {
+  const openFiles = useCallback((path?: string) => {
+    if (isMobile) {
+      navActions.navigateTo(path ?? defaultRootPath);
+      return;
+    }
+
+    wm.toggleWindow('files', {
+      title: 'Files',
+      icon: filesIconUrl(),
+      winType: 'files',
+      params: { path: path ?? defaultRootPath },
+      width: 900,
+      height: 600,
+    });
+  }, [defaultRootPath, isMobile, navActions, wm]);
+
+  const openDrives = useCallback(() => {
+    if (isMobile) {
+      nav.setShowingMyPC(true);
+      return;
+    }
+
+    wm.toggleWindow('drives', {
+      title: 'Drives',
+      icon: multidiskIconUrl(),
+      winType: 'drives',
+      params: {},
+      width: 820,
+      height: 560,
+    });
+  }, [isMobile, nav, wm]);
+
+  const openTrash = useCallback(() => {
+    if (isMobile) {
+      nav.setShowingTrash(true);
+      return;
+    }
+
+    wm.toggleWindow('trash', {
+      title: 'Trash',
+      icon: trashIconUrl(trashCount > 0),
+      winType: 'trash',
+      params: {},
+      width: 700,
+      height: 500,
+    });
+  }, [isMobile, nav, trashCount, wm]);
+
+  const openJobs = useCallback(() => {
+    if (isMobile) {
+      nav.setShowingJobs(true);
+      return;
+    }
+
+    wm.toggleWindow('jobs', {
+      title: 'Transfers',
+      icon: jobsIconUrl(),
+      winType: 'jobs',
+      params: {},
+      width: 700,
+      height: 500,
+    });
+  }, [isMobile, nav, wm]);
+
+  const openSettings = useCallback(() => {
+    if (isMobile) {
+      nav.setShowingSettings(true);
+      nav.setShowingTrash(false);
+      nav.setShowingJobs(false);
+      nav.setShowingMyPC(false);
+      nav.setSelectedDriveName(null);
+      return;
+    }
+
+    wm.toggleWindow('settings', {
+      title: 'Settings',
+      icon: preferencesIconUrl(),
+      winType: 'settings',
+      params: {},
+      width: 800,
+      height: 550,
+    });
+  }, [isMobile, nav, wm]);
+
+  const openPreview = useCallback((entry: FileEntry) => {
+    if (isMobile) {
+      setPreviewEntry(entry);
+      return;
+    }
+
+    wm.toggleWindow('preview', {
+      title: entry.name,
+      icon: fileTypeIconUrl(entry),
+      winType: 'preview',
+      params: { entry },
+      width: 760,
+      height: 560,
+    });
+  }, [isMobile, setPreviewEntry, wm]);
+
+  const openDesktop = useCallback(() => {
+    if (isMobile) {
+      navActions.resetToDesktopView();
+      return;
+    }
+
+    wm.windows.forEach((win) => {
+      if (!win.minimized) wm.toggleMinimize(win.id);
+    });
+  }, [isMobile, navActions, wm]);
+
+  return {
+    openDesktop,
+    openDrives,
+    openFiles,
+    openJobs,
+    openPreview,
+    openSettings,
+    openTrash,
+  };
+}
