@@ -1,4 +1,4 @@
-import { KeyboardEvent, MouseEvent, RefObject, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { KeyboardEvent, MouseEvent, RefObject, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
@@ -116,21 +116,12 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     currentPath: effectivePath,
   });
 
-  const selfNav = useMemo(() => ({
-    setShowingTrash: () => {},
-    setShowingSettings: () => {},
-    setShowingJobs: () => {},
-    setShowingMyPC: () => {},
-    setSelectedDriveName: () => {},
-  }), []);
-
   const navActions = useNavStack({
     viewPref: {
       currentPath: effectivePath,
       setCurrentPath: windowId ? setWindowPath : viewPref.setCurrentPath,
       navigateToPath: windowId ? setWindowPath : viewPref.navigateToPath,
     },
-    nav: selfNav,
     browser: {
       refresh: browser.refresh,
       setSearchOpen: browser.setSearchOpen,

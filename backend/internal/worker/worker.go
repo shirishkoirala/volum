@@ -414,6 +414,7 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 
 	buffer := make([]byte, 1024*1024)
 	copied := item.Processed
+	progress := newProgressThrottle(copied, 16*1024*1024, 500*time.Millisecond)
 	for {
 		if ctx.Err() != nil {
 			temp.Close()
@@ -451,13 +452,15 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 				return copied, io.ErrShortWrite
 			}
 			copied += int64(written)
-			if err := w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusRunning, copied, nil); err != nil {
-				temp.Close()
-				return copied, err
-			}
-			if err := w.store.UpdateJobProgress(ctx, job.ID, baseBytes+copied, processedItems, w.publicPath(item.Source)); err != nil {
-				temp.Close()
-				return copied, err
+			if progress.Ready(copied) {
+				if err := w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusRunning, copied, nil); err != nil {
+					temp.Close()
+					return copied, err
+				}
+				if err := w.store.UpdateJobProgress(ctx, job.ID, baseBytes+copied, processedItems, w.publicPath(item.Source)); err != nil {
+					temp.Close()
+					return copied, err
+				}
 			}
 		}
 		if errors.Is(readErr, io.EOF) {
@@ -514,6 +517,32 @@ func partialFileSize(path string, expectedSize int64) (int64, error) {
 
 var errSkipDestination = errors.New("destination skipped by conflict policy")
 var errJobPaused = errors.New("job paused")
+
+type progressThrottle struct {
+	lastBytes int64
+	lastTime  time.Time
+	minBytes  int64
+	minPeriod time.Duration
+}
+
+func newProgressThrottle(startBytes, minBytes int64, minPeriod time.Duration) *progressThrottle {
+	return &progressThrottle{
+		lastBytes: startBytes,
+		lastTime:  time.Now(),
+		minBytes:  minBytes,
+		minPeriod: minPeriod,
+	}
+}
+
+func (t *progressThrottle) Ready(currentBytes int64) bool {
+	now := time.Now()
+	if currentBytes-t.lastBytes < t.minBytes && now.Sub(t.lastTime) < t.minPeriod {
+		return false
+	}
+	t.lastBytes = currentBytes
+	t.lastTime = now
+	return true
+}
 
 func (w *Worker) resolveConflictDestination(ctx context.Context, destination, policy string) (string, error) {
 	if policy == "" {

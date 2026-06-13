@@ -18,6 +18,8 @@ import (
 	"github.com/volum-app/volum/backend/internal/security"
 )
 
+const maxUploadChunkBytes int64 = 2 * 1024 * 1024
+
 func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	targetPublic := r.URL.Query().Get("path")
 	targetDir, err := s.guard.Resolve(targetPublic)
@@ -214,52 +216,93 @@ func (s *Server) uploadPart(ctx context.Context, targetPublic, targetDir string,
 		_ = s.jobs.FailJob(ctx, job.ID, err)
 		return jobs.Job{}, err
 	}
-	if finalDestination, err := resolveUploadConflict(destination, conflictPolicy); err != nil {
+	job, err = s.finalizeUpload(ctx, uploadFinalizeRequest{
+		jobID:             job.ID,
+		itemID:            item.ID,
+		tempPath:          tempPath,
+		destination:       destination,
+		destinationPublic: destinationPublic,
+		uploadName:        uploadName,
+		name:              name,
+		bytes:             written,
+		conflictPolicy:    conflictPolicy,
+	})
+	if err != nil {
 		_ = os.Remove(tempPath)
 		_ = s.jobs.FailJob(ctx, job.ID, err)
 		return jobs.Job{}, err
-	} else if finalDestination != destination {
+	}
+	return job, nil
+}
+
+type uploadFinalizeRequest struct {
+	jobID             string
+	itemID            string
+	tempPath          string
+	destination       string
+	destinationPublic string
+	uploadName        string
+	name              string
+	bytes             int64
+	conflictPolicy    string
+	cleanupPaths      []string
+}
+
+func (s *Server) finalizeUpload(ctx context.Context, req uploadFinalizeRequest) (jobs.Job, error) {
+	destination := req.destination
+	destinationPublic := req.destinationPublic
+	name := req.name
+
+	finalDestination, err := resolveUploadConflict(destination, req.conflictPolicy)
+	if err != nil {
+		return jobs.Job{}, err
+	}
+	if finalDestination != destination {
 		destination = finalDestination
 		if publicPath, err := s.guard.PublicPath(destination); err == nil {
 			destinationPublic = publicPath
 		}
+		name = filepath.Base(destinationPublic)
 	}
-	if err := os.Rename(tempPath, destination); err != nil {
-		_ = os.Remove(tempPath)
-		_ = s.jobs.FailJob(ctx, job.ID, err)
+
+	if err := os.Rename(req.tempPath, destination); err != nil {
 		return jobs.Job{}, err
 	}
-	_ = os.Remove(filepath.Dir(tempPath))
+	for _, path := range req.cleanupPaths {
+		_ = os.Remove(path)
+	}
+	_ = os.Remove(filepath.Dir(req.tempPath))
 
-	if appBundle, converted, err := s.finalizeAppBundleArchive(destination, uploadName, conflictPolicy); err != nil {
-		_ = s.jobs.FailJob(ctx, job.ID, err)
+	if appBundle, converted, err := s.finalizeAppBundleArchive(destination, req.uploadName, req.conflictPolicy); err != nil {
 		return jobs.Job{}, err
 	} else if converted {
-		destination = appBundle.path
 		destinationPublic = appBundle.publicPath
 		name = appBundle.filename
-		if err := s.jobs.UpdateJobPaths(ctx, job.ID, name, destinationPublic); err != nil {
-			_ = s.jobs.FailJob(ctx, job.ID, err)
+	}
+
+	if name != req.name || destinationPublic != req.destinationPublic {
+		if err := s.jobs.UpdateJobPaths(ctx, req.jobID, name, destinationPublic); err != nil {
 			return jobs.Job{}, err
 		}
 	}
-
-	if err := s.jobs.SetJobTotals(ctx, job.ID, written, 1); err != nil {
+	if err := s.jobs.SetJobTotals(ctx, req.jobID, req.bytes, 1); err != nil {
 		return jobs.Job{}, err
 	}
-	if err := s.jobs.UpdateItemStatus(ctx, item.ID, jobs.StatusCompleted, written, nil); err != nil {
+	if req.itemID != "" {
+		if err := s.jobs.UpdateItemStatus(ctx, req.itemID, jobs.StatusCompleted, req.bytes, nil); err != nil {
+			return jobs.Job{}, err
+		}
+	}
+	if err := s.jobs.UpdateJobProgress(ctx, req.jobID, req.bytes, 1, name); err != nil {
 		return jobs.Job{}, err
 	}
-	if err := s.jobs.UpdateJobProgress(ctx, job.ID, written, 1, name); err != nil {
-		return jobs.Job{}, err
-	}
-	if err := s.jobs.CompleteJob(ctx, job.ID); err != nil {
+	if err := s.jobs.CompleteJob(ctx, req.jobID); err != nil {
 		return jobs.Job{}, err
 	}
 	if err := s.jobs.CreateAuditLog(ctx, "upload", destinationPublic, "uploaded "+name); err != nil {
 		return jobs.Job{}, err
 	}
-	return s.jobs.Get(ctx, job.ID)
+	return s.jobs.Get(ctx, req.jobID)
 }
 
 func validUploadName(name string) bool {
@@ -424,13 +467,17 @@ func (s *Server) handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chunkData, err := io.ReadAll(r.Body)
+	chunkData, err := io.ReadAll(io.LimitReader(r.Body, maxUploadChunkBytes+1))
 	if err != nil {
 		writeError(w, err)
 		return
 	}
 	if int64(len(chunkData)) == 0 {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "empty chunk"})
+		return
+	}
+	if int64(len(chunkData)) > maxUploadChunkBytes {
+		writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "upload chunk is too large"})
 		return
 	}
 
@@ -449,6 +496,7 @@ func (s *Server) handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 	partialPath := filepath.Join(tempDir, filename+".partial")
 	jobIDPath := filepath.Join(tempDir, filename+".jobid")
 	ctx := r.Context()
+	itemID := ""
 
 	// ─── Job exists: check cancel/pause ───
 	if jobID != "" {
@@ -532,20 +580,22 @@ func (s *Server) handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 			writeError(w, err)
 			return
 		}
-		if _, err := s.jobs.CreateItem(ctx, jobs.Item{
+		item, err := s.jobs.CreateItem(ctx, jobs.Item{
 			JobID:           job.ID,
 			SourcePath:      filename,
 			DestinationPath: destination,
 			SizeBytes:       totalSize,
 			Status:          jobs.StatusRunning,
 			ProcessedBytes:  received,
-		}); err != nil {
+		})
+		if err != nil {
 			_ = os.Remove(partialPath)
 			_ = os.Remove(jobIDPath)
 			_ = s.jobs.FailJob(ctx, job.ID, err)
 			writeError(w, err)
 			return
 		}
+		itemID = item.ID
 		if err := s.jobs.UpdateJobProgress(ctx, job.ID, received, 0, filename); err != nil {
 			_ = os.Remove(partialPath)
 			_ = os.Remove(jobIDPath)
@@ -562,6 +612,19 @@ func (s *Server) handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 
 	// ─── Last chunk: finalize ───
 	if complete {
+		if itemID == "" {
+			items, err := s.jobs.ListItems(ctx, jobID)
+			if err != nil {
+				_ = os.Remove(partialPath)
+				_ = os.Remove(jobIDPath)
+				_ = s.jobs.FailJob(ctx, jobID, err)
+				writeError(w, err)
+				return
+			}
+			if len(items) > 0 {
+				itemID = items[0].ID
+			}
+		}
 		if fi, err := os.Stat(partialPath); err != nil || fi.Size() != totalSize {
 			_ = os.Remove(partialPath)
 			_ = os.Remove(jobIDPath)
@@ -570,7 +633,18 @@ func (s *Server) handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		finalDestination, err := resolveUploadConflict(destination, uploadConflictPolicy(r))
+		job, err := s.finalizeUpload(ctx, uploadFinalizeRequest{
+			jobID:             jobID,
+			itemID:            itemID,
+			tempPath:          partialPath,
+			destination:       destination,
+			destinationPublic: destinationPublic,
+			uploadName:        filename,
+			name:              filename,
+			bytes:             totalSize,
+			conflictPolicy:    uploadConflictPolicy(r),
+			cleanupPaths:      []string{jobIDPath},
+		})
 		if err != nil {
 			_ = os.Remove(partialPath)
 			_ = os.Remove(jobIDPath)
@@ -578,44 +652,6 @@ func (s *Server) handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 			writeError(w, err)
 			return
 		}
-
-		if finalDestination != destination {
-			destination = finalDestination
-			if publicPath, err := s.guard.PublicPath(destination); err == nil {
-				destinationPublic = publicPath
-			}
-		}
-
-		if err := os.Rename(partialPath, destination); err != nil {
-			_ = os.Remove(partialPath)
-			_ = os.Remove(jobIDPath)
-			_ = s.jobs.FailJob(ctx, jobID, err)
-			writeError(w, err)
-			return
-		}
-		_ = os.Remove(jobIDPath)
-		_ = os.Remove(tempDir)
-
-		if appBundle, converted, err := s.finalizeAppBundleArchive(destination, filename, uploadConflictPolicy(r)); err != nil {
-			_ = s.jobs.FailJob(ctx, jobID, err)
-			writeError(w, err)
-			return
-		} else if converted {
-			destination = appBundle.path
-			destinationPublic = appBundle.publicPath
-			filename = appBundle.filename
-			if err := s.jobs.UpdateJobPaths(ctx, jobID, filename, destinationPublic); err != nil {
-				_ = s.jobs.FailJob(ctx, jobID, err)
-				writeError(w, err)
-				return
-			}
-		}
-
-		_ = s.jobs.SetJobTotals(ctx, jobID, totalSize, 1)
-		_ = s.jobs.UpdateJobProgress(ctx, jobID, totalSize, 1, filename)
-		_ = s.jobs.CompleteJob(ctx, jobID)
-		_ = s.jobs.CreateAuditLog(ctx, "upload", destinationPublic, "uploaded "+filename)
-		job, _ := s.jobs.Get(ctx, jobID)
 
 		writeJSON(w, http.StatusOK, map[string]any{
 			"received": received,
