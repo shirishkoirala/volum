@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Dialog } from './Dialog';
 import { Button } from '../ui/shared';
 import type { ServiceShortcut } from '../../utils/services';
@@ -14,6 +14,7 @@ type ServiceFormModalProps = {
 };
 
 export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalProps) {
+  const nameInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(initial?.name ?? '');
   const [url, setUrl] = useState(initial?.url ?? '');
   const [iconUrl, setIconUrl] = useState(initial?.iconUrl ?? '');
@@ -23,11 +24,7 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
   const [debouncedUrl, setDebouncedUrl] = useState('');
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const input = document.querySelector<HTMLInputElement>('[data-svc-autofocus]');
-      input?.focus();
-    }, 10);
-    return () => clearTimeout(timer);
+    nameInputRef.current?.focus();
   }, []);
 
   useEffect(() => {
@@ -75,9 +72,11 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
         </Button>
       </>
     }>
-      <label className={dStyles.dialogField}>
+      <label className={dStyles.dialogField} htmlFor="service-name">
         <span>Name</span>
         <input
+          id="service-name"
+          ref={nameInputRef}
           data-svc-autofocus
           value={name}
           onChange={(e) => { setName(e.target.value); setError(null); }}
@@ -86,9 +85,10 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
           onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
         />
       </label>
-      <label className={dStyles.dialogField}>
+      <label className={dStyles.dialogField} htmlFor="service-url">
         <span>URL</span>
         <input
+          id="service-url"
           value={url}
           onChange={(e) => { setUrl(e.target.value); setError(null); }}
           onBlur={() => setTouched((p) => ({ ...p, url: true }))}
@@ -97,10 +97,12 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
         />
         {urlError && <p className={dStyles.dialogError}>{urlError}</p>}
       </label>
-      <label className={dStyles.dialogField}>
+      <label className={dStyles.dialogField} htmlFor="service-icon-url">
         <span>Icon URL (optional)</span>
         <div className={dStyles.iconUrlRow}>
           <input
+            id="service-icon-url"
+            aria-label="Icon URL (optional)"
             value={iconUrl}
             onChange={(e) => { setIconUrl(e.target.value); setError(null); }}
             placeholder="https://example.com/favicon.ico"
