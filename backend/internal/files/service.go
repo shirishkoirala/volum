@@ -25,6 +25,19 @@ type Entry struct {
 	Hidden      bool      `json:"hidden"`
 }
 
+type ListOptions struct {
+	Limit  int
+	Offset int
+}
+
+type Listing struct {
+	Entries []Entry
+	Total   int
+	Limit   int
+	Offset  int
+	HasMore bool
+}
+
 type Root struct {
 	Path       string `json:"path"`
 	Label      string `json:"label,omitempty"`
@@ -109,24 +122,60 @@ func (s *Service) RootUsage() []Root {
 }
 
 func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
-	resolved, err := s.guard.Resolve(path)
+	listing, err := s.ListPage(path, showHidden, ListOptions{})
 	if err != nil {
 		return nil, err
+	}
+	return listing.Entries, nil
+}
+
+func (s *Service) ListPage(path string, showHidden bool, opts ListOptions) (Listing, error) {
+	resolved, err := s.guard.Resolve(path)
+	if err != nil {
+		return Listing{}, err
 	}
 
 	items, err := os.ReadDir(resolved)
 	if err != nil {
-		return nil, err
+		return Listing{}, err
 	}
 
-	entries := make([]Entry, 0, len(items))
+	filtered := make([]os.DirEntry, 0, len(items))
 	for _, item := range items {
 		name := item.Name()
 		hidden := strings.HasPrefix(name, ".")
 		if hidden && !showHidden {
 			continue
 		}
+		filtered = append(filtered, item)
+	}
 
+	sort.Slice(filtered, func(i, j int) bool {
+		iIsDir := filtered[i].IsDir()
+		jIsDir := filtered[j].IsDir()
+		if iIsDir != jIsDir {
+			return iIsDir
+		}
+		return strings.ToLower(filtered[i].Name()) < strings.ToLower(filtered[j].Name())
+	})
+
+	total := len(filtered)
+	offset := max(opts.Offset, 0)
+	if offset > total {
+		offset = total
+	}
+	limit := opts.Limit
+	end := total
+	if limit > 0 {
+		end = min(offset+limit, total)
+	} else {
+		limit = 0
+	}
+
+	entries := make([]Entry, 0, end-offset)
+	for _, item := range filtered[offset:end] {
+		name := item.Name()
+		hidden := strings.HasPrefix(name, ".")
 		info, err := item.Info()
 		if err != nil {
 			continue
@@ -167,14 +216,13 @@ func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
 		})
 	}
 
-	sort.Slice(entries, func(i, j int) bool {
-		if entries[i].Type != entries[j].Type {
-			return entries[i].Type == "directory"
-		}
-		return strings.ToLower(entries[i].Name) < strings.ToLower(entries[j].Name)
-	})
-
-	return entries, nil
+	return Listing{
+		Entries: entries,
+		Total:   total,
+		Limit:   limit,
+		Offset:  offset,
+		HasMore: end < total,
+	}, nil
 }
 
 func (s *Service) CreateFile(parentPath, name string) (Entry, error) {

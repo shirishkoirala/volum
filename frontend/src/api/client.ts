@@ -51,6 +51,10 @@ export type FileEntry = {
 
 export type FileResponse = {
   entries: FileEntry[] | null;
+  total?: number;
+  limit?: number;
+  offset?: number;
+  hasMore?: boolean;
 };
 
 export type TrashEntry = {
@@ -215,8 +219,10 @@ export function changeRole(userId: string, role: 'admin' | 'readonly') {
   });
 }
 
-export function getFiles(path: string, hidden: boolean) {
+export function getFiles(path: string, hidden: boolean, options?: { limit?: number; offset?: number }) {
   const params = new URLSearchParams({ path, hidden: String(hidden) });
+  if (options?.limit) params.set('limit', String(options.limit));
+  if (options?.offset) params.set('offset', String(options.offset));
   return request<FileResponse>(`/api/files?${params.toString()}`);
 }
 

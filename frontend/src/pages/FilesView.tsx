@@ -342,6 +342,10 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   }
 
   function renderEntries() {
+    const localFilterActive = browser.query.trim().length > 0;
+    const totalEntries = localFilterActive ? browser.filteredEntries.length : browser.filePage.total;
+    const incrementalResetKey = `${effectivePath}:${viewPref.showHidden}:${browser.query}:${viewPref.viewMode}`;
+
     if (viewPref.viewMode === 'grid') {
       return (
         <FileGridView
@@ -370,6 +374,10 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           onFileAreaMouseDown={handleFileAreaMouseDown}
           onFileAreaKeyDown={handleFileAreaKeyDown}
           draggingUpload={dragDrop.draggingUpload}
+          totalEntries={totalEntries}
+          loadingMore={browser.loadingMore}
+          onLoadMoreEntries={localFilterActive ? undefined : browser.loadMoreEntries}
+          resetKey={incrementalResetKey}
           onEntryTouchStart={handleEntryTouchStart}
           onEntryTouchMove={handleEntryTouchMove}
           onEntryTouchEnd={handleEntryTouchEnd}
@@ -408,6 +416,10 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         onFileAreaMouseDown={handleFileAreaMouseDown}
         onFileAreaKeyDown={handleFileAreaKeyDown}
         draggingUpload={dragDrop.draggingUpload}
+        totalEntries={totalEntries}
+        loadingMore={browser.loadingMore}
+        onLoadMoreEntries={localFilterActive ? undefined : browser.loadMoreEntries}
+        resetKey={incrementalResetKey}
         onEntryTouchStart={handleEntryTouchStart}
         onEntryTouchMove={handleEntryTouchMove}
         onEntryTouchEnd={handleEntryTouchEnd}

@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useIncrementalEntries } from '../hooks/useIncrementalEntries';
 
 describe('useIncrementalEntries', () => {
@@ -43,5 +43,41 @@ describe('useIncrementalEntries', () => {
     expect(result.current.incremental).toBe(false);
     expect(result.current.renderedCount).toBe(40);
     expect(result.current.visibleEntries).toHaveLength(40);
+  });
+
+  it('calls remote load when all loaded entries are visible but total has more', () => {
+    const entries = Array.from({ length: 600 }, (_, index) => index);
+    const onLoadMore = vi.fn();
+    const { result } = renderHook(() => useIncrementalEntries(entries, {
+      totalCount: 720,
+      onLoadMore,
+    }));
+
+    act(() => result.current.loadMore());
+    act(() => result.current.loadMore());
+    act(() => result.current.loadMore());
+
+    expect(result.current.renderedCount).toBe(600);
+    expect(onLoadMore).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps progress when a remote page is appended', () => {
+    const firstPage = Array.from({ length: 600 }, (_, index) => index);
+    const secondPage = Array.from({ length: 720 }, (_, index) => index);
+    const { result, rerender } = renderHook(({ entries }) => useIncrementalEntries(entries, {
+      totalCount: 720,
+      resetKey: '/folder:false::grid',
+    }), {
+      initialProps: { entries: firstPage },
+    });
+
+    act(() => result.current.loadMore());
+    act(() => result.current.loadMore());
+    expect(result.current.renderedCount).toBe(600);
+
+    rerender({ entries: secondPage });
+
+    expect(result.current.renderedCount).toBe(720);
+    expect(result.current.hasMore).toBe(false);
   });
 });

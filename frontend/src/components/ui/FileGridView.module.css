@@ -54,6 +54,11 @@
   background: var(--color-hover);
 }
 
+.loadMoreButton:disabled {
+  cursor: default;
+  opacity: var(--opacity-disabled);
+}
+
 .gridItem {
   justify-self: center;
   align-self: start;

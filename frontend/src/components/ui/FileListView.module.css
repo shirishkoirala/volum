@@ -48,6 +48,11 @@
   background: var(--color-hover);
 }
 
+.loadMoreButton:disabled {
+  cursor: default;
+  opacity: var(--opacity-disabled);
+}
+
 .rubberBand {
   background: var(--color-brand-bg);
   border: 1px solid var(--color-brand);

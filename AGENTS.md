@@ -251,6 +251,12 @@ frontend/src/
 - Converted selected/favorite path checks inside file rendering to `Set` lookups.
 - Browser smoke test used a temporary 720-file folder under `storage/` and confirmed 240 initial items, then 480 after loading more.
 
+### Priority 1 — Large Folder Performance, Slice 2
+- Added paginated file listing: `/api/files?limit=&offset=` returns `entries`, `total`, `limit`, `offset`, and `hasMore`.
+- Backend `files.Service.ListPage` sorts directory-first/name-first using `os.DirEntry`, then calls `Info()` only for entries in the requested page.
+- Frontend `getFiles` accepts paging options; `useFileBrowser` loads the first 600 entries and appends more pages on demand.
+- `useIncrementalEntries` now supports a backend total count and remote `onLoadMore` callback.
+
 ### Task 10 — Sidebar Removed, Favorites → Desktop Icons
 - Deleted `FilesSidebar.tsx` and `FilesSidebar.module.css`
 - Removed sidebar rendering (overlay + normal) from FilesView.tsx

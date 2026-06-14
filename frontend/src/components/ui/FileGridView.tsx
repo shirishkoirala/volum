@@ -32,6 +32,10 @@ type FileGridViewProps = {
   onFileAreaMouseDown: (event: React.MouseEvent<HTMLElement>) => void;
   onFileAreaKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
   draggingUpload: boolean;
+  totalEntries?: number;
+  loadingMore?: boolean;
+  onLoadMoreEntries?: () => void;
+  resetKey?: string;
   onEntryTouchStart?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
   onEntryTouchMove?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
   onEntryTouchEnd?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
@@ -62,10 +66,16 @@ export function FileGridView({
   onFileAreaDragOver, onFileAreaDragLeave, onFileAreaDrop,
   onFileAreaMouseDown, onFileAreaKeyDown,
   draggingUpload,
+  totalEntries, loadingMore, onLoadMoreEntries, resetKey,
   onEntryTouchStart, onEntryTouchMove, onEntryTouchEnd,
   onNavigate, onPreview,
 }: FileGridViewProps) {
-  const incrementalEntries = useIncrementalEntries(filteredEntries);
+  const incrementalEntries = useIncrementalEntries(filteredEntries, {
+    totalCount: totalEntries,
+    loadingMore,
+    onLoadMore: onLoadMoreEntries,
+    resetKey,
+  });
   const selectedPathSet = useMemo(() => new Set(selectedPaths), [selectedPaths]);
   const favoritePathSet = useMemo(() => new Set(favorites), [favorites]);
 
@@ -115,8 +125,8 @@ export function FileGridView({
         />
       ))}
       {incrementalEntries.hasMore && (
-        <button type="button" className={styles.loadMoreButton} onClick={incrementalEntries.loadMore}>
-          Load {Math.min(240, incrementalEntries.totalCount - incrementalEntries.renderedCount).toLocaleString()} more
+        <button type="button" className={styles.loadMoreButton} onClick={incrementalEntries.loadMore} disabled={incrementalEntries.loadingMore}>
+          {incrementalEntries.loadingMore ? 'Loading more...' : `Load ${Math.min(240, incrementalEntries.totalCount - incrementalEntries.renderedCount).toLocaleString()} more`}
         </button>
       )}
       {rubberBandStyle && <div className={styles.rubberBand} style={rubberBandStyle} />}

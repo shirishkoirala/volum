@@ -109,6 +109,40 @@ func TestListShowsHiddenFiles(t *testing.T) {
 	}
 }
 
+func TestListPageReturnsSortedWindow(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range []string{"b.txt", "a.txt", "z.txt", "folder-b", "folder-a"} {
+		path := filepath.Join(root, name)
+		if filepath.Ext(name) == "" {
+			if err := os.MkdirAll(path, 0o755); err != nil {
+				t.Fatal(err)
+			}
+		} else if err := os.WriteFile(path, []byte("data"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	guard, err := security.NewRootGuard([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	listing, err := NewService(guard, testCache()).ListPage(root, false, ListOptions{Limit: 2, Offset: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if listing.Total != 5 || listing.Offset != 1 || listing.Limit != 2 || !listing.HasMore {
+		t.Fatalf("unexpected listing metadata: %#v", listing)
+	}
+	if len(listing.Entries) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(listing.Entries))
+	}
+	names := []string{listing.Entries[0].Name, listing.Entries[1].Name}
+	if names[0] != "folder-b" || names[1] != "a.txt" {
+		t.Fatalf("unexpected page names: %#v", names)
+	}
+}
+
 func TestCreateFolder(t *testing.T) {
 	root := t.TempDir()
 	guard, err := security.NewRootGuard([]string{root})

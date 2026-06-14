@@ -291,6 +291,45 @@ func TestGetFiles(t *testing.T) {
 	}
 }
 
+func TestGetFilesSupportsPagination(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	for _, name := range []string{"b.txt", "a.txt", "z.txt", "folder-b", "folder-a"} {
+		path := filepath.Join(ts.root, name)
+		if filepath.Ext(name) == "" {
+			if err := os.MkdirAll(path, 0o755); err != nil {
+				t.Fatal(err)
+			}
+		} else if err := os.WriteFile(path, []byte("data"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	resp := ts.get("/api/files?path=" + ts.root + "&hidden=false&limit=2&offset=1")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+	var body struct {
+		Entries []files.Entry `json:"entries"`
+		Total   int           `json:"total"`
+		Limit   int           `json:"limit"`
+		Offset  int           `json:"offset"`
+		HasMore bool          `json:"hasMore"`
+	}
+	readJSON(t, resp, &body)
+
+	if body.Total < 5 || body.Limit != 2 || body.Offset != 1 || !body.HasMore {
+		t.Fatalf("unexpected pagination metadata: %#v", body)
+	}
+	if len(body.Entries) != 2 {
+		t.Fatalf("expected 2 entries, got %#v", body.Entries)
+	}
+	if body.Entries[0].Name != "folder-b" || body.Entries[1].Name != "a.txt" {
+		t.Fatalf("unexpected page entries: %#v", body.Entries)
+	}
+}
+
 func TestCreateFolder(t *testing.T) {
 	ts, cleanup := setupTestServer(t)
 	defer cleanup()

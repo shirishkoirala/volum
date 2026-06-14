@@ -5,6 +5,8 @@ import {
 } from '../api/client';
 import { uniquePaths } from '../utils/path';
 
+const FILE_PAGE_SIZE = 600;
+
 interface UseFileBrowserParams {
   currentPath: string;
   showHidden: boolean;
@@ -21,6 +23,8 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [filePage, setFilePage] = useState({ total: 0, limit: FILE_PAGE_SIZE, offset: 0, hasMore: false });
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -51,11 +55,42 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
     if (!currentPath) { setLoading(false); return; }
     setLoading(true);
     setError(null);
-    getFiles(currentPath, showHidden)
-      .then((response) => { setEntries(response.entries ?? []); setError(null); })
+    setLoadingMore(false);
+    getFiles(currentPath, showHidden, { limit: FILE_PAGE_SIZE, offset: 0 })
+      .then((response) => {
+        const nextEntries = response.entries ?? [];
+        setEntries(nextEntries);
+        setFilePage({
+          total: response.total ?? nextEntries.length,
+          limit: response.limit ?? FILE_PAGE_SIZE,
+          offset: response.offset ?? 0,
+          hasMore: response.hasMore ?? false,
+        });
+        setError(null);
+      })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, [currentPath, refreshKey, showHidden]);
+
+  const loadMoreEntries = useCallback(() => {
+    if (!currentPath || loadingMore || !filePage.hasMore) return;
+    setLoadingMore(true);
+    setError(null);
+    const offset = entriesRef.current.length;
+    getFiles(currentPath, showHidden, { limit: FILE_PAGE_SIZE, offset })
+      .then((response) => {
+        const nextEntries = response.entries ?? [];
+        setEntries((current) => [...current, ...nextEntries]);
+        setFilePage({
+          total: response.total ?? offset + nextEntries.length,
+          limit: response.limit ?? FILE_PAGE_SIZE,
+          offset: response.offset ?? offset,
+          hasMore: response.hasMore ?? false,
+        });
+      })
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoadingMore(false));
+  }, [currentPath, filePage.hasMore, loadingMore, showHidden]);
 
   useEffect(() => {
     getTrash()
@@ -113,7 +148,7 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
     jobs, setJobs,
     roots,
     devices, deviceError, loadDevices,
-    loading, error, setError,
+    loading, loadingMore, error, setError,
     query, setQuery,
     searchOpen, setSearchOpen,
     searchResults, setSearchResults,
@@ -122,6 +157,8 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
     breadcrumbs,
     folderSuggestions,
     currentRoot,
+    filePage,
+    loadMoreEntries,
     selectedFileBytes,
     canWrite,
     refresh,
