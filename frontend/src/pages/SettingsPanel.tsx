@@ -22,6 +22,7 @@ import {
   type UserInfo,
 } from '../api/client';
 import type { WallpaperConfig } from '../utils/wallpaper';
+import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
 import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
@@ -33,6 +34,11 @@ type SettingsPanelProps = {
   onOpenShortcuts: () => void;
   onLogout: () => void;
   session: Session | null;
+  services?: ServiceShortcut[];
+  serviceHealth?: Record<string, ServiceHealthResult>;
+  onAddService?: () => void;
+  onEditService?: (id: string) => void;
+  onRemoveService?: (id: string) => void;
 };
 
 type CategoryId = 'general' | 'server' | 'storage' | 'desktop' | 'admin' | 'about';
@@ -55,6 +61,11 @@ export function SettingsPanel({
   onOpenShortcuts,
   onLogout,
   session,
+  services,
+  serviceHealth,
+  onAddService,
+  onEditService,
+  onRemoveService,
 }: SettingsPanelProps) {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -276,10 +287,50 @@ export function SettingsPanel({
             </section>
           )}
 
-          {(!filterQuery.trim() ? activeCategory === 'desktop' : filteredCategories.some((c) => c.id === 'desktop')) && wallpaper && onWallpaperChange && (
-            <div className={styles.settingsSection}>
-              <WallpaperPicker wallpaper={wallpaper} onChange={onWallpaperChange} />
-            </div>
+          {(!filterQuery.trim() ? activeCategory === 'desktop' : filteredCategories.some((c) => c.id === 'desktop')) && (
+            <>
+              {wallpaper && onWallpaperChange && (
+                <div className={styles.settingsSection}>
+                  <WallpaperPicker wallpaper={wallpaper} onChange={onWallpaperChange} />
+                </div>
+              )}
+              {onAddService && (
+                <section className={styles.settingsSection}>
+                  <h4>Services</h4>
+                  {services && services.length > 0 ? (
+                    <div className={styles.serviceList}>
+                      {services.map((svc) => (
+                        <div key={svc.id} className={styles.serviceRow}>
+                          <div className={styles.serviceInfo}>
+                            <span>{svc.name}</span>
+                            <span className={styles.serviceHealth}>
+                              {(() => {
+                                const h = serviceHealth?.[svc.id];
+                                if (!h) return '⋯';
+                                return h.status === 'healthy'
+                                  ? '✓ Healthy'
+                                  : h.status === 'unhealthy'
+                                    ? '✗ Unhealthy'
+                                    : '⋯ Checking';
+                              })()}
+                            </span>
+                          </div>
+                          <div className={styles.serviceActions}>
+                            <Button size="compact" onClick={() => onEditService?.(svc.id)}>Edit</Button>
+                            <Button size="compact" onClick={() => onRemoveService?.(svc.id)}>Remove</Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <MutedText compact>No services configured. Add shortcuts to your favorite web apps.</MutedText>
+                  )}
+                  <div className={styles.settingsActions}>
+                    <Button size="compact" onClick={onAddService}>Add Service</Button>
+                  </div>
+                </section>
+              )}
+            </>
           )}
 
           {(!filterQuery.trim() ? activeCategory === 'admin' : filteredCategories.some((c) => c.id === 'admin')) && (

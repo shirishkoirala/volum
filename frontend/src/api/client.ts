@@ -141,8 +141,10 @@ export type UserInfo = {
 
 export type ConflictPolicy = 'ask' | 'skip' | 'overwrite' | 'rename' | 'cancel' | 'skip_identical';
 
+import { apiUrl } from './baseUrl';
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
+  const response = await fetch(apiUrl(url), {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     ...options
   });
@@ -156,7 +158,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 async function requestVoid(url: string, options?: RequestInit): Promise<void> {
-  const response = await fetch(url, {
+  const response = await fetch(apiUrl(url), {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     ...options
   });
@@ -260,7 +262,7 @@ export function createJob(params: {
 
 export async function getUploadStatus(path: string, filename: string) {
   const params = new URLSearchParams({ path, filename });
-  const response = await fetch(`/api/files/upload-status?${params.toString()}`);
+  const response = await fetch(apiUrl(`/api/files/upload-status?${params.toString()}`));
   if (!response.ok) {
     const body = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(body.error ?? response.statusText);
@@ -281,7 +283,7 @@ export async function uploadChunk(
 ) {
   const params = new URLSearchParams({ path, filename, offset: String(offset), totalSize: String(totalSize) });
   if (jobId) params.set('jobId', jobId);
-  const response = await fetch(`/api/files/upload-chunk?${params.toString()}`, {
+  const response = await fetch(apiUrl(`/api/files/upload-chunk?${params.toString()}`), {
     method: 'POST',
     body: chunk,
     signal,
@@ -415,12 +417,12 @@ export function deleteTrash(id: string) {
 
 export function downloadUrl(path: string) {
   const params = new URLSearchParams({ path });
-  return `/api/files/download?${params.toString()}`;
+  return apiUrl(`/api/files/download?${params.toString()}`);
 }
 
 export function rawUrl(path: string) {
   const params = new URLSearchParams({ path });
-  return `/api/files/raw?${params.toString()}`;
+  return apiUrl(`/api/files/raw?${params.toString()}`);
 }
 
 export type DiskUsageNode = {

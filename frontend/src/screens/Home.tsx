@@ -167,6 +167,21 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     };
   }, [services, nav.activeView, refreshServiceHealth, showToastFn]);
 
+  // ── Desktop actions ──────────────────────────────────────
+  const desktopActions = useDesktopActions({
+    browser, dialogs, toast, nav,
+    viewPref: { currentPath: viewPref.currentPath, setCurrentPath: viewPref.setCurrentPath },
+    selection,
+    removeFavorite, addService, updateService, removeService,
+    refreshServiceHealth,
+    serviceFormData: menus.serviceFormData,
+    setDesktopContextMenu: menus.setDesktopContextMenu,
+    setServiceFormData: menus.setServiceFormData,
+    refresh: navActions.refresh,
+    navigateTo: navActions.navigateTo,
+    resetToDesktopView: navActions.resetToDesktopView,
+  });
+
   // ── Render window content from type+params ──────────────
   const renderWindow = useCallback((win: WindowState) => {
     switch (win.winType) {
@@ -200,6 +215,14 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             onOpenShortcuts={() => fileActions.setShortcutsOpen(true)}
             onLogout={onLogout}
             session={session}
+            services={services}
+            serviceHealth={serviceHealth}
+            onAddService={() => desktopActions.handleOpenServiceForm()}
+            onEditService={(id) => {
+              const svc = services.find((s) => s.id === id);
+              if (svc) desktopActions.handleOpenServiceForm(svc);
+            }}
+            onRemoveService={desktopActions.handleRemoveService}
           />
         );
       case 'preview': {
@@ -235,7 +258,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       default:
         return null;
     }
-  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, workspaceOpeners.openPreview]);
+  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, workspaceOpeners.openPreview, services, serviceHealth, desktopActions]);
 
   const previewIndex = fileActions.previewEntry
     ? previewEntries.findIndex((entry) => entry.path === fileActions.previewEntry?.path)
@@ -243,20 +266,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const previewPositionLabel = previewIndex >= 0 ? `${previewIndex + 1} of ${previewEntries.length}` : undefined;
   const previousPreviewEntry = previewIndex > 0 ? previewEntries[previewIndex - 1] : undefined;
   const nextPreviewEntry = previewIndex >= 0 && previewIndex < previewEntries.length - 1 ? previewEntries[previewIndex + 1] : undefined;
-
-  const desktopActions = useDesktopActions({
-    browser, dialogs, toast, nav,
-    viewPref: { currentPath: viewPref.currentPath, setCurrentPath: viewPref.setCurrentPath },
-    selection,
-    removeFavorite, addService, updateService, removeService,
-    refreshServiceHealth,
-    serviceFormData: menus.serviceFormData,
-    setDesktopContextMenu: menus.setDesktopContextMenu,
-    setServiceFormData: menus.setServiceFormData,
-    refresh: navActions.refresh,
-    navigateTo: navActions.navigateTo,
-    resetToDesktopView: navActions.resetToDesktopView,
-  });
 
   const fileCommands = useFileCommands({
     currentPath: viewPref.currentPath,
@@ -508,6 +517,14 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onOpenShortcuts={() => fileActions.setShortcutsOpen(true)}
               onLogout={onLogout}
               session={session}
+              services={services}
+              serviceHealth={serviceHealth}
+              onAddService={() => desktopActions.handleOpenServiceForm()}
+              onEditService={(id) => {
+                const svc = services.find((s) => s.id === id);
+                if (svc) desktopActions.handleOpenServiceForm(svc);
+              }}
+              onRemoveService={desktopActions.handleRemoveService}
             />
           )}
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { cancelJob, getJobs, pauseJob, resumeJob, retryJob, retryJobItem, clearCompletedJobs, clearFailedJobs, resolveJobConflicts } from '../api/client';
+import { apiUrl } from '../api/baseUrl';
 import { makeJobLabel, refreshesFiles } from '../utils/jobs';
 import type { Job, Session } from '../api/client';
 
@@ -34,7 +35,7 @@ export function useJobs(
       })
       .catch((err) => console.error('Failed to fetch jobs:', err));
 
-    const events = new EventSource('/api/jobs/events');
+    const events = new EventSource(apiUrl('/api/jobs/events'));
     events.addEventListener('jobs', (event) => {
       let nextJobs: Job[] = [];
       try {
