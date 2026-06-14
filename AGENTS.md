@@ -267,6 +267,13 @@ frontend/src/
 - Video/audio previews now use `preload="metadata"`.
 - Browser smoke test used a temporary 1 MB+ log file and confirmed the fallback rendered without dumping the file contents.
 
+### Priority 2 — Preview Window Polish, Slice 1
+- PreviewContent now supports optional previous/next actions, disabled states, item position labels, and ArrowLeft/ArrowRight shortcuts.
+- FilesView builds a previewable file list from the current folder/filter and passes it into preview openers.
+- Mobile preview modals can navigate between previewable files without closing the modal or changing folders.
+- Desktop preview windows reuse the existing preview window and update its title/icon/content when moving between files.
+- Added focused preview navigation test coverage.
+
 ### Task 10 — Sidebar Removed, Favorites → Desktop Icons
 - Deleted `FilesSidebar.tsx` and `FilesSidebar.module.css`
 - Removed sidebar rendering (overlay + normal) from FilesView.tsx

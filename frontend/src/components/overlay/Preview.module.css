@@ -15,6 +15,12 @@
   padding: 12px var(--space-lg);
 }
 
+.previewTitleGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .previewTitle {
   font-weight: 600;
   font-size: var(--font-size-md);
@@ -23,11 +29,20 @@
   white-space: nowrap;
 }
 
+.previewPosition {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
 .previewActions {
   align-items: center;
   display: flex;
   flex-shrink: 0;
   gap: var(--space-sm);
+}
+
+.previousIcon {
+  transform: rotate(180deg);
 }
 
 .previewContent {

@@ -29,6 +29,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'edit-rename': Pencil,
   'folder-new': FolderPlus,
   'go-next': ChevronRight,
+  'go-previous': ChevronRight,
   'go-up': ChevronUp,
   'go-down': ArrowDown,
   'selection-invert': ListX,

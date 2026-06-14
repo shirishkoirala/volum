@@ -1,4 +1,4 @@
-import { KeyboardEvent, MouseEvent, RefObject, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { KeyboardEvent, MouseEvent, RefObject, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
@@ -43,7 +43,7 @@ type FilesViewProps = {
   onBack: () => void;
   onAddFavorite: (path: string) => void;
   onRemoveFavorite: (path: string) => void;
-  onPreview?: (entry: FileEntry) => void;
+  onPreview?: (entry: FileEntry, entries?: FileEntry[]) => void;
 };
 
 export type FilesViewHandle = {
@@ -98,8 +98,8 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     setPreviewEntry(null);
   }, [effectivePath, setPreviewEntry]);
 
-  const openPreview = useCallback((entry: FileEntry) => {
-    if (onPreview) onPreview(entry);
+  const openPreview = useCallback((entry: FileEntry, entries?: FileEntry[]) => {
+    if (onPreview) onPreview(entry, entries);
     else setPreviewEntry(entry);
   }, [onPreview, setPreviewEntry]);
 
@@ -333,6 +333,19 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const locationMode = fileActions.locationMode;
   const localFilterActive = browser.query.trim().length > 0;
   const totalEntries = localFilterActive ? browser.filteredEntries.length : browser.filePage.total;
+  const previewableEntries = useMemo(
+    () => browser.filteredEntries.filter((entry) => entry.type === 'file' && isPreviewableFile(entry.name)),
+    [browser.filteredEntries],
+  );
+  const previewIndex = fileActions.previewEntry
+    ? previewableEntries.findIndex((entry) => entry.path === fileActions.previewEntry?.path)
+    : -1;
+  const previewPositionLabel = previewIndex >= 0 ? `${previewIndex + 1} of ${previewableEntries.length}` : undefined;
+  const previousPreviewEntry = previewIndex > 0 ? previewableEntries[previewIndex - 1] : undefined;
+  const nextPreviewEntry = previewIndex >= 0 && previewIndex < previewableEntries.length - 1 ? previewableEntries[previewIndex + 1] : undefined;
+  const showPreviewEntry = useCallback((entry: FileEntry) => {
+    openPreview(entry, previewableEntries);
+  }, [openPreview, previewableEntries]);
 
   useEffect(() => {
     if (browser.loading || browser.filteredEntries.length === 0) {
@@ -397,7 +410,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           onEntryTouchEnd={handleEntryTouchEnd}
           onNavigate={handleNavigate}
           onPreview={(entry) => {
-            if (isPreviewableFile(entry.name)) openPreview(entry);
+            if (isPreviewableFile(entry.name)) showPreviewEntry(entry);
             else fileCommands.handleDownload(entry);
           }}
         />
@@ -440,7 +453,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         onEntryTouchEnd={handleEntryTouchEnd}
         onNavigate={handleNavigate}
         onPreview={(entry) => {
-          if (isPreviewableFile(entry.name)) openPreview(entry);
+          if (isPreviewableFile(entry.name)) showPreviewEntry(entry);
           else fileCommands.handleDownload(entry);
         }}
       />
@@ -600,7 +613,16 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
       )}
 
       {fileActions.previewEntry && (
-        <PreviewModal entry={fileActions.previewEntry} onClose={() => fileActions.setPreviewEntry(null)} onDownload={() => fileCommands.handleDownload(fileActions.previewEntry!)} />
+        <PreviewModal
+          entry={fileActions.previewEntry}
+          onClose={() => fileActions.setPreviewEntry(null)}
+          onDownload={() => fileCommands.handleDownload(fileActions.previewEntry!)}
+          onPrevious={previousPreviewEntry ? () => setPreviewTarget(previousPreviewEntry) : undefined}
+          onNext={nextPreviewEntry ? () => setPreviewTarget(nextPreviewEntry) : undefined}
+          previousDisabled={!previousPreviewEntry}
+          nextDisabled={!nextPreviewEntry}
+          positionLabel={previewPositionLabel}
+        />
       )}
       {fileActions.infoEntry && (
         <InfoPanel entry={fileActions.infoEntry} onClose={() => fileActions.setInfoEntry(null)} onRefresh={refresh} />

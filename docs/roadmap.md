@@ -46,6 +46,8 @@ References:
 
 ## Priority 2: Preview Window Polish
 
+Status: started. The first slice adds in-preview next/previous navigation within the current folder or filtered result set.
+
 Users expect media previews to preserve browsing state, not reset scroll position, sorting, or folder context.
 
 Planned work:
@@ -55,6 +57,13 @@ Planned work:
 - Support next/previous navigation within the current folder or filtered result set.
 - Add safe fallback actions: open raw file, download, copy path, share.
 - Ensure preview cancellation happens when the window closes or the user navigates away.
+
+Completed slice:
+
+- Preview controls show the current item position within the previewable files in the current folder/filter.
+- Previous/next buttons move through previewable files without closing the preview or leaving the folder.
+- ArrowLeft/ArrowRight shortcuts work while a preview is open.
+- Desktop preview windows update the existing preview window instead of opening extra windows.
 
 Why now:
 

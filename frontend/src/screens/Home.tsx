@@ -42,6 +42,7 @@ import { ShellContext } from '../contexts/ShellContext';
 import { Taskbar } from '../components/layout/Taskbar';
 import { PreviewWindow } from '../components/window/PreviewWindow';
 import { ServiceWindow } from '../components/window/ServiceWindow';
+import { fileTypeIconUrl } from '../api/icons';
 import { openFileExternally } from '../utils/preview';
 import styles from './Home.module.css';
 
@@ -79,6 +80,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const { services, health: serviceHealth, addService, updateService, removeService, refreshHealth: refreshServiceHealth } = useServiceShortcuts();
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
+  const [previewEntries, setPreviewEntries] = useState<FileEntry[]>([]);
 
   const isMobile = useIsMobile();
 
@@ -108,6 +110,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     nav,
     navActions,
     setPreviewEntry: fileActions.setPreviewEntry,
+    setPreviewEntries,
     trashCount: browser.trashEntries.length,
     wm,
   });
@@ -173,8 +176,26 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         );
       case 'preview': {
         const entry = win.params.entry as FileEntry | undefined;
+        const entries = Array.isArray(win.params.entries) ? win.params.entries as FileEntry[] : entry ? [entry] : [];
         if (!entry) return null;
-        return <PreviewWindow entry={entry} />;
+        return (
+          <PreviewWindow
+            entry={entry}
+            entries={entries}
+            onSelectEntry={(nextEntry) => {
+              wm.toggleWindow('preview', {
+                title: nextEntry.name,
+                icon: fileTypeIconUrl(nextEntry),
+                winType: 'preview',
+                params: { entry: nextEntry, entries },
+                width: win.width,
+                height: win.height,
+                x: win.x,
+                y: win.y,
+              });
+            }}
+          />
+        );
       }
       case 'service': {
         const name = typeof win.params.name === 'string' ? win.params.name : win.title;
@@ -186,6 +207,13 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         return null;
     }
   }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, workspaceOpeners.openPreview]);
+
+  const previewIndex = fileActions.previewEntry
+    ? previewEntries.findIndex((entry) => entry.path === fileActions.previewEntry?.path)
+    : -1;
+  const previewPositionLabel = previewIndex >= 0 ? `${previewIndex + 1} of ${previewEntries.length}` : undefined;
+  const previousPreviewEntry = previewIndex > 0 ? previewEntries[previewIndex - 1] : undefined;
+  const nextPreviewEntry = previewIndex >= 0 && previewIndex < previewEntries.length - 1 ? previewEntries[previewIndex + 1] : undefined;
 
   const desktopActions = useDesktopActions({
     browser, dialogs, toast, nav,
@@ -497,6 +525,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           entry={fileActions.previewEntry}
           onClose={() => fileActions.setPreviewEntry(null)}
           onDownload={() => openFileExternally(fileActions.previewEntry!.path)}
+          onPrevious={previousPreviewEntry ? () => fileActions.setPreviewEntry(previousPreviewEntry) : undefined}
+          onNext={nextPreviewEntry ? () => fileActions.setPreviewEntry(nextPreviewEntry) : undefined}
+          previousDisabled={!previousPreviewEntry}
+          nextDisabled={!nextPreviewEntry}
+          positionLabel={previewPositionLabel}
         />
       )}
       {fileActions.shortcutsOpen && <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />}

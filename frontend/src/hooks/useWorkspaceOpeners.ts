@@ -23,6 +23,7 @@ type UseWorkspaceOpenersParams = {
   nav: WorkspaceNav;
   navActions: WorkspaceNavActions;
   setPreviewEntry: (entry: FileEntry | null) => void;
+  setPreviewEntries: (entries: FileEntry[]) => void;
   trashCount: number;
   wm: WindowManagerType;
 };
@@ -33,6 +34,7 @@ export function useWorkspaceOpeners({
   nav,
   navActions,
   setPreviewEntry,
+  setPreviewEntries,
   trashCount,
   wm,
 }: UseWorkspaceOpenersParams) {
@@ -120,8 +122,9 @@ export function useWorkspaceOpeners({
     });
   }, [isMobile, nav, wm]);
 
-  const openPreview = useCallback((entry: FileEntry) => {
+  const openPreview = useCallback((entry: FileEntry, entries: FileEntry[] = [entry]) => {
     if (isMobile) {
+      setPreviewEntries(entries);
       setPreviewEntry(entry);
       return;
     }
@@ -130,11 +133,11 @@ export function useWorkspaceOpeners({
       title: entry.name,
       icon: fileTypeIconUrl(entry),
       winType: 'preview',
-      params: { entry },
+      params: { entry, entries },
       width: 760,
       height: 560,
     });
-  }, [isMobile, setPreviewEntry, wm]);
+  }, [isMobile, setPreviewEntries, setPreviewEntry, wm]);
 
   const openService = useCallback((service: ServiceShortcut) => {
     if (isMobile) {

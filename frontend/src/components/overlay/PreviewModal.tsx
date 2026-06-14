@@ -12,15 +12,34 @@ type PreviewModalProps = {
   entry: FileEntry;
   onClose: () => void;
   onDownload?: () => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  previousDisabled?: boolean;
+  nextDisabled?: boolean;
+  positionLabel?: string;
 };
 
 type PreviewContentProps = {
   entry: FileEntry;
   onClose?: () => void;
   onDownload?: () => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  previousDisabled?: boolean;
+  nextDisabled?: boolean;
+  positionLabel?: string;
 };
 
-export function PreviewContent({ entry, onClose, onDownload }: PreviewContentProps) {
+export function PreviewContent({
+  entry,
+  onClose,
+  onDownload,
+  onPrevious,
+  onNext,
+  previousDisabled = true,
+  nextDisabled = true,
+  positionLabel,
+}: PreviewContentProps) {
   const [textContent, setTextContent] = useState<string | null>(null);
   const [textError, setTextError] = useState<string | null>(null);
 
@@ -51,11 +70,42 @@ export function PreviewContent({ entry, onClose, onDownload }: PreviewContentPro
     return () => controller.abort();
   }, [fileUrl, previewBlocked, showText]);
 
+  useEffect(() => {
+    if (!onPrevious && !onNext) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft' && onPrevious && !previousDisabled) {
+        event.preventDefault();
+        onPrevious();
+      }
+      if (event.key === 'ArrowRight' && onNext && !nextDisabled) {
+        event.preventDefault();
+        onNext();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [nextDisabled, onNext, onPrevious, previousDisabled]);
+
   return (
     <div className={styles.previewShell}>
       <div className={styles.previewHeader}>
-        <span className={styles.previewTitle}>{entry.name}</span>
+        <div className={styles.previewTitleGroup}>
+          <span className={styles.previewTitle}>{entry.name}</span>
+          {positionLabel && <span className={styles.previewPosition}>{positionLabel}</span>}
+        </div>
         <div className={styles.previewActions}>
+          {onPrevious && (
+            <IconButton onClick={onPrevious} disabled={previousDisabled} title="Previous file">
+              <Icon name="go-previous" size={18} className={styles.previousIcon} />
+            </IconButton>
+          )}
+          {onNext && (
+            <IconButton onClick={onNext} disabled={nextDisabled} title="Next file">
+              <Icon name="go-next" size={18} />
+            </IconButton>
+          )}
           <IconButton onClick={() => onDownload?.()} title="Download">
             <Icon name="edit-download" size={18} />
           </IconButton>
@@ -105,10 +155,28 @@ export function PreviewContent({ entry, onClose, onDownload }: PreviewContentPro
   );
 }
 
-export function PreviewModal({ entry, onClose, onDownload }: PreviewModalProps) {
+export function PreviewModal({
+  entry,
+  onClose,
+  onDownload,
+  onPrevious,
+  onNext,
+  previousDisabled,
+  nextDisabled,
+  positionLabel,
+}: PreviewModalProps) {
   return (
     <Dialog hideHeader width="xl" onClose={onClose}>
-      <PreviewContent entry={entry} onClose={onClose} onDownload={onDownload} />
+      <PreviewContent
+        entry={entry}
+        onClose={onClose}
+        onDownload={onDownload}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        previousDisabled={previousDisabled}
+        nextDisabled={nextDisabled}
+        positionLabel={positionLabel}
+      />
     </Dialog>
   );
 }

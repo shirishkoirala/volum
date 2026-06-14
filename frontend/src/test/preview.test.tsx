@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FileEntry } from '../api/client';
 import {
@@ -52,5 +53,29 @@ describe('preview policy', () => {
     expect(screen.getByText('Text preview is limited to 1 MB to keep the browser responsive.')).toBeInTheDocument();
     expect(screen.getByText('Download instead')).toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('renders next and previous preview controls when provided', async () => {
+    const user = userEvent.setup();
+    const onPrevious = vi.fn();
+    const onNext = vi.fn();
+
+    render(
+      <PreviewContent
+        entry={entry({ name: 'photo.jpg' })}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        previousDisabled
+        nextDisabled={false}
+        positionLabel="1 of 2"
+      />,
+    );
+
+    expect(screen.getByText('1 of 2')).toBeInTheDocument();
+    expect(screen.getByTitle('Previous file')).toBeDisabled();
+
+    await user.click(screen.getByTitle('Next file'));
+    expect(onNext).toHaveBeenCalledOnce();
+    expect(onPrevious).not.toHaveBeenCalled();
   });
 });
