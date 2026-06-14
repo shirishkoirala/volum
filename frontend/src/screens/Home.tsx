@@ -20,6 +20,7 @@ import { ToastViewport } from '../components/overlay/Toast';
 import { WindowHost } from '../components/window/WindowHost';
 import { DesktopContextMenu } from '../components/overlay/DesktopContextMenu';
 import type { DesktopIconItem } from '../pages/DesktopView';
+import type { ServiceHealthResult } from '../utils/services';
 import { useServiceShortcuts } from '../hooks/useServiceShortcuts';
 import { useJobs } from '../hooks/useJobs';
 import { useViewPreferences } from '../hooks/useViewPreferences';
@@ -87,6 +88,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Refs ──
   const filesViewRef = useRef<import('../pages/FilesView').FilesViewHandle>(null);
+  const prevHealthRef = useRef<Record<string, ServiceHealthResult>>({});
 
   // ── Extracted behavior hooks ──
   const menus = useContextMenus();
@@ -116,29 +118,54 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     wm,
   });
 
+  const showToastFn = toast.showToast;
   useEffect(() => {
     const hasHealthChecks = services.some((service) => service.healthUrl);
     if (!hasHealthChecks) return;
 
     const shouldRefresh = () => nav.activeView === 'desktop' && document.visibilityState === 'visible';
+
+    async function checkHealth() {
+      const prev = prevHealthRef.current;
+      const next = await refreshServiceHealth();
+      if (!next) return;
+      prevHealthRef.current = next;
+      for (const [id, result] of Object.entries(next)) {
+        const prevResult = prev[id];
+        if (!prevResult || !result) continue;
+        if (prevResult.status === 'unhealthy' && result.status === 'healthy') {
+          const svc = services.find((s) => s.id === id);
+          if (svc) showToastFn(`${svc.name} recovered`, 'success');
+        } else if (prevResult.status !== 'unhealthy' && result.status === 'unhealthy') {
+          const svc = services.find((s) => s.id === id);
+          if (svc) {
+            showToastFn(`${svc.name} health check failed`, 'error');
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+              new Notification(`${svc.name} health check failed`, { body: result.error ?? 'Service is unreachable' });
+            }
+          }
+        }
+      }
+    }
+
     if (shouldRefresh()) {
-      void refreshServiceHealth();
+      void checkHealth();
     }
 
     const handleVisibilityChange = () => {
-      if (shouldRefresh()) void refreshServiceHealth();
+      if (shouldRefresh()) void checkHealth();
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     const interval = window.setInterval(() => {
-      if (shouldRefresh()) void refreshServiceHealth();
+      if (shouldRefresh()) void checkHealth();
     }, 60_000);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.clearInterval(interval);
     };
-  }, [services, nav.activeView, refreshServiceHealth]);
+  }, [services, nav.activeView, refreshServiceHealth, showToastFn]);
 
   // ── Render window content from type+params ──────────────
   const renderWindow = useCallback((win: WindowState) => {
