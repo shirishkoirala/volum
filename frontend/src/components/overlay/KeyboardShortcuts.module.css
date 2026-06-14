@@ -26,3 +26,26 @@
   padding: 2px 8px;
   white-space: nowrap;
 }
+
+@media (max-width: 760px) {
+  .shortcutsPanel {
+    padding: var(--space-md);
+  }
+
+  .shortcutsPanel h3 {
+    font-size: var(--font-size-base);
+    margin-bottom: var(--space-md);
+  }
+
+  .shortcutRow {
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    padding: 4px 0;
+    font-size: var(--font-size-sm);
+  }
+
+  .shortcutKey {
+    font-size: var(--font-size-xs);
+    padding: 1px 6px;
+  }
+}
