@@ -1,4 +1,4 @@
-import { DragEvent, KeyboardEvent, RefObject, TouchEvent, useMemo } from 'react';
+import { DragEvent, KeyboardEvent, RefObject, TouchEvent, useEffect, useLayoutEffect, useMemo } from 'react';
 import { FileItem } from './FileItem';
 import type { FileEntry } from '../../api/client';
 import { isPreviewableFile, openFileExternally } from '../../utils/preview';
@@ -35,6 +35,7 @@ type FileListViewProps = {
   totalEntries?: number;
   loadingMore?: boolean;
   onLoadMoreEntries?: () => void;
+  onVisibleCountChange?: (renderedCount: number, totalCount: number) => void;
   resetKey?: string;
   onEntryTouchStart?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
   onEntryTouchMove?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
@@ -66,7 +67,7 @@ export function FileListView({
   onFileAreaDragOver, onFileAreaDragLeave, onFileAreaDrop,
   onFileAreaMouseDown, onFileAreaKeyDown,
   draggingUpload,
-  totalEntries, loadingMore, onLoadMoreEntries, resetKey,
+  totalEntries, loadingMore, onLoadMoreEntries, onVisibleCountChange, resetKey,
   onEntryTouchStart, onEntryTouchMove, onEntryTouchEnd,
   onNavigate, onPreview,
 }: FileListViewProps) {
@@ -78,6 +79,16 @@ export function FileListView({
   });
   const selectedPathSet = useMemo(() => new Set(selectedPaths), [selectedPaths]);
   const favoritePathSet = useMemo(() => new Set(favorites), [favorites]);
+
+  useLayoutEffect(() => {
+    if (!fileGridRef?.current) return;
+    fileGridRef.current.scrollTop = 0;
+    fileGridRef.current.ownerDocument.defaultView?.scrollTo(0, 0);
+  }, [fileGridRef, resetKey]);
+
+  useEffect(() => {
+    onVisibleCountChange?.(incrementalEntries.renderedCount, incrementalEntries.totalCount);
+  }, [incrementalEntries.renderedCount, incrementalEntries.totalCount, onVisibleCountChange]);
 
   return (
     <section
@@ -93,11 +104,6 @@ export function FileListView({
       onScroll={incrementalEntries.handleScroll}
       tabIndex={0}
     >
-      {incrementalEntries.incremental && (
-        <div className={styles.largeFolderBanner}>
-          Showing {incrementalEntries.renderedCount.toLocaleString()} of {incrementalEntries.totalCount.toLocaleString()} items
-        </div>
-      )}
       {incrementalEntries.visibleEntries.map((entry) => (
         <FileItem
           key={entry.path}
@@ -124,9 +130,9 @@ export function FileListView({
         />
       ))}
       {incrementalEntries.hasMore && (
-        <button type="button" className={styles.loadMoreButton} onClick={incrementalEntries.loadMore} disabled={incrementalEntries.loadingMore}>
-          {incrementalEntries.loadingMore ? 'Loading more...' : `Load ${Math.min(240, incrementalEntries.totalCount - incrementalEntries.renderedCount).toLocaleString()} more`}
-        </button>
+        <div key={incrementalEntries.renderedCount} ref={incrementalEntries.loadMoreSentinelRef} className={styles.loadMoreStatus} aria-live="polite">
+          {incrementalEntries.loadingMore ? 'Loading more...' : 'Scroll to load more'}
+        </div>
       )}
       {rubberBandStyle && <div className={styles.rubberBand} style={rubberBandStyle} />}
     </section>

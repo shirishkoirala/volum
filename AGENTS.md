@@ -245,8 +245,11 @@ frontend/src/
 - Explicitly deferred full monitoring, native mobile apps, plugin marketplace, multi-board dashboard editor, and service-specific widget catalog.
 
 ### Priority 1 — Large Folder Performance, Slice 1
-- Added `useIncrementalEntries` to cap large folder initial rendering at 240 entries and load 240-entry batches on near-bottom scroll or "Load more".
+- Added `useIncrementalEntries` to cap large folder initial rendering at 240 entries and load 240-entry batches on near-bottom scroll.
 - Wired incremental rendering into both `FileGridView` and `FileListView`.
+- Replaced the manual "Load more" button with an IntersectionObserver sentinel footer; scrolling now loads the next local/remote batch automatically.
+- File grid/list scroll position resets on folder/view changes so old bottom scroll positions do not trigger eager loading in new folders.
+- WindowFrame content now uses a constrained flex column (`min-height: 0`, `overflow: hidden`) so windowed file grids own their scroll instead of expanding past the window.
 - Added a large-folder banner showing rendered count vs total count.
 - Converted selected/favorite path checks inside file rendering to `Set` lookups.
 - Browser smoke test used a temporary 720-file folder under `storage/` and confirmed 240 initial items, then 480 after loading more.

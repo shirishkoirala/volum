@@ -76,6 +76,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const menus = useContextMenus();
   const { register: registerCommands, unregister: unregisterCommands } = useCommandsContext();
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
+  const [visibleCounts, setVisibleCounts] = useState({ rendered: 0, total: 0 });
   const setPendingUploadCount = useCallback(() => {}, []);
   const fileGridRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -259,6 +260,12 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
   }, []);
 
+  const handleVisibleCountChange = useCallback((rendered: number, total: number) => {
+    setVisibleCounts((current) => (
+      current.rendered === rendered && current.total === total ? current : { rendered, total }
+    ));
+  }, []);
+
   const handleFileAreaKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
     fileCommands.handleFileAreaKeyDown(event);
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
@@ -324,6 +331,14 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const curPath = effectivePath;
   const breadcrumbs = browser.breadcrumbs;
   const locationMode = fileActions.locationMode;
+  const localFilterActive = browser.query.trim().length > 0;
+  const totalEntries = localFilterActive ? browser.filteredEntries.length : browser.filePage.total;
+
+  useEffect(() => {
+    if (browser.loading || browser.filteredEntries.length === 0) {
+      handleVisibleCountChange(0, totalEntries);
+    }
+  }, [browser.filteredEntries.length, browser.loading, handleVisibleCountChange, totalEntries]);
 
   function handleGoBack() {
     navActions.goBack();
@@ -342,8 +357,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   }
 
   function renderEntries() {
-    const localFilterActive = browser.query.trim().length > 0;
-    const totalEntries = localFilterActive ? browser.filteredEntries.length : browser.filePage.total;
     const incrementalResetKey = `${effectivePath}:${viewPref.showHidden}:${browser.query}:${viewPref.viewMode}`;
 
     if (viewPref.viewMode === 'grid') {
@@ -377,6 +390,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           totalEntries={totalEntries}
           loadingMore={browser.loadingMore}
           onLoadMoreEntries={localFilterActive ? undefined : browser.loadMoreEntries}
+          onVisibleCountChange={handleVisibleCountChange}
           resetKey={incrementalResetKey}
           onEntryTouchStart={handleEntryTouchStart}
           onEntryTouchMove={handleEntryTouchMove}
@@ -419,6 +433,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         totalEntries={totalEntries}
         loadingMore={browser.loadingMore}
         onLoadMoreEntries={localFilterActive ? undefined : browser.loadMoreEntries}
+        onVisibleCountChange={handleVisibleCountChange}
         resetKey={incrementalResetKey}
         onEntryTouchStart={handleEntryTouchStart}
         onEntryTouchMove={handleEntryTouchMove}
@@ -473,28 +488,33 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
               <button type="button" className={styles.errorDismiss} onClick={() => browser.setError(null)} aria-label="Dismiss error">&times;</button>
             </div>
           )}
-          {browser.loading ? (
-            <div className={styles.skeletonGrid}>
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className={styles.skeletonCard}>
-                  <div className={styles.skeletonIcon} />
-                  <div className={styles.skeletonLine} />
-                  <div className={`${styles.skeletonLine} ${styles.short}`} />
-                </div>
-              ))}
+          <div className={styles.fileFrame}>
+            {browser.loading ? (
+              <div className={styles.skeletonGrid}>
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className={styles.skeletonCard}>
+                    <div className={styles.skeletonIcon} />
+                    <div className={styles.skeletonLine} />
+                    <div className={`${styles.skeletonLine} ${styles.short}`} />
+                  </div>
+                ))}
+              </div>
+            ) : browser.filteredEntries.length === 0 ? (
+              <div
+                className={`${styles.emptyDropZone}${dragDrop.draggingUpload ? ` ${styles.dragOver}` : ''}`}
+                onDragOver={dragDrop.handleFileAreaDragOver}
+                onDragLeave={dragDrop.handleFileAreaDragLeave}
+                onDrop={dragDrop.handleFileAreaDrop}
+              >
+                <EmptyState icon={folderIconUrl('64')} title="This folder is empty" subtitle={curPath} />
+              </div>
+            ) : (
+              renderEntries()
+            )}
+            <div className={styles.fileStatusBar} role="status" aria-live="polite">
+              Showing {visibleCounts.rendered.toLocaleString()} of {visibleCounts.total.toLocaleString()} files
             </div>
-          ) : browser.filteredEntries.length === 0 ? (
-            <div
-              className={`${styles.emptyDropZone}${dragDrop.draggingUpload ? ` ${styles.dragOver}` : ''}`}
-              onDragOver={dragDrop.handleFileAreaDragOver}
-              onDragLeave={dragDrop.handleFileAreaDragLeave}
-              onDrop={dragDrop.handleFileAreaDrop}
-            >
-              <EmptyState icon={folderIconUrl('64')} title="This folder is empty" subtitle={curPath} />
-            </div>
-          ) : (
-            renderEntries()
-          )}
+          </div>
         </div>
       </div>
 

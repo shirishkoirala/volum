@@ -25,10 +25,10 @@ Planned work:
 Completed slice:
 
 - Large folders render the first 240 entries instead of mounting every file item immediately.
-- Grid and list views load additional 240-item batches by scrolling near the bottom or pressing "Load more".
+- Grid and list views load additional 240-item batches automatically when scrolling near the bottom.
 - File view selection/favorite checks use `Set` lookups during rendering instead of repeated array scans.
 - `/api/files` accepts `limit` and `offset`, returns `total`/`hasMore`, and only stats entries in the requested page.
-- Files view requests the first 600 entries, then appends additional backend pages as the user scrolls or loads more.
+- Files view requests the first 600 entries, then appends additional backend pages as the user scrolls near the end.
 - Thumbnails are skipped for GIFs and images larger than 8 MB, avoiding full raw-image fetches for expensive previews.
 - Inline text, image, and PDF previews now have size gates with explicit download/open fallbacks.
 

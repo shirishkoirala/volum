@@ -1,6 +1,17 @@
 import { act, renderHook } from '@testing-library/react';
+import type { UIEvent } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { useIncrementalEntries } from '../hooks/useIncrementalEntries';
+
+function nearBottomScrollEvent(): UIEvent<HTMLElement> {
+  return {
+    currentTarget: {
+      clientHeight: 600,
+      scrollHeight: 3000,
+      scrollTop: 2100,
+    },
+  } as UIEvent<HTMLElement>;
+}
 
 describe('useIncrementalEntries', () => {
   it('returns all entries for normal folders', () => {
@@ -13,7 +24,7 @@ describe('useIncrementalEntries', () => {
     expect(result.current.hasMore).toBe(false);
   });
 
-  it('caps initial render for large folders and loads more on demand', () => {
+  it('caps initial render for large folders and loads more near the scroll bottom', () => {
     const entries = Array.from({ length: 900 }, (_, index) => index);
     const { result } = renderHook(() => useIncrementalEntries(entries));
 
@@ -22,7 +33,7 @@ describe('useIncrementalEntries', () => {
     expect(result.current.visibleEntries).toHaveLength(240);
     expect(result.current.hasMore).toBe(true);
 
-    act(() => result.current.loadMore());
+    act(() => result.current.handleScroll(nearBottomScrollEvent()));
 
     expect(result.current.renderedCount).toBe(480);
     expect(result.current.visibleEntries).toHaveLength(480);
@@ -45,7 +56,7 @@ describe('useIncrementalEntries', () => {
     expect(result.current.visibleEntries).toHaveLength(40);
   });
 
-  it('calls remote load when all loaded entries are visible but total has more', () => {
+  it('calls remote load on scroll when all loaded entries are visible but total has more', () => {
     const entries = Array.from({ length: 600 }, (_, index) => index);
     const onLoadMore = vi.fn();
     const { result } = renderHook(() => useIncrementalEntries(entries, {
@@ -53,9 +64,9 @@ describe('useIncrementalEntries', () => {
       onLoadMore,
     }));
 
-    act(() => result.current.loadMore());
-    act(() => result.current.loadMore());
-    act(() => result.current.loadMore());
+    act(() => result.current.handleScroll(nearBottomScrollEvent()));
+    act(() => result.current.handleScroll(nearBottomScrollEvent()));
+    act(() => result.current.handleScroll(nearBottomScrollEvent()));
 
     expect(result.current.renderedCount).toBe(600);
     expect(onLoadMore).toHaveBeenCalledTimes(1);
