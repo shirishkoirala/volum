@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ServiceFormModal } from '../components/overlay/ServiceFormModal';
 
 vi.mock('../utils/services', async (importOriginal) => {
@@ -11,6 +12,19 @@ vi.mock('../utils/services', async (importOriginal) => {
 });
 
 describe('ServiceFormModal', () => {
+  it('autofocuses the name input and allows focusing other fields', async () => {
+    const user = userEvent.setup();
+    render(<ServiceFormModal onSave={vi.fn()} onClose={vi.fn()} />);
+
+    const nameInput = screen.getByLabelText('Name');
+    const urlInput = screen.getByLabelText('URL');
+
+    expect(nameInput).toHaveFocus();
+
+    await user.click(urlInput);
+    expect(urlInput).toHaveFocus();
+  });
+
   it('submits a new service when Add is clicked', () => {
     const onSave = vi.fn();
     const onClose = vi.fn();
