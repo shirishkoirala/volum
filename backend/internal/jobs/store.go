@@ -13,7 +13,7 @@ type Store struct {
 	db *sql.DB
 }
 
-var ErrInvalidConflictPolicy = errors.New("conflict policy must be ask, skip, overwrite, rename, or cancel")
+var ErrInvalidConflictPolicy = errors.New("conflict policy must be ask, skip, overwrite, rename, cancel, or skip_identical")
 
 func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
@@ -471,7 +471,7 @@ func nullString(value sql.NullString) *string {
 
 func validConflictPolicy(policy string) bool {
 	switch policy {
-	case "ask", "skip", "overwrite", "rename", "cancel":
+	case "ask", "skip", "overwrite", "rename", "cancel", "skip_identical":
 		return true
 	default:
 		return false

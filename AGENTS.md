@@ -337,6 +337,22 @@ frontend/src/
 - Backend `GET /api/files/search` already functional; no backend changes needed
 - TypeScript, ESLint, and production build all pass clean
 
+### Priority 4 — Conflict Handling (Slice 1: skip_identical)
+- Added `skip_identical` to `validConflictPolicy()` and `ConflictPolicy` type — backend validates and frontend type supports the new policy
+- Added `hashFile()` helper to `worker/checksum.go` for computing SHA256 on a file path
+- Added `resolveSkipIdentical()` in `worker.go` — compares size + SHA256; skips if identical, errors if different, with audit logging
+- Updated `resolveConflictDestination()` to take a `source` path parameter; updated both call sites (`transferItems`, `copyOne`)
+- Added "Skip identical files (by size + checksum)" option to TransferDialog conflict policy dropdown (both Dialogs.tsx and SearchResultsView)
+- Move jobs reject `skip_identical` just like they reject `skip`
+- Go build verified via Docker, frontend TypeScript/ESLint/build all clean
+- Created `SearchResultsView.tsx` + `SearchResultsView.module.css` — full-page search results view with list showing icon, name, full path, size, and modified date
+- Added "View all N results →" footer to the quick-search dropdown (`FileSearchBar.tsx`) with `onShowAllResults` callback
+- Added `'search'` to `ActiveView` type in `useNavigation.ts`, `TopBar.tsx`, and `StatusBar.tsx`
+- Search results support full right-click context menu (`FileContextMenu`) with all file operations: preview, download, share, info, rename, copy, move, delete, archive, extract, checksum, quick share
+- Search results are preserved after actions (re-executes search query on rename/delete)
+- Backend `GET /api/files/search` already functional; no backend changes needed
+- TypeScript, ESLint, and production build all pass clean
+
 ### Session — Columns Removal, Container Styling, Drives View Extraction
 - **Columns removed**: Deleted `FileColumnView.tsx` + `FileColumnView.module.css`; removed `'columns'` from `ViewMode` type; deleted `buildColumnPath` utility; cleaned columns branch from `FilesView.tsx`; removed `viewModeBeforeTrash` ref; removed "Columns" menu item from `AppMenuBar.tsx`; removed `'view-columns': Columns3` icon mapping; cleared columns assertion from test
 - **Container styling**: Added `border: 1px solid var(--color-border-subtle)` + `border-radius: var(--radius-md)` + `margin: var(--space-md)` to both `.fileList` (FileListView.module.css) and `.fileGrid` (FileGridView.module.css) — no background

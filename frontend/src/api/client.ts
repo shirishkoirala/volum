@@ -128,7 +128,7 @@ export type UserInfo = {
   role: 'admin' | 'readonly';
 };
 
-export type ConflictPolicy = 'ask' | 'skip' | 'overwrite' | 'rename' | 'cancel';
+export type ConflictPolicy = 'ask' | 'skip' | 'overwrite' | 'rename' | 'cancel' | 'skip_identical';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {

@@ -115,7 +115,7 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 	if job.SourcePath == nil || job.DestinationPath == nil {
 		return errors.New("transfer job requires source and destination paths")
 	}
-	if job.Type == jobs.TypeMove && job.ConflictPolicy == "skip" {
+	if job.Type == jobs.TypeMove && (job.ConflictPolicy == "skip" || job.ConflictPolicy == "skip_identical") {
 		return errors.New("skip conflict policy is not supported for move jobs")
 	}
 
@@ -199,7 +199,7 @@ func (w *Worker) transferItems(ctx context.Context, job jobs.Job, source, destin
 
 	if policy := job.ConflictPolicy; policy == "cancel" {
 		return nil, 0, 0, errors.New("transfer cancelled by conflict policy")
-	} else if resolvedDestination, err := w.resolveConflictDestination(ctx, destination, policy); err != nil {
+	} else if resolvedDestination, err := w.resolveConflictDestination(ctx, source, destination, policy); err != nil {
 		if errors.Is(err, errSkipDestination) {
 			if err := w.store.CompleteJob(ctx, job.ID); err != nil {
 				return nil, 0, 0, err
@@ -360,7 +360,7 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 	if policy := job.ConflictPolicy; policy == "cancel" {
 		return 0, errors.New("transfer cancelled by conflict policy")
 	} else if !item.Persisted {
-		destination, err := w.resolveConflictDestination(ctx, item.Destination, policy)
+		destination, err := w.resolveConflictDestination(ctx, item.Source, item.Destination, policy)
 		if err != nil {
 			if errors.Is(err, errSkipDestination) {
 				return 0, nil
@@ -544,7 +544,7 @@ func (t *progressThrottle) Ready(currentBytes int64) bool {
 	return true
 }
 
-func (w *Worker) resolveConflictDestination(ctx context.Context, destination, policy string) (string, error) {
+func (w *Worker) resolveConflictDestination(ctx context.Context, source, destination, policy string) (string, error) {
 	if policy == "" {
 		policy = "ask"
 	}
@@ -552,6 +552,8 @@ func (w *Worker) resolveConflictDestination(ctx context.Context, destination, po
 		switch policy {
 		case "skip":
 			return "", errSkipDestination
+		case "skip_identical":
+			return w.resolveSkipIdentical(ctx, source, destination)
 		case "overwrite":
 			if err := w.store.CreateAuditLog(ctx, "overwrite", destination, "removed existing destination for transfer job"); err != nil {
 				return "", err
@@ -565,6 +567,36 @@ func (w *Worker) resolveConflictDestination(ctx context.Context, destination, po
 		return "", err
 	}
 	return destination, nil
+}
+
+func (w *Worker) resolveSkipIdentical(ctx context.Context, source, destination string) (string, error) {
+	srcInfo, err := os.Stat(source)
+	if err != nil {
+		return "", fmt.Errorf("cannot stat source for skip_identical: %w", err)
+	}
+	dstInfo, err := os.Stat(destination)
+	if err != nil {
+		return "", fmt.Errorf("cannot stat destination for skip_identical: %w", err)
+	}
+	if srcInfo.Size() != dstInfo.Size() {
+		return "", fmt.Errorf("destination already exists and sizes differ: %s", destination)
+	}
+	srcHash, err := hashFile(source, "sha256")
+	if err != nil {
+		return "", fmt.Errorf("cannot hash source for skip_identical: %w", err)
+	}
+	dstHash, err := hashFile(destination, "sha256")
+	if err != nil {
+		return "", fmt.Errorf("cannot hash destination for skip_identical: %w", err)
+	}
+	if srcHash != dstHash {
+		return "", fmt.Errorf("destination already exists and checksums differ: %s", destination)
+	}
+	if err := w.store.CreateAuditLog(ctx, "skip_identical", destination,
+		fmt.Sprintf("skipped identical file (sha256: %s)", srcHash)); err != nil {
+		return "", err
+	}
+	return "", errSkipDestination
 }
 
 func nextAvailablePath(path string) (string, error) {

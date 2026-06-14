@@ -148,7 +148,7 @@ export function TransferDialog({
         let fate: string;
         if (!conflict) {
           fate = 'New file';
-        } else if (conflictPolicy === 'skip') {
+        } else if (conflictPolicy === 'skip' || conflictPolicy === 'skip_identical') {
           fate = 'Skipped (file exists)';
         } else if (conflictPolicy === 'overwrite') {
           fate = 'Overwritten (file exists)';
@@ -270,6 +270,7 @@ export function TransferDialog({
         <Select value={conflictPolicy} onChange={(value) => setConflictPolicy(value as ConflictPolicy)}>
           <option value="ask">Ask when needed</option>
           <option value="skip">Skip existing files</option>
+          <option value="skip_identical">Skip identical files (by size + checksum)</option>
           <option value="overwrite">Overwrite existing files</option>
           <option value="rename">Rename new files</option>
           <option value="cancel">Cancel the job</option>

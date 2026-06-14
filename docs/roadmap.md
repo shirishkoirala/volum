@@ -105,13 +105,21 @@ References:
 
 ## Priority 4: Conflict Handling
 
+Status: started.
+
 File operations need clearer duplicate handling, especially for move/copy jobs with many items.
 
-Planned work:
+Completed:
 
-- Show the conflicting filename and destination.
-- Add "skip this", "skip all", "replace this", "replace all", and "rename" choices where appropriate.
-- Add "skip identical" when size and checksum match.
+- Added `skip_identical` conflict policy: before copying a file, compares size + SHA256 checksum; if both match, the destination is skipped and an audit log entry is created.
+- Added `hashFile()` helper in the worker package for server-side file checksumming.
+- TransferDialog UI now includes "Skip identical files (by size + checksum)" in the conflict policy dropdown.
+- Frontend `ConflictPolicy` type updated to include `skip_identical`.
+
+Planned work (remaining):
+
+- Show the conflicting filename and destination in job error messages.
+- Add "skip this", "skip all", "replace this", "replace all", and "rename" interactive per-item choices when a job hits conflicts (requires `needs_attention` job state support and a conflict resolution UI).
 - Record per-item conflict decisions in the job audit trail.
 - Keep existing safe move semantics: copy, verify, then delete.
 
