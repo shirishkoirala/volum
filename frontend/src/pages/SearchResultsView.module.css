@@ -191,7 +191,7 @@
   border-radius: var(--radius-xs);
   background: var(--color-skeleton, #e0e0e0);
   flex-shrink: 0;
-  animation: skeletonPulse 1.5s ease-in-out infinite;
+  animation: var(--anim-skeleton);
 }
 
 .skeletonLine {
@@ -199,13 +199,7 @@
   height: 14px;
   border-radius: var(--radius-xs);
   background: var(--color-skeleton, #e0e0e0);
-  animation: skeletonPulse 1.5s ease-in-out infinite;
-}
-
-@keyframes skeletonPulse {
-  0% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-  100% { opacity: 0.4; }
+  animation: var(--anim-skeleton);
 }
 
 @media (max-width: 760px) {

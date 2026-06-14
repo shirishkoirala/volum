@@ -116,7 +116,7 @@
 .skeletonCard,
 .skeletonIcon,
 .skeletonLine {
-  animation: skeletonPulse 1.5s ease-in-out infinite;
+  animation: var(--anim-skeleton);
 }
 
 .emptyDropZone {

@@ -104,7 +104,7 @@
 
 .skeletonCell,
 .skeletonRow {
-  animation: skeletonPulse 1.5s ease-in-out infinite;
+  animation: var(--anim-skeleton);
 }
 
 @media (max-width: 760px) {

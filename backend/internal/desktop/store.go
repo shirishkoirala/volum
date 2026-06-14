@@ -38,8 +38,7 @@ type scanner interface {
 	Scan(dest ...any) error
 }
 
-func scanService(row scanner) (ServiceRecord, error) {
-	var svc ServiceRecord
+func scanService(row scanner) (ServiceRecord, error) {	var svc ServiceRecord
 	var created time.Time
 	var checkedAt sql.NullString
 	if err := row.Scan(&svc.ID, &svc.Name, &svc.URL, &svc.IconURL, &svc.HealthURL, &svc.Description, &svc.OpenMode, &svc.Position, &created, &svc.LastHealthStatus, &checkedAt, &svc.LastHealthStatusCode, &svc.LastHealthError); err != nil {
@@ -118,10 +117,7 @@ func (s *Store) ListServices(ctx context.Context) ([]ServiceRecord, error) {
 func (s *Store) CreateService(ctx context.Context, name, url, iconURL, healthURL, description, openMode string) (*ServiceRecord, error) {
 	id := uuid.New().String()
 	now := time.Now().UTC()
-	om := openMode
-	if om != "tab" && om != "embed" {
-		om = "embed"
-	}
+	om := validOpenMode(openMode)
 	if _, err := s.db.ExecContext(ctx,
 		`INSERT INTO desktop_services (id, name, url, icon_url, health_url, description, open_mode, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)`,
 		id, name, url, iconURL, healthURL, description, om, now,
@@ -145,10 +141,7 @@ func (s *Store) CreateService(ctx context.Context, name, url, iconURL, healthURL
 }
 
 func (s *Store) UpdateService(ctx context.Context, id, name, url, iconURL, healthURL, description, openMode string) (*ServiceRecord, error) {
-	om := openMode
-	if om != "tab" && om != "embed" {
-		om = "embed"
-	}
+	om := validOpenMode(openMode)
 	res, err := s.db.ExecContext(ctx,
 		`UPDATE desktop_services SET name = ?, url = ?, icon_url = ?, health_url = ?, description = ?, open_mode = ? WHERE id = ?`,
 		name, url, iconURL, healthURL, description, om, id,
@@ -203,4 +196,11 @@ func (s *Store) ReorderServices(ctx context.Context, ids []string) error {
 		}
 	}
 	return tx.Commit()
+}
+
+func validOpenMode(mode string) string {
+	if mode != "tab" && mode != "embed" {
+		return "embed"
+	}
+	return mode
 }
