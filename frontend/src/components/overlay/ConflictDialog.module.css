@@ -151,3 +151,34 @@
   justify-content: flex-end;
   padding-top: var(--space-sm);
 }
+
+@media (max-width: 760px) {
+  .dialog {
+    padding: var(--space-md);
+    width: 95vw;
+    max-height: 90vh;
+  }
+
+  .itemActions {
+    flex-wrap: wrap;
+  }
+
+  .choiceBtn {
+    flex: 1;
+    text-align: center;
+    min-width: 60px;
+  }
+
+  .defaultRow {
+    flex-wrap: wrap;
+  }
+
+  .footer {
+    flex-wrap: wrap;
+  }
+
+  .footer button {
+    flex: 1;
+    text-align: center;
+  }
+}

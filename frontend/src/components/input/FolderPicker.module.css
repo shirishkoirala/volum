@@ -170,3 +170,19 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+@media (max-width: 760px) {
+  .folderPicker {
+    max-height: 60vh;
+    min-height: 150px;
+  }
+
+  .folderPickerFooter {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .folderPickerPath {
+    max-width: 100%;
+  }
+}

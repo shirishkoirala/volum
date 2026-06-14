@@ -207,3 +207,43 @@
   50% { opacity: 0.8; }
   100% { opacity: 0.4; }
 }
+
+@media (max-width: 760px) {
+  .searchHeader {
+    padding: var(--space-sm) var(--space-sm);
+    gap: var(--space-xs);
+  }
+
+  .backBtn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .resultRow {
+    flex-wrap: wrap;
+    padding: var(--space-xs) var(--space-sm);
+    gap: 2px var(--space-sm);
+  }
+
+  .resultName {
+    min-width: 0;
+    flex: 1 1 auto;
+    font-size: 0.8rem;
+  }
+
+  .resultPath {
+    flex: 0 0 100%;
+    font-size: 0.72rem;
+    order: 1;
+  }
+
+  .resultSize {
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+  }
+
+  .resultDate {
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+  }
+}
