@@ -15,6 +15,12 @@ type Store struct {
 
 var ErrInvalidConflictPolicy = errors.New("conflict policy must be ask, skip, overwrite, rename, cancel, or skip_identical")
 
+const jobColumns = `id, type, status, source_path, destination_path,
+	total_bytes, processed_bytes, total_items, processed_items,
+	current_item, error_message, conflict_policy, verify_mode,
+	scheduled_at, next_job_id,
+	created_at, updated_at, started_at, completed_at`
+
 func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
@@ -61,11 +67,7 @@ func (s *Store) Create(ctx context.Context, req CreateRequest) (Job, error) {
 
 func (s *Store) List(ctx context.Context, limit, offset int) ([]Job, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, type, status, source_path, destination_path,
-			total_bytes, processed_bytes, total_items, processed_items,
-			current_item, error_message, conflict_policy, verify_mode,
-			scheduled_at, next_job_id,
-			created_at, updated_at, started_at, completed_at
+		SELECT `+jobColumns+`
 		FROM jobs
 		ORDER BY created_at DESC
 		LIMIT ? OFFSET ?
@@ -88,11 +90,7 @@ func (s *Store) List(ctx context.Context, limit, offset int) ([]Job, error) {
 
 func (s *Store) Get(ctx context.Context, id string) (Job, error) {
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, type, status, source_path, destination_path,
-			total_bytes, processed_bytes, total_items, processed_items,
-			current_item, error_message, conflict_policy, verify_mode,
-			scheduled_at, next_job_id,
-			created_at, updated_at, started_at, completed_at
+		SELECT `+jobColumns+`
 		FROM jobs
 		WHERE id = ?
 	`, id)
