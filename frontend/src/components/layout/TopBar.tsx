@@ -5,7 +5,7 @@ import type { Session } from '../../api/client';
 import appIcon from '../../assets/icon-light.png';
 import styles from './TopBar.module.css';
 
-type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives';
+type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives' | 'search';
 
 type TopBarProps = {
   activeView: ActiveView;

@@ -13,6 +13,7 @@ interface NavStackOptions {
     setShowingJobs: (v: boolean) => void;
     setShowingMyPC: (v: boolean) => void;
     setSelectedDriveName: (v: string | null) => void;
+    setShowingSearch?: (v: boolean) => void;
   };
   browser: {
     refresh: () => void;
@@ -37,6 +38,7 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
     }
     viewPref.navigateToPath(path);
     nav?.setShowingJobs(false);
+    nav?.setShowingSearch?.(false);
     browser.setSearchOpen(false);
     browser.setSearchResults(null);
     browser.setQuery('');
@@ -49,6 +51,7 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
     nav?.setShowingTrash(false);
     nav?.setShowingSettings(false);
     nav?.setShowingJobs(false);
+    nav?.setShowingSearch?.(false);
     nav?.setShowingMyPC(false);
     nav?.setSelectedDriveName(null);
   }, [viewPref, nav]);

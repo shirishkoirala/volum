@@ -14,6 +14,7 @@ import { FilesView } from '../pages/FilesView';
 import { DesktopView } from '../pages/DesktopView';
 import { DrivesView } from '../pages/DrivesView';
 import { TrashView } from '../pages/TrashView';
+import { SearchResultsView } from '../pages/SearchResultsView';
 import { JobsPage } from '../pages/JobsPage';
 import { ToastViewport } from '../components/overlay/Toast';
 import { WindowHost } from '../components/window/WindowHost';
@@ -444,6 +445,15 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           {nav.activeView === 'trash' && (
             <TrashView />
           )}
+          {nav.activeView === 'search' && (
+            <SearchResultsView
+              initialQuery={nav.searchQuery}
+              session={session}
+              onNavigate={navActions.navigateTo}
+              onClose={() => { nav.setShowingSearch(false); navActions.resetToDesktopView(); }}
+              onPreview={workspaceOpeners.openPreview}
+            />
+          )}
           {nav.activeView === 'files' && (
             <FilesView
               ref={filesViewRef}
@@ -455,6 +465,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onAddFavorite={addFavorite}
               onRemoveFavorite={removeFavorite}
               onPreview={workspaceOpeners.openPreview}
+              onShowAllSearchResults={(query) => { nav.setSearchQuery(query); nav.setShowingSearch(true); }}
             />
           )}
           {nav.activeView === 'jobs' && (

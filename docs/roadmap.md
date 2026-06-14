@@ -78,14 +78,20 @@ Reference:
 
 ## Priority 3: Search Result Actions
 
+Status: completed.
+
 Large-folder users often search to find one item, then need to share, download, move, rename, or inspect it from the result itself.
 
-Planned work:
+Completed slice:
 
-- Add context menu support for search results.
-- Add share, download, preview, info, rename, copy, move, and trash actions from search results.
-- Preserve the search result list after completing an action.
-- Make search result paths easy to inspect and copy.
+- Created `SearchResultsView.tsx` — dedicated full-page search results view with a list showing icon, name, full path, size, and modified date.
+- Search results support right-click context menu with all file operations: preview, download, share, info, rename, copy, move, delete, archive, extract, checksum, and quick share.
+- Each action calls the appropriate backend API directly; the result list is preserved after actions by re-executing the search query.
+- Clicking a directory navigates to it; clicking a file opens preview (or download for non-previewable files).
+- Added "View all N results &rarr;" footer to the existing quick-search dropdown, which opens the full search results view with the current query pre-populated.
+- The search results view has its own search bar, loading skeleton, empty state, and error handling — fully self-contained.
+- All dialogs (confirm, text input, transfer, share, info, preview) are handled within the view.
+- Backend `GET /api/files/search` was already functional; no backend changes were needed.
 
 Why now:
 

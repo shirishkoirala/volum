@@ -44,6 +44,7 @@ type FilesViewProps = {
   onAddFavorite: (path: string) => void;
   onRemoveFavorite: (path: string) => void;
   onPreview?: (entry: FileEntry, entries?: FileEntry[]) => void;
+  onShowAllSearchResults?: (query: string) => void;
 };
 
 export type FilesViewHandle = {
@@ -63,7 +64,7 @@ export type FilesViewHandle = {
   handleGoBack: () => void;
 };
 
-export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function FilesView({ currentPath, session, favorites, onNavigate, onBack, onAddFavorite, onRemoveFavorite, onPreview }, ref) {
+export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function FilesView({ currentPath, session, favorites, onNavigate, onBack, onAddFavorite, onRemoveFavorite, onPreview, onShowAllSearchResults }, ref) {
   const shell = useShellContext();
   const viewPref = useViewPreferences();
   const windowId = useWindowId();
@@ -492,6 +493,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
               onUploadClick={openUploadPicker}
               canUpload={canUpload}
               searchRef={searchRef as React.RefObject<HTMLInputElement | null>}
+              onShowAllResults={onShowAllSearchResults ? (q) => onShowAllSearchResults(q) : undefined}
             />
           </BreadcrumbBar>
 

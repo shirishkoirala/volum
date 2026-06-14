@@ -123,3 +123,25 @@
   font-size: var(--font-size-xs);
   flex-shrink: 0;
 }
+
+.showAllResults {
+  align-items: center;
+  background: var(--color-hover);
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-brand, #06c);
+  cursor: pointer;
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  gap: var(--space-sm);
+  justify-content: center;
+  padding: var(--space-sm) var(--space-md);
+  text-align: center;
+  width: 100%;
+  transition: background var(--transition-fast);
+}
+
+.showAllResults:hover {
+  background: var(--color-border);
+}

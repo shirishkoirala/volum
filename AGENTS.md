@@ -328,6 +328,15 @@ frontend/src/
 - **9.4** Added CSS utility classes to `global.css` (`.row`, `.col`, `.gap*`, `.truncate`, `.clickable`, flex helpers, alignment, color utilities)
 - **9.2** (recommendation) OpenAPI/Swagger would improve backend↔frontend type sync but deferred — existing TypeScript types in `client.ts` are already well-maintained
 
+### Priority 3 — Search Result Actions
+- Created `SearchResultsView.tsx` + `SearchResultsView.module.css` — full-page search results view with list showing icon, name, full path, size, and modified date
+- Added "View all N results →" footer to the quick-search dropdown (`FileSearchBar.tsx`) with `onShowAllResults` callback
+- Added `'search'` to `ActiveView` type in `useNavigation.ts`, `TopBar.tsx`, and `StatusBar.tsx`
+- Search results support full right-click context menu (`FileContextMenu`) with all file operations: preview, download, share, info, rename, copy, move, delete, archive, extract, checksum, quick share
+- Search results are preserved after actions (re-executes search query on rename/delete)
+- Backend `GET /api/files/search` already functional; no backend changes needed
+- TypeScript, ESLint, and production build all pass clean
+
 ### Session — Columns Removal, Container Styling, Drives View Extraction
 - **Columns removed**: Deleted `FileColumnView.tsx` + `FileColumnView.module.css`; removed `'columns'` from `ViewMode` type; deleted `buildColumnPath` utility; cleaned columns branch from `FilesView.tsx`; removed `viewModeBeforeTrash` ref; removed "Columns" menu item from `AppMenuBar.tsx`; removed `'view-columns': Columns3` icon mapping; cleared columns assertion from test
 - **Container styling**: Added `border: 1px solid var(--color-border-subtle)` + `border-radius: var(--radius-md)` + `margin: var(--space-md)` to both `.fileList` (FileListView.module.css) and `.fileGrid` (FileGridView.module.css) — no background
