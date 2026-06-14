@@ -3,7 +3,7 @@ import type { FileEntry, TrashEntry, ConflictPolicy } from '../api/client';
 import {
   createFile, createFolder, createJob, deleteTrash, deletePath,
   getTrash, renamePath, restoreTrash,
-  createShare,
+  createShare, shareUrl,
 } from '../api/client';
 import type { UploadProgress } from '../utils/upload';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
@@ -255,7 +255,7 @@ export function useFileCommands(deps: FileCommandDeps) {
     setContextMenu(null);
     try {
       const share = await createShare({ path: entry.path });
-      await navigator.clipboard.writeText(`${window.location.origin}/api/public/${share.token}`);
+      await navigator.clipboard.writeText(shareUrl(share.token));
       showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
     } catch (err) {
       showToastObj({ title: 'Quick share failed', message: err instanceof Error ? err.message : undefined, variant: 'error' });

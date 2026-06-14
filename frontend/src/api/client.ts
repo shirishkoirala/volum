@@ -143,6 +143,10 @@ export type ConflictPolicy = 'ask' | 'skip' | 'overwrite' | 'rename' | 'cancel' 
 
 import { apiUrl } from './baseUrl';
 
+export function shareUrl(token: string): string {
+  return `${window.location.origin}/api/public/${token}`;
+}
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(apiUrl(url), {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -158,15 +162,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 async function requestVoid(url: string, options?: RequestInit): Promise<void> {
-  const response = await fetch(apiUrl(url), {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options
-  });
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(body.error ?? response.statusText);
-  }
+  await request(url, options);
 }
 
 export function getRoots() {

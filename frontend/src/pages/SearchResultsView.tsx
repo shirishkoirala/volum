@@ -12,7 +12,7 @@ import { joinPath } from '../utils/path';
 import { formatBytes, formatGridDate } from '../utils/format';
 import { isArchiveFile } from '../utils/archive';
 import {
-  searchFiles, createShare, createJob, deletePath, renamePath,
+  searchFiles, createShare, createJob, deletePath, renamePath, shareUrl,
   type SearchResult, type FileEntry, type Session, type ConflictPolicy,
 } from '../api/client';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } from '../components/overlay/Dialogs';
@@ -261,7 +261,7 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
     setContextMenu(null);
     try {
       const share = await createShare({ path: entry.path });
-      await navigator.clipboard.writeText(`${window.location.origin}/api/public/${share.token}`);
+      await navigator.clipboard.writeText(shareUrl(share.token));
       shell.showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
     } catch (err) {
       shell.showToastObj({ title: 'Quick share failed', message: err instanceof Error ? err.message : undefined, variant: 'error' });

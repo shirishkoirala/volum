@@ -3,7 +3,7 @@ import { Icon } from '../ui/Icon';
 import { Button, IconButton, StatusBadge } from '../ui/shared';
 import { Dialog } from './Dialog';
 import { EmptyState } from '../ui/EmptyState';
-import { getShares, deleteShare, type Share } from '../../api/client';
+import { getShares, deleteShare, shareUrl, type Share } from '../../api/client';
 import { ConfirmDialog } from './Dialogs';
 import dStyles from './Dialogs.module.css';
 import styles from './ShareManager.module.css';
@@ -47,7 +47,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
   };
 
   const handleCopyLink = (token: string) => {
-    navigator.clipboard.writeText(`${window.location.origin}/api/public/${token}`).catch(() => {});
+    navigator.clipboard.writeText(shareUrl(token)).catch(() => {});
   };
 
   return (
