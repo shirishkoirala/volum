@@ -140,7 +140,7 @@ export function useWorkspaceOpeners({
   }, [isMobile, setPreviewEntries, setPreviewEntry, wm]);
 
   const openService = useCallback((service: ServiceShortcut) => {
-    if (isMobile) {
+    if (service.openMode === 'tab' || isMobile) {
       window.open(service.url, '_blank', 'noopener,noreferrer');
       return;
     }

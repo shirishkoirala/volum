@@ -524,6 +524,8 @@ export type ServiceInfo = {
   url: string;
   iconUrl: string;
   healthUrl: string;
+  description?: string;
+  openMode?: 'embed' | 'tab';
   position: number;
 };
 
@@ -568,17 +570,17 @@ export function listServiceHealth() {
   return request<Record<string, ServiceHealthInfo>>('/api/services/health');
 }
 
-export function createService(name: string, url: string, iconUrl?: string, healthUrl?: string) {
+export function createService(name: string, url: string, iconUrl?: string, healthUrl?: string, description?: string, openMode?: string) {
   return request<ServiceInfo>('/api/services', {
     method: 'POST',
-    body: JSON.stringify({ name, url, iconUrl, healthUrl }),
+    body: JSON.stringify({ name, url, iconUrl, healthUrl, description, openMode }),
   });
 }
 
-export function updateService(id: string, name: string, url: string, iconUrl?: string, healthUrl?: string) {
+export function updateService(id: string, name: string, url: string, iconUrl?: string, healthUrl?: string, description?: string, openMode?: string) {
   return request<ServiceInfo>(`/api/services/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    body: JSON.stringify({ name, url, iconUrl, healthUrl }),
+    body: JSON.stringify({ name, url, iconUrl, healthUrl, description, openMode }),
   });
 }
 

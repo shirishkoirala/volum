@@ -9,7 +9,7 @@ type FaviconStatus = 'idle' | 'detecting' | 'found' | 'not-found';
 
 type ServiceFormModalProps = {
   initial?: ServiceShortcut;
-  onSave: (data: { name: string; url: string; iconUrl?: string; healthUrl?: string }) => void;
+  onSave: (data: { name: string; url: string; iconUrl?: string; healthUrl?: string; description?: string; openMode: 'embed' | 'tab' }) => void;
   onClose: () => void;
 };
 
@@ -19,6 +19,8 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
   const [url, setUrl] = useState(initial?.url ?? '');
   const [iconUrl, setIconUrl] = useState(initial?.iconUrl ?? '');
   const [healthUrl, setHealthUrl] = useState(initial?.healthUrl ?? '');
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [openMode, setOpenMode] = useState(initial?.openMode ?? 'embed');
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState({ name: false, url: false, healthUrl: false });
   const [faviconStatus, setFaviconStatus] = useState<FaviconStatus>('idle');
@@ -58,7 +60,7 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
     if (!validUrl(url.trim())) { setError('Enter a valid http:// or https:// URL.'); return; }
     if (healthUrl.trim() && !validUrl(healthUrl.trim())) { setError('Enter a valid health check http:// or https:// URL.'); return; }
     onClose();
-    onSave({ name: name.trim(), url: url.trim(), iconUrl: iconUrl.trim() || undefined, healthUrl: healthUrl.trim() || undefined });
+    onSave({ name: name.trim(), url: url.trim(), iconUrl: iconUrl.trim() || undefined, healthUrl: healthUrl.trim() || undefined, description: description.trim() || undefined, openMode });
   };
 
   const urlError = touched.url && url.trim() && !validUrl(url.trim())
@@ -151,6 +153,27 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
         />
         {healthUrlError && <p className={dStyles.dialogError}>{healthUrlError}</p>}
         <span className={dStyles.dialogHelp}>Used only for the desktop health indicator.</span>
+      </label>
+      <label className={dStyles.dialogField} htmlFor="service-description">
+        <span>Description (optional)</span>
+        <textarea
+          id="service-description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Brief description of this service"
+          rows={2}
+        />
+      </label>
+      <label className={dStyles.dialogField} htmlFor="service-open-mode">
+        <span>Open in</span>
+        <select
+          id="service-open-mode"
+          value={openMode}
+          onChange={(e) => setOpenMode(e.target.value as 'embed' | 'tab')}
+        >
+          <option value="embed">Desktop window (embedded)</option>
+          <option value="tab">New browser tab</option>
+        </select>
       </label>
       {error && <p className={dStyles.dialogError}>{error}</p>}
     </Dialog>

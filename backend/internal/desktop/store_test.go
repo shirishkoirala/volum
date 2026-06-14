@@ -21,7 +21,7 @@ func newTestStore(t *testing.T) (*Store, context.Context) {
 func TestServiceHealthURLRoundTrip(t *testing.T) {
 	store, ctx := newTestStore(t)
 
-	created, err := store.CreateService(ctx, "Jellyfin", "https://jellyfin.example.com", "https://example.com/icon.svg", "https://jellyfin.example.com/health")
+	created, err := store.CreateService(ctx, "Jellyfin", "https://jellyfin.example.com", "https://example.com/icon.svg", "https://jellyfin.example.com/health", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestServiceHealthURLRoundTrip(t *testing.T) {
 		t.Fatalf("expected listed health URL to round trip, got %q", services[0].HealthURL)
 	}
 
-	updated, err := store.UpdateService(ctx, created.ID, "Jellyfin", "https://jellyfin.example.com", "https://example.com/icon.svg", "https://jellyfin.example.com/status")
+	updated, err := store.UpdateService(ctx, created.ID, "Jellyfin", "https://jellyfin.example.com", "https://example.com/icon.svg", "https://jellyfin.example.com/status", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}

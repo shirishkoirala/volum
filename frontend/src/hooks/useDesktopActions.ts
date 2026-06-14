@@ -33,7 +33,7 @@ interface DesktopActionsOptions {
   };
   removeFavorite: (path: string) => void;
   addService: (svc: ServiceShortcut) => Promise<unknown>;
-  updateService: (id: string, data: { name: string; url: string; iconUrl?: string; healthUrl?: string }) => Promise<unknown>;
+  updateService: (id: string, data: { name: string; url: string; iconUrl?: string; healthUrl?: string; description?: string; openMode?: 'embed' | 'tab' }) => Promise<unknown>;
   removeService: (id: string) => Promise<void>;
   refreshServiceHealth: () => Promise<unknown>;
   serviceFormData: { initial?: ServiceShortcut } | null;
@@ -89,12 +89,12 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
     setServiceFormData(svc ? { initial: svc } : {});
   }, [setDesktopContextMenu, setServiceFormData]);
 
-  const handleSaveService = useCallback(async (data: { name: string; url: string; iconUrl?: string; healthUrl?: string }) => {
+  const handleSaveService = useCallback(async (data: { name: string; url: string; iconUrl?: string; healthUrl?: string; description?: string; openMode: 'embed' | 'tab' }) => {
     if (serviceFormData?.initial) {
       await updateService(serviceFormData.initial.id, data);
       toast.showToastObj({ title: 'Service updated', variant: 'success' });
     } else {
-      await addService({ id: '', ...data });
+      await addService({ id: '', name: data.name, url: data.url, iconUrl: data.iconUrl, healthUrl: data.healthUrl, description: data.description, openMode: data.openMode });
       toast.showToastObj({ title: 'Service added', variant: 'success' });
     }
     if (data.healthUrl) await refreshServiceHealth();

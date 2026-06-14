@@ -26,7 +26,8 @@
 }
 
 .dialogField input,
-.dialogField textarea {
+.dialogField textarea,
+.dialogField select {
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -39,13 +40,19 @@
 .dialogField textarea {
   font-family: inherit;
   line-height: 1.4;
-  min-height: 80px;
+  min-height: 60px;
   padding: var(--space-sm) var(--space-md);
   resize: vertical;
 }
 
+.dialogField select {
+  appearance: auto;
+  cursor: pointer;
+}
+
 .dialogField input:focus,
-.dialogField textarea:focus {
+.dialogField textarea:focus,
+.dialogField select:focus {
   border-color: var(--color-brand);
   outline: 0;
 }

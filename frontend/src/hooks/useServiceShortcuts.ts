@@ -15,6 +15,8 @@ export function useServiceShortcuts() {
         url: s.url,
         iconUrl: s.iconUrl || undefined,
         healthUrl: s.healthUrl || undefined,
+        description: s.description || undefined,
+        openMode: s.openMode === 'tab' ? 'tab' : 'embed',
       }))))
       .catch(() => setServices([]))
       .finally(() => setLoading(false));
@@ -27,21 +29,23 @@ export function useServiceShortcuts() {
   }, []);
 
   const addService = useCallback(async (svc: ServiceShortcut) => {
-    const created = await createService(svc.name, svc.url, svc.iconUrl, svc.healthUrl);
+    const created = await createService(svc.name, svc.url, svc.iconUrl, svc.healthUrl, svc.description, svc.openMode);
     const entry: ServiceShortcut = {
       id: created.id,
       name: created.name,
       url: created.url,
       iconUrl: created.iconUrl || undefined,
       healthUrl: created.healthUrl || undefined,
+      description: created.description || undefined,
+      openMode: created.openMode === 'tab' ? 'tab' : 'embed',
     };
     setServices(prev => [...prev, entry]);
     return entry;
   }, []);
 
   const updateService = useCallback(async (id: string, updates: Partial<ServiceShortcut>) => {
-    const updated = await apiUpdateService(id, updates.name ?? '', updates.url ?? '', updates.iconUrl ?? '', updates.healthUrl ?? '');
-    setServices(prev => prev.map(s => s.id === id ? { ...s, id: updated.id, name: updated.name, url: updated.url, iconUrl: updated.iconUrl || undefined, healthUrl: updated.healthUrl || undefined } : s));
+    const updated = await apiUpdateService(id, updates.name ?? '', updates.url ?? '', updates.iconUrl ?? '', updates.healthUrl ?? '', updates.description, updates.openMode);
+    setServices(prev => prev.map(s => s.id === id ? { ...s, id: updated.id, name: updated.name, url: updated.url, iconUrl: updated.iconUrl || undefined, healthUrl: updated.healthUrl || undefined, description: updated.description || undefined, openMode: updated.openMode === 'tab' ? 'tab' : 'embed' } : s));
     return updated;
   }, []);
 

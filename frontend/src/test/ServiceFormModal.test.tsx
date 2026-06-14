@@ -49,6 +49,8 @@ describe('ServiceFormModal', () => {
       url: 'https://example.com/codex-service-test',
       iconUrl: 'https://example.com/favicon.ico',
       healthUrl: 'https://example.com/health',
+      description: undefined,
+      openMode: 'embed',
     });
   });
 
@@ -69,6 +71,8 @@ describe('ServiceFormModal', () => {
       url: 'https://docs.example.com',
       iconUrl: undefined,
       healthUrl: undefined,
+      description: undefined,
+      openMode: 'embed',
     });
   });
 
@@ -135,6 +139,8 @@ describe('ServiceFormModal', () => {
       url: 'https://new.example.com',
       iconUrl: 'https://old.example.com/favicon.ico',
       healthUrl: 'https://old.example.com/health',
+      description: undefined,
+      openMode: 'embed',
     });
   });
 });

@@ -4,6 +4,8 @@ export type ServiceShortcut = {
   url: string;
   iconUrl?: string;
   healthUrl?: string;
+  description?: string;
+  openMode?: 'embed' | 'tab';
 };
 
 export type ServiceHealthStatus = 'healthy' | 'unhealthy';
