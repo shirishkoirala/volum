@@ -182,6 +182,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           <PreviewWindow
             entry={entry}
             entries={entries}
+            onShare={(shareEntry) => dialogs.setShareDialogPath({ path: shareEntry.path, name: shareEntry.name })}
             onSelectEntry={(nextEntry) => {
               wm.toggleWindow('preview', {
                 title: nextEntry.name,
@@ -525,6 +526,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           entry={fileActions.previewEntry}
           onClose={() => fileActions.setPreviewEntry(null)}
           onDownload={() => openFileExternally(fileActions.previewEntry!.path)}
+          onShare={() => dialogs.setShareDialogPath({ path: fileActions.previewEntry!.path, name: fileActions.previewEntry!.name })}
           onPrevious={previousPreviewEntry ? () => fileActions.setPreviewEntry(previousPreviewEntry) : undefined}
           onNext={nextPreviewEntry ? () => fileActions.setPreviewEntry(nextPreviewEntry) : undefined}
           previousDisabled={!previousPreviewEntry}

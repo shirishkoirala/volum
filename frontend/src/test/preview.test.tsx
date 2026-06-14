@@ -94,4 +94,14 @@ describe('preview policy', () => {
     expect(writeText).toHaveBeenCalledWith('/storage/photos/photo.jpg');
     expect(await screen.findByTitle('Path copied')).toBeInTheDocument();
   });
+
+  it('calls the share action when provided', async () => {
+    const user = userEvent.setup();
+    const onShare = vi.fn();
+
+    render(<PreviewContent entry={entry({ name: 'photo.jpg' })} onShare={onShare} />);
+
+    await user.click(screen.getByTitle('Share'));
+    expect(onShare).toHaveBeenCalledOnce();
+  });
 });

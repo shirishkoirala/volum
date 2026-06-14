@@ -64,7 +64,7 @@ Completed slice:
 - Previous/next buttons move through previewable files without closing the preview or leaving the folder.
 - ArrowLeft/ArrowRight shortcuts work while a preview is open.
 - Desktop preview windows update the existing preview window instead of opening extra windows.
-- Preview actions include copy path, download, and open raw file.
+- Preview actions include copy path, share, download, and open raw file.
 
 Why now:
 

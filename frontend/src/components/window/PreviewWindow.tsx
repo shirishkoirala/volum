@@ -6,9 +6,10 @@ type PreviewWindowProps = {
   entry: FileEntry;
   entries?: FileEntry[];
   onSelectEntry?: (entry: FileEntry) => void;
+  onShare?: (entry: FileEntry) => void;
 };
 
-export function PreviewWindow({ entry, entries = [entry], onSelectEntry }: PreviewWindowProps) {
+export function PreviewWindow({ entry, entries = [entry], onSelectEntry, onShare }: PreviewWindowProps) {
   const currentIndex = entries.findIndex((candidate) => candidate.path === entry.path);
   const normalizedIndex = currentIndex >= 0 ? currentIndex : 0;
   const selectEntry = onSelectEntry;
@@ -20,6 +21,7 @@ export function PreviewWindow({ entry, entries = [entry], onSelectEntry }: Previ
     <PreviewContent
       entry={entry}
       onDownload={() => openFileExternally(entry.path)}
+      onShare={onShare ? () => onShare(entry) : undefined}
       onPrevious={previousEntry && selectEntry ? () => selectEntry(previousEntry) : undefined}
       onNext={nextEntry && selectEntry ? () => selectEntry(nextEntry) : undefined}
       previousDisabled={!previousEntry}

@@ -14,6 +14,7 @@ type PreviewModalProps = {
   entry: FileEntry;
   onClose: () => void;
   onDownload?: () => void;
+  onShare?: () => void;
   onPrevious?: () => void;
   onNext?: () => void;
   previousDisabled?: boolean;
@@ -25,6 +26,7 @@ type PreviewContentProps = {
   entry: FileEntry;
   onClose?: () => void;
   onDownload?: () => void;
+  onShare?: () => void;
   onPrevious?: () => void;
   onNext?: () => void;
   previousDisabled?: boolean;
@@ -36,6 +38,7 @@ export function PreviewContent({
   entry,
   onClose,
   onDownload,
+  onShare,
   onPrevious,
   onNext,
   previousDisabled = true,
@@ -151,6 +154,11 @@ export function PreviewContent({
           <IconButton onClick={() => { void handleCopyPath(); }} title={copyTitle}>
             <Icon name="edit-copy" size={18} />
           </IconButton>
+          {onShare && (
+            <IconButton onClick={onShare} title="Share">
+              <Icon name="mail-send" size={18} />
+            </IconButton>
+          )}
           <IconButton onClick={() => onDownload?.()} title="Download">
             <Icon name="edit-download" size={18} />
           </IconButton>
@@ -204,6 +212,7 @@ export function PreviewModal({
   entry,
   onClose,
   onDownload,
+  onShare,
   onPrevious,
   onNext,
   previousDisabled,
@@ -216,6 +225,7 @@ export function PreviewModal({
         entry={entry}
         onClose={onClose}
         onDownload={onDownload}
+        onShare={onShare}
         onPrevious={onPrevious}
         onNext={onNext}
         previousDisabled={previousDisabled}

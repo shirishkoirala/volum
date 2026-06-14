@@ -617,6 +617,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           entry={fileActions.previewEntry}
           onClose={() => fileActions.setPreviewEntry(null)}
           onDownload={() => fileCommands.handleDownload(fileActions.previewEntry!)}
+          onShare={() => dialogs.setShareDialogPath({ path: fileActions.previewEntry!.path, name: fileActions.previewEntry!.name })}
           onPrevious={previousPreviewEntry ? () => setPreviewTarget(previousPreviewEntry) : undefined}
           onNext={nextPreviewEntry ? () => setPreviewTarget(nextPreviewEntry) : undefined}
           previousDisabled={!previousPreviewEntry}
