@@ -361,6 +361,23 @@ frontend/src/
 - Reviewed upload error cleanup paths: partial files and job IDs are always removed on failure
 - Frontend typecheck + lint clean
 
+### Priority 4 — Conflict Handling (Full Implementation)
+- Added `StatusConflict` item status for tracking conflicting files per-item
+- Worker modified: `ask` policy conflicts in `copyOne` now set item to `"conflict"` and job to `needs_attention` via `errAskDestination`/`errJobNeedsAttention` sentinels
+- Top-level destination check in `transferItems` skips `ask` policy (delegates to per-item in `copyOne`)
+- Added `POST /api/jobs/{id}/resolve` handler — accepts per-item decisions (`skip`/`overwrite`/`rename`) with optional `defaultResolution`; overwrite removes destination, rename finds next available path
+- Added `GET /api/jobs/{id}/conflicts` handler — lists conflicting items
+- Added store methods: `NeedsAttention`, `ListConflictingItems`, `CountConflicts`, `UpdateItemDestination`
+- Each resolution creates audit log entry (`conflict_skip`, `conflict_overwrite`, `conflict_rename`)
+- Job auto-resumes (set to `queued`) when all conflicts are resolved
+- Cancel now supports `needs_attention` status
+- Frontend: `ConflictDialog.tsx` + `.module.css` — per-file skip/overwrite/rename buttons + "Apply to all" dropdown
+- Frontend: JobsPage shows Resolve Conflicts button + `active` badge for `needs_attention` jobs
+- Added `handleResolveConflicts` to `useJobs` hook
+- Fixed upload handler to trim leading/trailing spaces from filenames before storage
+- Fixed `TestUploadLeadingTrailingSpaces` test expectation
+- Docker build + Go vet/tests + frontend typecheck/lint/build all passing
+
 ### Session — Columns Removal, Container Styling, Drives View Extraction
 - **Columns removed**: Deleted `FileColumnView.tsx` + `FileColumnView.module.css`; removed `'columns'` from `ViewMode` type; deleted `buildColumnPath` utility; cleaned columns branch from `FilesView.tsx`; removed `viewModeBeforeTrash` ref; removed "Columns" menu item from `AppMenuBar.tsx`; removed `'view-columns': Columns3` icon mapping; cleared columns assertion from test
 - **Container styling**: Added `border: 1px solid var(--color-border-subtle)` + `border-radius: var(--radius-md)` + `margin: var(--space-md)` to both `.fileList` (FileListView.module.css) and `.fileGrid` (FileGridView.module.css) — no background

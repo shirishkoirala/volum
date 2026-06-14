@@ -89,6 +89,17 @@ export type SearchResponse = {
 export type JobType = 'copy' | 'move' | 'upload' | 'extract' | 'archive' | 'checksum';
 export type JobStatus = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'needs_attention';
 
+export type ConflictItem = {
+  id: string;
+  jobId: string;
+  sourcePath: string;
+  destinationPath: string;
+  sizeBytes: number;
+  processedBytes: number;
+  status: JobStatus;
+  errorMessage?: string;
+};
+
 export type Job = {
   id: string;
   type: JobType;
@@ -341,6 +352,17 @@ export function clearCompletedJobs() {
 export function clearFailedJobs() {
   return request<{ removed: number }>('/api/jobs/clear-failed', {
     method: 'DELETE'
+  });
+}
+
+export function getJobConflicts(id: string) {
+  return request<{ items: ConflictItem[] }>(`/api/jobs/${id}/conflicts`);
+}
+
+export function resolveJobConflicts(id: string, items: Array<{ itemId: string; resolution: 'skip' | 'overwrite' | 'rename' }>, defaultResolution?: 'skip' | 'overwrite' | 'rename') {
+  return request<{ status: string; resumed?: boolean }>(`/api/jobs/${id}/resolve`, {
+    method: 'POST',
+    body: JSON.stringify({ items, defaultResolution }),
   });
 }
 

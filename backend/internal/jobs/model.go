@@ -24,6 +24,7 @@ const (
 	StatusFailed         Status = "failed"
 	StatusCancelled      Status = "cancelled"
 	StatusNeedsAttention Status = "needs_attention"
+	StatusConflict       Status = "conflict"
 )
 
 type Job struct {

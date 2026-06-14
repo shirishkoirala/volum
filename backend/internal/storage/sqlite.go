@@ -88,6 +88,9 @@ func migrate(db *sql.DB) error {
 	if err := addColumnIfMissing(db, "desktop_services", "health_url", "TEXT DEFAULT ''"); err != nil {
 		return err
 	}
+	if err := addColumnIfMissing(db, "job_items", "conflict_resolution", "TEXT"); err != nil {
+		return err
+	}
 	return nil
 }
 

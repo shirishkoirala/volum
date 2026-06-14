@@ -158,6 +158,9 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 			if errors.Is(err, errJobPaused) {
 				return nil
 			}
+			if errors.Is(err, errJobNeedsAttention) {
+				return nil
+			}
 			message := err.Error()
 			_ = w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusFailed, copied, &message)
 			return err
@@ -199,16 +202,18 @@ func (w *Worker) transferItems(ctx context.Context, job jobs.Job, source, destin
 
 	if policy := job.ConflictPolicy; policy == "cancel" {
 		return nil, 0, 0, errors.New("transfer cancelled by conflict policy")
-	} else if resolvedDestination, err := w.resolveConflictDestination(ctx, source, destination, policy); err != nil {
-		if errors.Is(err, errSkipDestination) {
-			if err := w.store.CompleteJob(ctx, job.ID); err != nil {
-				return nil, 0, 0, err
+	} else if policy != "ask" {
+		if resolvedDestination, err := w.resolveConflictDestination(ctx, source, destination, policy); err != nil {
+			if errors.Is(err, errSkipDestination) {
+				if err := w.store.CompleteJob(ctx, job.ID); err != nil {
+					return nil, 0, 0, err
+				}
+				return nil, 0, 0, nil
 			}
-			return nil, 0, 0, nil
+			return nil, 0, 0, err
+		} else {
+			destination = resolvedDestination
 		}
-		return nil, 0, 0, err
-	} else {
-		destination = resolvedDestination
 	}
 
 	items, err := w.planCopy(source, destination)
@@ -365,6 +370,12 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 			if errors.Is(err, errSkipDestination) {
 				return 0, nil
 			}
+			if errors.Is(err, errAskDestination) {
+				errMsg := fmt.Sprintf("destination already exists: %s", item.Destination)
+				_ = w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusConflict, 0, &errMsg)
+				_ = w.store.NeedsAttention(ctx, job.ID)
+				return 0, errJobNeedsAttention
+			}
 			return 0, err
 		}
 		item.Destination = destination
@@ -517,6 +528,8 @@ func partialFileSize(path string, expectedSize int64) (int64, error) {
 
 var errSkipDestination = errors.New("destination skipped by conflict policy")
 var errJobPaused = errors.New("job paused")
+var errAskDestination = errors.New("destination already exists; needs user decision")
+var errJobNeedsAttention = errors.New("job needs user attention to resolve conflicts")
 
 type progressThrottle struct {
 	lastBytes int64
@@ -550,19 +563,21 @@ func (w *Worker) resolveConflictDestination(ctx context.Context, source, destina
 	}
 	if _, err := os.Stat(destination); err == nil {
 		switch policy {
-		case "skip":
-			return "", errSkipDestination
-		case "skip_identical":
-			return w.resolveSkipIdentical(ctx, source, destination)
-		case "overwrite":
-			if err := w.store.CreateAuditLog(ctx, "overwrite", destination, "removed existing destination for transfer job"); err != nil {
-				return "", err
-			}
-			return destination, os.RemoveAll(destination)
-		case "rename":
-			return nextAvailablePath(destination)
+	case "ask":
+		return "", errAskDestination
+	case "skip":
+		return "", errSkipDestination
+	case "skip_identical":
+		return w.resolveSkipIdentical(ctx, source, destination)
+	case "overwrite":
+		if err := w.store.CreateAuditLog(ctx, "overwrite", destination, "removed existing destination for transfer job"); err != nil {
+			return "", err
 		}
-		return "", fmt.Errorf("destination already exists: %s", destination)
+		return destination, os.RemoveAll(destination)
+	case "rename":
+		return nextAvailablePath(destination)
+	}
+	return "", fmt.Errorf("destination already exists: %s", destination)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return "", err
 	}

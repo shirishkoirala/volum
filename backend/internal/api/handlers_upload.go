@@ -86,10 +86,11 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) uploadPart(ctx context.Context, targetPublic, targetDir string, part *multipart.Part, conflictPolicy string, expectedBytes int64) (jobs.Job, error) {
-	name := filepath.Base(part.FileName())
-	if !validUploadName(name) {
+	rawName := filepath.Base(part.FileName())
+	if !validUploadName(rawName) {
 		return jobs.Job{}, files.ErrInvalidName
 	}
+	name := strings.TrimSpace(rawName)
 	uploadName := name
 
 	destinationPublic := filepath.Join(filepath.Clean(targetPublic), name)

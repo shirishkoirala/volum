@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { cancelJob, getJobs, pauseJob, resumeJob, retryJob, retryJobItem, clearCompletedJobs, clearFailedJobs } from '../api/client';
+import { cancelJob, getJobs, pauseJob, resumeJob, retryJob, retryJobItem, clearCompletedJobs, clearFailedJobs, resolveJobConflicts } from '../api/client';
 import { refreshesFiles } from '../utils/jobs';
 import type { Job, Session } from '../api/client';
 
@@ -134,6 +134,26 @@ export function useJobs(
     }, 'Failed transfers cleared');
   };
 
+  const handleResolveConflicts = async (
+    jobId: string,
+    items: Array<{ itemId: string; resolution: 'skip' | 'overwrite' | 'rename' }>,
+    defaultResolution?: 'skip' | 'overwrite' | 'rename',
+  ) => {
+    try {
+      const result = await resolveJobConflicts(jobId, items, defaultResolution);
+      const response = await getJobs();
+      setJobs(response.jobs ?? []);
+      if (result.resumed) {
+        toastRef.current('Conflicts resolved, transfer resumed', 'success');
+      } else {
+        toastRef.current('Conflicts resolved', 'success');
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to resolve conflicts';
+      toastRef.current('Failed to resolve conflicts', 'error', msg);
+    }
+  };
+
   return {
     handleCancelJob,
     handleRetryJob,
@@ -142,5 +162,6 @@ export function useJobs(
     handleResumeJob,
     handleClearCompleted,
     handleClearFailed,
+    handleResolveConflicts,
   };
 }

@@ -114,6 +114,8 @@ func (s *Server) routes() {
 			r.Post("/jobs/{id}/items/{itemId}/retry", s.handleRetryItem)
 			r.Post("/jobs/{id}/pause", s.handlePauseJob)
 			r.Post("/jobs/{id}/resume", s.handleResumeJob)
+			r.Get("/jobs/{id}/conflicts", s.handleJobConflicts)
+			r.Post("/jobs/{id}/resolve", s.handleResolveConflicts)
 			r.Delete("/jobs/clear-completed", s.handleClearCompleted)
 			r.Delete("/jobs/clear-failed", s.handleClearFailed)
 			r.Post("/shares", s.handleCreateShare)

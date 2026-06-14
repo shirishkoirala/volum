@@ -105,7 +105,7 @@ References:
 
 ## Priority 4: Conflict Handling
 
-Status: started.
+Status: completed.
 
 File operations need clearer duplicate handling, especially for move/copy jobs with many items.
 
@@ -115,13 +115,16 @@ Completed:
 - Added `hashFile()` helper in the worker package for server-side file checksumming.
 - TransferDialog UI now includes "Skip identical files (by size + checksum)" in the conflict policy dropdown.
 - Frontend `ConflictPolicy` type updated to include `skip_identical`.
-
-Planned work (remaining):
-
-- Show the conflicting filename and destination in job error messages.
-- Add "skip this", "skip all", "replace this", "replace all", and "rename" interactive per-item choices when a job hits conflicts (requires `needs_attention` job state support and a conflict resolution UI).
-- Record per-item conflict decisions in the job audit trail.
-- Keep existing safe move semantics: copy, verify, then delete.
+- Added interactive per-item conflict resolution: when a job encounters a conflict with the `"ask"` policy, it pauses with `needs_attention` status instead of failing.
+- Worker detects conflicts during per-item copy, marks the item as `"conflict"` and sets the job to `needs_attention`.
+- Backend `POST /api/jobs/{id}/resolve` accepts per-file decisions (`skip`, `overwrite`, `rename`) with an optional `defaultResolution` for remaining items.
+- Backend `GET /api/jobs/{id}/conflicts` lists conflicting items with source/destination paths.
+- Each resolution creates an audit log entry (`conflict_skip`, `conflict_overwrite`, `conflict_rename`).
+- When all conflicts are resolved, the job is automatically resumed (set back to `queued`).
+- Frontend `ConflictDialog` shows each conflicting file with per-item skip/overwrite/rename buttons and an "Apply to all" dropdown.
+- Jobs in `needs_attention` state show a prominent "Resolve Conflicts" button and an `active`-colored status badge.
+- `Cancel` supports `needs_attention` jobs.
+- Upload handler now trims leading/trailing spaces from filenames before storage.
 
 Why now:
 

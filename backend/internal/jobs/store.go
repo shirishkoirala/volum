@@ -104,8 +104,8 @@ func (s *Store) Cancel(ctx context.Context, id string) error {
 	result, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, updated_at = ?, completed_at = ?
-		WHERE id = ? AND status IN (?, ?, ?)
-	`, StatusCancelled, now, now, id, StatusQueued, StatusRunning, StatusPaused)
+		WHERE id = ? AND status IN (?, ?, ?, ?)
+	`, StatusCancelled, now, now, id, StatusQueued, StatusRunning, StatusPaused, StatusNeedsAttention)
 	if err != nil {
 		return err
 	}
@@ -294,6 +294,16 @@ func (s *Store) ResumeJob(ctx context.Context, id string) error {
 		return sql.ErrNoRows
 	}
 	return nil
+}
+
+func (s *Store) NeedsAttention(ctx context.Context, jobID string) error {
+	now := time.Now().UTC()
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, updated_at = ?, current_item = NULL
+		WHERE id = ?
+	`, StatusNeedsAttention, now, jobID)
+	return err
 }
 
 func (s *Store) ClearCompleted(ctx context.Context) (int64, error) {
