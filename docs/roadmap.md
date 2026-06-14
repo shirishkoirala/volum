@@ -149,9 +149,14 @@ Completed:
 - Added backend tests for invalid name rejection (backslash, `.`, `..`) — all return 400.
 - Reviewed cleanup logic in `handleUploadChunk`: every error path removes the partial file, job ID file, and calls `FailJob`. No partial files are left behind.
 
+Completed:
+
+- Improved toast and notification messages to be job-type-aware: "Upload completed", "Copy paused", "Move cancelled" instead of generic "Transfer completed", "Transfer paused", "Transfer cancelled".
+- SSE browser notifications now show e.g. "Upload completed" with the source path instead of "Transfer completed" with a redundant `[upload]` prefix.
+- Added `makeJobLabel(type, action)` utility in `utils/jobs.ts`.
+
 Planned work (remaining):
 
-- Improve upload retry/resume messaging on the frontend (clearer toasts when upload is cancelled or paused).
 - Verify large upload behavior through reverse proxy path prefixes.
 - Add frontend tests for upload flow edge cases.
 

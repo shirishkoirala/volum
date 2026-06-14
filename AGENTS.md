@@ -376,6 +376,12 @@ frontend/src/
 - Added `handleResolveConflicts` to `useJobs` hook
 - Fixed upload handler to trim leading/trailing spaces from filenames before storage
 - Fixed `TestUploadLeadingTrailingSpaces` test expectation
+
+### Priority 5 — Upload Reliability (Slice 2)
+- Added `makeJobLabel(type, action)` to `utils/jobs.ts` for job-type-aware toast titles
+- Updated `useJobs` action handlers (cancel/pause/resume/retry) to accept `jobType` and show e.g. "Upload cancelled", "Copy paused", "Move resumed" instead of generic "Transfer cancelled"
+- Updated SSE browser notifications to show e.g. "Upload completed" / "Upload failed" instead of "Transfer completed" / "Transfer failed"
+- Frontend typecheck + lint + build clean
 - Docker build + Go vet/tests + frontend typecheck/lint/build all passing
 
 ### Session — Columns Removal, Container Styling, Drives View Extraction

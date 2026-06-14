@@ -42,10 +42,10 @@ function JobItem({
   onResolve
 }: {
   job: Job;
-  onCancel: (id: string) => void;
-  onPause: (id: string) => void;
-  onResume: (id: string) => void;
-  onRetry: (id: string) => void;
+  onCancel: (id: string, type: string) => void;
+  onPause: (id: string, type: string) => void;
+  onResume: (id: string, type: string) => void;
+  onRetry: (id: string, type: string) => void;
   onResolve: (id: string) => void;
 }) {
   const progress = job.totalBytes > 0 ? Math.round((job.processedBytes / job.totalBytes) * 100) : 0;
@@ -100,25 +100,25 @@ function JobItem({
             </Button>
           )}
           {canPause && (
-            <Button size="compact" onClick={() => onPause(job.id)}>
+            <Button size="compact" onClick={() => onPause(job.id, job.type)}>
               <Icon name="media-playback-pause" size={15} />
               Pause
             </Button>
           )}
           {canResume && (
-            <Button size="compact" onClick={() => onResume(job.id)}>
+            <Button size="compact" onClick={() => onResume(job.id, job.type)}>
               <Icon name="media-playback-start" size={15} />
               Resume
             </Button>
           )}
           {canCancel && (
-            <Button size="compact" onClick={() => onCancel(job.id)}>
+            <Button size="compact" onClick={() => onCancel(job.id, job.type)}>
               <Icon name="process-stop" size={15} />
               Cancel
             </Button>
           )}
           {canRetry && (
-            <Button size="compact" onClick={() => onRetry(job.id)}>
+            <Button size="compact" onClick={() => onRetry(job.id, job.type)}>
               <Icon name="view-refresh" size={15} />
               Retry
             </Button>

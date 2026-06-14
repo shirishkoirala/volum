@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { cancelJob, getJobs, pauseJob, resumeJob, retryJob, retryJobItem, clearCompletedJobs, clearFailedJobs, resolveJobConflicts } from '../api/client';
-import { refreshesFiles } from '../utils/jobs';
+import { makeJobLabel, refreshesFiles } from '../utils/jobs';
 import type { Job, Session } from '../api/client';
 
 interface UseJobsOptions {
@@ -51,9 +51,9 @@ export function useJobs(
         }
         if (typeof Notification !== 'undefined' && !knownJobIds.current.has(job.id) && Notification.permission === 'granted') {
           if (job.status === 'completed') {
-            new Notification('Transfer completed', { body: `[${job.type}] ${job.sourcePath ?? job.id}` });
+            new Notification(makeJobLabel(job.type, 'completed'), { body: `${job.sourcePath ?? job.id}` });
           } else if (job.status === 'failed') {
-            new Notification('Transfer failed', { body: `[${job.type}] ${job.errorMessage ?? job.id}` });
+            new Notification(makeJobLabel(job.type, 'failed'), { body: `${job.errorMessage ?? job.id}` });
           }
         }
       }
@@ -78,20 +78,22 @@ export function useJobs(
     }
   };
 
-  const handleCancelJob = (id: string) => {
+  const handleCancelJob = (id: string, jobType?: string) => {
+    const label = jobType ? makeJobLabel(jobType, 'cancelled') : 'Transfer cancelled';
     void runWithToast(async () => {
       await cancelJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Transfer cancelled');
+    }, label);
   };
 
-  const handleRetryJob = (id: string) => {
+  const handleRetryJob = (id: string, jobType?: string) => {
+    const label = jobType ? makeJobLabel(jobType, 'queued for retry') : 'Transfer retried';
     void runWithToast(async () => {
       await retryJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Transfer retried');
+    }, label);
   };
 
   const handleRetryItem = (jobId: string, itemId: string) => {
@@ -102,20 +104,22 @@ export function useJobs(
     }, 'Item queued for retry');
   };
 
-  const handlePauseJob = (id: string) => {
+  const handlePauseJob = (id: string, jobType?: string) => {
+    const label = jobType ? makeJobLabel(jobType, 'paused') : 'Transfer paused';
     void runWithToast(async () => {
       await pauseJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Transfer paused');
+    }, label);
   };
 
-  const handleResumeJob = (id: string) => {
+  const handleResumeJob = (id: string, jobType?: string) => {
+    const label = jobType ? makeJobLabel(jobType, 'resumed') : 'Transfer resumed';
     void runWithToast(async () => {
       await resumeJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Transfer resumed');
+    }, label);
   };
 
   const handleClearCompleted = () => {
