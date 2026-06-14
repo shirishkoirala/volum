@@ -134,15 +134,23 @@ Reference:
 
 ## Priority 5: Upload Reliability
 
+Status: started.
+
 Upload failures are a common source of trust loss in web file managers, especially with large files, many small files, folder drops, special characters, and reverse proxies.
 
-Planned work:
+Completed:
 
-- Add targeted tests for filenames with special characters.
-- Add folder-upload path normalization tests.
-- Improve upload retry/resume messaging.
+- Added backend tests for filenames with special characters (spaces, unicode, symbols, mixed punctuation) — all pass with the existing validator.
+- Added backend test for leading/trailing space normalization (`validUploadName` trims spaces, file lands under trimmed name).
+- Added backend test for path normalization (`filepath.Base` strips directory components from uploaded filenames — `subdir/file.txt` lands as `file.txt`).
+- Added backend tests for invalid name rejection (backslash, `.`, `..`) — all return 400.
+- Reviewed cleanup logic in `handleUploadChunk`: every error path removes the partial file, job ID file, and calls `FailJob`. No partial files are left behind.
+
+Planned work (remaining):
+
+- Improve upload retry/resume messaging on the frontend (clearer toasts when upload is cancelled or paused).
 - Verify large upload behavior through reverse proxy path prefixes.
-- Avoid leaving zero-byte or partial files after failed uploads.
+- Add frontend tests for upload flow edge cases.
 
 Why now:
 

@@ -367,6 +367,95 @@ func TestUploadFile(t *testing.T) {
 	}
 }
 
+func TestUploadSpecialCharacters(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	tests := []struct {
+		name    string
+		content string
+	}{
+		{"hello world.txt", "spaces"},
+		{"résumé.pdf", "accented"},
+		{"照片.jpg", "chinese"},
+		{"file-with-dashes_and.dots.txt", "mixed"},
+		{"foo bar baz (1).txt", "parentheses"},
+		{"a+b=c.txt", "plus and equals"},
+		{"file@#$%.txt", "symbols"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp := ts.upload(ts.root, map[string]string{tt.name: tt.content})
+			if resp.StatusCode != http.StatusCreated {
+				t.Fatalf("expected 201, got %d; body: %s", resp.StatusCode, readBody(resp))
+			}
+			got, err := os.ReadFile(filepath.Join(ts.root, tt.name))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(got) != tt.content {
+				t.Fatalf("expected %q, got %q", tt.content, got)
+			}
+		})
+	}
+}
+
+func TestUploadLeadingTrailingSpaces(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	resp := ts.upload(ts.root, map[string]string{"  spaced.txt": "data"})
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("expected 201, got %d; body: %s", resp.StatusCode, readBody(resp))
+	}
+	// validUploadName trims spaces, so the actual file is "spaced.txt"
+	if _, err := os.Stat(filepath.Join(ts.root, "  spaced.txt")); !os.IsNotExist(err) {
+		t.Fatal("leading-space filename should have been trimmed")
+	}
+	if _, err := os.Stat(filepath.Join(ts.root, "spaced.txt")); err != nil {
+		t.Fatal("trimmed filename 'spaced.txt' should exist")
+	}
+}
+
+func TestUploadPathNormalization(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// "folder/file.txt" is normalized to "file.txt" via filepath.Base
+	resp := ts.upload(ts.root, map[string]string{"subdir/file.txt": "data"})
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("expected 201, got %d; body: %s", resp.StatusCode, readBody(resp))
+	}
+	// Should land at root/file.txt, not root/subdir/file.txt
+	if _, err := os.Stat(filepath.Join(ts.root, "file.txt")); err != nil {
+		t.Fatal("normalized filename 'file.txt' should exist")
+	}
+}
+
+func TestUploadInvalidNameRejection(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	tests := []struct {
+		name string
+		desc string
+	}{
+		{"folder\\file.txt", "backslash"},
+		{".", "dot only"},
+		{"..", "dotdot only"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			resp := ts.upload(ts.root, map[string]string{tt.name: "x"})
+			if resp.StatusCode != http.StatusBadRequest {
+				t.Fatalf("expected 400, got %d; body: %s", resp.StatusCode, readBody(resp))
+			}
+		})
+	}
+}
+
 func TestRenameFile(t *testing.T) {
 	ts, cleanup := setupTestServer(t)
 	defer cleanup()

@@ -353,6 +353,14 @@ frontend/src/
 - Backend `GET /api/files/search` already functional; no backend changes needed
 - TypeScript, ESLint, and production build all pass clean
 
+### Priority 5 — Upload Reliability (Slice 1)
+- Added `TestUploadSpecialCharacters` — 8 test cases for filenames with spaces, unicode, symbols, mixed punctuation
+- Added `TestUploadLeadingTrailingSpaces` — verifies `validUploadName` trims leading/trailing spaces
+- Added `TestUploadPathNormalization` — verifies `filepath.Base` strips directory components from filenames
+- Added `TestUploadInvalidNameRejection` — verifies backslash, `.`, `..` return 400
+- Reviewed upload error cleanup paths: partial files and job IDs are always removed on failure
+- Frontend typecheck + lint clean
+
 ### Session — Columns Removal, Container Styling, Drives View Extraction
 - **Columns removed**: Deleted `FileColumnView.tsx` + `FileColumnView.module.css`; removed `'columns'` from `ViewMode` type; deleted `buildColumnPath` utility; cleaned columns branch from `FilesView.tsx`; removed `viewModeBeforeTrash` ref; removed "Columns" menu item from `AppMenuBar.tsx`; removed `'view-columns': Columns3` icon mapping; cleared columns assertion from test
 - **Container styling**: Added `border: 1px solid var(--color-border-subtle)` + `border-radius: var(--radius-md)` + `margin: var(--space-md)` to both `.fileList` (FileListView.module.css) and `.fileGrid` (FileGridView.module.css) — no background
