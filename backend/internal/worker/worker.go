@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/volum-app/volum/backend/internal/jobs"
@@ -130,7 +129,7 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 	if job.Type == jobs.TypeMove && w.guard.IsRoot(source) {
 		return errors.New("operation is not allowed on a configured root")
 	}
-	if containsPath(source, destination) {
+	if security.PathInside(source, destination) {
 		return errors.New("destination cannot be inside the source path")
 	}
 	items, processedBytes, processedItems, err := w.transferItems(ctx, job, source, destination)
@@ -622,14 +621,6 @@ func (w *Worker) finishMove(ctx context.Context, job jobs.Job, source string) er
 		return err
 	}
 	return w.store.CreateAuditLog(ctx, "move", w.publicPath(source), fmt.Sprintf("moved to %s", deref(job.DestinationPath)))
-}
-
-func containsPath(parent, child string) bool {
-	rel, err := filepath.Rel(parent, child)
-	if err != nil {
-		return false
-	}
-	return rel == "." || (rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)))
 }
 
 func deref(value *string) string {

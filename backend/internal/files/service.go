@@ -558,7 +558,3 @@ func validBaseName(name string) bool {
 	return name != "" && name == filepath.Base(name) && name != "." && name != ".."
 }
 
-func isPathInside(root, path string) bool {
-	rel, err := filepath.Rel(root, path)
-	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
-}

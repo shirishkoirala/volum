@@ -110,7 +110,7 @@ func (g *RootGuard) Resolve(input string) (string, error) {
 
 	var best *Root
 	for _, root := range g.roots {
-		if !pathInside(root.Path, publicPath) {
+		if !PathInside(root.Path, publicPath) {
 			continue
 		}
 		if best == nil || len(root.Path) > len(best.Path) {
@@ -136,7 +136,7 @@ func (g *RootGuard) Resolve(input string) (string, error) {
 			resolved = filepath.Clean(evaluated)
 		}
 	}
-	if pathInside(best.InternalPath, resolved) {
+	if PathInside(best.InternalPath, resolved) {
 		return resolved, nil
 	}
 	return "", ErrOutsideRoots
@@ -149,7 +149,7 @@ func (g *RootGuard) PublicPath(internal string) (string, error) {
 	}
 	var best *Root
 	for _, root := range g.roots {
-		if !pathInside(root.InternalPath, internalPath) {
+		if !PathInside(root.InternalPath, internalPath) {
 			continue
 		}
 		if best == nil || len(root.InternalPath) > len(best.InternalPath) {
@@ -189,11 +189,11 @@ func (g *RootGuard) RootFor(path string) (Root, bool) {
 	internalPath, internalErr := cleanAbs(path)
 	var best *Root
 	for _, root := range g.roots {
-		if publicErr == nil && pathInside(root.Path, publicPath) && (best == nil || len(root.Path) > len(best.Path)) {
+		if publicErr == nil && PathInside(root.Path, publicPath) && (best == nil || len(root.Path) > len(best.Path)) {
 			item := root
 			best = &item
 		}
-		if internalErr == nil && pathInside(root.InternalPath, internalPath) && (best == nil || len(root.InternalPath) > len(best.InternalPath)) {
+		if internalErr == nil && PathInside(root.InternalPath, internalPath) && (best == nil || len(root.InternalPath) > len(best.InternalPath)) {
 			item := root
 			best = &item
 		}
@@ -231,7 +231,7 @@ func containsTraversal(input string) bool {
 	return false
 }
 
-func pathInside(root, path string) bool {
+func PathInside(root, path string) bool {
 	if path == root {
 		return true
 	}
