@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { isAudioExtension, isImageExtension, isTextExtension, isVideoExtension } from '../../utils/fileTypes';
 import { downloadUrl, rawUrl } from '../../api/client';
 import type { FileEntry } from '../../api/client';
+import { previewBlockedReason } from '../../utils/preview';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/shared';
 import { Dialog } from './Dialog';
@@ -29,9 +30,11 @@ export function PreviewContent({ entry, onClose, onDownload }: PreviewContentPro
   const showAudio = isAudioExtension(entry.name);
   const showText = isTextExtension(entry.name);
   const showPDF = /\.pdf$/i.test(entry.name);
+  const blockedReason = previewBlockedReason(entry);
+  const previewBlocked = blockedReason !== null;
 
   useEffect(() => {
-    if (!showText) return;
+    if (!showText || previewBlocked) return;
     const controller = new AbortController();
     setTextContent(null);
     setTextError(null);
@@ -46,7 +49,7 @@ export function PreviewContent({ entry, onClose, onDownload }: PreviewContentPro
       });
 
     return () => controller.abort();
-  }, [fileUrl, showText]);
+  }, [fileUrl, previewBlocked, showText]);
 
   return (
     <div className={styles.previewShell}>
@@ -68,24 +71,30 @@ export function PreviewContent({ entry, onClose, onDownload }: PreviewContentPro
       </div>
 
       <div className={styles.previewContent}>
-        {showImage && <img alt={entry.name} className={styles.previewImage} src={fileUrl} />}
-        {showVideo && <video className={styles.previewVideo} controls src={fileUrl} />}
-        {showAudio && (
-          <div className={styles.previewAudioWrapper}>
-            <p className={styles.previewAudioLabel}>{entry.name}</p>
-            <audio controls src={fileUrl} />
+        {previewBlocked && (
+          <div className={styles.previewUnsupported}>
+            <p>{blockedReason}</p>
+            <a href={downloadUrl(entry.path)} target="_blank" rel="noopener noreferrer">Download instead</a>
           </div>
         )}
-        {showText && textContent !== null && (
+        {!previewBlocked && showImage && <img alt={entry.name} className={styles.previewImage} src={fileUrl} />}
+        {!previewBlocked && showVideo && <video className={styles.previewVideo} controls preload="metadata" src={fileUrl} />}
+        {!previewBlocked && showAudio && (
+          <div className={styles.previewAudioWrapper}>
+            <p className={styles.previewAudioLabel}>{entry.name}</p>
+            <audio controls preload="metadata" src={fileUrl} />
+          </div>
+        )}
+        {!previewBlocked && showText && textContent !== null && (
           <pre className={styles.previewText}><code>{textContent}</code></pre>
         )}
-        {showText && textError !== null && (
+        {!previewBlocked && showText && textError !== null && (
           <div className={styles.previewError}>{textError}</div>
         )}
-        {showPDF && (
+        {!previewBlocked && showPDF && (
           <iframe className={styles.previewIframe} src={fileUrl} title={entry.name} />
         )}
-        {!showImage && !showVideo && !showAudio && !showText && !showPDF && (
+        {!previewBlocked && !showImage && !showVideo && !showAudio && !showText && !showPDF && (
           <div className={styles.previewUnsupported}>
             <p>No preview available for this file type.</p>
             <a href={downloadUrl(entry.path)} target="_blank" rel="noopener noreferrer">Download instead</a>

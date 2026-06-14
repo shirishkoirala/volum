@@ -257,6 +257,13 @@ frontend/src/
 - Frontend `getFiles` accepts paging options; `useFileBrowser` loads the first 600 entries and appends more pages on demand.
 - `useIncrementalEntries` now supports a backend total count and remote `onLoadMore` callback.
 
+### Priority 1 — Large Folder Performance, Slice 3
+- Added preview policy helpers in `frontend/src/utils/preview.ts`.
+- Thumbnails are skipped for GIFs and images larger than 8 MB; file icons are used instead.
+- Inline text previews are blocked above 1 MB, image previews above 40 MB, and embedded PDF previews above 50 MB.
+- Video/audio previews now use `preload="metadata"`.
+- Browser smoke test used a temporary 1 MB+ log file and confirmed the fallback rendered without dumping the file contents.
+
 ### Task 10 — Sidebar Removed, Favorites → Desktop Icons
 - Deleted `FilesSidebar.tsx` and `FilesSidebar.module.css`
 - Removed sidebar rendering (overlay + normal) from FilesView.tsx
