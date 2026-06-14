@@ -273,6 +273,7 @@ frontend/src/
 - Mobile preview modals can navigate between previewable files without closing the modal or changing folders.
 - Desktop preview windows reuse the existing preview window and update its title/icon/content when moving between files.
 - Preview actions now include Copy path with a short copied state and Share, alongside existing download/open raw actions.
+- Preview cleanup is explicit: text fetches abort, image srcs clear, video/audio pause and unload, and PDF iframes navigate away on close/file changes.
 - Added focused preview navigation test coverage.
 
 ### Task 10 — Sidebar Removed, Favorites → Desktop Icons

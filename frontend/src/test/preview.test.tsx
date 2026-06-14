@@ -29,6 +29,7 @@ function entry(overrides: Partial<FileEntry>): FileEntry {
 describe('preview policy', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('allows thumbnails only for reasonably sized non-gif images', () => {
@@ -53,6 +54,36 @@ describe('preview policy', () => {
     expect(screen.getByText('Text preview is limited to 1 MB to keep the browser responsive.')).toBeInTheDocument();
     expect(screen.getByText('Download instead')).toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('aborts text preview fetches when the preview closes', () => {
+    let signal: AbortSignal | undefined;
+    const fetchSpy = vi.fn((_url: string, init?: RequestInit) => {
+      signal = init?.signal ?? undefined;
+      return new Promise<Response>(() => undefined);
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const { unmount } = render(<PreviewContent entry={entry({ name: 'notes.txt' })} />);
+
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    expect(signal?.aborted).toBe(false);
+
+    unmount();
+
+    expect(signal?.aborted).toBe(true);
+  });
+
+  it('unloads media previews when the preview closes', () => {
+    const pauseSpy = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined);
+    const loadSpy = vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => undefined);
+
+    const { unmount } = render(<PreviewContent entry={entry({ name: 'clip.mp4', path: '/storage/clip.mp4' })} />);
+
+    unmount();
+
+    expect(pauseSpy).toHaveBeenCalledOnce();
+    expect(loadSpy).toHaveBeenCalledOnce();
   });
 
   it('renders next and previous preview controls when provided', async () => {

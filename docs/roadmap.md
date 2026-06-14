@@ -65,6 +65,7 @@ Completed slice:
 - ArrowLeft/ArrowRight shortcuts work while a preview is open.
 - Desktop preview windows update the existing preview window instead of opening extra windows.
 - Preview actions include copy path, share, download, and open raw file.
+- Text preview fetches abort on close/file change, and media/PDF preview elements explicitly unload resources on close/file change.
 
 Why now:
 

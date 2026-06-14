@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { isAudioExtension, isImageExtension, isTextExtension, isVideoExtension } from '../../utils/fileTypes';
 import { downloadUrl, rawUrl } from '../../api/client';
 import type { FileEntry } from '../../api/client';
@@ -9,6 +9,71 @@ import { Dialog } from './Dialog';
 import styles from './Preview.module.css';
 
 type CopyStatus = 'idle' | 'copied' | 'failed';
+
+function PreviewImage({ alt, src }: { alt: string; src: string }) {
+  const imageRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const image = imageRef.current;
+    return () => {
+      if (image) image.src = '';
+    };
+  }, [src]);
+
+  return <img ref={imageRef} alt={alt} className={styles.previewImage} src={src} />;
+}
+
+function PreviewVideo({ src }: { src: string }) {
+  const mediaRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const media = mediaRef.current;
+    return () => {
+      if (!media) return;
+      media.pause();
+      media.removeAttribute('src');
+      media.load();
+    };
+  }, [src]);
+
+  return <video ref={mediaRef} className={styles.previewVideo} controls preload="metadata" src={src} />;
+}
+
+function PreviewAudio({ name, src }: { name: string; src: string }) {
+  const mediaRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const media = mediaRef.current;
+    return () => {
+      if (!media) return;
+      media.pause();
+      media.removeAttribute('src');
+      media.load();
+    };
+  }, [src]);
+
+  return (
+    <div className={styles.previewAudioWrapper}>
+      <p className={styles.previewAudioLabel}>{name}</p>
+      <audio ref={mediaRef} controls preload="metadata" src={src} />
+    </div>
+  );
+}
+
+function PreviewFrame({ name, src }: { name: string; src: string }) {
+  const frameRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    const frame = frameRef.current;
+    return () => {
+      if (!frame) return;
+      frame.src = 'about:blank';
+      frame.removeAttribute('src');
+    };
+  }, [src]);
+
+  return <iframe ref={frameRef} className={styles.previewIframe} src={src} title={name} />;
+}
 
 type PreviewModalProps = {
   entry: FileEntry;
@@ -180,23 +245,16 @@ export function PreviewContent({
             <a href={downloadUrl(entry.path)} target="_blank" rel="noopener noreferrer">Download instead</a>
           </div>
         )}
-        {!previewBlocked && showImage && <img alt={entry.name} className={styles.previewImage} src={fileUrl} />}
-        {!previewBlocked && showVideo && <video className={styles.previewVideo} controls preload="metadata" src={fileUrl} />}
-        {!previewBlocked && showAudio && (
-          <div className={styles.previewAudioWrapper}>
-            <p className={styles.previewAudioLabel}>{entry.name}</p>
-            <audio controls preload="metadata" src={fileUrl} />
-          </div>
-        )}
+        {!previewBlocked && showImage && <PreviewImage alt={entry.name} src={fileUrl} />}
+        {!previewBlocked && showVideo && <PreviewVideo src={fileUrl} />}
+        {!previewBlocked && showAudio && <PreviewAudio name={entry.name} src={fileUrl} />}
         {!previewBlocked && showText && textContent !== null && (
           <pre className={styles.previewText}><code>{textContent}</code></pre>
         )}
         {!previewBlocked && showText && textError !== null && (
           <div className={styles.previewError}>{textError}</div>
         )}
-        {!previewBlocked && showPDF && (
-          <iframe className={styles.previewIframe} src={fileUrl} title={entry.name} />
-        )}
+        {!previewBlocked && showPDF && <PreviewFrame name={entry.name} src={fileUrl} />}
         {!previewBlocked && !showImage && !showVideo && !showAudio && !showText && !showPDF && (
           <div className={styles.previewUnsupported}>
             <p>No preview available for this file type.</p>
