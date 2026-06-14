@@ -1,8 +1,9 @@
-import { DragEvent, KeyboardEvent, RefObject, TouchEvent } from 'react';
+import { DragEvent, KeyboardEvent, RefObject, TouchEvent, useMemo } from 'react';
 import { FileItem } from './FileItem';
 import type { FileEntry } from '../../api/client';
 import { isPreviewableFile, openFileExternally } from '../../utils/preview';
 import type { RenameState } from '../../types';
+import { useIncrementalEntries } from '../../hooks/useIncrementalEntries';
 import styles from './FileGridView.module.css';
 
 type FileGridViewProps = {
@@ -64,6 +65,10 @@ export function FileGridView({
   onEntryTouchStart, onEntryTouchMove, onEntryTouchEnd,
   onNavigate, onPreview,
 }: FileGridViewProps) {
+  const incrementalEntries = useIncrementalEntries(filteredEntries);
+  const selectedPathSet = useMemo(() => new Set(selectedPaths), [selectedPaths]);
+  const favoritePathSet = useMemo(() => new Set(favorites), [favorites]);
+
   return (
     <section
       className={`${styles.fileGrid}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
@@ -75,17 +80,23 @@ export function FileGridView({
       onDrop={onFileAreaDrop}
       onMouseDown={onFileAreaMouseDown}
       onKeyDown={onFileAreaKeyDown}
+      onScroll={incrementalEntries.handleScroll}
       tabIndex={0}
     >
-      {filteredEntries.map((entry) => (
+      {incrementalEntries.incremental && (
+        <div className={styles.largeFolderBanner}>
+          Showing {incrementalEntries.renderedCount.toLocaleString()} of {incrementalEntries.totalCount.toLocaleString()} items
+        </div>
+      )}
+      {incrementalEntries.visibleEntries.map((entry) => (
         <FileItem
           key={entry.path}
           entry={entry}
           viewMode="grid"
-          isSelected={selectedPaths.includes(entry.path)}
+          isSelected={selectedPathSet.has(entry.path)}
           isDragOver={dragOverPath === entry.path}
           canWrite={canWrite}
-          isFavorited={favorites.includes(entry.path)}
+          isFavorited={favoritePathSet.has(entry.path)}
           renameState={renameState}
           renameInputRef={renameInputRef}
           onContextMenu={(event) => onContextMenu(entry, event)}
@@ -103,6 +114,11 @@ export function FileGridView({
           className={styles.gridItem}
         />
       ))}
+      {incrementalEntries.hasMore && (
+        <button type="button" className={styles.loadMoreButton} onClick={incrementalEntries.loadMore}>
+          Load {Math.min(240, incrementalEntries.totalCount - incrementalEntries.renderedCount).toLocaleString()} more
+        </button>
+      )}
       {rubberBandStyle && <div className={styles.rubberBand} style={rubberBandStyle} />}
     </section>
   );

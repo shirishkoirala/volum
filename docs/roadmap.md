@@ -10,6 +10,8 @@ Guiding principles:
 
 ## Priority 1: Large Folder Performance
 
+Status: started. The first slice caps initial rendering for large folders and progressively loads more items as the user scrolls.
+
 Users of web file managers repeatedly report slow or stuck folders with thousands of files, especially when previews or thumbnails are involved.
 
 Planned work:
@@ -19,6 +21,12 @@ Planned work:
 - Keep preview/thumbnail generation cancelable when navigation changes.
 - Add defensive preview limits for very large images, GIFs, and media files.
 - Show a clear "large folder" loading state with partial results instead of blocking the whole view.
+
+Completed slice:
+
+- Large folders render the first 240 entries instead of mounting every file item immediately.
+- Grid and list views load additional 240-item batches by scrolling near the bottom or pressing "Load more".
+- File view selection/favorite checks use `Set` lookups during rendering instead of repeated array scans.
 
 Why now:
 

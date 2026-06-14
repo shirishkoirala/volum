@@ -244,6 +244,13 @@ frontend/src/
 - Prioritized practical Volum work: large-folder performance, preview preservation/cancellation, search-result actions, duplicate handling, upload hardening, mobile layout, and constrained health/notification features.
 - Explicitly deferred full monitoring, native mobile apps, plugin marketplace, multi-board dashboard editor, and service-specific widget catalog.
 
+### Priority 1 — Large Folder Performance, Slice 1
+- Added `useIncrementalEntries` to cap large folder initial rendering at 240 entries and load 240-entry batches on near-bottom scroll or "Load more".
+- Wired incremental rendering into both `FileGridView` and `FileListView`.
+- Added a large-folder banner showing rendered count vs total count.
+- Converted selected/favorite path checks inside file rendering to `Set` lookups.
+- Browser smoke test used a temporary 720-file folder under `storage/` and confirmed 240 initial items, then 480 after loading more.
+
 ### Task 10 — Sidebar Removed, Favorites → Desktop Icons
 - Deleted `FilesSidebar.tsx` and `FilesSidebar.module.css`
 - Removed sidebar rendering (overlay + normal) from FilesView.tsx
