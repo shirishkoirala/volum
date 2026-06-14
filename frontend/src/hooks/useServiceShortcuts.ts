@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { listServices, listServiceHealth, createService, updateService as apiUpdateService, deleteService } from '../api/client';
+import { listServices, listServiceHealth, createService, updateService as apiUpdateService, deleteService, reorderServices as apiReorderServices } from '../api/client';
 import type { ServiceHealthResult, ServiceShortcut } from '../utils/services';
 
 export function useServiceShortcuts() {
@@ -79,5 +79,13 @@ export function useServiceShortcuts() {
     });
   }, []);
 
-  return { services, health, loading, addService, updateService, removeService, refreshHealth };
+  const reorderServices = useCallback(async (ids: string[]) => {
+    await apiReorderServices(ids);
+    setServices(prev => {
+      const ordered = ids.map(id => prev.find(s => s.id === id)).filter(Boolean) as ServiceShortcut[];
+      return ordered;
+    });
+  }, []);
+
+  return { services, health, loading, addService, updateService, removeService, reorderServices, refreshHealth };
 }

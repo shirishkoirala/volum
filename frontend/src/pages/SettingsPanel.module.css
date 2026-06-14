@@ -368,15 +368,38 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   display: flex;
-  justify-content: space-between;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.serviceRow.dragging {
+  opacity: 0.4;
+}
+
+.serviceRow.dragOver {
+  border-color: var(--color-brand);
+  background: var(--color-brand-bg);
+}
+
+.serviceDragHandle {
+  cursor: grab;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.serviceDragHandle:active {
+  cursor: grabbing;
 }
 
 .serviceInfo {
   align-items: center;
   display: flex;
   gap: var(--space-sm);
+  flex: 1;
+  min-width: 0;
 }
 
 .serviceInfo span:first-child {

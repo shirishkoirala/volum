@@ -69,7 +69,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   });
 
   const wallpaper = useWallpaper();
-  const { services, health: serviceHealth, addService, updateService, removeService, refreshHealth: refreshServiceHealth } = useServiceShortcuts();
+  const { services, health: serviceHealth, addService, updateService, removeService, reorderServices, refreshHealth: refreshServiceHealth } = useServiceShortcuts();
   const isMobile = useIsMobile();
   const notifPrefs = useNotificationPreferences();
 
@@ -209,6 +209,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               if (svc) desktopActions.handleOpenServiceForm(svc);
             }}
             onRemoveService={desktopActions.handleRemoveService}
+            onReorderServices={reorderServices}
           />
         );
       case 'preview': {
@@ -244,7 +245,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       default:
         return null;
     }
-  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, workspaceOpeners.openPreview, services, serviceHealth, desktopActions]);
+  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, workspaceOpeners.openPreview, services, serviceHealth, desktopActions, reorderServices]);
 
   const previewIndex = fileActions.previewEntry
     ? previewEntries.findIndex((entry) => entry.path === fileActions.previewEntry?.path)
@@ -511,6 +512,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
                 if (svc) desktopActions.handleOpenServiceForm(svc);
               }}
               onRemoveService={desktopActions.handleRemoveService}
+              onReorderServices={reorderServices}
             />
           )}
 
