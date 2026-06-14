@@ -87,6 +87,7 @@ func (s *Server) routes() {
 			r.Delete("/favorites", s.handleRemoveFavorite)
 			r.Put("/favorites/reorder", s.handleReorderFavorites)
 			r.Get("/services", s.handleListServices)
+			r.Get("/services/health", s.handleServiceHealth)
 			r.Post("/services", s.handleCreateService)
 			r.Put("/services/{id}", s.handleUpdateService)
 			r.Delete("/services/{id}", s.handleDeleteService)

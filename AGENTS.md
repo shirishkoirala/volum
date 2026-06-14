@@ -223,7 +223,26 @@ frontend/src/
 - **YAGNI** — implement only what's currently needed, no speculative features
 - **SOLID** — single responsibility, open-closed, interface segregation, dependency inversion
 
+## Product Roadmap
+
+- Roadmap lives in `docs/roadmap.md`; README links to it from the Development section.
+- Current priority order: large-folder performance, preview window polish, search-result actions, conflict handling, upload reliability, mobile/responsive desktop, service health/notifications, then service widgets/integrations.
+- Keep Volum focused on reliable file management with desktop-style service shortcuts; avoid turning it into a full monitoring suite or dashboard widget platform too early.
+
 ## Task History
+
+### Service Health Checks
+- Added optional `healthUrl` to desktop services in SQLite, backend store, API request/response types, and frontend service shortcut types.
+- Added `GET /api/services/health` authenticated endpoint; backend checks only services with a health URL, uses a 3s timeout, and limits concurrent checks.
+- Service form now includes optional "Health Check URL"; invalid values are rejected client-side.
+- Desktop service icons show a small checking/healthy/unhealthy indicator when `healthUrl` is configured.
+- Frontend health polling is visibility-aware and desktop-view-aware, refreshing immediately when useful and then every 60s only while visible on the desktop.
+- Tests cover backend health endpoint/store migration and frontend service form/desktop health indicator behavior.
+
+### Roadmap From Adjacent App Requests
+- Added `docs/roadmap.md` based on recurring File Browser, Homarr, and Homepage requests.
+- Prioritized practical Volum work: large-folder performance, preview preservation/cancellation, search-result actions, duplicate handling, upload hardening, mobile layout, and constrained health/notification features.
+- Explicitly deferred full monitoring, native mobile apps, plugin marketplace, multi-board dashboard editor, and service-specific widget catalog.
 
 ### Task 10 — Sidebar Removed, Favorites → Desktop Icons
 - Deleted `FilesSidebar.tsx` and `FilesSidebar.module.css`
@@ -287,4 +306,3 @@ frontend/src/
 - **DesktopView.module.css**: Removed `.driveContents`, `.driveContent`, `.drivePartitionItem`, `.drivePartitionInfo`, `.drivePartitionMeter`, `.partitionUnmoved` and their hover/media styles — kept only desktop icon CSS
 - **Home.tsx**: Renders `DrivesView` when `activeView === 'drives'`; passes `handleBackToDesktop` (sets `showingMyPC = false`)
 - TypeScript, ESLint, and production build (`npm run build`) all pass clean
-

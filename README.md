@@ -90,6 +90,8 @@ npm run lint         # eslint .
 npm run build        # tsc && vite build
 ```
 
+For upcoming product priorities, see [docs/roadmap.md](docs/roadmap.md).
+
 ## Architecture
 
 ### Backend (`backend/`)

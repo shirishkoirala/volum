@@ -3,6 +3,17 @@ export type ServiceShortcut = {
   name: string;
   url: string;
   iconUrl?: string;
+  healthUrl?: string;
+};
+
+export type ServiceHealthStatus = 'healthy' | 'unhealthy';
+
+export type ServiceHealthResult = {
+  serviceId: string;
+  status: ServiceHealthStatus;
+  checkedAt: string;
+  statusCode?: number;
+  error?: string;
 };
 
 export function validUrl(str: string): boolean {

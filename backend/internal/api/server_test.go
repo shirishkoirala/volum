@@ -200,6 +200,70 @@ func TestGetRoots(t *testing.T) {
 	}
 }
 
+func TestServiceHealthEndpoint(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	healthyServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer healthyServer.Close()
+
+	unhealthyServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer unhealthyServer.Close()
+
+	createHealthy := ts.post("/api/services", map[string]string{
+		"name":      "Healthy",
+		"url":       healthyServer.URL,
+		"healthUrl": healthyServer.URL + "/health",
+	})
+	if createHealthy.StatusCode != http.StatusCreated {
+		t.Fatalf("expected healthy service create 201, got %d", createHealthy.StatusCode)
+	}
+	var healthySvc desktop.ServiceRecord
+	readJSON(t, createHealthy, &healthySvc)
+
+	createUnhealthy := ts.post("/api/services", map[string]string{
+		"name":      "Unhealthy",
+		"url":       unhealthyServer.URL,
+		"healthUrl": unhealthyServer.URL + "/health",
+	})
+	if createUnhealthy.StatusCode != http.StatusCreated {
+		t.Fatalf("expected unhealthy service create 201, got %d", createUnhealthy.StatusCode)
+	}
+	var unhealthySvc desktop.ServiceRecord
+	readJSON(t, createUnhealthy, &unhealthySvc)
+
+	createUnchecked := ts.post("/api/services", map[string]string{
+		"name": "Unchecked",
+		"url":  "https://unchecked.example.com",
+	})
+	if createUnchecked.StatusCode != http.StatusCreated {
+		t.Fatalf("expected unchecked service create 201, got %d", createUnchecked.StatusCode)
+	}
+	var uncheckedSvc desktop.ServiceRecord
+	readJSON(t, createUnchecked, &uncheckedSvc)
+
+	resp := ts.get("/api/services/health")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d; body: %s", resp.StatusCode, readBody(resp))
+	}
+	var body map[string]serviceHealthResult
+	readJSON(t, resp, &body)
+
+	if body[healthySvc.ID].Status != "healthy" || body[healthySvc.ID].StatusCode != http.StatusNoContent {
+		t.Fatalf("expected healthy result, got %#v", body[healthySvc.ID])
+	}
+	if body[unhealthySvc.ID].Status != "unhealthy" || body[unhealthySvc.ID].StatusCode != http.StatusServiceUnavailable {
+		t.Fatalf("expected unhealthy result, got %#v", body[unhealthySvc.ID])
+	}
+	if _, ok := body[uncheckedSvc.ID]; ok {
+		t.Fatal("did not expect service without health URL in health response")
+	}
+}
+
 func TestGetFiles(t *testing.T) {
 	ts, cleanup := setupTestServer(t)
 	defer cleanup()

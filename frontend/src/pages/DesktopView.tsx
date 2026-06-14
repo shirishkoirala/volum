@@ -4,7 +4,7 @@ import { IconImg } from '../components/ui/shared';
 import { preferencesIconUrl, jobsIconUrl, multidiskIconUrl, folderBookmarksIconUrl, filesIconUrl } from '../api/icons';
 import type { TrashEntry, Job } from '../api/client';
 import { countActiveTransfers } from '../utils/jobs';
-import type { ServiceShortcut } from '../utils/services';
+import type { ServiceHealthResult, ServiceShortcut } from '../utils/services';
 import styles from './DesktopView.module.css';
 
 type DesktopViewProps = {
@@ -13,6 +13,7 @@ type DesktopViewProps = {
   pendingTransferCount?: number;
   favorites: string[];
   services: ServiceShortcut[];
+  serviceHealth: Record<string, ServiceHealthResult>;
   onNavigateTo: (path: string) => void;
   onNavigateToTrash: () => void;
   onOpenSettings: () => void;
@@ -54,6 +55,7 @@ function saveOrder(ids: string[]) {
 
 export function DesktopView({
   trashEntries, jobs, pendingTransferCount = 0, favorites, services,
+  serviceHealth,
   onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onOpenService, onShowMyPC,
   wallpaperStyle,
   onItemContextMenu,
@@ -163,6 +165,10 @@ export function DesktopView({
     }
 
     for (const svc of services) {
+      const health = svc.healthUrl ? serviceHealth[svc.id] : undefined;
+      const healthLabel = svc.healthUrl
+        ? `${svc.name} health: ${health?.status ?? 'checking'}`
+        : undefined;
       items.push({
         id: `svc-${svc.id}`,
         type: 'serviceShortcut',
@@ -183,6 +189,13 @@ export function DesktopView({
                 </svg>
               </div>
             )}
+            {svc.healthUrl && (
+              <span
+                className={`${styles.serviceHealthDot} ${health?.status === 'healthy' ? styles.serviceHealthHealthy : health?.status === 'unhealthy' ? styles.serviceHealthUnhealthy : styles.serviceHealthChecking}`}
+                title={healthLabel}
+                aria-label={healthLabel}
+              />
+            )}
           </div>
         ),
       });
@@ -199,7 +212,7 @@ export function DesktopView({
       if (!used.has(item.id)) ordered.push(item);
     }
     return ordered;
-  }, [trashEntries, favorites, services, activeTransferCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onOpenService, onNavigateTo]);
+  }, [trashEntries, favorites, services, serviceHealth, activeTransferCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onOpenService, onNavigateTo]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';

@@ -76,7 +76,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   const nav = useNavigation(browser.devices, browser.jobs, browser.trashEntries.length, viewPref.currentPath, pendingUploadCount);
   const { favorites, addFavorite, removeFavorite } = useFavorites(viewPref.currentPath);
   const wallpaper = useWallpaper();
-  const { services, addService, updateService, removeService } = useServiceShortcuts();
+  const { services, health: serviceHealth, addService, updateService, removeService, refreshHealth: refreshServiceHealth } = useServiceShortcuts();
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
 
@@ -111,6 +111,30 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     trashCount: browser.trashEntries.length,
     wm,
   });
+
+  useEffect(() => {
+    const hasHealthChecks = services.some((service) => service.healthUrl);
+    if (!hasHealthChecks) return;
+
+    const shouldRefresh = () => nav.activeView === 'desktop' && document.visibilityState === 'visible';
+    if (shouldRefresh()) {
+      void refreshServiceHealth();
+    }
+
+    const handleVisibilityChange = () => {
+      if (shouldRefresh()) void refreshServiceHealth();
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    const interval = window.setInterval(() => {
+      if (shouldRefresh()) void refreshServiceHealth();
+    }, 60_000);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.clearInterval(interval);
+    };
+  }, [services, nav.activeView, refreshServiceHealth]);
 
   // ── Render window content from type+params ──────────────
   const renderWindow = useCallback((win: WindowState) => {
@@ -168,6 +192,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     viewPref: { currentPath: viewPref.currentPath, setCurrentPath: viewPref.setCurrentPath },
     selection,
     removeFavorite, addService, updateService, removeService,
+    refreshServiceHealth,
     serviceFormData: menus.serviceFormData,
     setDesktopContextMenu: menus.setDesktopContextMenu,
     setServiceFormData: menus.setServiceFormData,
@@ -372,7 +397,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             <DesktopView
               trashEntries={browser.trashEntries} jobs={browser.jobs}
               pendingTransferCount={pendingUploadCount}
-              favorites={favorites} services={services}
+              favorites={favorites} services={services} serviceHealth={serviceHealth}
               onNavigateTo={workspaceOpeners.openFiles}
               onNavigateToTrash={workspaceOpeners.openTrash}
               onOpenSettings={workspaceOpeners.openSettings}

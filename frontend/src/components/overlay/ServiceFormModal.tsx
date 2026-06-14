@@ -9,7 +9,7 @@ type FaviconStatus = 'idle' | 'detecting' | 'found' | 'not-found';
 
 type ServiceFormModalProps = {
   initial?: ServiceShortcut;
-  onSave: (data: { name: string; url: string; iconUrl?: string }) => void;
+  onSave: (data: { name: string; url: string; iconUrl?: string; healthUrl?: string }) => void;
   onClose: () => void;
 };
 
@@ -18,8 +18,9 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
   const [name, setName] = useState(initial?.name ?? '');
   const [url, setUrl] = useState(initial?.url ?? '');
   const [iconUrl, setIconUrl] = useState(initial?.iconUrl ?? '');
+  const [healthUrl, setHealthUrl] = useState(initial?.healthUrl ?? '');
   const [error, setError] = useState<string | null>(null);
-  const [touched, setTouched] = useState({ name: false, url: false });
+  const [touched, setTouched] = useState({ name: false, url: false, healthUrl: false });
   const [faviconStatus, setFaviconStatus] = useState<FaviconStatus>('idle');
   const [debouncedUrl, setDebouncedUrl] = useState('');
 
@@ -55,11 +56,15 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
     if (!name.trim()) { setError('Name is required.'); return; }
     if (!url.trim()) { setError('URL is required.'); return; }
     if (!validUrl(url.trim())) { setError('Enter a valid http:// or https:// URL.'); return; }
+    if (healthUrl.trim() && !validUrl(healthUrl.trim())) { setError('Enter a valid health check http:// or https:// URL.'); return; }
     onClose();
-    onSave({ name: name.trim(), url: url.trim(), iconUrl: iconUrl.trim() || undefined });
+    onSave({ name: name.trim(), url: url.trim(), iconUrl: iconUrl.trim() || undefined, healthUrl: healthUrl.trim() || undefined });
   };
 
   const urlError = touched.url && url.trim() && !validUrl(url.trim())
+    ? 'Must be a valid http:// or https:// URL'
+    : null;
+  const healthUrlError = touched.healthUrl && healthUrl.trim() && !validUrl(healthUrl.trim())
     ? 'Must be a valid http:// or https:// URL'
     : null;
 
@@ -132,6 +137,20 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
             <span className={dStyles.dialogHelp}>Leave empty to auto-detect from URL</span>
           )}
         </div>
+      </label>
+      <label className={dStyles.dialogField} htmlFor="service-health-url">
+        <span>Health Check URL (optional)</span>
+        <input
+          id="service-health-url"
+          aria-label="Health Check URL (optional)"
+          value={healthUrl}
+          onChange={(e) => { setHealthUrl(e.target.value); setError(null); }}
+          onBlur={() => setTouched((p) => ({ ...p, healthUrl: true }))}
+          placeholder="https://example.com/health"
+          onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+        />
+        {healthUrlError && <p className={dStyles.dialogError}>{healthUrlError}</p>}
+        <span className={dStyles.dialogHelp}>Used only for the desktop health indicator.</span>
       </label>
       {error && <p className={dStyles.dialogError}>{error}</p>}
     </Dialog>

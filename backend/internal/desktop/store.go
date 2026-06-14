@@ -13,6 +13,7 @@ type ServiceRecord struct {
 	Name      string `json:"name"`
 	URL       string `json:"url"`
 	IconURL   string `json:"iconUrl,omitempty"`
+	HealthURL string `json:"healthUrl,omitempty"`
 	Position  int    `json:"position"`
 	CreatedAt string `json:"createdAt,omitempty"`
 }
@@ -71,7 +72,7 @@ func (s *Store) ReorderFavorites(ctx context.Context, paths []string) error {
 
 func (s *Store) ListServices(ctx context.Context) ([]ServiceRecord, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, name, url, COALESCE(icon_url, ''), position, created_at FROM desktop_services ORDER BY position, created_at`,
+		`SELECT id, name, url, COALESCE(icon_url, ''), COALESCE(health_url, ''), position, created_at FROM desktop_services ORDER BY position, created_at`,
 	)
 	if err != nil {
 		return nil, err
@@ -81,7 +82,7 @@ func (s *Store) ListServices(ctx context.Context) ([]ServiceRecord, error) {
 	for rows.Next() {
 		var svc ServiceRecord
 		var created time.Time
-		if err := rows.Scan(&svc.ID, &svc.Name, &svc.URL, &svc.IconURL, &svc.Position, &created); err != nil {
+		if err := rows.Scan(&svc.ID, &svc.Name, &svc.URL, &svc.IconURL, &svc.HealthURL, &svc.Position, &created); err != nil {
 			return nil, err
 		}
 		svc.CreatedAt = created.Format(time.RFC3339)
@@ -90,12 +91,12 @@ func (s *Store) ListServices(ctx context.Context) ([]ServiceRecord, error) {
 	return services, rows.Err()
 }
 
-func (s *Store) CreateService(ctx context.Context, name, url, iconURL string) (*ServiceRecord, error) {
+func (s *Store) CreateService(ctx context.Context, name, url, iconURL, healthURL string) (*ServiceRecord, error) {
 	id := uuid.New().String()
 	now := time.Now().UTC()
 	if _, err := s.db.ExecContext(ctx,
-		`INSERT INTO desktop_services (id, name, url, icon_url, position, created_at) VALUES (?, ?, ?, ?, 0, ?)`,
-		id, name, url, iconURL, now,
+		`INSERT INTO desktop_services (id, name, url, icon_url, health_url, position, created_at) VALUES (?, ?, ?, ?, ?, 0, ?)`,
+		id, name, url, iconURL, healthURL, now,
 	); err != nil {
 		return nil, err
 	}
@@ -104,15 +105,16 @@ func (s *Store) CreateService(ctx context.Context, name, url, iconURL string) (*
 		Name:      name,
 		URL:       url,
 		IconURL:   iconURL,
+		HealthURL: healthURL,
 		Position:  0,
 		CreatedAt: now.Format(time.RFC3339),
 	}, nil
 }
 
-func (s *Store) UpdateService(ctx context.Context, id, name, url, iconURL string) (*ServiceRecord, error) {
+func (s *Store) UpdateService(ctx context.Context, id, name, url, iconURL, healthURL string) (*ServiceRecord, error) {
 	res, err := s.db.ExecContext(ctx,
-		`UPDATE desktop_services SET name = ?, url = ?, icon_url = ? WHERE id = ?`,
-		name, url, iconURL, id,
+		`UPDATE desktop_services SET name = ?, url = ?, icon_url = ?, health_url = ? WHERE id = ?`,
+		name, url, iconURL, healthURL, id,
 	)
 	if err != nil {
 		return nil, err
@@ -124,8 +126,8 @@ func (s *Store) UpdateService(ctx context.Context, id, name, url, iconURL string
 	var svc ServiceRecord
 	var created time.Time
 	err = s.db.QueryRowContext(ctx,
-		`SELECT id, name, url, COALESCE(icon_url, ''), position, created_at FROM desktop_services WHERE id = ?`, id,
-	).Scan(&svc.ID, &svc.Name, &svc.URL, &svc.IconURL, &svc.Position, &created)
+		`SELECT id, name, url, COALESCE(icon_url, ''), COALESCE(health_url, ''), position, created_at FROM desktop_services WHERE id = ?`, id,
+	).Scan(&svc.ID, &svc.Name, &svc.URL, &svc.IconURL, &svc.HealthURL, &svc.Position, &created)
 	if err != nil {
 		return nil, err
 	}

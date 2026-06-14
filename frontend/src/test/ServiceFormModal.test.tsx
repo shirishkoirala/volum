@@ -24,6 +24,9 @@ describe('ServiceFormModal', () => {
     fireEvent.change(screen.getByLabelText('Icon URL (optional)'), {
       target: { value: 'https://example.com/favicon.ico' },
     });
+    fireEvent.change(screen.getByLabelText('Health Check URL (optional)'), {
+      target: { value: 'https://example.com/health' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
     expect(onClose).toHaveBeenCalledOnce();
@@ -31,6 +34,7 @@ describe('ServiceFormModal', () => {
       name: 'Codex Test Service',
       url: 'https://example.com/codex-service-test',
       iconUrl: 'https://example.com/favicon.ico',
+      healthUrl: 'https://example.com/health',
     });
   });
 
@@ -50,6 +54,7 @@ describe('ServiceFormModal', () => {
       name: 'Docs',
       url: 'https://docs.example.com',
       iconUrl: undefined,
+      healthUrl: undefined,
     });
   });
 
@@ -71,6 +76,22 @@ describe('ServiceFormModal', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it('validates health check URL when provided', () => {
+    const onSave = vi.fn();
+    const onClose = vi.fn();
+
+    render(<ServiceFormModal onSave={onSave} onClose={onClose} />);
+
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Invalid Health' } });
+    fireEvent.change(screen.getByLabelText('URL'), { target: { value: 'https://example.com' } });
+    fireEvent.change(screen.getByLabelText('Health Check URL (optional)'), { target: { value: 'ftp://example.com/health' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+    expect(screen.getByText('Enter a valid health check http:// or https:// URL.')).toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('renders edit mode with initial values and saves edits', () => {
     const onSave = vi.fn();
     const onClose = vi.fn();
@@ -82,6 +103,7 @@ describe('ServiceFormModal', () => {
           name: 'Existing',
           url: 'https://old.example.com',
           iconUrl: 'https://old.example.com/favicon.ico',
+          healthUrl: 'https://old.example.com/health',
         }}
         onSave={onSave}
         onClose={onClose}
@@ -98,6 +120,7 @@ describe('ServiceFormModal', () => {
       name: 'Existing',
       url: 'https://new.example.com',
       iconUrl: 'https://old.example.com/favicon.ico',
+      healthUrl: 'https://old.example.com/health',
     });
   });
 });

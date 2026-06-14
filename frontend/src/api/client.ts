@@ -495,7 +495,16 @@ export type ServiceInfo = {
   name: string;
   url: string;
   iconUrl: string;
+  healthUrl: string;
   position: number;
+};
+
+export type ServiceHealthInfo = {
+  serviceId: string;
+  status: 'healthy' | 'unhealthy';
+  checkedAt: string;
+  statusCode?: number;
+  error?: string;
 };
 
 export function listFavorites() {
@@ -527,17 +536,21 @@ export function listServices() {
   return request<ServiceInfo[]>('/api/services');
 }
 
-export function createService(name: string, url: string, iconUrl?: string) {
+export function listServiceHealth() {
+  return request<Record<string, ServiceHealthInfo>>('/api/services/health');
+}
+
+export function createService(name: string, url: string, iconUrl?: string, healthUrl?: string) {
   return request<ServiceInfo>('/api/services', {
     method: 'POST',
-    body: JSON.stringify({ name, url, iconUrl }),
+    body: JSON.stringify({ name, url, iconUrl, healthUrl }),
   });
 }
 
-export function updateService(id: string, name: string, url: string, iconUrl?: string) {
+export function updateService(id: string, name: string, url: string, iconUrl?: string, healthUrl?: string) {
   return request<ServiceInfo>(`/api/services/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    body: JSON.stringify({ name, url, iconUrl }),
+    body: JSON.stringify({ name, url, iconUrl, healthUrl }),
   });
 }
 
