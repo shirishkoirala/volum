@@ -231,13 +231,15 @@ frontend/src/
 
 ## Task History
 
-### Service Health Checks
+### Service Health Checks (Slices 1-3)
 - Added optional `healthUrl` to desktop services in SQLite, backend store, API request/response types, and frontend service shortcut types.
 - Added `GET /api/services/health` authenticated endpoint; backend checks only services with a health URL, uses a 3s timeout, and limits concurrent checks.
 - Service form now includes optional "Health Check URL"; invalid values are rejected client-side.
 - Desktop service icons show a small checking/healthy/unhealthy indicator when `healthUrl` is configured.
 - Frontend health polling is visibility-aware and desktop-view-aware, refreshing immediately when useful and then every 60s only while visible on the desktop.
 - Tests cover backend health endpoint/store migration and frontend service form/desktop health indicator behavior.
+- **Slice 2**: HealthChecker background goroutine, SSE health events, cached health endpoint, DB-persisted health state
+- **Slice 3**: SSE health events consumed by frontend (real-time toasts + browser notifications on health transitions), redundant notification logic removed from polling path, notification preferences hook with SettingsPanel toggle (localStorage), job/health browser notifications respect user preference
 
 ### Roadmap From Adjacent App Requests
 - Added `docs/roadmap.md` based on recurring File Browser, Homarr, and Homepage requests.

@@ -38,6 +38,7 @@ import { useNavStack } from '../hooks/useNavStack';
 import { useDesktopActions } from '../hooks/useDesktopActions';
 import { useWorkspaceOpeners } from '../hooks/useWorkspaceOpeners';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
 import { useWindowManager, type WindowState } from '../contexts/WindowManager';
 import { CommandsContext, type WindowCommands } from '../contexts/WindowCommands';
 import { ShellContext } from '../contexts/ShellContext';
@@ -67,24 +68,27 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     session,
   });
 
-  // SSE connection for job badges (dock + desktop). Action handlers unused — JobsPage has its own.
+  const wallpaper = useWallpaper();
+  const { services, health: serviceHealth, addService, updateService, removeService, refreshHealth: refreshServiceHealth } = useServiceShortcuts();
+  const isMobile = useIsMobile();
+  const notifPrefs = useNotificationPreferences();
+
+  // SSE connection for job badges (dock + desktop) and health event notifications.
   useJobs(browser.setJobs, {
     session,
     sessionLoading: false,
     onRefresh: browser.refresh,
     showToast: toast.showToast,
+    services,
+    browserNotifications: notifPrefs.enabled,
   });
   const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
   const nav = useNavigation(browser.devices, browser.jobs, browser.trashEntries.length, viewPref.currentPath, pendingUploadCount);
   const { favorites, addFavorite, removeFavorite } = useFavorites(viewPref.currentPath);
-  const wallpaper = useWallpaper();
-  const { services, health: serviceHealth, addService, updateService, removeService, refreshHealth: refreshServiceHealth } = useServiceShortcuts();
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
   const [previewEntries, setPreviewEntries] = useState<FileEntry[]>([]);
-
-  const isMobile = useIsMobile();
 
   // ── Refs ──
   const filesViewRef = useRef<import('../pages/FilesView').FilesViewHandle>(null);
@@ -118,7 +122,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     wm,
   });
 
-  const showToastFn = toast.showToast;
+  // Health polling for UI state updates. Notifications are handled by SSE in useJobs.
   useEffect(() => {
     const hasHealthChecks = services.some((service) => service.healthUrl);
     if (!hasHealthChecks) return;
@@ -126,26 +130,8 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     const shouldRefresh = () => nav.activeView === 'desktop' && document.visibilityState === 'visible';
 
     async function checkHealth() {
-      const prev = prevHealthRef.current;
       const next = await refreshServiceHealth();
-      if (!next) return;
-      prevHealthRef.current = next;
-      for (const [id, result] of Object.entries(next)) {
-        const prevResult = prev[id];
-        if (!prevResult || !result) continue;
-        if (prevResult.status === 'unhealthy' && result.status === 'healthy') {
-          const svc = services.find((s) => s.id === id);
-          if (svc) showToastFn(`${svc.name} recovered`, 'success');
-        } else if (prevResult.status !== 'unhealthy' && result.status === 'unhealthy') {
-          const svc = services.find((s) => s.id === id);
-          if (svc) {
-            showToastFn(`${svc.name} health check failed`, 'error');
-            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-              new Notification(`${svc.name} health check failed`, { body: result.error ?? 'Service is unreachable' });
-            }
-          }
-        }
-      }
+      if (next) prevHealthRef.current = next;
     }
 
     if (shouldRefresh()) {
@@ -165,7 +151,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.clearInterval(interval);
     };
-  }, [services, nav.activeView, refreshServiceHealth, showToastFn]);
+  }, [services, nav.activeView, refreshServiceHealth]);
 
   // ── Desktop actions ──────────────────────────────────────
   const desktopActions = useDesktopActions({

@@ -3,17 +3,20 @@ import { cancelJob, getJobs, pauseJob, resumeJob, retryJob, retryJobItem, clearC
 import { apiUrl } from '../api/baseUrl';
 import { makeJobLabel, refreshesFiles } from '../utils/jobs';
 import type { Job, Session } from '../api/client';
+import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
 
 interface UseJobsOptions {
   session: Session | null;
   sessionLoading: boolean;
   onRefresh: () => void;
   showToast: (title: string, variant?: 'success' | 'error', message?: string) => void;
+  services?: ServiceShortcut[];
+  browserNotifications?: boolean;
 }
 
 export function useJobs(
   setJobs: React.Dispatch<React.SetStateAction<Job[]>>,
-  { session, sessionLoading, onRefresh, showToast }: UseJobsOptions,
+  { session, sessionLoading, onRefresh, showToast, services, browserNotifications }: UseJobsOptions,
 ) {
   const knownJobIds = useRef(new Set<string>());
   const jobStatuses = useRef(new Map<string, string>());
@@ -21,6 +24,10 @@ export function useJobs(
   refreshRef.current = onRefresh;
   const toastRef = useRef(showToast);
   toastRef.current = showToast;
+  const servicesRef = useRef(services);
+  servicesRef.current = services;
+  const browserNotificationsRef = useRef(true);
+  browserNotificationsRef.current = browserNotifications ?? true;
 
   useEffect(() => {
     if (sessionLoading || (session?.authEnabled && !session.authenticated)) {
@@ -50,7 +57,7 @@ export function useJobs(
         if (job.status === 'completed' && previousStatus !== 'completed' && refreshesFiles(job)) {
           refreshRef.current();
         }
-        if (typeof Notification !== 'undefined' && !knownJobIds.current.has(job.id) && Notification.permission === 'granted') {
+        if (browserNotificationsRef.current && typeof Notification !== 'undefined' && !knownJobIds.current.has(job.id) && Notification.permission === 'granted') {
           if (job.status === 'completed') {
             new Notification(makeJobLabel(job.type, 'completed'), { body: `${job.sourcePath ?? job.id}` });
           } else if (job.status === 'failed') {
@@ -61,6 +68,28 @@ export function useJobs(
       knownJobIds.current = new Set(nextJobs.map((j) => j.id));
       jobStatuses.current = new Map(nextJobs.map((j) => [j.id, j.status]));
       setJobs(nextJobs);
+    });
+    events.addEventListener('health', (event) => {
+      try {
+        const transition = JSON.parse((event as MessageEvent).data) as {
+          serviceId: string;
+          previous?: ServiceHealthResult | null;
+          current: ServiceHealthResult;
+        };
+        if (!transition.current) return;
+        const svc = servicesRef.current?.find((s) => s.id === transition.serviceId);
+        const name = svc?.name ?? transition.serviceId;
+        if (transition.current.status === 'unhealthy' && transition.previous?.status === 'healthy') {
+          toastRef.current(`${name} health check failed`, 'error');
+          if (browserNotificationsRef.current && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            new Notification(`${name} health check failed`, { body: transition.current.error ?? 'Service is unreachable' });
+          }
+        } else if (transition.current.status === 'healthy' && transition.previous?.status === 'unhealthy') {
+          toastRef.current(`${name} recovered`, 'success');
+        }
+      } catch {
+        /* ignore malformed health events */
+      }
     });
     events.onerror = () => {
       console.warn('SSE connection lost, will auto-reconnect');

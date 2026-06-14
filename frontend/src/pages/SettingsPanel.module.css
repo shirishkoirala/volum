@@ -187,6 +187,19 @@
   flex-wrap: wrap;
   gap: var(--space-sm);
   margin-top: var(--space-sm);
+  align-items: center;
+}
+
+.toggleLabel {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 6px;
+  font-size: var(--font-size-sm);
+}
+
+.toggleLabel input[type="checkbox"] {
+  accent-color: var(--color-brand);
 }
 
 .maintenanceMsg {

@@ -23,6 +23,7 @@ import {
 } from '../api/client';
 import type { WallpaperConfig } from '../utils/wallpaper';
 import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
+import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
 import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
@@ -83,6 +84,7 @@ export function SettingsPanel({
   const [newRole, setNewRole] = useState<'admin' | 'readonly'>('readonly');
   const [creatingUser, setCreatingUser] = useState(false);
   const [pwdChangeUserId, setPwdChangeUserId] = useState<string | null>(null);
+  const notifPrefs = useNotificationPreferences();
   const [pwdChangeValue, setPwdChangeValue] = useState('');
   const [userMsg, setUserMsg] = useState<string | null>(null);
   const [userError, setUserError] = useState<string | null>(null);
@@ -244,6 +246,19 @@ export function SettingsPanel({
                 <Button size="compact" onClick={onOpenShortcuts}>
                   Keyboard Shortcuts
                 </Button>
+                <label className={styles.toggleLabel}>
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.enabled}
+                    onChange={(e) => {
+                      notifPrefs.setEnabled(e.target.checked);
+                      if (e.target.checked && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+                        void Notification.requestPermission();
+                      }
+                    }}
+                  />
+                  <span>Browser notifications</span>
+                </label>
                 {session?.authEnabled && (
                   <Button size="compact" onClick={onLogout}>
                     Log Out
