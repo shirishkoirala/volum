@@ -6,7 +6,7 @@ import { joinPath, normalizeFolderPath } from '../utils/path';
 import type { TextInputDialogState } from '../components/overlay/Dialogs';
 import type { ContextMenuState } from '../types';
 
-type RunAction = (action: () => Promise<unknown>, successTitle?: string) => Promise<void>;
+export type RunAction = (action: () => Promise<unknown>, successTitle?: string) => Promise<void>;
 
 interface ArchiveCommandDeps {
   currentPath: string;

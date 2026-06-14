@@ -1,3 +1,5 @@
+import type { ServiceHealthInfo } from '../api/client';
+
 export type ServiceShortcut = {
   id: string;
   name: string;
@@ -12,15 +14,9 @@ export type ServiceShortcut = {
   lastHealthError?: string;
 };
 
-export type ServiceHealthStatus = 'healthy' | 'unhealthy';
+export type ServiceHealthResult = ServiceHealthInfo;
 
-export type ServiceHealthResult = {
-  serviceId: string;
-  status: ServiceHealthStatus;
-  checkedAt: string;
-  statusCode?: number;
-  error?: string;
-};
+export type ServiceHealthStatus = 'healthy' | 'unhealthy';
 
 export function validUrl(str: string): boolean {
   try {

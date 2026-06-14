@@ -3,8 +3,7 @@ import type { Job } from '../api/client';
 import { getJobs } from '../api/client';
 import { unsupportedUploadReason, uploadFilesWithResume, type UploadProgress } from '../utils/upload';
 import type { Toast } from '../components/overlay/Toast';
-
-type RunAction = (action: () => Promise<unknown>, successTitle?: string) => Promise<void>;
+import type { RunAction } from './useArchiveCommands';
 
 interface UploadCommandDeps {
   currentPath: string;
