@@ -70,3 +70,18 @@
   margin: 0;
   text-align: center;
 }
+
+@media (max-width: 760px) {
+  .authShell {
+    padding: var(--space-md);
+  }
+
+  .loginPanel {
+    max-width: 100%;
+    padding: var(--space-xl) var(--space-lg);
+  }
+
+  .loginPanel h1 {
+    font-size: 22px;
+  }
+}

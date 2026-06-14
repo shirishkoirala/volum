@@ -34,3 +34,22 @@
 .statusBar:empty {
   display: none;
 }
+
+@media (max-width: 760px) {
+  .statusBar {
+    height: 20px;
+    font-size: var(--font-size-3xs);
+    gap: var(--space-xs);
+    padding: 0 var(--space-xs);
+  }
+
+  .statusRight {
+    display: none;
+  }
+
+  .statusLeft {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

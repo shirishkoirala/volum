@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TrashIcon } from '../components/ui/Icon';
 import { IconImg } from '../components/ui/shared';
 import { preferencesIconUrl, jobsIconUrl, multidiskIconUrl, folderBookmarksIconUrl, filesIconUrl } from '../api/icons';
@@ -252,6 +252,37 @@ export function DesktopView({
     setDropTarget(null);
   }, []);
 
+  // ── Touch long-press context menu ────────────────────────
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressItemRef = useRef<{ item: DesktopIconItem; x: number; y: number } | null>(null);
+
+  const handleItemTouchStart = useCallback((item: DesktopIconItem, event: React.TouchEvent) => {
+    const touch = event.touches[0]!;
+    longPressItemRef.current = { item, x: touch.clientX, y: touch.clientY };
+    longPressTimerRef.current = window.setTimeout(() => {
+      const lp = longPressItemRef.current;
+      if (lp) {
+        longPressItemRef.current = null;
+        onItemContextMenu(lp.item, { clientX: lp.x, clientY: lp.y, preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.MouseEvent<HTMLElement>);
+      }
+    }, 500);
+  }, [onItemContextMenu]);
+
+  const handleItemTouchMove = useCallback(() => {
+    longPressItemRef.current = null;
+    if (longPressTimerRef.current != null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleItemTouchEnd = useCallback(() => {
+    if (longPressTimerRef.current != null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
   return (
     <div
       className={styles.desktopWrapper}
@@ -275,6 +306,9 @@ export function DesktopView({
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, item.id)}
             onDragEnd={handleDragEnd}
+            onTouchStart={(event) => handleItemTouchStart(item, event)}
+            onTouchMove={handleItemTouchMove}
+            onTouchEnd={handleItemTouchEnd}
           >
             {item.icon}
             <span className={styles.desktopIconLabel}>{item.label}</span>
