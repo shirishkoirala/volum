@@ -73,6 +73,10 @@
 
 @media (max-width: 760px) {
   .appShell {
+    grid-template-rows: 44px minmax(0, 1fr) 64px;
+  }
+
+  .appShell.withShellStatus {
     grid-template-rows: 44px minmax(0, 1fr) 24px 64px;
   }
 

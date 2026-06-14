@@ -65,13 +65,17 @@
     flex-direction: row;
     gap: 4px;
     grid-column: 1;
-    grid-row: 4;
+    grid-row: 3;
     height: 64px;
     justify-content: center;
     overflow-x: auto;
     padding: 6px;
     z-index: 10000;
     position: relative;
+  }
+
+  .dock.withShellStatus {
+    grid-row: 4;
   }
 
   .dockItem {

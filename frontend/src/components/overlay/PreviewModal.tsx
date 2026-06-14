@@ -107,7 +107,7 @@ export function PreviewContent({ entry, onClose, onDownload }: PreviewContentPro
 
 export function PreviewModal({ entry, onClose, onDownload }: PreviewModalProps) {
   return (
-    <Dialog hideHeader onClose={onClose}>
+    <Dialog hideHeader width="xl" onClose={onClose}>
       <PreviewContent entry={entry} onClose={onClose} onDownload={onDownload} />
     </Dialog>
   );

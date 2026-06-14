@@ -272,7 +272,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   // ── Derived data ─────────────────────────────────────────
 
-  const showStatusBar = !isMobile ? false : (nav.activeView !== 'settings' && nav.activeView !== 'jobs' && nav.activeView !== 'desktop' && nav.activeView !== 'drives');
+  const showStatusBar = !isMobile ? false : nav.activeView === 'trash';
 
   // ── Taskbar launcher handler ─────────────────────────────
   const handleTaskbarLauncher = useCallback((id: string) => {
@@ -342,7 +342,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const shell = (
     <>
-      <main className={styles.appShell}>
+      <main className={`${styles.appShell}${showStatusBar ? ` ${styles.withShellStatus}` : ''}`}>
         <CommandsContext.Provider value={{ commands: commandsMap, register: registerCommands, unregister: unregisterCommands }}>
         <ShellContext.Provider value={shellContext}>
         <TopBar
@@ -390,7 +390,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
             selectedCount: focusedCommands.selectedCount ?? (nav.showingTrash ? selection.selectedTrashIds.length : selection.selectedPaths.length),
           }}
         />
-        <Dock items={nav.dockItems} onActivate={handleTaskbarLauncher} />
+        <Dock items={nav.dockItems} onActivate={handleTaskbarLauncher} shellStatusVisible={showStatusBar} />
 
         <section className={styles.workspace} onClick={selection.handleWorkspaceClick}>
           {nav.activeView === 'desktop' && (

@@ -14,7 +14,7 @@ type DialogProps = {
   footer?: ReactNode;
 };
 
-export function Dialog({ title, subtitle, hideHeader, width = 'md', zIndex = 110, onClose, children, footer }: DialogProps) {
+export function Dialog({ title, subtitle, hideHeader, width = 'md', zIndex = 500, onClose, children, footer }: DialogProps) {
   useEscapeStack(onClose);
 
   return (

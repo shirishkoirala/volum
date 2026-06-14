@@ -31,13 +31,17 @@
 
 .fileStatusBar {
   align-items: center;
-  border-top: 1px solid var(--color-border-subtle);
-  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border-light);
+  color: var(--color-text-secondary);
   display: flex;
   flex-shrink: 0;
   font-size: var(--font-size-2xs);
+  gap: var(--space-sm);
   height: 24px;
+  overflow: hidden;
   padding: 0 var(--space-sm);
+  user-select: none;
   white-space: nowrap;
 }
 
@@ -186,6 +190,11 @@
 @media (max-width: 760px) {
   .filesViewContainer {
     gap: var(--space-sm);
+  }
+
+  .fileContent {
+    margin: var(--space-sm);
+    margin-bottom: 0;
   }
 
   .errorBanner {
