@@ -1,3 +1,8 @@
+html, body, #root {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
 ::-webkit-scrollbar {
   height: 6px;
   width: 6px;

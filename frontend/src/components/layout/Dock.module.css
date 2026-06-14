@@ -66,10 +66,11 @@
     gap: 4px;
     grid-column: 1;
     grid-row: 3;
-    height: 64px;
+    height: calc(64px + env(safe-area-inset-bottom, 0));
     justify-content: center;
     overflow-x: auto;
     padding: 6px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0));
     z-index: 10000;
     position: relative;
   }

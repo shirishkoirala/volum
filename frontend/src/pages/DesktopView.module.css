@@ -114,6 +114,8 @@
     gap: var(--space-md);
     grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
     padding: var(--space-md);
+    overflow-y: auto;
+    align-content: flex-start;
   }
 
   .desktopIcon {
