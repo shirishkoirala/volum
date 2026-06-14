@@ -78,4 +78,20 @@ describe('preview policy', () => {
     expect(onNext).toHaveBeenCalledOnce();
     expect(onPrevious).not.toHaveBeenCalled();
   });
+
+  it('copies the preview file path', async () => {
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    render(<PreviewContent entry={entry({ name: 'photo.jpg', path: '/storage/photos/photo.jpg' })} />);
+
+    await user.click(screen.getByTitle('Copy path'));
+
+    expect(writeText).toHaveBeenCalledWith('/storage/photos/photo.jpg');
+    expect(await screen.findByTitle('Path copied')).toBeInTheDocument();
+  });
 });
