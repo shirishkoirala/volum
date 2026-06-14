@@ -2,8 +2,10 @@ package desktop
 
 import (
 	"context"
+	"log/slog"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/volum-app/volum/backend/internal/storage"
 )
@@ -46,5 +48,34 @@ func TestServiceHealthURLRoundTrip(t *testing.T) {
 	}
 	if updated.HealthURL != "https://jellyfin.example.com/status" {
 		t.Fatalf("expected updated health URL to round trip, got %q", updated.HealthURL)
+	}
+}
+
+func TestHealthEventsBroadcastToSubscribers(t *testing.T) {
+	store, _ := newTestStore(t)
+	checker := NewHealthChecker(store, slog.Default())
+	first, unsubscribeFirst := checker.SubscribeEvents()
+	defer unsubscribeFirst()
+	second, unsubscribeSecond := checker.SubscribeEvents()
+	defer unsubscribeSecond()
+
+	transition := HealthTransition{
+		ServiceID: "svc-1",
+		Current: ServiceHealthResult{
+			ServiceID: "svc-1",
+			Status:    "unhealthy",
+		},
+	}
+	checker.publishTransition(transition, "Test Service")
+
+	for name, ch := range map[string]<-chan HealthTransition{"first": first, "second": second} {
+		select {
+		case got := <-ch:
+			if got.ServiceID != transition.ServiceID || got.Current.Status != transition.Current.Status {
+				t.Fatalf("%s subscriber got unexpected transition: %#v", name, got)
+			}
+		case <-time.After(time.Second):
+			t.Fatalf("%s subscriber did not receive transition", name)
+		}
 	}
 }

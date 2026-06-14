@@ -110,6 +110,22 @@ func TestPauseResumeJob(t *testing.T) {
 	}
 }
 
+func TestResumeNeedsAttentionJob(t *testing.T) {
+	store, ctx := setupStore(t)
+	job := createTestJob(t, store, ctx, TypeCopy)
+
+	if err := store.NeedsAttention(ctx, job.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.ResumeNeedsAttentionJob(ctx, job.ID); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := store.Get(ctx, job.ID)
+	if got.Status != StatusQueued {
+		t.Fatalf("expected queued after needs_attention resume, got %s", got.Status)
+	}
+}
+
 func TestClearCompleted(t *testing.T) {
 	store, ctx := setupStore(t)
 	job := createTestJob(t, store, ctx, TypeCopy)

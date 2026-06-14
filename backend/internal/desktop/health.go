@@ -19,13 +19,14 @@ type ServiceHealthResult struct {
 }
 
 type HealthChecker struct {
-	store    *Store
-	client   *http.Client
-	interval time.Duration
-	mu       sync.RWMutex
-	cache    map[string]ServiceHealthResult
-	events   chan HealthTransition
-	log      *slog.Logger
+	store       *Store
+	client      *http.Client
+	interval    time.Duration
+	mu          sync.RWMutex
+	cache       map[string]ServiceHealthResult
+	subscribers map[int]chan HealthTransition
+	nextSubID   int
+	log         *slog.Logger
 }
 
 type HealthTransition struct {
@@ -36,17 +37,33 @@ type HealthTransition struct {
 
 func NewHealthChecker(store *Store, log *slog.Logger) *HealthChecker {
 	return &HealthChecker{
-		store:    store,
-		client:   &http.Client{Timeout: 3 * time.Second},
-		interval: 60 * time.Second,
-		cache:    make(map[string]ServiceHealthResult),
-		events:   make(chan HealthTransition, 64),
-		log:      log.With("component", "health-checker"),
+		store:       store,
+		client:      &http.Client{Timeout: 3 * time.Second},
+		interval:    60 * time.Second,
+		cache:       make(map[string]ServiceHealthResult),
+		subscribers: make(map[int]chan HealthTransition),
+		log:         log.With("component", "health-checker"),
 	}
 }
 
-func (hc *HealthChecker) Events() <-chan HealthTransition {
-	return hc.events
+func (hc *HealthChecker) SubscribeEvents() (<-chan HealthTransition, func()) {
+	hc.mu.Lock()
+	defer hc.mu.Unlock()
+
+	hc.nextSubID++
+	id := hc.nextSubID
+	ch := make(chan HealthTransition, 16)
+	hc.subscribers[id] = ch
+
+	unsubscribe := func() {
+		hc.mu.Lock()
+		defer hc.mu.Unlock()
+		if existing, ok := hc.subscribers[id]; ok {
+			delete(hc.subscribers, id)
+			close(existing)
+		}
+	}
+	return ch, unsubscribe
 }
 
 func (hc *HealthChecker) Start(ctx context.Context) {
@@ -65,11 +82,20 @@ func (hc *HealthChecker) Start(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			hc.log.Info("health checker stopped")
-			close(hc.events)
+			hc.closeSubscribers()
 			return
 		case <-ticker.C:
 			hc.checkAll(ctx)
 		}
+	}
+}
+
+func (hc *HealthChecker) closeSubscribers() {
+	hc.mu.Lock()
+	defer hc.mu.Unlock()
+	for id, ch := range hc.subscribers {
+		delete(hc.subscribers, id)
+		close(ch)
 	}
 }
 
@@ -138,8 +164,8 @@ func (hc *HealthChecker) checkAll(ctx context.Context) {
 
 			result := hc.CheckOne(ctx, svc)
 
-			prev := hc.cache[svc.ID]
 			hc.mu.Lock()
+			prev := hc.cache[svc.ID]
 			hc.cache[svc.ID] = result
 			hc.mu.Unlock()
 
@@ -154,17 +180,25 @@ func (hc *HealthChecker) checkAll(ctx context.Context) {
 					cp := prev
 					transition.Previous = &cp
 				}
-				select {
-				case hc.events <- transition:
-				default:
-					hc.log.Warn("health event channel full, dropping transition", "service", svc.Name)
-				}
+				hc.publishTransition(transition, svc.Name)
 			}
 
 			hc.log.Debug("health check complete", "service", svc.Name, "status", result.Status)
 		}(svc)
 	}
 	wg.Wait()
+}
+
+func (hc *HealthChecker) publishTransition(transition HealthTransition, serviceName string) {
+	hc.mu.RLock()
+	for _, ch := range hc.subscribers {
+		select {
+		case ch <- transition:
+		default:
+			hc.log.Warn("health event subscriber full, dropping transition", "service", serviceName)
+		}
+	}
+	hc.mu.RUnlock()
 }
 
 func (hc *HealthChecker) CheckOne(ctx context.Context, svc ServiceRecord) ServiceHealthResult {

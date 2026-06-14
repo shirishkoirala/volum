@@ -294,6 +294,26 @@ func (s *Store) ResumeJob(ctx context.Context, id string) error {
 	return nil
 }
 
+func (s *Store) ResumeNeedsAttentionJob(ctx context.Context, id string) error {
+	now := time.Now().UTC()
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, updated_at = ?, error_message = NULL
+		WHERE id = ? AND status = ?
+	`, StatusQueued, now, id, StatusNeedsAttention)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 func (s *Store) NeedsAttention(ctx context.Context, jobID string) error {
 	now := time.Now().UTC()
 	_, err := s.db.ExecContext(ctx, `

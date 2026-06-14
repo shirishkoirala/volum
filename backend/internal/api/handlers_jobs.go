@@ -78,7 +78,8 @@ func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	healthEvents := s.healthChecker.Events()
+	healthEvents, unsubscribeHealthEvents := s.healthChecker.SubscribeEvents()
+	defer unsubscribeHealthEvents()
 
 	for {
 		select {
@@ -363,7 +364,10 @@ func (s *Server) handleResolveConflicts(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if remaining == 0 {
-		_ = s.jobs.ResumeJob(r.Context(), jobID)
+		if err := s.jobs.ResumeNeedsAttentionJob(r.Context(), jobID); err != nil {
+			writeError(w, err)
+			return
+		}
 		writeJSON(w, http.StatusOK, map[string]any{"status": "resolved", "resumed": true})
 	} else {
 		writeJSON(w, http.StatusOK, map[string]any{"status": "resolved", "resumed": false, "remainingConflicts": remaining})
