@@ -374,24 +374,10 @@ func resolveUploadConflict(destination, policy string) (string, error) {
 	case "overwrite":
 		return destination, os.RemoveAll(destination)
 	case "rename":
-		return nextAvailableUploadPath(destination)
+		return security.NextAvailablePath(destination)
 	default:
 		return "", files.ErrDestinationExists
 	}
-}
-
-func nextAvailableUploadPath(path string) (string, error) {
-	ext := filepath.Ext(path)
-	base := path[:len(path)-len(ext)]
-	for i := 1; i <= 1000; i++ {
-		candidate := fmt.Sprintf("%s (%d)%s", base, i, ext)
-		if _, err := os.Stat(candidate); errors.Is(err, os.ErrNotExist) {
-			return candidate, nil
-		} else if err != nil {
-			return "", err
-		}
-	}
-	return "", fmt.Errorf("could not find available name for %s", path)
 }
 
 func (s *Server) handleUploadStatus(w http.ResponseWriter, r *http.Request) {

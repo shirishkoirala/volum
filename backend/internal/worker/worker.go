@@ -575,7 +575,7 @@ func (w *Worker) resolveConflictDestination(ctx context.Context, source, destina
 		}
 		return destination, os.RemoveAll(destination)
 	case "rename":
-		return nextAvailablePath(destination)
+		return security.NextAvailablePath(destination)
 	}
 	return "", fmt.Errorf("destination already exists: %s", destination)
 	} else if !errors.Is(err, os.ErrNotExist) {
@@ -612,25 +612,6 @@ func (w *Worker) resolveSkipIdentical(ctx context.Context, source, destination s
 		return "", err
 	}
 	return "", errSkipDestination
-}
-
-func nextAvailablePath(path string) (string, error) {
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		return path, nil
-	} else if err != nil {
-		return "", err
-	}
-	ext := filepath.Ext(path)
-	base := path[:len(path)-len(ext)]
-	for i := 1; i <= 1000; i++ {
-		candidate := fmt.Sprintf("%s (%d)%s", base, i, ext)
-		if _, err := os.Stat(candidate); errors.Is(err, os.ErrNotExist) {
-			return candidate, nil
-		} else if err != nil {
-			return "", err
-		}
-	}
-	return "", fmt.Errorf("could not find available name for %s", path)
 }
 
 func (w *Worker) finishMove(ctx context.Context, job jobs.Job, source string) error {
@@ -680,7 +661,7 @@ func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, erro
 	}
 	archivePath := dest
 	if _, err := os.Stat(dest); err == nil {
-		archivePath, err = nextAvailablePath(dest)
+		archivePath, err = security.NextAvailablePath(dest)
 		if err != nil {
 			return "", err
 		}

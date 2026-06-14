@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/volum-app/volum/backend/internal/desktop"
 	"github.com/volum-app/volum/backend/internal/jobs"
+	"github.com/volum-app/volum/backend/internal/security"
 	"github.com/volum-app/volum/backend/internal/worker"
 )
 
@@ -267,25 +267,6 @@ type resolveItem struct {
 	Resolution string `json:"resolution"`
 }
 
-func nextAvailablePath(path string) (string, error) {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return path, nil
-	} else if err != nil {
-		return "", err
-	}
-	ext := filepath.Ext(path)
-	base := path[:len(path)-len(ext)]
-	for i := 1; i <= 1000; i++ {
-		candidate := fmt.Sprintf("%s (%d)%s", base, i, ext)
-		if _, err := os.Stat(candidate); os.IsNotExist(err) {
-			return candidate, nil
-		} else if err != nil {
-			return "", err
-		}
-	}
-	return "", fmt.Errorf("could not find available name for %s", path)
-}
-
 func (s *Server) handleResolveConflicts(w http.ResponseWriter, r *http.Request) {
 	jobID := chi.URLParam(r, "id")
 
@@ -363,7 +344,7 @@ func (s *Server) handleResolveConflicts(w http.ResponseWriter, r *http.Request) 
 			_ = s.jobs.CreateAuditLog(r.Context(), "conflict_overwrite", item.DestinationPath, details)
 
 		case "rename":
-			newDest, err := nextAvailablePath(item.DestinationPath)
+			newDest, err := security.NextAvailablePath(item.DestinationPath)
 			if err != nil {
 				writeError(w, err)
 				return

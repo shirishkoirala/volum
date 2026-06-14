@@ -2,6 +2,7 @@ package security
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -239,4 +240,23 @@ func pathInside(root, path string) bool {
 		return false
 	}
 	return rel != "." && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator))
+}
+
+func NextAvailablePath(path string) (string, error) {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return path, nil
+	} else if err != nil {
+		return "", err
+	}
+	ext := filepath.Ext(path)
+	base := path[:len(path)-len(ext)]
+	for i := 1; i <= 1000; i++ {
+		candidate := fmt.Sprintf("%s (%d)%s", base, i, ext)
+		if _, err := os.Stat(candidate); errors.Is(err, os.ErrNotExist) {
+			return candidate, nil
+		} else if err != nil {
+			return "", err
+		}
+	}
+	return "", fmt.Errorf("could not find available name for %s", path)
 }
