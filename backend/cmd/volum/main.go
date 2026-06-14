@@ -76,7 +76,9 @@ func run(log *slog.Logger) error {
 	filesService := files.NewService(guard, dirSizeCache)
 	shareStore := shares.NewStore(db)
 	desktopStore := desktop.NewStore(db)
-	server := api.New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, cfg.DB)
+	healthChecker := desktop.NewHealthChecker(desktopStore, log)
+	go healthChecker.Start(ctx)
+	server := api.New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, healthChecker, cfg.DB)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,

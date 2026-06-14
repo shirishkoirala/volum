@@ -6,6 +6,10 @@ export type ServiceShortcut = {
   healthUrl?: string;
   description?: string;
   openMode?: 'embed' | 'tab';
+  lastHealthStatus?: string;
+  lastHealthCheckedAt?: string;
+  lastHealthStatusCode?: number;
+  lastHealthError?: string;
 };
 
 export type ServiceHealthStatus = 'healthy' | 'unhealthy';

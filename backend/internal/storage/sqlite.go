@@ -94,6 +94,18 @@ func migrate(db *sql.DB) error {
 	if err := addColumnIfMissing(db, "desktop_services", "open_mode", "TEXT DEFAULT 'embed'"); err != nil {
 		return err
 	}
+	if err := addColumnIfMissing(db, "desktop_services", "last_health_status", "TEXT DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := addColumnIfMissing(db, "desktop_services", "last_health_checked_at", "DATETIME"); err != nil {
+		return err
+	}
+	if err := addColumnIfMissing(db, "desktop_services", "last_health_status_code", "INTEGER DEFAULT 0"); err != nil {
+		return err
+	}
+	if err := addColumnIfMissing(db, "desktop_services", "last_health_error", "TEXT DEFAULT ''"); err != nil {
+		return err
+	}
 	if err := addColumnIfMissing(db, "job_items", "conflict_resolution", "TEXT"); err != nil {
 		return err
 	}

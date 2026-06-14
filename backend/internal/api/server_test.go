@@ -62,7 +62,8 @@ func setupTestServer(t *testing.T) (*testServer, func()) {
 
 	_ = workerService
 
-	s := New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, filepath.Join(root, "volum.db"))
+	healthChecker := desktop.NewHealthChecker(desktopStore, slogger)
+	s := New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, healthChecker, filepath.Join(root, "volum.db"))
 
 	ctx := context.Background()
 	_, err = authStore.CreateUser(ctx, "admin", "adminpass", auth.RoleAdmin)
@@ -250,7 +251,7 @@ func TestServiceHealthEndpoint(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected 200, got %d; body: %s", resp.StatusCode, readBody(resp))
 	}
-	var body map[string]serviceHealthResult
+	var body map[string]desktop.ServiceHealthResult
 	readJSON(t, resp, &body)
 
 	if body[healthySvc.ID].Status != "healthy" || body[healthySvc.ID].StatusCode != http.StatusNoContent {

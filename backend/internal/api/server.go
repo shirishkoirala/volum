@@ -18,30 +18,32 @@ import (
 )
 
 type Server struct {
-	router    *chi.Mux
-	files     *files.Service
-	jobs      *jobs.Store
-	guard     *security.RootGuard
-	auth      *auth.Service
-	authStore *auth.Store
-	shares    *shares.Store
-	desktop   *desktop.Store
-	startTime time.Time
-	dbPath    string
+	router        *chi.Mux
+	files         *files.Service
+	jobs          *jobs.Store
+	guard         *security.RootGuard
+	auth          *auth.Service
+	authStore     *auth.Store
+	shares        *shares.Store
+	desktop       *desktop.Store
+	healthChecker *desktop.HealthChecker
+	startTime     time.Time
+	dbPath        string
 }
 
-func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service, authSt *auth.Store, shareStore *shares.Store, desktopStore *desktop.Store, dbPath string) *Server {
+func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service, authSt *auth.Store, shareStore *shares.Store, desktopStore *desktop.Store, healthChecker *desktop.HealthChecker, dbPath string) *Server {
 	s := &Server{
-		router:    chi.NewRouter(),
-		files:     filesService,
-		jobs:      jobStore,
-		guard:     guard,
-		auth:      authService,
-		authStore: authSt,
-		shares:    shareStore,
-		desktop:   desktopStore,
-		startTime: time.Now(),
-		dbPath:    dbPath,
+		router:        chi.NewRouter(),
+		files:         filesService,
+		jobs:          jobStore,
+		guard:         guard,
+		auth:          authService,
+		authStore:     authSt,
+		shares:        shareStore,
+		desktop:       desktopStore,
+		healthChecker: healthChecker,
+		startTime:     time.Now(),
+		dbPath:        dbPath,
 	}
 	s.routes()
 	return s

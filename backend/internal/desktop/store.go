@@ -9,15 +9,19 @@ import (
 )
 
 type ServiceRecord struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	URL         string `json:"url"`
-	IconURL     string `json:"iconUrl,omitempty"`
-	HealthURL   string `json:"healthUrl,omitempty"`
-	Description string `json:"description,omitempty"`
-	OpenMode    string `json:"openMode,omitempty"`
-	Position    int    `json:"position"`
-	CreatedAt   string `json:"createdAt,omitempty"`
+	ID                 string `json:"id"`
+	Name               string `json:"name"`
+	URL                string `json:"url"`
+	IconURL            string `json:"iconUrl,omitempty"`
+	HealthURL          string `json:"healthUrl,omitempty"`
+	Description        string `json:"description,omitempty"`
+	OpenMode           string `json:"openMode,omitempty"`
+	Position           int    `json:"position"`
+	CreatedAt          string `json:"createdAt,omitempty"`
+	LastHealthStatus   string `json:"lastHealthStatus,omitempty"`
+	LastHealthCheckedAt string `json:"lastHealthCheckedAt,omitempty"`
+	LastHealthStatusCode int    `json:"lastHealthStatusCode,omitempty"`
+	LastHealthError    string `json:"lastHealthError,omitempty"`
 }
 
 type Store struct {
@@ -74,7 +78,7 @@ func (s *Store) ReorderFavorites(ctx context.Context, paths []string) error {
 
 func (s *Store) ListServices(ctx context.Context) ([]ServiceRecord, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, name, url, COALESCE(icon_url, ''), COALESCE(health_url, ''), COALESCE(description, ''), COALESCE(open_mode, 'embed'), position, created_at FROM desktop_services ORDER BY position, created_at`,
+		`SELECT id, name, url, COALESCE(icon_url, ''), COALESCE(health_url, ''), COALESCE(description, ''), COALESCE(open_mode, 'embed'), position, created_at, COALESCE(last_health_status, ''), COALESCE(last_health_checked_at, ''), COALESCE(last_health_status_code, 0), COALESCE(last_health_error, '') FROM desktop_services ORDER BY position, created_at`,
 	)
 	if err != nil {
 		return nil, err
@@ -84,10 +88,14 @@ func (s *Store) ListServices(ctx context.Context) ([]ServiceRecord, error) {
 	for rows.Next() {
 		var svc ServiceRecord
 		var created time.Time
-		if err := rows.Scan(&svc.ID, &svc.Name, &svc.URL, &svc.IconURL, &svc.HealthURL, &svc.Description, &svc.OpenMode, &svc.Position, &created); err != nil {
+		var checkedAt sql.NullString
+		if err := rows.Scan(&svc.ID, &svc.Name, &svc.URL, &svc.IconURL, &svc.HealthURL, &svc.Description, &svc.OpenMode, &svc.Position, &created, &svc.LastHealthStatus, &checkedAt, &svc.LastHealthStatusCode, &svc.LastHealthError); err != nil {
 			return nil, err
 		}
 		svc.CreatedAt = created.Format(time.RFC3339)
+		if checkedAt.Valid {
+			svc.LastHealthCheckedAt = checkedAt.String
+		}
 		services = append(services, svc)
 	}
 	return services, rows.Err()
@@ -107,15 +115,18 @@ func (s *Store) CreateService(ctx context.Context, name, url, iconURL, healthURL
 		return nil, err
 	}
 	return &ServiceRecord{
-		ID:          id,
-		Name:        name,
-		URL:         url,
-		IconURL:     iconURL,
-		HealthURL:   healthURL,
-		Description: description,
-		OpenMode:    om,
-		Position:    0,
-		CreatedAt:   now.Format(time.RFC3339),
+		ID:                 id,
+		Name:               name,
+		URL:                url,
+		IconURL:            iconURL,
+		HealthURL:          healthURL,
+		Description:        description,
+		OpenMode:           om,
+		Position:           0,
+		CreatedAt:          now.Format(time.RFC3339),
+		LastHealthStatus:   "",
+		LastHealthCheckedAt: "",
+		LastHealthError:    "",
 	}, nil
 }
 
@@ -137,13 +148,17 @@ func (s *Store) UpdateService(ctx context.Context, id, name, url, iconURL, healt
 	}
 	var svc ServiceRecord
 	var created time.Time
+	var checkedAt sql.NullString
 	err = s.db.QueryRowContext(ctx,
-		`SELECT id, name, url, COALESCE(icon_url, ''), COALESCE(health_url, ''), COALESCE(description, ''), COALESCE(open_mode, 'embed'), position, created_at FROM desktop_services WHERE id = ?`, id,
-	).Scan(&svc.ID, &svc.Name, &svc.URL, &svc.IconURL, &svc.HealthURL, &svc.Description, &svc.OpenMode, &svc.Position, &created)
+		`SELECT id, name, url, COALESCE(icon_url, ''), COALESCE(health_url, ''), COALESCE(description, ''), COALESCE(open_mode, 'embed'), position, created_at, COALESCE(last_health_status, ''), COALESCE(last_health_checked_at, ''), COALESCE(last_health_status_code, 0), COALESCE(last_health_error, '') FROM desktop_services WHERE id = ?`, id,
+	).Scan(&svc.ID, &svc.Name, &svc.URL, &svc.IconURL, &svc.HealthURL, &svc.Description, &svc.OpenMode, &svc.Position, &created, &svc.LastHealthStatus, &checkedAt, &svc.LastHealthStatusCode, &svc.LastHealthError)
 	if err != nil {
 		return nil, err
 	}
 	svc.CreatedAt = created.Format(time.RFC3339)
+	if checkedAt.Valid {
+		svc.LastHealthCheckedAt = checkedAt.String
+	}
 	return &svc, nil
 }
 
@@ -157,6 +172,15 @@ func (s *Store) DeleteService(ctx context.Context, id string) error {
 		return sql.ErrNoRows
 	}
 	return nil
+}
+
+func (s *Store) UpdateServiceHealth(ctx context.Context, id, status string, statusCode int, errorMsg string) error {
+	now := time.Now().UTC().Format(time.RFC3339)
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE desktop_services SET last_health_status = ?, last_health_checked_at = ?, last_health_status_code = ?, last_health_error = ? WHERE id = ?`,
+		status, now, statusCode, errorMsg, id,
+	)
+	return err
 }
 
 func (s *Store) ReorderServices(ctx context.Context, ids []string) error {

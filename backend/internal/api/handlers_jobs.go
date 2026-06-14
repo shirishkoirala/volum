@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/volum-app/volum/backend/internal/desktop"
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/worker"
 )
@@ -43,7 +44,7 @@ func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
-	send := func() bool {
+	sendJobs := func() bool {
 		jobs, err := s.jobs.List(r.Context(), 200, 0)
 		if err != nil {
 			_, _ = fmt.Fprintf(w, "event: error\ndata: %q\n\n", err.Error())
@@ -61,19 +62,37 @@ func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
 		return true
 	}
 
-	if !send() {
+	sendHealth := func(transition desktop.HealthTransition) bool {
+		payload, err := json.Marshal(transition)
+		if err != nil {
+			return false
+		}
+		_, _ = fmt.Fprintf(w, "event: health\ndata: %s\n\n", payload)
+		flusher.Flush()
+		return true
+	}
+
+	if !sendJobs() {
 		return
 	}
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
+
+	healthEvents := s.healthChecker.Events()
+
 	for {
 		select {
 		case <-r.Context().Done():
 			return
 		case <-ticker.C:
-			if !send() {
+			if !sendJobs() {
 				return
 			}
+		case transition, ok := <-healthEvents:
+			if !ok {
+				return
+			}
+			sendHealth(transition)
 		}
 	}
 }

@@ -9,15 +9,35 @@ export function useServiceShortcuts() {
 
   useEffect(() => {
     listServices()
-      .then(data => setServices(data.map(s => ({
-        id: s.id,
-        name: s.name,
-        url: s.url,
-        iconUrl: s.iconUrl || undefined,
-        healthUrl: s.healthUrl || undefined,
-        description: s.description || undefined,
-        openMode: s.openMode === 'tab' ? 'tab' : 'embed',
-      }))))
+      .then(data => {
+        const mapped: ServiceShortcut[] = data.map(s => ({
+          id: s.id,
+          name: s.name,
+          url: s.url,
+          iconUrl: s.iconUrl || undefined,
+          healthUrl: s.healthUrl || undefined,
+          description: s.description || undefined,
+          openMode: s.openMode === 'tab' ? 'tab' : 'embed',
+          lastHealthStatus: s.lastHealthStatus || undefined,
+          lastHealthCheckedAt: s.lastHealthCheckedAt || undefined,
+          lastHealthStatusCode: s.lastHealthStatusCode || undefined,
+          lastHealthError: s.lastHealthError || undefined,
+        }));
+        setServices(mapped);
+        const healthMap: Record<string, ServiceHealthResult> = {};
+        for (const svc of mapped) {
+          if (svc.lastHealthStatus) {
+            healthMap[svc.id] = {
+              serviceId: svc.id,
+              status: svc.lastHealthStatus as ServiceHealthResult['status'],
+              checkedAt: svc.lastHealthCheckedAt ?? '',
+              statusCode: svc.lastHealthStatusCode,
+              error: svc.lastHealthError,
+            };
+          }
+        }
+        setHealth(healthMap);
+      })
       .catch(() => setServices([]))
       .finally(() => setLoading(false));
   }, []);

@@ -529,6 +529,10 @@ export type ServiceInfo = {
   description?: string;
   openMode?: 'embed' | 'tab';
   position: number;
+  lastHealthStatus?: string;
+  lastHealthCheckedAt?: string;
+  lastHealthStatusCode?: number;
+  lastHealthError?: string;
 };
 
 export type ServiceHealthInfo = {
