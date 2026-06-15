@@ -52,18 +52,19 @@ type Job struct {
 }
 
 type Item struct {
-	ID              string    `json:"id"`
-	JobID           string    `json:"jobId"`
-	SourcePath      string    `json:"sourcePath"`
-	DestinationPath string    `json:"destinationPath"`
-	TempPath        *string   `json:"tempPath,omitempty"`
-	SizeBytes       int64     `json:"sizeBytes"`
-	ProcessedBytes  int64     `json:"processedBytes"`
-	Status          Status    `json:"status"`
-	ErrorMessage    *string   `json:"errorMessage,omitempty"`
-	Checksum        *string   `json:"checksum,omitempty"`
-	CreatedAt       time.Time `json:"createdAt"`
-	UpdatedAt       time.Time `json:"updatedAt"`
+	ID                 string    `json:"id"`
+	JobID              string    `json:"jobId"`
+	SourcePath         string    `json:"sourcePath"`
+	DestinationPath    string    `json:"destinationPath"`
+	TempPath           *string   `json:"tempPath,omitempty"`
+	SizeBytes          int64     `json:"sizeBytes"`
+	ProcessedBytes     int64     `json:"processedBytes"`
+	Status             Status    `json:"status"`
+	ErrorMessage       *string   `json:"errorMessage,omitempty"`
+	Checksum           *string   `json:"checksum,omitempty"`
+	ConflictResolution *string   `json:"conflictResolution,omitempty"`
+	CreatedAt          time.Time `json:"createdAt"`
+	UpdatedAt          time.Time `json:"updatedAt"`
 }
 
 type CreateRequest struct {

@@ -113,6 +113,61 @@ func TestProcessTransferResumesPartialFile(t *testing.T) {
 	}
 }
 
+func TestProcessTransferResumesSkippedConflict(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "source.txt")
+	destination := filepath.Join(root, "destination.txt")
+	sourceContent := []byte("larger source content")
+
+	if err := os.WriteFile(source, sourceContent, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(destination, []byte("old"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	w, store, ctx := setupWorker(t, root)
+	job, err := store.Create(ctx, jobs.CreateRequest{
+		Type:            jobs.TypeCopy,
+		SourcePath:      source,
+		DestinationPath: destination,
+		ConflictPolicy:  "ask",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	resolution := "skip"
+	if _, err := store.CreateItem(ctx, jobs.Item{
+		JobID:              job.ID,
+		SourcePath:         source,
+		DestinationPath:    destination,
+		SizeBytes:          int64(len(sourceContent)),
+		ProcessedBytes:     int64(len(sourceContent)),
+		Status:             jobs.StatusCompleted,
+		ConflictResolution: &resolution,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	job, err = store.Get(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := w.processTransfer(ctx, job); err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.Get(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != jobs.StatusCompleted {
+		t.Fatalf("expected completed job, got %s", got.Status)
+	}
+	if got.ProcessedBytes != int64(len(sourceContent)) || got.ProcessedItems != 1 {
+		t.Fatalf("unexpected progress after skipped conflict: bytes=%d items=%d", got.ProcessedBytes, got.ProcessedItems)
+	}
+}
+
 func TestProcessArchiveZip(t *testing.T) {
 	root := t.TempDir()
 	srcDir := filepath.Join(root, "src")

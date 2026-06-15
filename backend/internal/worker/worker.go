@@ -262,6 +262,11 @@ func (w *Worker) resumeTransferItems(ctx context.Context, jobID string, storedIt
 	for _, stored := range storedItems {
 		totalBytes += stored.SizeBytes
 		if stored.Status == jobs.StatusCompleted {
+			if stored.ConflictResolution != nil && *stored.ConflictResolution == "skip" {
+				processedBytes += stored.SizeBytes
+				processedItems++
+				continue
+			}
 			info, err := os.Stat(stored.DestinationPath)
 			if err != nil {
 				return nil, 0, 0, fmt.Errorf("completed destination missing for resume: %s", stored.DestinationPath)

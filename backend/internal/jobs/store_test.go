@@ -189,6 +189,43 @@ func TestItemCRUD(t *testing.T) {
 	}
 }
 
+func TestItemConflictResolutionRoundTrip(t *testing.T) {
+	store, ctx := setupStore(t)
+	job := createTestJob(t, store, ctx, TypeCopy)
+	resolution := "skip"
+
+	item, err := store.CreateItem(ctx, Item{
+		JobID:              job.ID,
+		SourcePath:         "/tmp/source",
+		DestinationPath:    "/tmp/dest",
+		SizeBytes:          100,
+		Status:             StatusCompleted,
+		ConflictResolution: &resolution,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	items, err := store.ListItems(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 || items[0].ConflictResolution == nil || *items[0].ConflictResolution != "skip" {
+		t.Fatalf("expected skip conflict resolution for created item, got %#v", items)
+	}
+
+	if err := store.UpdateItemConflictResolution(ctx, item.ID, "rename"); err != nil {
+		t.Fatal(err)
+	}
+	items, err = store.ListItems(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if items[0].ConflictResolution == nil || *items[0].ConflictResolution != "rename" {
+		t.Fatalf("expected updated rename conflict resolution, got %#v", items[0].ConflictResolution)
+	}
+}
+
 func TestRetryItem(t *testing.T) {
 	store, ctx := setupStore(t)
 	job := createTestJob(t, store, ctx, TypeCopy)

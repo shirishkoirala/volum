@@ -12,7 +12,7 @@ import (
 func (s *Store) ListItems(ctx context.Context, jobID string) ([]Item, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, job_id, source_path, destination_path, temp_path, size_bytes,
-			processed_bytes, status, error_message, checksum, created_at, updated_at
+			processed_bytes, status, error_message, checksum, conflict_resolution, created_at, updated_at
 		FROM job_items
 		WHERE job_id = ?
 		ORDER BY created_at ASC
@@ -24,21 +24,34 @@ func (s *Store) ListItems(ctx context.Context, jobID string) ([]Item, error) {
 
 	items := make([]Item, 0)
 	for rows.Next() {
-		var item Item
-		var temp, errMsg, checksum sql.NullString
-		if err := rows.Scan(
-			&item.ID, &item.JobID, &item.SourcePath, &item.DestinationPath, &temp,
-			&item.SizeBytes, &item.ProcessedBytes, &item.Status, &errMsg, &checksum,
-			&item.CreatedAt, &item.UpdatedAt,
-		); err != nil {
+		item, err := scanItem(rows)
+		if err != nil {
 			return nil, err
 		}
-		item.TempPath = nullString(temp)
-		item.ErrorMessage = nullString(errMsg)
-		item.Checksum = nullString(checksum)
 		items = append(items, item)
 	}
 	return items, rows.Err()
+}
+
+type itemScanner interface {
+	Scan(dest ...any) error
+}
+
+func scanItem(row itemScanner) (Item, error) {
+	var item Item
+	var temp, errMsg, checksum, conflictResolution sql.NullString
+	if err := row.Scan(
+		&item.ID, &item.JobID, &item.SourcePath, &item.DestinationPath, &temp,
+		&item.SizeBytes, &item.ProcessedBytes, &item.Status, &errMsg, &checksum, &conflictResolution,
+		&item.CreatedAt, &item.UpdatedAt,
+	); err != nil {
+		return Item{}, err
+	}
+	item.TempPath = nullString(temp)
+	item.ErrorMessage = nullString(errMsg)
+	item.Checksum = nullString(checksum)
+	item.ConflictResolution = nullString(conflictResolution)
+	return item, nil
 }
 
 func (s *Store) CreateItem(ctx context.Context, item Item) (Item, error) {
@@ -55,10 +68,10 @@ func (s *Store) CreateItem(ctx context.Context, item Item) (Item, error) {
 	_, err := s.db.ExecContext(ctx, `
 		INSERT INTO job_items (
 			id, job_id, source_path, destination_path, temp_path, size_bytes,
-			processed_bytes, status, error_message, checksum, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			processed_bytes, status, error_message, checksum, conflict_resolution, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, item.ID, item.JobID, item.SourcePath, item.DestinationPath, item.TempPath, item.SizeBytes,
-		item.ProcessedBytes, item.Status, item.ErrorMessage, item.Checksum, item.CreatedAt, item.UpdatedAt)
+		item.ProcessedBytes, item.Status, item.ErrorMessage, item.Checksum, item.ConflictResolution, item.CreatedAt, item.UpdatedAt)
 	if err != nil {
 		return Item{}, err
 	}
@@ -75,6 +88,16 @@ func (s *Store) UpdateItemStatus(ctx context.Context, itemID string, status Stat
 	return err
 }
 
+func (s *Store) UpdateItemConflictResolution(ctx context.Context, itemID, resolution string) error {
+	now := time.Now().UTC()
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE job_items
+		SET conflict_resolution = ?, updated_at = ?
+		WHERE id = ?
+	`, resolution, now, itemID)
+	return err
+}
+
 func (s *Store) ClearItems(ctx context.Context, jobID string) error {
 	_, err := s.db.ExecContext(ctx, `DELETE FROM job_items WHERE job_id = ?`, jobID)
 	return err
@@ -83,7 +106,7 @@ func (s *Store) ClearItems(ctx context.Context, jobID string) error {
 func (s *Store) ListConflictingItems(ctx context.Context, jobID string) ([]Item, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT id, job_id, source_path, destination_path, temp_path, size_bytes,
-			processed_bytes, status, error_message, checksum, created_at, updated_at
+			processed_bytes, status, error_message, checksum, conflict_resolution, created_at, updated_at
 		FROM job_items
 		WHERE job_id = ? AND status = ?
 		ORDER BY created_at ASC
@@ -95,18 +118,10 @@ func (s *Store) ListConflictingItems(ctx context.Context, jobID string) ([]Item,
 
 	items := make([]Item, 0)
 	for rows.Next() {
-		var item Item
-		var temp, errMsg, checksum sql.NullString
-		if err := rows.Scan(
-			&item.ID, &item.JobID, &item.SourcePath, &item.DestinationPath, &temp,
-			&item.SizeBytes, &item.ProcessedBytes, &item.Status, &errMsg, &checksum,
-			&item.CreatedAt, &item.UpdatedAt,
-		); err != nil {
+		item, err := scanItem(rows)
+		if err != nil {
 			return nil, err
 		}
-		item.TempPath = nullString(temp)
-		item.ErrorMessage = nullString(errMsg)
-		item.Checksum = nullString(checksum)
 		items = append(items, item)
 	}
 	return items, rows.Err()

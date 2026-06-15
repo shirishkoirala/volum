@@ -331,7 +331,14 @@ func (s *Server) handleResolveConflicts(w http.ResponseWriter, r *http.Request) 
 
 		switch resolution {
 		case "skip":
-			_ = s.jobs.UpdateItemStatus(r.Context(), item.ID, jobs.StatusCompleted, 0, nil)
+			if err := s.jobs.UpdateItemConflictResolution(r.Context(), item.ID, "skip"); err != nil {
+				writeError(w, err)
+				return
+			}
+			if err := s.jobs.UpdateItemStatus(r.Context(), item.ID, jobs.StatusCompleted, item.SizeBytes, nil); err != nil {
+				writeError(w, err)
+				return
+			}
 			details := fmt.Sprintf("conflict resolved: skipped %s", item.SourcePath)
 			_ = s.jobs.CreateAuditLog(r.Context(), "conflict_skip", item.SourcePath, details)
 
