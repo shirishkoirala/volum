@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"os/exec"
 	"strings"
-	"syscall"
 
 	"github.com/volum-app/volum/backend/internal/security"
+	"github.com/volum-app/volum/backend/internal/sysutil"
 )
 
 type BlockDevice struct {
@@ -165,13 +165,5 @@ func publicPathForMountPoint(mountPoint string, roots []security.Root) (string, 
 }
 
 func diskUsage(path string) (int64, int64, int64, error) {
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs(path, &stat); err != nil {
-		return 0, 0, 0, err
-	}
-	blockSize := uint64(stat.Bsize)
-	total := int64(min(stat.Blocks*blockSize, uint64(1<<63-1)))
-	free := int64(min(stat.Bavail*blockSize, uint64(1<<63-1)))
-	used := max(total-free, 0)
-	return total, free, used, nil
+	return sysutil.DiskUsage(path)
 }

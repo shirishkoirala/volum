@@ -112,10 +112,10 @@ func unescapeMountPath(value string) string {
 }
 
 func rootSpec(publicPath, hostRoot, label, source, fsType string, discovered bool) security.Root {
-	publicPath, _ = cleanAbs(publicPath)
+	publicPath, _ = security.CleanAbs(publicPath)
 	internalPath := publicPath
 	if strings.TrimSpace(hostRoot) != "" {
-		hostRoot, _ = cleanAbs(hostRoot)
+		hostRoot, _ = security.CleanAbs(hostRoot)
 		if publicPath == "/" {
 			internalPath = hostRoot
 		} else {

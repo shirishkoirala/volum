@@ -39,6 +39,7 @@ import { useDesktopActions } from '../hooks/useDesktopActions';
 import { useWorkspaceOpeners } from '../hooks/useWorkspaceOpeners';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
+import { usePreviewNavigation } from '../hooks/usePreviewNavigation';
 import { useWindowManager, type WindowState } from '../contexts/WindowManager';
 import { CommandsContext, type WindowCommands } from '../contexts/WindowCommands';
 import { ShellContext } from '../contexts/ShellContext';
@@ -248,12 +249,11 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     }
   }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, workspaceOpeners.openPreview, services, serviceHealth, desktopActions, reorderServices]);
 
-  const previewIndex = fileActions.previewEntry
-    ? previewEntries.findIndex((entry) => entry.path === fileActions.previewEntry?.path)
-    : -1;
-  const previewPositionLabel = previewIndex >= 0 ? `${previewIndex + 1} of ${previewEntries.length}` : undefined;
-  const previousPreviewEntry = previewIndex > 0 ? previewEntries[previewIndex - 1] : undefined;
-  const nextPreviewEntry = previewIndex >= 0 && previewIndex < previewEntries.length - 1 ? previewEntries[previewIndex + 1] : undefined;
+  const {
+    previewPositionLabel,
+    previousPreviewEntry,
+    nextPreviewEntry,
+  } = usePreviewNavigation(fileActions.previewEntry, previewEntries);
 
   const fileCommands = useFileCommands({
     currentPath: viewPref.currentPath,

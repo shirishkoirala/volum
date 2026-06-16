@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/volum-app/volum/backend/internal/sqlutil"
 )
 
 type ServiceRecord struct {
@@ -34,11 +35,7 @@ func NewStore(db *sql.DB) *Store {
 
 const serviceColumns = `id, name, url, COALESCE(icon_url, ''), COALESCE(health_url, ''), COALESCE(description, ''), COALESCE(open_mode, 'embed'), position, created_at, COALESCE(last_health_status, ''), COALESCE(last_health_checked_at, ''), COALESCE(last_health_status_code, 0), COALESCE(last_health_error, '')`
 
-type scanner interface {
-	Scan(dest ...any) error
-}
-
-func scanService(row scanner) (ServiceRecord, error) {	var svc ServiceRecord
+func scanService(row sqlutil.Scanner) (ServiceRecord, error) {	var svc ServiceRecord
 	var created time.Time
 	var checkedAt sql.NullString
 	if err := row.Scan(&svc.ID, &svc.Name, &svc.URL, &svc.IconURL, &svc.HealthURL, &svc.Description, &svc.OpenMode, &svc.Position, &created, &svc.LastHealthStatus, &checkedAt, &svc.LastHealthStatusCode, &svc.LastHealthError); err != nil {
@@ -149,9 +146,8 @@ func (s *Store) UpdateService(ctx context.Context, id, name, url, iconURL, healt
 	if err != nil {
 		return nil, err
 	}
-	n, _ := res.RowsAffected()
-	if n == 0 {
-		return nil, sql.ErrNoRows
+	if err := sqlutil.RequireRowsAffected(res); err != nil {
+		return nil, err
 	}
 	row := s.db.QueryRowContext(ctx,
 		`SELECT `+serviceColumns+` FROM desktop_services WHERE id = ?`, id,
@@ -168,11 +164,7 @@ func (s *Store) DeleteService(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	n, _ := res.RowsAffected()
-	if n == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return sqlutil.RequireRowsAffected(res)
 }
 
 func (s *Store) UpdateServiceHealth(ctx context.Context, id, status string, statusCode int, errorMsg string) error {

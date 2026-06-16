@@ -147,16 +147,18 @@ export function shareUrl(token: string): string {
   return new URL(apiUrl(`/api/public/${token}`), window.location.origin).toString();
 }
 
+async function parseError(response: Response): Promise<Error> {
+  const body = await response.json().catch(() => ({ error: response.statusText }));
+  return new Error(body.error ?? response.statusText);
+}
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(apiUrl(url), {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     ...options
   });
 
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(body.error ?? response.statusText);
-  }
+  if (!response.ok) throw await parseError(response);
 
   return response.json() as Promise<T>;
 }
@@ -259,10 +261,7 @@ export function createJob(params: {
 export async function getUploadStatus(path: string, filename: string) {
   const params = new URLSearchParams({ path, filename });
   const response = await fetch(apiUrl(`/api/files/upload-status?${params.toString()}`));
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(body.error ?? response.statusText);
-  }
+  if (!response.ok) throw await parseError(response);
   return response.json() as Promise<{ filename: string; received: number; complete: boolean; jobId?: string }>;
 }
 
@@ -290,10 +289,7 @@ export async function uploadChunk(
   if (response.status === 409) {
     throw new UploadPausedError(filename);
   }
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(body.error ?? response.statusText);
-  }
+  if (!response.ok) throw await parseError(response);
   return response.json() as Promise<UploadChunkResponse>;
 }
 
@@ -507,13 +503,16 @@ export function dbVacuum() {
 }
 
 export function dbPruneJobs(olderThan?: string) {
-  const params = olderThan ? `?olderThan=${encodeURIComponent(olderThan)}` : '';
-  return request<{ removed: number }>(`/api/db/prune-jobs${params}`, { method: 'POST' });
+  return pruneTable('/api/db/prune-jobs', olderThan);
 }
 
 export function dbPruneAuditLogs(olderThan?: string) {
+  return pruneTable('/api/db/prune-audit-logs', olderThan);
+}
+
+function pruneTable(endpoint: string, olderThan?: string) {
   const params = olderThan ? `?olderThan=${encodeURIComponent(olderThan)}` : '';
-  return request<{ removed: number }>(`/api/db/prune-audit-logs${params}`, { method: 'POST' });
+  return request<{ removed: number }>(`${endpoint}${params}`, { method: 'POST' });
 }
 
 export type ServiceInfo = {
@@ -575,15 +574,19 @@ export function listServiceHealth() {
 export function createService(name: string, url: string, iconUrl?: string, healthUrl?: string, description?: string, openMode?: string) {
   return request<ServiceInfo>('/api/services', {
     method: 'POST',
-    body: JSON.stringify({ name, url, iconUrl, healthUrl, description, openMode }),
+    body: JSON.stringify(serviceBody(name, url, iconUrl, healthUrl, description, openMode)),
   });
 }
 
 export function updateService(id: string, name: string, url: string, iconUrl?: string, healthUrl?: string, description?: string, openMode?: string) {
   return request<ServiceInfo>(`/api/services/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    body: JSON.stringify({ name, url, iconUrl, healthUrl, description, openMode }),
+    body: JSON.stringify(serviceBody(name, url, iconUrl, healthUrl, description, openMode)),
   });
+}
+
+function serviceBody(name: string, url: string, iconUrl?: string, healthUrl?: string, description?: string, openMode?: string) {
+  return { name, url, iconUrl, healthUrl, description, openMode };
 }
 
 export function deleteService(id: string) {

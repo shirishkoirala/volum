@@ -6,7 +6,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { Button, StatusBadge } from '../components/ui/shared';
-import { formatBytes, formatGridDate } from '../utils/format';
+import { formatBytes, formatDuration, formatGridDate } from '../utils/format';
 import { useJobs } from '../hooks/useJobs';
 import { useToasts } from '../hooks/useToasts';
 import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
@@ -20,18 +20,6 @@ const jobVariant = (status: JobStatus): 'success' | 'warning' | 'danger' | 'disa
   if (status === 'needs_attention') return 'active';
   return 'disabled';
 };
-
-function formatDuration(seconds: number) {
-  if (seconds < 0) return '';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  const parts: string[] = [];
-  if (h > 0) parts.push(`${h}h`);
-  if (m > 0) parts.push(`${m}m`);
-  if (s > 0) parts.push(`${s}s`);
-  return parts.join(' ') || '< 1s';
-}
 
 function JobItem({
   job,

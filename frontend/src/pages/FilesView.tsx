@@ -30,6 +30,7 @@ import { useContextMenus } from '../hooks/useContextMenus';
 import { useDragDrop } from '../hooks/useDragDrop';
 import { useRubberBand } from '../hooks/useRubberBand';
 import { useNavStack } from '../hooks/useNavStack';
+import { usePreviewNavigation } from '../hooks/usePreviewNavigation';
 import { useShellContext } from '../contexts/ShellContext';
 import type { UploadProgress } from '../utils/upload';
 import { formatBytes } from '../utils/format';
@@ -338,12 +339,11 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     () => browser.filteredEntries.filter((entry) => entry.type === 'file' && isPreviewableFile(entry.name)),
     [browser.filteredEntries],
   );
-  const previewIndex = fileActions.previewEntry
-    ? previewableEntries.findIndex((entry) => entry.path === fileActions.previewEntry?.path)
-    : -1;
-  const previewPositionLabel = previewIndex >= 0 ? `${previewIndex + 1} of ${previewableEntries.length}` : undefined;
-  const previousPreviewEntry = previewIndex > 0 ? previewableEntries[previewIndex - 1] : undefined;
-  const nextPreviewEntry = previewIndex >= 0 && previewIndex < previewableEntries.length - 1 ? previewableEntries[previewIndex + 1] : undefined;
+  const {
+    previewPositionLabel,
+    previousPreviewEntry,
+    nextPreviewEntry,
+  } = usePreviewNavigation(fileActions.previewEntry, previewableEntries);
   const showPreviewEntry = useCallback((entry: FileEntry) => {
     openPreview(entry, previewableEntries);
   }, [openPreview, previewableEntries]);

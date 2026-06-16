@@ -7,6 +7,7 @@ import { ShareDialog } from '../components/overlay/ShareDialog';
 import { InfoPanel } from '../components/overlay/InfoPanel';
 import { PreviewModal } from '../components/overlay/PreviewModal';
 import { useShellContext } from '../contexts/ShellContext';
+import { usePreviewNavigation } from '../hooks/usePreviewNavigation';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
 import { joinPath } from '../utils/path';
 import { formatBytes, formatGridDate } from '../utils/format';
@@ -99,11 +100,11 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
     () => (results ?? []).filter((r) => r.type === 'file' && isPreviewableFile(r.name)).map(searchResultToFileEntry),
     [results],
   );
-  const previewIndex = previewEntry
-    ? previewableEntries.findIndex((e) => e.path === previewEntry.path)
-    : -1;
-  const previousPreviewEntry = previewIndex > 0 ? (previewableEntries[previewIndex - 1] ?? null) : null;
-  const nextPreviewEntry = previewIndex >= 0 && previewIndex < previewableEntries.length - 1 ? (previewableEntries[previewIndex + 1] ?? null) : null;
+  const {
+    previewPositionLabel,
+    previousPreviewEntry,
+    nextPreviewEntry,
+  } = usePreviewNavigation(previewEntry, previewableEntries);
 
   const caps = useMemo(() => ({
     canWrite,
@@ -474,7 +475,7 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
           onNext={nextPreviewEntry ? () => setPreviewEntry(nextPreviewEntry) : undefined}
           previousDisabled={!previousPreviewEntry}
           nextDisabled={!nextPreviewEntry}
-          positionLabel={previewIndex >= 0 ? `${previewIndex + 1} of ${previewableEntries.length}` : undefined}
+          positionLabel={previewPositionLabel}
         />
       )}
       {infoEntry && <InfoPanel entry={infoEntry} onClose={() => setInfoEntry(null)} onRefresh={() => {}} />}

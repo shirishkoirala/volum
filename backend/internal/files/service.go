@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/volum-app/volum/backend/internal/security"
+	"github.com/volum-app/volum/backend/internal/sysutil"
 )
 
 type Entry struct {
@@ -466,14 +467,11 @@ func immediateDirSize(path string, info os.FileInfo) int64 {
 }
 
 func diskUsage(path string) (int64, int64, error) {
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs(path, &stat); err != nil {
+	total, free, _, err := sysutil.DiskUsage(path)
+	if err != nil {
 		return 0, 0, err
 	}
-	blockSize := uint64(stat.Bsize)
-	total := stat.Blocks * blockSize
-	free := stat.Bavail * blockSize
-	return int64(min(total, uint64(^uint64(0)>>1))), int64(min(free, uint64(^uint64(0)>>1))), nil
+	return total, free, nil
 }
 
 func (s *Service) Search(query string, maxResults int) ([]SearchResult, error) {
@@ -554,7 +552,5 @@ func isTextFile(name string) bool {
 }
 
 func validBaseName(name string) bool {
-	name = strings.TrimSpace(name)
-	return name != "" && name == filepath.Base(name) && name != "." && name != ".."
+	return security.ValidBaseName(name)
 }
-

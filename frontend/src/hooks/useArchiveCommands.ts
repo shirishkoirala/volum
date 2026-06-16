@@ -5,8 +5,7 @@ import { archiveBaseName, archiveFileName, isArchiveFile } from '../utils/archiv
 import { joinPath, normalizeFolderPath } from '../utils/path';
 import type { TextInputDialogState } from '../components/overlay/Dialogs';
 import type { ContextMenuState } from '../types';
-
-export type RunAction = (action: () => Promise<unknown>, successTitle?: string) => Promise<void>;
+import type { RunAction } from './types';
 
 interface ArchiveCommandDeps {
   currentPath: string;

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/volum-app/volum/backend/internal/sqlutil"
 )
 
 type Store struct {
@@ -107,14 +108,7 @@ func (s *Store) Cancel(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return sqlutil.RequireRowsAffected(result)
 }
 
 func (s *Store) Retry(ctx context.Context, id string) error {
@@ -129,12 +123,8 @@ func (s *Store) Retry(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	affected, err := result.RowsAffected()
-	if err != nil {
+	if err := sqlutil.RequireRowsAffected(result); err != nil {
 		return err
-	}
-	if affected == 0 {
-		return sql.ErrNoRows
 	}
 	return s.ClearItems(ctx, id)
 }
@@ -149,14 +139,7 @@ func (s *Store) StartJob(ctx context.Context, jobID string) error {
 	if err != nil {
 		return err
 	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return sqlutil.RequireRowsAffected(result)
 }
 
 func (s *Store) SetJobTotals(ctx context.Context, jobID string, totalBytes, totalItems int64) error {
@@ -264,14 +247,7 @@ func (s *Store) PauseJob(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return sqlutil.RequireRowsAffected(result)
 }
 
 func (s *Store) ResumeJob(ctx context.Context, id string) error {
@@ -284,14 +260,7 @@ func (s *Store) ResumeJob(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return sqlutil.RequireRowsAffected(result)
 }
 
 func (s *Store) ResumeNeedsAttentionJob(ctx context.Context, id string) error {
@@ -304,14 +273,7 @@ func (s *Store) ResumeNeedsAttentionJob(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return sqlutil.RequireRowsAffected(result)
 }
 
 func (s *Store) NeedsAttention(ctx context.Context, jobID string) error {
@@ -439,11 +401,7 @@ func (s *Store) MarkInterruptedRunningJobs(ctx context.Context) error {
 	return tx.Commit()
 }
 
-type scanner interface {
-	Scan(dest ...any) error
-}
-
-func scanJob(row scanner) (Job, error) {
+func scanJob(row sqlutil.Scanner) (Job, error) {
 	var job Job
 	var source, destination, current, message, nextID sql.NullString
 	var started, completed, scheduled sql.NullTime

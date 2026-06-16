@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"time"
+
+	"github.com/volum-app/volum/backend/internal/sqlutil"
 )
 
 type Share struct {
@@ -39,11 +41,7 @@ func NewStore(db *sql.DB) *Store {
 
 const shareColumns = `id, path, token, COALESCE(password_hash,''), expires_at, max_downloads, download_count, enabled, created_by, created_at`
 
-type scanner interface {
-	Scan(dest ...any) error
-}
-
-func scanShare(row scanner) (Share, error) {
+func scanShare(row sqlutil.Scanner) (Share, error) {
 	var sh Share
 	var expiresAt, passwordHash sql.NullString
 	var maxDownloads sql.NullInt64

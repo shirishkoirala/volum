@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatBytes, formatUptime, formatGridDate, formatDeviceUsage } from '../utils/format';
+import { formatBytes, formatUptime, formatGridDate, formatDeviceUsage, formatDuration } from '../utils/format';
 import type { BlockDevice } from '../api/client';
 
 describe('formatBytes', () => {
@@ -59,6 +59,20 @@ describe('formatUptime', () => {
 
   it('returns multiple days', () => {
     expect(formatUptime(200000)).toBe('2d 7h 33m');
+  });
+});
+
+describe('formatDuration', () => {
+  it('returns < 1s for zero seconds', () => {
+    expect(formatDuration(0)).toBe('< 1s');
+  });
+
+  it('returns empty string for negative values', () => {
+    expect(formatDuration(-1)).toBe('');
+  });
+
+  it('returns mixed hour, minute, second labels', () => {
+    expect(formatDuration(3661)).toBe('1h 1m 1s');
   });
 });
 

@@ -15,27 +15,7 @@ func writeZip(store *jobs.Store, ctx context.Context, writer io.Writer, jobID, s
 	zw := zip.NewWriter(writer)
 	defer zw.Close()
 
-	return filepath.WalkDir(source, func(path string, entry os.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-		cancelled, _ := store.IsCancelled(ctx, jobID)
-		if cancelled {
-			return nil
-		}
-		paused, _ := store.IsPaused(ctx, jobID)
-		if paused {
-			return errJobPaused
-		}
-
-		rel, err := filepath.Rel(source, path)
-		if err != nil {
-			return err
-		}
-		if rel == "." {
-			return nil
-		}
-
+	return walkWithJobControl(store, ctx, jobID, source, func(path, rel string, entry os.DirEntry) error {
 		zipRel := filepath.ToSlash(rel)
 		info, err := entry.Info()
 		if err != nil {

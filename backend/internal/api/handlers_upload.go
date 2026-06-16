@@ -307,12 +307,7 @@ func (s *Server) finalizeUpload(ctx context.Context, req uploadFinalizeRequest) 
 }
 
 func validUploadName(name string) bool {
-	name = strings.TrimSpace(name)
-	return name != "" &&
-		name == filepath.Base(name) &&
-		name != "." &&
-		name != ".." &&
-		!strings.ContainsAny(name, `/\`)
+	return security.ValidBaseName(name) && !strings.ContainsAny(name, `/\`)
 }
 
 type uploadSizeQueue struct {

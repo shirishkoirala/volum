@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -78,7 +77,7 @@ func loadRoots(value, hostRoot string, includeRoot, discoverRoots bool, homeRoot
 	roots = append(roots, explicit...)
 	roots = dedupeRoots(roots)
 	if homeRoot != "" {
-		homePath, err := cleanAbs(homeRoot)
+		homePath, err := security.CleanAbs(homeRoot)
 		if err == nil {
 			found := false
 			for i, r := range roots {
@@ -114,7 +113,7 @@ func parseRoots(value, hostRoot string) ([]security.Root, error) {
 		if root == "" {
 			continue
 		}
-		publicPath, err := cleanAbs(root)
+		publicPath, err := security.CleanAbs(root)
 		if err != nil {
 			return nil, err
 		}
@@ -132,12 +131,4 @@ func parseBool(value string) bool {
 	default:
 		return false
 	}
-}
-
-func cleanAbs(path string) (string, error) {
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Clean(abs), nil
 }

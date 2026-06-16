@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import type { FileEntry } from '../api/client';
 import type { ContextMenuState, RenameState } from '../types';
-
-export type ClipboardState = { mode: 'copy' | 'move'; entries: FileEntry[] } | null;
+import type { ClipboardState } from './types';
 
 export function useFileActions() {
   const [renaming, setRenaming] = useState<RenameState>(null);

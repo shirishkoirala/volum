@@ -49,7 +49,7 @@ func NewRootGuardWithRoots(roots []Root) (*RootGuard, error) {
 		if strings.TrimSpace(root.Path) == "" {
 			continue
 		}
-		publicPath, err := cleanAbs(root.Path)
+		publicPath, err := CleanAbs(root.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -57,7 +57,7 @@ func NewRootGuardWithRoots(roots []Root) (*RootGuard, error) {
 		if strings.TrimSpace(internalPath) == "" {
 			internalPath = publicPath
 		}
-		internalPath, err = cleanAbs(internalPath)
+		internalPath, err = CleanAbs(internalPath)
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +143,7 @@ func (g *RootGuard) Resolve(input string) (string, error) {
 }
 
 func (g *RootGuard) PublicPath(internal string) (string, error) {
-	internalPath, err := cleanAbs(internal)
+	internalPath, err := CleanAbs(internal)
 	if err != nil {
 		return "", err
 	}
@@ -172,7 +172,7 @@ func (g *RootGuard) PublicPath(internal string) (string, error) {
 
 func (g *RootGuard) IsRoot(path string) bool {
 	publicPath, publicErr := cleanPublicInput(path)
-	internalPath, internalErr := cleanAbs(path)
+	internalPath, internalErr := CleanAbs(path)
 	for _, root := range g.roots {
 		if publicErr == nil && publicPath == root.Path {
 			return true
@@ -186,7 +186,7 @@ func (g *RootGuard) IsRoot(path string) bool {
 
 func (g *RootGuard) RootFor(path string) (Root, bool) {
 	publicPath, publicErr := cleanPublicInput(path)
-	internalPath, internalErr := cleanAbs(path)
+	internalPath, internalErr := CleanAbs(path)
 	var best *Root
 	for _, root := range g.roots {
 		if publicErr == nil && PathInside(root.Path, publicPath) && (best == nil || len(root.Path) > len(best.Path)) {
@@ -211,15 +211,20 @@ func cleanPublicInput(input string) (string, error) {
 	if containsTraversal(input) {
 		return "", ErrPathTraversal
 	}
-	return cleanAbs(input)
+	return CleanAbs(input)
 }
 
-func cleanAbs(path string) (string, error) {
+func CleanAbs(path string) (string, error) {
 	abs, err := filepath.Abs(path)
 	if err != nil {
 		return "", err
 	}
 	return filepath.Clean(abs), nil
+}
+
+func ValidBaseName(name string) bool {
+	name = strings.TrimSpace(name)
+	return name != "" && name == filepath.Base(name) && name != "." && name != ".."
 }
 
 func containsTraversal(input string) bool {

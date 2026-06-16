@@ -13,7 +13,7 @@ import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } fr
 import type { Toast } from '../components/overlay/Toast';
 import { useArchiveCommands } from './useArchiveCommands';
 import { useUploadCommands } from './useUploadCommands';
-import type { ClipboardState } from './useFileActions';
+import type { ClipboardState } from './types';
 
 interface FileCommandDeps {
   currentPath: string;

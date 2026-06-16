@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/volum-app/volum/backend/internal/sqlutil"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -91,11 +92,7 @@ func (s *Store) DeleteUser(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	n, _ := res.RowsAffected()
-	if n == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return sqlutil.RequireRowsAffected(res)
 }
 
 func (s *Store) UpdatePassword(ctx context.Context, id, newPassword string) error {
@@ -110,11 +107,7 @@ func (s *Store) UpdatePassword(ctx context.Context, id, newPassword string) erro
 	if err != nil {
 		return err
 	}
-	n, _ := res.RowsAffected()
-	if n == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return sqlutil.RequireRowsAffected(res)
 }
 
 func (s *Store) UpdateRole(ctx context.Context, id string, role Role) error {
@@ -125,11 +118,7 @@ func (s *Store) UpdateRole(ctx context.Context, id string, role Role) error {
 	if err != nil {
 		return err
 	}
-	n, _ := res.RowsAffected()
-	if n == 0 {
-		return sql.ErrNoRows
-	}
-	return nil
+	return sqlutil.RequireRowsAffected(res)
 }
 
 func (s *Store) Count(ctx context.Context) (int, error) {
@@ -154,11 +143,7 @@ func scanUser(row *sql.Row) (*UserRecord, error) {
 	return &u, nil
 }
 
-type scanner interface {
-	Scan(dest ...any) error
-}
-
-func scanUserFromRows(row scanner) (*UserRecord, error) {
+func scanUserFromRows(row sqlutil.Scanner) (*UserRecord, error) {
 	var u UserRecord
 	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {

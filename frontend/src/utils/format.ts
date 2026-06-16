@@ -32,6 +32,18 @@ export function formatUptime(seconds: number): string {
   return parts.join(' ') || '< 1m';
 }
 
+export function formatDuration(seconds: number): string {
+  if (seconds < 0) return '';
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const wholeSeconds = Math.floor(seconds % 60);
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (wholeSeconds > 0) parts.push(`${wholeSeconds}s`);
+  return parts.join(' ') || '< 1s';
+}
+
 /**
  * Format an ISO date string for display in file grid views.
  */

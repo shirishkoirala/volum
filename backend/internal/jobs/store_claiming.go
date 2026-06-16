@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/volum-app/volum/backend/internal/sqlutil"
 )
 
 func (s *Store) claimNextJob(ctx context.Context, types ...Type) (Job, bool, error) {
@@ -46,12 +48,11 @@ func (s *Store) claimNextJob(ctx context.Context, types ...Type) (Job, bool, err
 	if err != nil {
 		return Job{}, false, err
 	}
-	affected, err := result.RowsAffected()
-	if err != nil {
+	if err := sqlutil.RequireRowsAffected(result); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Job{}, false, nil
+		}
 		return Job{}, false, err
-	}
-	if affected == 0 {
-		return Job{}, false, nil
 	}
 	if err := tx.Commit(); err != nil {
 		return Job{}, false, err
