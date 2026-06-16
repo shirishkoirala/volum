@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { getTrash, deleteTrash } from '../api/client';
 import type { ServiceShortcut } from '../utils/services';
 import type { DesktopIconItem } from '../pages/DesktopView';
+import { defaultRootPath } from '../utils/roots';
 
 interface DesktopActionsOptions {
   browser: {
@@ -127,8 +128,7 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
         nav.setShowingTrash(false); nav.setShowingSettings(false); nav.setShowingJobs(false);
         nav.setShowingMyPC(false); nav.setSelectedDriveName(null);
         if (viewPref.currentPath === '') {
-          const target = browser.roots.find((r) => r.available)?.path;
-          if (target) navigateTo(target);
+          navigateTo(defaultRootPath(browser.roots));
         }
         break;
       case 'trash':

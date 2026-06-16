@@ -47,6 +47,7 @@ import { PreviewWindow } from '../components/window/PreviewWindow';
 import { ServiceWindow } from '../components/window/ServiceWindow';
 import { fileTypeIconUrl } from '../api/icons';
 import { openFileExternally } from '../utils/preview';
+import { defaultRootPath as getDefaultRootPath } from '../utils/roots';
 import styles from './Home.module.css';
 
 
@@ -107,7 +108,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
 
   const wm = useWindowManager();
   const defaultRootPath = useMemo(
-    () => browser.roots.find((root) => root.available)?.path ?? browser.roots[0]?.path ?? '/',
+    () => getDefaultRootPath(browser.roots),
     [browser.roots],
   );
 
