@@ -5,7 +5,7 @@ import type { Session } from '../../api/client';
 import appIcon from '../../assets/icon-light.png';
 import styles from './TopBar.module.css';
 
-type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives';
+type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives' | 'search';
 
 type TopBarProps = {
   activeView: ActiveView;
@@ -15,6 +15,8 @@ type TopBarProps = {
   title?: string;
   session?: Session | null;
   onLogout?: () => void;
+  focusedWindowType?: string | null;
+  focusedWindowExists?: boolean;
 };
 
 function formatDateTime(date: Date) {
@@ -24,7 +26,7 @@ function formatDateTime(date: Date) {
   return `${weekday}, ${dayMonth}, ${time}`;
 }
 
-export function TopBar({ activeView, onGoDesktop, onOpenSettings, menuHandlers, title, session, onLogout }: TopBarProps) {
+export function TopBar({ activeView, onGoDesktop, onOpenSettings, menuHandlers, title, session, onLogout, focusedWindowType, focusedWindowExists }: TopBarProps) {
   const [dateTime, setDateTime] = useState(() => formatDateTime(new Date()));
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -48,6 +50,8 @@ export function TopBar({ activeView, onGoDesktop, onOpenSettings, menuHandlers, 
   }, [userMenuOpen]);
 
   const showUserMenu = session?.authEnabled && session.authenticated;
+  const showMenu = ((focusedWindowExists && (focusedWindowType === 'files' || focusedWindowType === 'trash')) || activeView === 'files' || activeView === 'trash') && menuHandlers;
+  const appMenuWindowType = !focusedWindowExists ? activeView : (focusedWindowType ?? activeView);
 
   return (
     <header className={styles.topbar}>
@@ -56,7 +60,7 @@ export function TopBar({ activeView, onGoDesktop, onOpenSettings, menuHandlers, 
           <img className={styles.brandIcon} src={appIcon} alt="" />
           <span className={styles.brandName}>{title ?? 'Volum Desktop'}</span>
         </button>
-        {activeView === 'files' && menuHandlers && <AppMenuBar handlers={menuHandlers} />}
+        {showMenu && <AppMenuBar handlers={menuHandlers} windowType={appMenuWindowType} />}
       </div>
       <div className={styles.clock}>
         <span>{dateTime}</span>

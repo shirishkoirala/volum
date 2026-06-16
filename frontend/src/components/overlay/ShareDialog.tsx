@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
 import { Button, IconButton } from '../ui/shared';
 import { Dialog } from './Dialog';
-import { createShare, type Share } from '../../api/client';
+import { createShare, shareUrl as buildShareUrl, type Share } from '../../api/client';
 import dStyles from './Dialogs.module.css';
 import uiStyles from '../ui/shared.module.css';
 
@@ -51,7 +51,7 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
     }
   };
 
-  const shareUrl = share ? `${window.location.origin}/api/public/${share.token}` : '';
+  const shareUrl = share ? buildShareUrl(share.token) : '';
 
   const handleCopy = () => {
     if (copyRef.current) {

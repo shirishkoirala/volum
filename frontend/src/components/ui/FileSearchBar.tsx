@@ -13,13 +13,14 @@ type FileSearchBarProps = {
   onClearSearch: () => void;
   onSearchResultClick: (result: SearchResult) => void;
   onUploadClick: () => void;
+  onShowAllResults?: (query: string) => void;
   searchRef?: RefObject<HTMLInputElement | null>;
   canUpload: boolean;
 };
 
 export function FileSearchBar({
   query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
-  onUploadClick, searchRef, canUpload,
+  onUploadClick, onShowAllResults, searchRef, canUpload,
 }: FileSearchBarProps) {
   return (
     <div className={styles.toolbar}>
@@ -58,6 +59,15 @@ export function FileSearchBar({
               <span className={styles.searchResultPath}>{result.root}</span>
             </button>
           ))}
+          {onShowAllResults && (
+            <button
+              type="button"
+              className={styles.showAllResults}
+              onClick={() => onShowAllResults(query)}
+            >
+              View all {searchResults.length} results &rarr;
+            </button>
+          )}
         </div>
       )}
       <IconButton

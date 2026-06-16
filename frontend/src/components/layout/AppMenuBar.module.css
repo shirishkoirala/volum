@@ -45,7 +45,7 @@
   padding: var(--space-sm);
   position: absolute;
   top: 100%;
-  z-index: 50;
+  z-index: 10001;
 }
 
 .menuItem {

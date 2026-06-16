@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '../ui/Icon';
+import { apiUrl } from '../../api/baseUrl';
 import { EmptyState } from '../ui/EmptyState';
 import { folderIconUrl } from '../../api/icons';
 import { Button, IconButton, RotatedIcon } from '../ui/shared';
@@ -27,7 +28,7 @@ export function FolderPicker({
     setError(null);
     try {
       const params = new URLSearchParams({ path, hidden: 'false' });
-      const response = await fetch(`/api/files?${params.toString()}`);
+      const response = await fetch(apiUrl(`/api/files?${params.toString()}`));
       if (!response.ok) {
         throw new Error(`Failed to load folder (${response.status})`);
       }

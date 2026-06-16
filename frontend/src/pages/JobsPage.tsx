@@ -1,23 +1,25 @@
 import { useState, useEffect } from 'react';
-import type { Job, JobStatus } from '../api/client';
+import type { Job, JobStatus, Session } from '../api/client';
+import { getJobs } from '../api/client';
 import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { Button, StatusBadge } from '../components/ui/shared';
 import { formatBytes, formatGridDate } from '../utils/format';
+import { useJobs } from '../hooks/useJobs';
+import { useToasts } from '../hooks/useToasts';
+import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
+import { ConflictDialog } from '../components/overlay/ConflictDialog';
 import styles from './JobsPage.module.css';
 
-const jobVariant = (status: JobStatus): 'success' | 'warning' | 'danger' | 'disabled' => {
+const jobVariant = (status: JobStatus): 'success' | 'warning' | 'danger' | 'disabled' | 'active' => {
   if (status === 'completed') return 'success';
   if (status === 'running') return 'warning';
   if (status === 'failed') return 'danger';
+  if (status === 'needs_attention') return 'active';
   return 'disabled';
 };
-
-
-
-
 
 function formatDuration(seconds: number) {
   if (seconds < 0) return '';
@@ -36,19 +38,22 @@ function JobItem({
   onCancel,
   onPause,
   onResume,
-  onRetry
+  onRetry,
+  onResolve
 }: {
   job: Job;
-  onCancel: (id: string) => void;
-  onPause: (id: string) => void;
-  onResume: (id: string) => void;
-  onRetry: (id: string) => void;
+  onCancel: (id: string, type: string) => void;
+  onPause: (id: string, type: string) => void;
+  onResume: (id: string, type: string) => void;
+  onRetry: (id: string, type: string) => void;
+  onResolve: (id: string) => void;
 }) {
   const progress = job.totalBytes > 0 ? Math.round((job.processedBytes / job.totalBytes) * 100) : 0;
-  const canCancel = job.status === 'queued' || job.status === 'running' || job.status === 'paused';
+  const canCancel = job.status === 'queued' || job.status === 'running' || job.status === 'paused' || job.status === 'needs_attention';
   const canPause = job.status === 'running';
   const canResume = job.status === 'paused';
   const canRetry = job.status === 'failed' || job.status === 'cancelled';
+  const needsResolve = job.status === 'needs_attention';
   const showLiveStats = job.status === 'running';
   const hasKnownTotal = job.totalBytes > 0;
 
@@ -86,28 +91,34 @@ function JobItem({
       </div>
       {job.currentItem ?? job.sourcePath ? <p className={styles.jobPath}>{job.currentItem ?? job.sourcePath}</p> : null}
       {job.errorMessage && <p className={styles.jobError}><Icon name="dialog-warning" size={14} /> {job.errorMessage}</p>}
-      {(canPause || canResume || canCancel || canRetry) && (
+      {(canPause || canResume || canCancel || canRetry || needsResolve) && (
         <div className={styles.jobActions}>
+          {needsResolve && (
+            <Button size="compact" variant="primary" onClick={() => onResolve(job.id)}>
+              <Icon name="dialog-warning" size={15} />
+              Resolve Conflicts
+            </Button>
+          )}
           {canPause && (
-            <Button size="compact" onClick={() => onPause(job.id)}>
+            <Button size="compact" onClick={() => onPause(job.id, job.type)}>
               <Icon name="media-playback-pause" size={15} />
               Pause
             </Button>
           )}
           {canResume && (
-            <Button size="compact" onClick={() => onResume(job.id)}>
+            <Button size="compact" onClick={() => onResume(job.id, job.type)}>
               <Icon name="media-playback-start" size={15} />
               Resume
             </Button>
           )}
           {canCancel && (
-            <Button size="compact" onClick={() => onCancel(job.id)}>
+            <Button size="compact" onClick={() => onCancel(job.id, job.type)}>
               <Icon name="process-stop" size={15} />
               Cancel
             </Button>
           )}
           {canRetry && (
-            <Button size="compact" onClick={() => onRetry(job.id)}>
+            <Button size="compact" onClick={() => onRetry(job.id, job.type)}>
               <Icon name="view-refresh" size={15} />
               Retry
             </Button>
@@ -118,17 +129,9 @@ function JobItem({
   );
 }
 
-
-
 type JobsPageProps = {
-  jobs: Job[];
-  onCancel: (id: string) => void;
-  onPause: (id: string) => void;
-  onResume: (id: string) => void;
-  onRetry: (id: string) => void;
-  onClearCompleted: () => void;
-  onClearFailed: () => void;
-  onJobsEmptyContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
+  session: Session | null;
+  sessionLoading: boolean;
 };
 
 function handleJobListKeyDown(e: React.KeyboardEvent) {
@@ -144,16 +147,24 @@ function handleJobListKeyDown(e: React.KeyboardEvent) {
   }
 }
 
-export function JobsPage({
-  jobs,
-  onCancel,
-  onPause,
-  onResume,
-  onRetry,
-  onClearCompleted,
-  onClearFailed,
-  onJobsEmptyContextMenu,
-}: JobsPageProps) {
+export function JobsPage({ session, sessionLoading }: JobsPageProps) {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobsEmptyMenu, setJobsEmptyMenu] = useState<{ x: number; y: number } | null>(null);
+  const [conflictDialogJobId, setConflictDialogJobId] = useState<string | null>(null);
+  const toast = useToasts();
+
+  const {
+    handleCancelJob, handleRetryJob,
+    handlePauseJob, handleResumeJob,
+    handleClearCompleted, handleClearFailed,
+    handleResolveConflicts,
+  } = useJobs(setJobs, {
+    session,
+    sessionLoading,
+    onRefresh: () => {},
+    showToast: (title, variant, message) => toast.showToastObj({ title, variant: variant ?? 'success', message }),
+  });
+
   const pageSize = 25;
   const totalPages = Math.max(1, Math.ceil(jobs.length / pageSize));
   const [currentPage, setCurrentPage] = useState(1);
@@ -168,18 +179,24 @@ export function JobsPage({
   const hasCompleted = jobs.some((j) => j.status === 'completed' || j.status === 'cancelled');
   const hasFailed = jobs.some((j) => j.status === 'failed');
 
+  const handleJobsEmptyContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setJobsEmptyMenu({ x: event.clientX, y: event.clientY });
+  };
+
   return (
     <>
-      <main className={styles.jobsPage} onContextMenu={onJobsEmptyContextMenu}>
+      <main className={styles.jobsPage} onContextMenu={handleJobsEmptyContextMenu}>
         {jobs.length > 0 && (
           <div className={styles.jobToolbar}>
             {hasFailed && (
-              <Button size="compact" onClick={onClearFailed}>
+              <Button size="compact" onClick={handleClearFailed}>
                 Clear failed
               </Button>
             )}
             {hasCompleted && (
-              <Button size="compact" onClick={onClearCompleted}>
+              <Button size="compact" onClick={handleClearCompleted}>
                 Clear completed
               </Button>
             )}
@@ -191,7 +208,7 @@ export function JobsPage({
           ) : (
             <>
               {pageJobs.map((job) => (
-                <JobItem key={job.id} job={job} onCancel={onCancel} onPause={onPause} onResume={onResume} onRetry={onRetry} />
+                <JobItem key={job.id} job={job} onCancel={handleCancelJob} onPause={handlePauseJob} onResume={handleResumeJob} onRetry={handleRetryJob} onResolve={setConflictDialogJobId} />
               ))}
             </>
           )}
@@ -212,6 +229,26 @@ export function JobsPage({
           </div>
         )}
       </main>
+      {jobsEmptyMenu && (
+        <JobsEmptyMenu
+          x={jobsEmptyMenu.x} y={jobsEmptyMenu.y}
+          onRefresh={() => {
+            getJobs().then((r) => setJobs(r.jobs ?? []));
+            toast.showToastObj({ title: 'Refreshed', variant: 'success' });
+          }}
+          onClose={() => setJobsEmptyMenu(null)}
+        />
+      )}
+      {conflictDialogJobId && (
+        <ConflictDialog
+          jobId={conflictDialogJobId}
+          onResolve={(items, defaultResolution) => {
+            handleResolveConflicts(conflictDialogJobId, items, defaultResolution);
+            setConflictDialogJobId(null);
+          }}
+          onClose={() => setConflictDialogJobId(null)}
+        />
+      )}
     </>
   );
 }

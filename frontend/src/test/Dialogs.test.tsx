@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ConfirmDialog, TextInputDialog } from '../components/overlay/Dialogs';
+import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
 import { ToastViewport } from '../components/overlay/Toast';
 import { FolderSuggestions } from '../components/input/FolderPicker';
-import type { ConfirmDialogState, TextInputDialogState } from '../components/overlay/Dialogs';
+import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } from '../components/overlay/Dialogs';
+import type { FileEntry } from '../api/client';
 import type { Toast } from '../components/overlay/Toast';
 
 describe('ConfirmDialog', () => {
@@ -78,6 +79,52 @@ describe('TextInputDialog', () => {
     render(<TextInputDialog dialog={baseDialog} onClose={vi.fn()} />);
     await user.click(screen.getByText('Create'));
     expect(screen.getByText('Value is required.')).toBeInTheDocument();
+  });
+});
+
+describe('TransferDialog', () => {
+  const fileEntry: FileEntry = {
+    name: 'report.txt',
+    path: '/source/report.txt',
+    type: 'file',
+    size: 42,
+    modifiedAt: '2026-01-01T00:00:00Z',
+    permissions: '-rw-r--r--',
+    owner: 'user',
+    group: 'staff',
+    hidden: false,
+  };
+  const folderEntry: FileEntry = {
+    ...fileEntry,
+    name: 'docs',
+    path: '/source/docs',
+    type: 'directory',
+  };
+
+  function renderTransferDialog(dialog: NonNullable<TransferDialogState>) {
+    return render(
+      <TransferDialog
+        dialog={dialog}
+        folderSuggestions={[]}
+        onClose={vi.fn()}
+        onSubmit={vi.fn()}
+      />
+    );
+  }
+
+  it('shows skip-identical for file copy transfers', () => {
+    renderTransferDialog({ mode: 'copy', entries: [fileEntry], initialDestination: '/target' });
+    expect(screen.getByText('Skip identical files (by size + checksum)')).toBeInTheDocument();
+  });
+
+  it('hides skip-identical for move transfers', () => {
+    renderTransferDialog({ mode: 'move', entries: [fileEntry], initialDestination: '/target' });
+    expect(screen.queryByText('Skip identical files (by size + checksum)')).not.toBeInTheDocument();
+  });
+
+  it('hides skip-identical for folder copy transfers', () => {
+    renderTransferDialog({ mode: 'copy', entries: [folderEntry], initialDestination: '/target' });
+    expect(screen.queryByText('Skip identical files (by size + checksum)')).not.toBeInTheDocument();
   });
 });
 

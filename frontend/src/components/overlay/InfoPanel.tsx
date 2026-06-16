@@ -4,6 +4,7 @@ import { Button, MutedText } from '../ui/shared';
 import { Dialog } from './Dialog';
 import { chmodPath } from '../../api/client';
 import type { FileEntry } from '../../api/client';
+import { formatBytes } from '../../utils/format';
 import uiStyles from '../ui/shared.module.css';
 import styles from './InfoPanel.module.css';
 
@@ -68,11 +69,7 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
     }
   };
 
-  const sizeStr = entry.size === 0 ? '0 B' : (() => {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const index = Math.min(Math.floor(Math.log(entry.size) / Math.log(1024)), units.length - 1);
-    return `${(entry.size / 1024 ** index).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
-  })();
+  const sizeStr = formatBytes(entry.size);
 
   return (
     <Dialog title="Info" onClose={onClose} width="md">

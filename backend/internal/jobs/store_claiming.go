@@ -15,11 +15,7 @@ func (s *Store) claimNextJob(ctx context.Context, types ...Type) (Job, bool, err
 	defer tx.Rollback()
 
 	query := `
-		SELECT id, type, status, source_path, destination_path,
-			total_bytes, processed_bytes, total_items, processed_items,
-			current_item, error_message, conflict_policy, verify_mode,
-			scheduled_at, next_job_id,
-			created_at, updated_at, started_at, completed_at
+		SELECT `+jobColumns+`
 		FROM jobs
 		WHERE status = ? AND type IN (?` + repeatParams(len(types)-1) + `)
 			AND (scheduled_at IS NULL OR scheduled_at <= ?)

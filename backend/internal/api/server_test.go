@@ -62,7 +62,8 @@ func setupTestServer(t *testing.T) (*testServer, func()) {
 
 	_ = workerService
 
-	s := New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, filepath.Join(root, "volum.db"))
+	healthChecker := desktop.NewHealthChecker(desktopStore, slogger)
+	s := New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, healthChecker, filepath.Join(root, "volum.db"))
 
 	ctx := context.Background()
 	_, err = authStore.CreateUser(ctx, "admin", "adminpass", auth.RoleAdmin)
@@ -200,6 +201,70 @@ func TestGetRoots(t *testing.T) {
 	}
 }
 
+func TestServiceHealthEndpoint(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	healthyServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer healthyServer.Close()
+
+	unhealthyServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer unhealthyServer.Close()
+
+	createHealthy := ts.post("/api/services", map[string]string{
+		"name":      "Healthy",
+		"url":       healthyServer.URL,
+		"healthUrl": healthyServer.URL + "/health",
+	})
+	if createHealthy.StatusCode != http.StatusCreated {
+		t.Fatalf("expected healthy service create 201, got %d", createHealthy.StatusCode)
+	}
+	var healthySvc desktop.ServiceRecord
+	readJSON(t, createHealthy, &healthySvc)
+
+	createUnhealthy := ts.post("/api/services", map[string]string{
+		"name":      "Unhealthy",
+		"url":       unhealthyServer.URL,
+		"healthUrl": unhealthyServer.URL + "/health",
+	})
+	if createUnhealthy.StatusCode != http.StatusCreated {
+		t.Fatalf("expected unhealthy service create 201, got %d", createUnhealthy.StatusCode)
+	}
+	var unhealthySvc desktop.ServiceRecord
+	readJSON(t, createUnhealthy, &unhealthySvc)
+
+	createUnchecked := ts.post("/api/services", map[string]string{
+		"name": "Unchecked",
+		"url":  "https://unchecked.example.com",
+	})
+	if createUnchecked.StatusCode != http.StatusCreated {
+		t.Fatalf("expected unchecked service create 201, got %d", createUnchecked.StatusCode)
+	}
+	var uncheckedSvc desktop.ServiceRecord
+	readJSON(t, createUnchecked, &uncheckedSvc)
+
+	resp := ts.get("/api/services/health")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d; body: %s", resp.StatusCode, readBody(resp))
+	}
+	var body map[string]desktop.ServiceHealthResult
+	readJSON(t, resp, &body)
+
+	if body[healthySvc.ID].Status != "healthy" || body[healthySvc.ID].StatusCode != http.StatusNoContent {
+		t.Fatalf("expected healthy result, got %#v", body[healthySvc.ID])
+	}
+	if body[unhealthySvc.ID].Status != "unhealthy" || body[unhealthySvc.ID].StatusCode != http.StatusServiceUnavailable {
+		t.Fatalf("expected unhealthy result, got %#v", body[unhealthySvc.ID])
+	}
+	if _, ok := body[uncheckedSvc.ID]; ok {
+		t.Fatal("did not expect service without health URL in health response")
+	}
+}
+
 func TestGetFiles(t *testing.T) {
 	ts, cleanup := setupTestServer(t)
 	defer cleanup()
@@ -224,6 +289,45 @@ func TestGetFiles(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("expected test.txt in entries, got %#v", body.Entries)
+	}
+}
+
+func TestGetFilesSupportsPagination(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	for _, name := range []string{"b.txt", "a.txt", "z.txt", "folder-b", "folder-a"} {
+		path := filepath.Join(ts.root, name)
+		if filepath.Ext(name) == "" {
+			if err := os.MkdirAll(path, 0o755); err != nil {
+				t.Fatal(err)
+			}
+		} else if err := os.WriteFile(path, []byte("data"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	resp := ts.get("/api/files?path=" + ts.root + "&hidden=false&limit=2&offset=1")
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+	var body struct {
+		Entries []files.Entry `json:"entries"`
+		Total   int           `json:"total"`
+		Limit   int           `json:"limit"`
+		Offset  int           `json:"offset"`
+		HasMore bool          `json:"hasMore"`
+	}
+	readJSON(t, resp, &body)
+
+	if body.Total < 5 || body.Limit != 2 || body.Offset != 1 || !body.HasMore {
+		t.Fatalf("unexpected pagination metadata: %#v", body)
+	}
+	if len(body.Entries) != 2 {
+		t.Fatalf("expected 2 entries, got %#v", body.Entries)
+	}
+	if body.Entries[0].Name != "folder-b" || body.Entries[1].Name != "a.txt" {
+		t.Fatalf("unexpected page entries: %#v", body.Entries)
 	}
 }
 
@@ -261,6 +365,95 @@ func TestUploadFile(t *testing.T) {
 	}
 	if string(content) != "uploaded content" {
 		t.Fatalf("unexpected uploaded content: %q", content)
+	}
+}
+
+func TestUploadSpecialCharacters(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	tests := []struct {
+		name    string
+		content string
+	}{
+		{"hello world.txt", "spaces"},
+		{"résumé.pdf", "accented"},
+		{"照片.jpg", "chinese"},
+		{"file-with-dashes_and.dots.txt", "mixed"},
+		{"foo bar baz (1).txt", "parentheses"},
+		{"a+b=c.txt", "plus and equals"},
+		{"file@#$%.txt", "symbols"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp := ts.upload(ts.root, map[string]string{tt.name: tt.content})
+			if resp.StatusCode != http.StatusCreated {
+				t.Fatalf("expected 201, got %d; body: %s", resp.StatusCode, readBody(resp))
+			}
+			got, err := os.ReadFile(filepath.Join(ts.root, tt.name))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(got) != tt.content {
+				t.Fatalf("expected %q, got %q", tt.content, got)
+			}
+		})
+	}
+}
+
+func TestUploadLeadingTrailingSpaces(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	resp := ts.upload(ts.root, map[string]string{"  spaced.txt": "data"})
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("expected 201, got %d; body: %s", resp.StatusCode, readBody(resp))
+	}
+	// validUploadName trims spaces, so the actual file is "spaced.txt"
+	if _, err := os.Stat(filepath.Join(ts.root, "  spaced.txt")); !os.IsNotExist(err) {
+		t.Fatal("leading-space filename should have been trimmed")
+	}
+	if _, err := os.Stat(filepath.Join(ts.root, "spaced.txt")); err != nil {
+		t.Fatal("trimmed filename 'spaced.txt' should exist")
+	}
+}
+
+func TestUploadPathNormalization(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// "folder/file.txt" is normalized to "file.txt" via filepath.Base
+	resp := ts.upload(ts.root, map[string]string{"subdir/file.txt": "data"})
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("expected 201, got %d; body: %s", resp.StatusCode, readBody(resp))
+	}
+	// Should land at root/file.txt, not root/subdir/file.txt
+	if _, err := os.Stat(filepath.Join(ts.root, "file.txt")); err != nil {
+		t.Fatal("normalized filename 'file.txt' should exist")
+	}
+}
+
+func TestUploadInvalidNameRejection(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	tests := []struct {
+		name string
+		desc string
+	}{
+		{"folder\\file.txt", "backslash"},
+		{".", "dot only"},
+		{"..", "dotdot only"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			resp := ts.upload(ts.root, map[string]string{tt.name: "x"})
+			if resp.StatusCode != http.StatusBadRequest {
+				t.Fatalf("expected 400, got %d; body: %s", resp.StatusCode, readBody(resp))
+			}
+		})
 	}
 }
 

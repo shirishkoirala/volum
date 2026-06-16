@@ -11,7 +11,7 @@
   overflow-y: auto;
   padding: var(--space-sm);
   position: fixed;
-  z-index: 100;
+  z-index: 150;
 }
 
 .contextMenu button {
@@ -52,4 +52,18 @@
   border: 0;
   border-top: 1px solid var(--color-border);
   margin: var(--space-xxs) 0;
+}
+
+@media (max-width: 760px) {
+  .contextMenu {
+    min-width: 140px;
+    max-width: calc(100vw - var(--space-md));
+    max-height: min(300px, 70vh);
+  }
+
+  .contextMenu button {
+    font-size: 0.8rem;
+    min-height: 36px;
+    padding: 0 8px;
+  }
 }

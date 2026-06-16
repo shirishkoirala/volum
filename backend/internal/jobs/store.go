@@ -13,7 +13,13 @@ type Store struct {
 	db *sql.DB
 }
 
-var ErrInvalidConflictPolicy = errors.New("conflict policy must be ask, skip, overwrite, rename, or cancel")
+var ErrInvalidConflictPolicy = errors.New("conflict policy must be ask, skip, overwrite, rename, cancel, or skip_identical")
+
+const jobColumns = `id, type, status, source_path, destination_path,
+	total_bytes, processed_bytes, total_items, processed_items,
+	current_item, error_message, conflict_policy, verify_mode,
+	scheduled_at, next_job_id,
+	created_at, updated_at, started_at, completed_at`
 
 func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
@@ -61,11 +67,7 @@ func (s *Store) Create(ctx context.Context, req CreateRequest) (Job, error) {
 
 func (s *Store) List(ctx context.Context, limit, offset int) ([]Job, error) {
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, type, status, source_path, destination_path,
-			total_bytes, processed_bytes, total_items, processed_items,
-			current_item, error_message, conflict_policy, verify_mode,
-			scheduled_at, next_job_id,
-			created_at, updated_at, started_at, completed_at
+		SELECT `+jobColumns+`
 		FROM jobs
 		ORDER BY created_at DESC
 		LIMIT ? OFFSET ?
@@ -88,11 +90,7 @@ func (s *Store) List(ctx context.Context, limit, offset int) ([]Job, error) {
 
 func (s *Store) Get(ctx context.Context, id string) (Job, error) {
 	row := s.db.QueryRowContext(ctx, `
-		SELECT id, type, status, source_path, destination_path,
-			total_bytes, processed_bytes, total_items, processed_items,
-			current_item, error_message, conflict_policy, verify_mode,
-			scheduled_at, next_job_id,
-			created_at, updated_at, started_at, completed_at
+		SELECT `+jobColumns+`
 		FROM jobs
 		WHERE id = ?
 	`, id)
@@ -104,8 +102,8 @@ func (s *Store) Cancel(ctx context.Context, id string) error {
 	result, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, updated_at = ?, completed_at = ?
-		WHERE id = ? AND status IN (?, ?, ?)
-	`, StatusCancelled, now, now, id, StatusQueued, StatusRunning, StatusPaused)
+		WHERE id = ? AND status IN (?, ?, ?, ?)
+	`, StatusCancelled, now, now, id, StatusQueued, StatusRunning, StatusPaused, StatusNeedsAttention)
 	if err != nil {
 		return err
 	}
@@ -296,6 +294,36 @@ func (s *Store) ResumeJob(ctx context.Context, id string) error {
 	return nil
 }
 
+func (s *Store) ResumeNeedsAttentionJob(ctx context.Context, id string) error {
+	now := time.Now().UTC()
+	result, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, updated_at = ?, error_message = NULL
+		WHERE id = ? AND status = ?
+	`, StatusQueued, now, id, StatusNeedsAttention)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (s *Store) NeedsAttention(ctx context.Context, jobID string) error {
+	now := time.Now().UTC()
+	_, err := s.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET status = ?, updated_at = ?, current_item = NULL
+		WHERE id = ?
+	`, StatusNeedsAttention, now, jobID)
+	return err
+}
+
 func (s *Store) ClearCompleted(ctx context.Context) (int64, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -471,7 +499,7 @@ func nullString(value sql.NullString) *string {
 
 func validConflictPolicy(policy string) bool {
 	switch policy {
-	case "ask", "skip", "overwrite", "rename", "cancel":
+	case "ask", "skip", "overwrite", "rename", "cancel", "skip_identical":
 		return true
 	default:
 		return false

@@ -1,15 +1,5 @@
 .dock {
-  align-items: center;
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border-light);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  grid-column: 1;
-  grid-row: 2 / -1;
-  overflow-y: auto;
-  padding: 8px 0;
-  z-index: 20;
+  display: none;
 }
 
 .dockItem {
@@ -67,15 +57,26 @@
 
 @media (max-width: 760px) {
   .dock {
+    display: flex;
+    align-items: center;
+    background: var(--color-surface);
     border-right: 0;
     border-top: 1px solid var(--color-border-light);
     flex-direction: row;
+    gap: 4px;
     grid-column: 1;
-    grid-row: 4;
-    height: 64px;
+    grid-row: 3;
+    height: calc(64px + env(safe-area-inset-bottom, 0));
     justify-content: center;
     overflow-x: auto;
     padding: 6px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0));
+    z-index: 10000;
+    position: relative;
+  }
+
+  .dock.withShellStatus {
+    grid-row: 4;
   }
 
   .dockItem {

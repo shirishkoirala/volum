@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/volum-app/volum/backend/internal/desktop"
 	"github.com/volum-app/volum/backend/internal/jobs"
+	"github.com/volum-app/volum/backend/internal/security"
 	"github.com/volum-app/volum/backend/internal/worker"
 )
 
@@ -42,7 +44,7 @@ func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
-	send := func() bool {
+	sendJobs := func() bool {
 		jobs, err := s.jobs.List(r.Context(), 200, 0)
 		if err != nil {
 			_, _ = fmt.Fprintf(w, "event: error\ndata: %q\n\n", err.Error())
@@ -60,19 +62,38 @@ func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
 		return true
 	}
 
-	if !send() {
+	sendHealth := func(transition desktop.HealthTransition) bool {
+		payload, err := json.Marshal(transition)
+		if err != nil {
+			return false
+		}
+		_, _ = fmt.Fprintf(w, "event: health\ndata: %s\n\n", payload)
+		flusher.Flush()
+		return true
+	}
+
+	if !sendJobs() {
 		return
 	}
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
+
+	healthEvents, unsubscribeHealthEvents := s.healthChecker.SubscribeEvents()
+	defer unsubscribeHealthEvents()
+
 	for {
 		select {
 		case <-r.Context().Done():
 			return
 		case <-ticker.C:
-			if !send() {
+			if !sendJobs() {
 				return
 			}
+		case transition, ok := <-healthEvents:
+			if !ok {
+				return
+			}
+			sendHealth(transition)
 		}
 	}
 }
@@ -226,4 +247,136 @@ func (s *Server) handleClearFailed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]int64{"removed": removed})
+}
+
+func (s *Server) handleJobConflicts(w http.ResponseWriter, r *http.Request) {
+	items, err := s.jobs.ListConflictingItems(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": items})
+}
+
+type resolveRequest struct {
+	Items              []resolveItem `json:"items"`
+	DefaultResolution  *string       `json:"defaultResolution,omitempty"`
+}
+
+type resolveItem struct {
+	ItemID     string `json:"itemId"`
+	Resolution string `json:"resolution"`
+}
+
+func (s *Server) handleResolveConflicts(w http.ResponseWriter, r *http.Request) {
+	jobID := chi.URLParam(r, "id")
+
+	job, err := s.jobs.Get(r.Context(), jobID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	if job.Status != jobs.StatusNeedsAttention {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "job is not in needs_attention state"})
+		return
+	}
+
+	var req resolveRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+	if len(req.Items) == 0 && req.DefaultResolution == nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "must provide items or a default resolution"})
+		return
+	}
+
+	conflicts, err := s.jobs.ListConflictingItems(r.Context(), jobID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	if len(conflicts) == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no conflicting items to resolve"})
+		return
+	}
+
+	resolutionMap := make(map[string]string, len(req.Items))
+	for _, ri := range req.Items {
+		switch ri.Resolution {
+		case "skip", "overwrite", "rename":
+			resolutionMap[ri.ItemID] = ri.Resolution
+		default:
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("invalid resolution %q for item %s", ri.Resolution, ri.ItemID)})
+			return
+		}
+	}
+	if req.DefaultResolution != nil {
+		switch *req.DefaultResolution {
+		case "skip", "overwrite", "rename":
+		default:
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": fmt.Sprintf("invalid default resolution %q", *req.DefaultResolution)})
+			return
+		}
+	}
+
+	for _, item := range conflicts {
+		resolution, ok := resolutionMap[item.ID]
+		if !ok {
+			if req.DefaultResolution == nil {
+				continue
+			}
+			resolution = *req.DefaultResolution
+		}
+
+		switch resolution {
+		case "skip":
+			if err := s.jobs.UpdateItemConflictResolution(r.Context(), item.ID, "skip"); err != nil {
+				writeError(w, err)
+				return
+			}
+			if err := s.jobs.UpdateItemStatus(r.Context(), item.ID, jobs.StatusCompleted, item.SizeBytes, nil); err != nil {
+				writeError(w, err)
+				return
+			}
+			details := fmt.Sprintf("conflict resolved: skipped %s", item.SourcePath)
+			_ = s.jobs.CreateAuditLog(r.Context(), "conflict_skip", item.SourcePath, details)
+
+		case "overwrite":
+			if err := os.RemoveAll(item.DestinationPath); err != nil {
+				writeError(w, err)
+				return
+			}
+			_ = s.jobs.UpdateItemStatus(r.Context(), item.ID, jobs.StatusQueued, 0, nil)
+			details := fmt.Sprintf("conflict resolved: overwrite %s -> %s", item.SourcePath, item.DestinationPath)
+			_ = s.jobs.CreateAuditLog(r.Context(), "conflict_overwrite", item.DestinationPath, details)
+
+		case "rename":
+			newDest, err := security.NextAvailablePath(item.DestinationPath)
+			if err != nil {
+				writeError(w, err)
+				return
+			}
+			_ = s.jobs.UpdateItemDestination(r.Context(), item.ID, newDest)
+			_ = s.jobs.UpdateItemStatus(r.Context(), item.ID, jobs.StatusQueued, 0, nil)
+			details := fmt.Sprintf("conflict resolved: rename %s -> %s", item.DestinationPath, newDest)
+			_ = s.jobs.CreateAuditLog(r.Context(), "conflict_rename", item.SourcePath, details)
+		}
+	}
+
+	remaining, err := s.jobs.CountConflicts(r.Context(), jobID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+
+	if remaining == 0 {
+		if err := s.jobs.ResumeNeedsAttentionJob(r.Context(), jobID); err != nil {
+			writeError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"status": "resolved", "resumed": true})
+	} else {
+		writeJSON(w, http.StatusOK, map[string]any{"status": "resolved", "resumed": false, "remainingConflicts": remaining})
+	}
 }

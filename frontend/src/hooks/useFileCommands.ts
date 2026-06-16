@@ -2,18 +2,18 @@ import { KeyboardEvent, useRef } from 'react';
 import type { FileEntry, TrashEntry, ConflictPolicy } from '../api/client';
 import {
   createFile, createFolder, createJob, deleteTrash, deletePath,
-  getFiles, getJobs, getTrash, renamePath, restoreTrash,
-  createShare,
+  getTrash, renamePath, restoreTrash,
+  createShare, shareUrl,
 } from '../api/client';
-import { unsupportedUploadReason, uploadFilesWithResume, type UploadProgress } from '../utils/upload';
+import type { UploadProgress } from '../utils/upload';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
-import { isArchiveFile, archiveBaseName, archiveFileName } from '../utils/archive';
-import { joinPath, normalizeFolderPath } from '../utils/path';
+import { joinPath } from '../utils/path';
 import type { RenameState, ContextMenuState } from '../types';
 import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } from '../components/overlay/Dialogs';
 import type { Toast } from '../components/overlay/Toast';
-
-type ClipboardState = { mode: 'copy' | 'move'; entries: FileEntry[] } | null;
+import { useArchiveCommands } from './useArchiveCommands';
+import { useUploadCommands } from './useUploadCommands';
+import type { ClipboardState } from './useFileActions';
 
 interface FileCommandDeps {
   currentPath: string;
@@ -211,69 +211,16 @@ export function useFileCommands(deps: FileCommandDeps) {
 
   const handleBatchRename = () => setBatchRenameOpen(true);
 
-  // ── Upload ────────────────────────────────────────────
-
-  const handleUploadFiles = (files: FileList | File[]) => {
-    if (!canWrite) {
-      console.error('Upload blocked: canWrite is false');
-      setError('Upload requires admin permissions');
-      showToastObj({ title: 'Upload failed', message: 'Admin permissions required', variant: 'error' });
-      return;
-    }
-    const selectedFiles = Array.from(files);
-    if (selectedFiles.length === 0) {
-      console.error('Upload blocked: no files selected');
-      return;
-    }
-    if (!currentPath) {
-      console.error('Upload blocked: currentPath is', currentPath);
-      setError('No destination folder selected');
-      showToastObj({ title: 'Upload failed', message: 'Navigate to a folder first', variant: 'error' });
-      return;
-    }
-    const unsupportedMessage = selectedFiles.map(unsupportedUploadReason).find(Boolean);
-    if (unsupportedMessage) {
-      setError(unsupportedMessage);
-      showToastObj({ title: 'Upload not supported', message: unsupportedMessage, variant: 'error' });
-      return;
-    }
-    setPendingUploadCount((count) => count + selectedFiles.length);
-    setUploadProgress({ filename: selectedFiles[0]?.name ?? 'Upload', received: 0, total: selectedFiles[0]?.size ?? 0 });
-    showToastObj({
-      title: 'Upload started',
-      message: selectedFiles.length === 1 ? selectedFiles[0]!.name : `${selectedFiles.length} files`,
-      variant: 'success',
-    }, 6000);
-    void runAction(async () => {
-      let backendJobsSeen = 0;
-      try {
-        const result = await uploadFilesWithResume(currentPath, selectedFiles, undefined, setUploadProgress, undefined, () => {
-          backendJobsSeen += 1;
-          setPendingUploadCount((count) => Math.max(0, count - 1));
-        });
-        if (result.interrupted) {
-          showToastObj({
-            title: result.interrupted === 'paused' ? 'Upload paused' : result.interrupted === 'cancelled' ? 'Upload cancelled' : 'Upload interrupted',
-            message: `${result.completed} of ${selectedFiles.length} upload${selectedFiles.length === 1 ? '' : 's'} completed`,
-            variant: 'warning',
-          });
-        } else {
-          showToastObj({
-            title: `${result.completed} upload${result.completed === 1 ? '' : 's'} completed`,
-            variant: 'success',
-          });
-        }
-      } finally {
-        const remainingUploads = selectedFiles.length - backendJobsSeen;
-        if (remainingUploads > 0) {
-          setPendingUploadCount((count) => Math.max(0, count - remainingUploads));
-        }
-        setUploadProgress(null);
-      }
-      const response = await getJobs();
-      setJobs(response.jobs ?? []);
-    });
-  };
+  const { handleUploadFiles } = useUploadCommands({
+    currentPath,
+    canWrite,
+    setError,
+    setJobs,
+    setUploadProgress,
+    setPendingUploadCount,
+    showToastObj,
+    runAction,
+  });
 
   // ── Transfer / Clipboard ──────────────────────────────
 
@@ -308,7 +255,7 @@ export function useFileCommands(deps: FileCommandDeps) {
     setContextMenu(null);
     try {
       const share = await createShare({ path: entry.path });
-      await navigator.clipboard.writeText(`${window.location.origin}/api/public/${share.token}`);
+      await navigator.clipboard.writeText(shareUrl(share.token));
       showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
     } catch (err) {
       showToastObj({ title: 'Quick share failed', message: err instanceof Error ? err.message : undefined, variant: 'error' });
@@ -337,90 +284,20 @@ export function useFileCommands(deps: FileCommandDeps) {
     }, dialog.mode === 'copy' ? 'Copy transfer started' : 'Move transfer started');
   };
 
-  // ── Archive / Checksum ────────────────────────────────
-
-  const handleCreateArchiveWithPreview = (entry: FileEntry, targetPath: string, archiveName: string) => {
-    getFiles(currentPath, false).then((response) => {
-      const entries2 = response.entries ?? [];
-      const conflict = entries2.find((e) => e.name === archiveName);
-      if (conflict) {
-        setConfirmDialog({
-          title: 'Archive Already Exists',
-          message: `"${archiveName}" already exists in ${currentPath}. Overwrite it?`,
-          confirmLabel: 'Overwrite',
-          danger: true,
-          onConfirm: () => { void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'overwrite' }), 'Archive transfer started'); }
-        });
-      } else {
-        void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'rename' }), 'Archive transfer started');
-      }
-    }).catch(() => { void runAction(() => createJob({ type: 'archive', sourcePath: entry.path, destinationPath: targetPath, conflictPolicy: 'rename' }), 'Archive transfer started'); });
-  };
-
-  const handleCreateArchive = () => {
-    const entry = selectedEntries[0];
-    if (!entry || selectedEntries.length !== 1) return;
-    const aName = archiveFileName(entry.name);
-    const defaultPath = joinPath(currentPath, aName);
-    setContextMenu(null);
-    setTextInputDialog({
-      title: 'Create Archive', label: 'Archive path', initialValue: defaultPath,
-      placeholder: defaultPath, confirmLabel: 'Create Archive',
-      folderSuggestions, suggestionLabel: 'Create in',
-      applyFolderSuggestion: (path) => joinPath(path, aName),
-      onSubmit: (value) => { handleCreateArchiveWithPreview(entry, value.trim(), aName); }
-    });
-  };
-
-  const handleExtractArchive = () => {
-    const entry = selectedEntries[0];
-    if (!entry || selectedEntries.length !== 1 || entry.type !== 'file' || !isArchiveFile(entry.name)) return;
-    const defaultPath = joinPath(currentPath, archiveBaseName(entry.name));
-    setContextMenu(null);
-    setTextInputDialog({
-      title: 'Extract Archive', label: 'Destination folder path',
-      initialValue: defaultPath, placeholder: defaultPath, confirmLabel: 'Extract',
-      folderSuggestions, suggestionLabel: 'Extract to',
-      applyFolderSuggestion: (path) => normalizeFolderPath(path),
-      onSubmit: (value) => {
-        const dest = value.trim();
-        getFiles(dest, false).then((response) => {
-          const existing = response.entries ?? [];
-          if (existing.length > 0) {
-            setConfirmDialog({
-              title: 'Destination Not Empty',
-              message: `The destination folder contains ${existing.length} item${existing.length === 1 ? '' : 's'}. Extract here anyway? Existing files with the same name may be renamed.`,
-              confirmLabel: 'Extract Anyway',
-              onConfirm: () => { void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract transfer started'); }
-            });
-          } else {
-            void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract transfer started');
-          }
-        }).catch(() => { void runAction(() => createJob({ type: 'extract', sourcePath: entry.path, destinationPath: dest }), 'Extract transfer started'); });
-      }
-    });
-  };
-
-  const handleAnalyze = () => {
-    const entry = selectedEntries[0];
-    if (!entry || entry.type !== 'directory') return;
-    setContextMenu(null);
-    setAnalyzePath(entry.path);
-  };
-
-  const handleCreateChecksum = () => {
-    const entry = selectedEntries[0];
-    if (!entry || selectedEntries.length !== 1) return;
-    setContextMenu(null);
-    setTextInputDialog({
-      title: 'Generate Checksum', label: 'Verify mode', initialValue: 'sha256',
-      placeholder: 'sha256', confirmLabel: 'Generate',
-      onSubmit: (value) => {
-        const mode = value.trim().toLowerCase() === 'md5' ? 'md5' : 'sha256';
-        void runAction(() => createJob({ type: 'checksum', sourcePath: entry.path, verifyMode: mode }), `Checksum (${mode}) transfer started`);
-      }
-    });
-  };
+  const {
+    handleCreateArchive,
+    handleExtractArchive,
+    handleAnalyze,
+    handleCreateChecksum,
+  } = useArchiveCommands({
+    currentPath,
+    folderSuggestions,
+    selectedEntries,
+    setContextMenu,
+    setTextInputDialog,
+    setAnalyzePath,
+    runAction,
+  });
 
   // ── Trash context menu handler ────────────────────────
 

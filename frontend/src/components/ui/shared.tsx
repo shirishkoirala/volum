@@ -12,7 +12,7 @@ type OverlayProps = {
   onClose?: () => void;
 };
 
-export function Overlay({ children, zIndex = 100, onClose }: OverlayProps) {
+export function Overlay({ children, zIndex = 500, onClose }: OverlayProps) {
   return (
     <div
       className={styles.overlay}

@@ -28,3 +28,10 @@
   align-self: start;
   max-width: var(--grid-column);
 }
+
+@media (max-width: 760px) {
+  .grid {
+    gap: 14px 16px;
+    padding: 2px 4px 16px;
+  }
+}

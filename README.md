@@ -24,7 +24,7 @@ Volum Desktop is a self-hosted web file manager for Ubuntu and Docker home serve
 
 | Desktop view | File grid | Drives view |
 |---|---|---|
-| ![Desktop](docs/screenshots/desktop.png) | ![File grid](docs/screenshots/file-grid.png) | ![Drives view](docs/screenshots/columns.png) |
+| ![Desktop](docs/screenshots/desktop.png) | ![File grid](docs/screenshots/file-grid.png) | ![Drives view](docs/screenshots/drives.png) |
 
 | Preview modal | Settings | Transfers |
 |---|---|---|
@@ -90,6 +90,8 @@ npm run lint         # eslint .
 npm run build        # tsc && vite build
 ```
 
+For upcoming product priorities, see [docs/roadmap.md](docs/roadmap.md).
+
 ## Architecture
 
 ### Backend (`backend/`)
@@ -119,7 +121,7 @@ React 19 + Vite 6 + TypeScript with strict options (`noUncheckedIndexedAccess`, 
 frontend/src/
 ├── App.tsx                       # Thin routing shell (~50 lines): theme, auth, ErrorBoundary
 ├── screens/
-│   ├── Home.tsx                  # Workspace shell: state, effects, handlers, view routing (~1112 lines)
+│   ├── Home.tsx                  # Workspace shell: state, effects, handlers, windows, view routing
 │   └── LoginScreen.tsx
 ├── hooks/                        # Custom hooks (never define logic inline)
 │   ├── useJobs.ts                # SSE job subscription + control handlers
@@ -134,7 +136,7 @@ frontend/src/
 │   └── useLocalStorage.ts        # Generic localStorage hook
 ├── pages/                        # Full-page views
 │   ├── DesktopView.tsx           # Desktop with drive icons, wallpaper, drag ordering
-│   ├── FilesView.tsx             # File grid/list/column browsing
+│   ├── FilesView.tsx             # File grid/list browsing
 │   ├── TrashView.tsx             # Trash list (no selection toolbar)
 │   ├── JobsPage.tsx              # Transfer history (no filter tabs)
 │   └── SettingsPanel.tsx         # Settings with sidebar nav (6 categories)
@@ -144,7 +146,7 @@ frontend/src/
 │   ├── overlay/                  # Dialogs, Toast, InfoPanel, PreviewModal, ShareDialog, ShareManager,
 │   │                             # DiskUsageAnalyzer, KeyboardShortcuts, ContextMenus (File/Trash/Desktop)
 │   └── ui/                       # EmptyState, ProgressBar, Icon, WallpaperPicker, ServerInfo, GridTile,
-│                                 # FileGridView/ListView/ColumnView, FileSearchBar, DriveSection
+│                                 # FileGridView/ListView, FileSearchBar, DriveSection
 ├── utils/                        # format.ts, path.ts, archive.ts, jobs.ts, view.ts, preview.ts, wallpaper.ts
 ├── types/                        # Shared TypeScript types
 ├── styles/                       # global.css (utility classes), tokens.css (theme vars)
@@ -154,7 +156,7 @@ frontend/src/
 ## Environment
 
 ```txt
-VOLUM_HOME=/home/username            # Home directory for "My PC" Home icon
+VOLUM_HOME=/home/username            # Home directory used for default root shortcuts
 VOLUM_ROOTS=/mnt/storage,/mnt/data1  # Comma-separated paths to expose
 VOLUM_INCLUDE_ROOT=false             # Expose host / in server mode
 VOLUM_DISCOVER_ROOTS=false           # Auto-discover mounted drives

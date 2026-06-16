@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
 import { Button, MutedText } from '../components/ui/shared';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -22,6 +22,8 @@ import {
   type UserInfo,
 } from '../api/client';
 import type { WallpaperConfig } from '../utils/wallpaper';
+import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
+import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
 import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
@@ -33,6 +35,12 @@ type SettingsPanelProps = {
   onOpenShortcuts: () => void;
   onLogout: () => void;
   session: Session | null;
+  services?: ServiceShortcut[];
+  serviceHealth?: Record<string, ServiceHealthResult>;
+  onAddService?: () => void;
+  onEditService?: (id: string) => void;
+  onRemoveService?: (id: string) => void;
+  onReorderServices?: (ids: string[]) => Promise<void>;
 };
 
 type CategoryId = 'general' | 'server' | 'storage' | 'desktop' | 'admin' | 'about';
@@ -55,6 +63,12 @@ export function SettingsPanel({
   onOpenShortcuts,
   onLogout,
   session,
+  services,
+  serviceHealth,
+  onAddService,
+  onEditService,
+  onRemoveService,
+  onReorderServices,
 }: SettingsPanelProps) {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,6 +86,11 @@ export function SettingsPanel({
   const [newRole, setNewRole] = useState<'admin' | 'readonly'>('readonly');
   const [creatingUser, setCreatingUser] = useState(false);
   const [pwdChangeUserId, setPwdChangeUserId] = useState<string | null>(null);
+  const notifPrefs = useNotificationPreferences();
+
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const dragOverIndex = useRef<number | null>(null);
   const [pwdChangeValue, setPwdChangeValue] = useState('');
   const [userMsg, setUserMsg] = useState<string | null>(null);
   const [userError, setUserError] = useState<string | null>(null);
@@ -233,6 +252,19 @@ export function SettingsPanel({
                 <Button size="compact" onClick={onOpenShortcuts}>
                   Keyboard Shortcuts
                 </Button>
+                <label className={styles.toggleLabel}>
+                  <input
+                    type="checkbox"
+                    checked={notifPrefs.enabled}
+                    onChange={(e) => {
+                      notifPrefs.setEnabled(e.target.checked);
+                      if (e.target.checked && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+                        void Notification.requestPermission();
+                      }
+                    }}
+                  />
+                  <span>Browser notifications</span>
+                </label>
                 {session?.authEnabled && (
                   <Button size="compact" onClick={onLogout}>
                     Log Out
@@ -276,10 +308,79 @@ export function SettingsPanel({
             </section>
           )}
 
-          {(!filterQuery.trim() ? activeCategory === 'desktop' : filteredCategories.some((c) => c.id === 'desktop')) && wallpaper && onWallpaperChange && (
-            <div className={styles.settingsSection}>
-              <WallpaperPicker wallpaper={wallpaper} onChange={onWallpaperChange} />
-            </div>
+          {(!filterQuery.trim() ? activeCategory === 'desktop' : filteredCategories.some((c) => c.id === 'desktop')) && (
+            <>
+              {wallpaper && onWallpaperChange && (
+                <div className={styles.settingsSection}>
+                  <WallpaperPicker wallpaper={wallpaper} onChange={onWallpaperChange} />
+                </div>
+              )}
+              {onAddService && (
+                <section className={styles.settingsSection}>
+                  <h4>Services</h4>
+                  {services && services.length > 0 ? (
+                    <div className={styles.serviceList}>
+                      {services.map((svc, idx) => (
+                        <div
+                          key={svc.id}
+                          className={`${styles.serviceRow}${dragIndex === idx ? ` ${styles.dragging}` : ''}${dropIndex === idx ? ` ${styles.dragOver}` : ''}`}
+                          draggable
+                          onDragStart={() => { setDragIndex(idx); dragOverIndex.current = null; }}
+                          onDragEnd={() => {
+                            const toIdx = dragOverIndex.current;
+                            const fromIdx = dragIndex;
+                            if (toIdx !== null && fromIdx !== null && toIdx !== fromIdx) {
+                              const ids = [...services.map(s => s.id)];
+                              const moved = ids[fromIdx];
+                              if (!moved) return;
+                              ids.splice(fromIdx, 1);
+                              ids.splice(toIdx, 0, moved);
+                              onReorderServices?.(ids);
+                            }
+                            setDragIndex(null);
+                            setDropIndex(null);
+                            dragOverIndex.current = null;
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            if (dropIndex !== idx) setDropIndex(idx);
+                            dragOverIndex.current = idx;
+                          }}
+                          onDragLeave={() => { setDropIndex(null); }}
+                        >
+                          <div className={styles.serviceDragHandle}>
+                            <Icon name="drag-handle" size={14} />
+                          </div>
+                          <div className={styles.serviceInfo}>
+                            <span>{svc.name}</span>
+                            <span className={styles.serviceHealth}>
+                              {(() => {
+                                const h = serviceHealth?.[svc.id];
+                                if (!h) return '⋯';
+                                return h.status === 'healthy'
+                                  ? '✓ Healthy'
+                                  : h.status === 'unhealthy'
+                                    ? '✗ Unhealthy'
+                                    : '⋯ Checking';
+                              })()}
+                            </span>
+                          </div>
+                          <div className={styles.serviceActions}>
+                            <Button size="compact" onClick={() => onEditService?.(svc.id)}>Edit</Button>
+                            <Button size="compact" onClick={() => onRemoveService?.(svc.id)}>Remove</Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <MutedText compact>No services configured. Add shortcuts to your favorite web apps.</MutedText>
+                  )}
+                  <div className={styles.settingsActions}>
+                    <Button size="compact" onClick={onAddService}>Add Service</Button>
+                  </div>
+                </section>
+              )}
+            </>
           )}
 
           {(!filterQuery.trim() ? activeCategory === 'admin' : filteredCategories.some((c) => c.id === 'admin')) && (

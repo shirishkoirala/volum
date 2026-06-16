@@ -1,0 +1,243 @@
+.searchView {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.searchHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.backBtn:hover {
+  background: var(--color-hover);
+  color: var(--color-text-primary);
+}
+
+.searchInputWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex: 1;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: var(--space-xs) 0;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  outline: none;
+}
+
+.clearBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.clearBtn:hover {
+  background: var(--color-hover);
+  color: var(--color-text-primary);
+}
+
+.resultMeta {
+  padding: var(--space-xs) var(--space-md);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  margin: var(--space-sm) var(--space-md) 0;
+  background: var(--color-danger-bg, #fee);
+  color: var(--color-danger, #c00);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.errorDismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0 var(--space-xs);
+  opacity: 0.7;
+}
+
+.errorDismiss:hover {
+  opacity: 1;
+}
+
+.resultsArea {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.resultsList {
+  display: flex;
+  flex-direction: column;
+}
+
+.resultRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border-subtle);
+  min-height: 36px;
+  user-select: none;
+}
+
+.resultRow:hover {
+  background: var(--color-hover);
+}
+
+.resultRow.selected {
+  background: var(--color-accent-bg, rgba(0, 100, 200, 0.1));
+}
+
+.resultName {
+  flex: 0 0 auto;
+  min-width: 180px;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resultPath {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: monospace;
+}
+
+.resultSize {
+  flex: 0 0 80px;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.resultDate {
+  flex: 0 0 120px;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.skeletonList {
+  padding: var(--space-md);
+}
+
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+}
+
+.skeletonIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-xs);
+  background: var(--color-skeleton, #e0e0e0);
+  flex-shrink: 0;
+  animation: var(--anim-skeleton);
+}
+
+.skeletonLine {
+  flex: 1;
+  height: 14px;
+  border-radius: var(--radius-xs);
+  background: var(--color-skeleton, #e0e0e0);
+  animation: var(--anim-skeleton);
+}
+
+@media (max-width: 760px) {
+  .searchHeader {
+    padding: var(--space-sm) var(--space-sm);
+    gap: var(--space-xs);
+  }
+
+  .backBtn {
+    width: 28px;
+    height: 28px;
+  }
+
+  .resultRow {
+    flex-wrap: wrap;
+    padding: var(--space-xs) var(--space-sm);
+    gap: 2px var(--space-sm);
+  }
+
+  .resultName {
+    min-width: 0;
+    flex: 1 1 auto;
+    font-size: 0.8rem;
+  }
+
+  .resultPath {
+    flex: 0 0 100%;
+    font-size: 0.72rem;
+    order: 1;
+  }
+
+  .resultSize {
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+  }
+
+  .resultDate {
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+  }
+}

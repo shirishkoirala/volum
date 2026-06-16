@@ -1,9 +1,22 @@
+import type { ServiceHealthInfo } from '../api/client';
+
 export type ServiceShortcut = {
   id: string;
   name: string;
   url: string;
   iconUrl?: string;
+  healthUrl?: string;
+  description?: string;
+  openMode?: 'embed' | 'tab';
+  lastHealthStatus?: string;
+  lastHealthCheckedAt?: string;
+  lastHealthStatusCode?: number;
+  lastHealthError?: string;
 };
+
+export type ServiceHealthResult = ServiceHealthInfo;
+
+export type ServiceHealthStatus = 'healthy' | 'unhealthy';
 
 export function validUrl(str: string): boolean {
   try {

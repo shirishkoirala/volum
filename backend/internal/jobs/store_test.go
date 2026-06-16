@@ -110,6 +110,22 @@ func TestPauseResumeJob(t *testing.T) {
 	}
 }
 
+func TestResumeNeedsAttentionJob(t *testing.T) {
+	store, ctx := setupStore(t)
+	job := createTestJob(t, store, ctx, TypeCopy)
+
+	if err := store.NeedsAttention(ctx, job.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.ResumeNeedsAttentionJob(ctx, job.ID); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := store.Get(ctx, job.ID)
+	if got.Status != StatusQueued {
+		t.Fatalf("expected queued after needs_attention resume, got %s", got.Status)
+	}
+}
+
 func TestClearCompleted(t *testing.T) {
 	store, ctx := setupStore(t)
 	job := createTestJob(t, store, ctx, TypeCopy)
@@ -170,6 +186,43 @@ func TestItemCRUD(t *testing.T) {
 	}
 	if len(items) != 1 || items[0].ProcessedBytes != 50 {
 		t.Fatalf("unexpected items: %#v", items)
+	}
+}
+
+func TestItemConflictResolutionRoundTrip(t *testing.T) {
+	store, ctx := setupStore(t)
+	job := createTestJob(t, store, ctx, TypeCopy)
+	resolution := "skip"
+
+	item, err := store.CreateItem(ctx, Item{
+		JobID:              job.ID,
+		SourcePath:         "/tmp/source",
+		DestinationPath:    "/tmp/dest",
+		SizeBytes:          100,
+		Status:             StatusCompleted,
+		ConflictResolution: &resolution,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	items, err := store.ListItems(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 || items[0].ConflictResolution == nil || *items[0].ConflictResolution != "skip" {
+		t.Fatalf("expected skip conflict resolution for created item, got %#v", items)
+	}
+
+	if err := store.UpdateItemConflictResolution(ctx, item.ID, "rename"); err != nil {
+		t.Fatal(err)
+	}
+	items, err = store.ListItems(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if items[0].ConflictResolution == nil || *items[0].ConflictResolution != "rename" {
+		t.Fatalf("expected updated rename conflict resolution, got %#v", items[0].ConflictResolution)
 	}
 }
 

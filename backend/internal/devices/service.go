@@ -142,7 +142,7 @@ func publicPathForMountPoint(mountPoint string, roots []security.Root) (string, 
 
 	var best *security.Root
 	for _, root := range roots {
-		if !pathInside(root.InternalPath, internalPath) {
+		if !security.PathInside(root.InternalPath, internalPath) {
 			continue
 		}
 		if best == nil || len(root.InternalPath) > len(best.InternalPath) {
@@ -162,17 +162,6 @@ func publicPathForMountPoint(mountPoint string, roots []security.Root) (string, 
 		return best.Path, *best, true
 	}
 	return filepath.Join(best.Path, rel), *best, true
-}
-
-func pathInside(root, candidate string) bool {
-	rel, err := filepath.Rel(root, candidate)
-	if err != nil {
-		return false
-	}
-	if rel == "." {
-		return true
-	}
-	return !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && rel != ".."
 }
 
 func diskUsage(path string) (int64, int64, int64, error) {

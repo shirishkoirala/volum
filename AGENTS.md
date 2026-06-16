@@ -223,7 +223,60 @@ frontend/src/
 - **YAGNI** — implement only what's currently needed, no speculative features
 - **SOLID** — single responsibility, open-closed, interface segregation, dependency inversion
 
+## Product Roadmap
+
+- Roadmap lives in `docs/roadmap.md`; README links to it from the Development section.
+- Current priority order: large-folder performance, preview window polish, search-result actions, conflict handling, upload reliability, mobile/responsive desktop, service health/notifications, then service widgets/integrations.
+- Keep Volum focused on reliable file management with desktop-style service shortcuts; avoid turning it into a full monitoring suite or dashboard widget platform too early.
+
 ## Task History
+
+### Service Health Checks (Slices 1-3)
+- Added optional `healthUrl` to desktop services in SQLite, backend store, API request/response types, and frontend service shortcut types.
+- Added `GET /api/services/health` authenticated endpoint; backend checks only services with a health URL, uses a 3s timeout, and limits concurrent checks.
+- Service form now includes optional "Health Check URL"; invalid values are rejected client-side.
+- Desktop service icons show a small checking/healthy/unhealthy indicator when `healthUrl` is configured.
+- Frontend health polling is visibility-aware and desktop-view-aware, refreshing immediately when useful and then every 60s only while visible on the desktop.
+- Tests cover backend health endpoint/store migration and frontend service form/desktop health indicator behavior.
+- **Slice 2**: HealthChecker background goroutine, SSE health events, cached health endpoint, DB-persisted health state
+- **Slice 3**: SSE health events consumed by frontend (real-time toasts + browser notifications on health transitions), redundant notification logic removed from polling path, notification preferences hook with SettingsPanel toggle (localStorage), job/health browser notifications respect user preference
+
+### Roadmap From Adjacent App Requests
+- Added `docs/roadmap.md` based on recurring File Browser, Homarr, and Homepage requests.
+- Prioritized practical Volum work: large-folder performance, preview preservation/cancellation, search-result actions, duplicate handling, upload hardening, mobile layout, and constrained health/notification features.
+- Explicitly deferred full monitoring, native mobile apps, plugin marketplace, multi-board dashboard editor, and service-specific widget catalog.
+
+### Priority 1 — Large Folder Performance, Slice 1
+- Added `useIncrementalEntries` to cap large folder initial rendering at 240 entries and load 240-entry batches on near-bottom scroll.
+- Wired incremental rendering into both `FileGridView` and `FileListView`.
+- Replaced the manual "Load more" button with an IntersectionObserver sentinel footer; scrolling now loads the next local/remote batch automatically.
+- File grid/list scroll position resets on folder/view changes so old bottom scroll positions do not trigger eager loading in new folders.
+- WindowFrame content now uses a constrained flex column (`min-height: 0`, `overflow: hidden`) so windowed file grids own their scroll instead of expanding past the window.
+- Added a large-folder banner showing rendered count vs total count.
+- Converted selected/favorite path checks inside file rendering to `Set` lookups.
+- Browser smoke test used a temporary 720-file folder under `storage/` and confirmed 240 initial items, then 480 after loading more.
+
+### Priority 1 — Large Folder Performance, Slice 2
+- Added paginated file listing: `/api/files?limit=&offset=` returns `entries`, `total`, `limit`, `offset`, and `hasMore`.
+- Backend `files.Service.ListPage` sorts directory-first/name-first using `os.DirEntry`, then calls `Info()` only for entries in the requested page.
+- Frontend `getFiles` accepts paging options; `useFileBrowser` loads the first 600 entries and appends more pages on demand.
+- `useIncrementalEntries` now supports a backend total count and remote `onLoadMore` callback.
+
+### Priority 1 — Large Folder Performance, Slice 3
+- Added preview policy helpers in `frontend/src/utils/preview.ts`.
+- Thumbnails are skipped for GIFs and images larger than 8 MB; file icons are used instead.
+- Inline text previews are blocked above 1 MB, image previews above 40 MB, and embedded PDF previews above 50 MB.
+- Video/audio previews now use `preload="metadata"`.
+- Browser smoke test used a temporary 1 MB+ log file and confirmed the fallback rendered without dumping the file contents.
+
+### Priority 2 — Preview Window Polish, Slice 1
+- PreviewContent now supports optional previous/next actions, disabled states, item position labels, and ArrowLeft/ArrowRight shortcuts.
+- FilesView builds a previewable file list from the current folder/filter and passes it into preview openers.
+- Mobile preview modals can navigate between previewable files without closing the modal or changing folders.
+- Desktop preview windows reuse the existing preview window and update its title/icon/content when moving between files.
+- Preview actions now include Copy path with a short copied state and Share, alongside existing download/open raw actions.
+- Preview cleanup is explicit: text fetches abort, image srcs clear, video/audio pause and unload, and PDF iframes navigate away on close/file changes.
+- Added focused preview navigation test coverage.
 
 ### Task 10 — Sidebar Removed, Favorites → Desktop Icons
 - Deleted `FilesSidebar.tsx` and `FilesSidebar.module.css`
@@ -277,6 +330,62 @@ frontend/src/
 - **9.4** Added CSS utility classes to `global.css` (`.row`, `.col`, `.gap*`, `.truncate`, `.clickable`, flex helpers, alignment, color utilities)
 - **9.2** (recommendation) OpenAPI/Swagger would improve backend↔frontend type sync but deferred — existing TypeScript types in `client.ts` are already well-maintained
 
+### Priority 3 — Search Result Actions
+- Created `SearchResultsView.tsx` + `SearchResultsView.module.css` — full-page search results view with list showing icon, name, full path, size, and modified date
+- Added "View all N results →" footer to the quick-search dropdown (`FileSearchBar.tsx`) with `onShowAllResults` callback
+- Added `'search'` to `ActiveView` type in `useNavigation.ts`, `TopBar.tsx`, and `StatusBar.tsx`
+- Search results support full right-click context menu (`FileContextMenu`) with all file operations: preview, download, share, info, rename, copy, move, delete, archive, extract, checksum, quick share
+- Search results are preserved after actions (re-executes search query on rename/delete)
+- Backend `GET /api/files/search` already functional; no backend changes needed
+- TypeScript, ESLint, and production build all pass clean
+
+### Priority 4 — Conflict Handling (Slice 1: skip_identical)
+- Added `skip_identical` to `validConflictPolicy()` and `ConflictPolicy` type — backend validates and frontend type supports the new policy
+- Added `hashFile()` helper to `worker/checksum.go` for computing SHA256 on a file path
+- Added `resolveSkipIdentical()` in `worker.go` — compares size + SHA256; skips if identical, errors if different, with audit logging
+- Updated `resolveConflictDestination()` to take a `source` path parameter; updated both call sites (`transferItems`, `copyOne`)
+- Added "Skip identical files (by size + checksum)" option to TransferDialog conflict policy dropdown (both Dialogs.tsx and SearchResultsView)
+- Move jobs reject `skip_identical` just like they reject `skip`
+- Go build verified via Docker, frontend TypeScript/ESLint/build all clean
+- Created `SearchResultsView.tsx` + `SearchResultsView.module.css` — full-page search results view with list showing icon, name, full path, size, and modified date
+- Added "View all N results →" footer to the quick-search dropdown (`FileSearchBar.tsx`) with `onShowAllResults` callback
+- Added `'search'` to `ActiveView` type in `useNavigation.ts`, `TopBar.tsx`, and `StatusBar.tsx`
+- Search results support full right-click context menu (`FileContextMenu`) with all file operations: preview, download, share, info, rename, copy, move, delete, archive, extract, checksum, quick share
+- Search results are preserved after actions (re-executes search query on rename/delete)
+- Backend `GET /api/files/search` already functional; no backend changes needed
+- TypeScript, ESLint, and production build all pass clean
+
+### Priority 5 — Upload Reliability (Slice 1)
+- Added `TestUploadSpecialCharacters` — 8 test cases for filenames with spaces, unicode, symbols, mixed punctuation
+- Added `TestUploadLeadingTrailingSpaces` — verifies `validUploadName` trims leading/trailing spaces
+- Added `TestUploadPathNormalization` — verifies `filepath.Base` strips directory components from filenames
+- Added `TestUploadInvalidNameRejection` — verifies backslash, `.`, `..` return 400
+- Reviewed upload error cleanup paths: partial files and job IDs are always removed on failure
+- Frontend typecheck + lint clean
+
+### Priority 4 — Conflict Handling (Full Implementation)
+- Added `StatusConflict` item status for tracking conflicting files per-item
+- Worker modified: `ask` policy conflicts in `copyOne` now set item to `"conflict"` and job to `needs_attention` via `errAskDestination`/`errJobNeedsAttention` sentinels
+- Top-level destination check in `transferItems` skips `ask` policy (delegates to per-item in `copyOne`)
+- Added `POST /api/jobs/{id}/resolve` handler — accepts per-item decisions (`skip`/`overwrite`/`rename`) with optional `defaultResolution`; overwrite removes destination, rename finds next available path
+- Added `GET /api/jobs/{id}/conflicts` handler — lists conflicting items
+- Added store methods: `NeedsAttention`, `ListConflictingItems`, `CountConflicts`, `UpdateItemDestination`
+- Each resolution creates audit log entry (`conflict_skip`, `conflict_overwrite`, `conflict_rename`)
+- Job auto-resumes (set to `queued`) when all conflicts are resolved
+- Cancel now supports `needs_attention` status
+- Frontend: `ConflictDialog.tsx` + `.module.css` — per-file skip/overwrite/rename buttons + "Apply to all" dropdown
+- Frontend: JobsPage shows Resolve Conflicts button + `active` badge for `needs_attention` jobs
+- Added `handleResolveConflicts` to `useJobs` hook
+- Fixed upload handler to trim leading/trailing spaces from filenames before storage
+- Fixed `TestUploadLeadingTrailingSpaces` test expectation
+
+### Priority 5 — Upload Reliability (Slice 2)
+- Added `makeJobLabel(type, action)` to `utils/jobs.ts` for job-type-aware toast titles
+- Updated `useJobs` action handlers (cancel/pause/resume/retry) to accept `jobType` and show e.g. "Upload cancelled", "Copy paused", "Move resumed" instead of generic "Transfer cancelled"
+- Updated SSE browser notifications to show e.g. "Upload completed" / "Upload failed" instead of "Transfer completed" / "Transfer failed"
+- Frontend typecheck + lint + build clean
+- Docker build + Go vet/tests + frontend typecheck/lint/build all passing
+
 ### Session — Columns Removal, Container Styling, Drives View Extraction
 - **Columns removed**: Deleted `FileColumnView.tsx` + `FileColumnView.module.css`; removed `'columns'` from `ViewMode` type; deleted `buildColumnPath` utility; cleaned columns branch from `FilesView.tsx`; removed `viewModeBeforeTrash` ref; removed "Columns" menu item from `AppMenuBar.tsx`; removed `'view-columns': Columns3` icon mapping; cleared columns assertion from test
 - **Container styling**: Added `border: 1px solid var(--color-border-subtle)` + `border-radius: var(--radius-md)` + `margin: var(--space-md)` to both `.fileList` (FileListView.module.css) and `.fileGrid` (FileGridView.module.css) — no background
@@ -287,4 +396,3 @@ frontend/src/
 - **DesktopView.module.css**: Removed `.driveContents`, `.driveContent`, `.drivePartitionItem`, `.drivePartitionInfo`, `.drivePartitionMeter`, `.partitionUnmoved` and their hover/media styles — kept only desktop icon CSS
 - **Home.tsx**: Renders `DrivesView` when `activeView === 'drives'`; passes `handleBackToDesktop` (sets `showingMyPC = false`)
 - TypeScript, ESLint, and production build (`npm run build`) all pass clean
-

@@ -1,206 +1,246 @@
-# Volum Cleanup Roadmap
+# Volum Roadmap
 
-This roadmap tracks the current inconsistency, KISS, YAGNI, and SOLID cleanup work. Fix correctness first, then reduce coupling, then polish conventions.
+This roadmap is based on recurring requests and pain points seen in adjacent self-hosted apps such as File Browser, Homarr, and Homepage, then filtered through Volum's current direction: a reliable server-side file manager with a desktop-like web UI.
 
-## Phase 1 - Correctness
+Guiding principles:
 
-### 1.1 Fix checksum job scheduling — ✅ Complete
+- **KISS**: prefer focused, understandable workflows over broad platform features.
+- **YAGNI**: build the next useful slice, not a speculative monitoring suite.
+- **SOLID**: keep backend jobs, file browsing, previews, sharing, desktop services, and UI state isolated enough to evolve independently.
 
-**Result:**
-- `runOnce` chain: transfer → archive/extract → checksum. Checksum claims when no transfer/archive job exists.
-- `TestRunOnceProcessesChecksumWhenNoArchiveJob` — checksum-only jobs are picked up.
-- `TestRunOnceProcessesOnlyOneJobPerTick` — archive takes priority, checksum runs on next tick.
+## Priority 1: Large Folder Performance
 
-### 1.2 Complete directory checksum jobs — ✅ Complete
+Status: started. The first slice caps initial rendering for large folders and progressively loads more items as the user scrolls.
 
-**Result:**
-- `checksumDir` calls `CompleteJob` after the second walkDir succeeds (line 152).
-- Cancellation returns nil without `CompleteJob`; pause returns `errJobPaused`.
-- `TestProcessChecksumDirectoryCompletesJob` + `TestProcessChecksumDirectoryEmptyCompletesJob` verify completion.
+Users of web file managers repeatedly report slow or stuck folders with thousands of files, especially when previews or thumbnails are involved.
 
-## Phase 2 - Frontend State Ownership
+Planned work:
 
-### 2.1 Deduplicate view preference persistence — ✅ Complete
+- Add list virtualization for large file grids/lists.
+- Add server-side pagination or cursor-based listing for very large directories.
+- Keep preview/thumbnail generation cancelable when navigation changes.
+- Add defensive preview limits for very large images, GIFs, and media files.
+- Show a clear "large folder" loading state with partial results instead of blocking the whole view.
 
-**Result:**
-- `useViewPreferences` is the single owner of folder preference persistence via `navigateToPath`.
-- Home.tsx has zero direct `setFolderPrefs`/`folderPrefs` calls.
-- Per-folder view, sort field, and sort direction restored on navigation.
-- Trash `columns` restore via `viewModeBeforeTrash` ref works correctly.
+Completed slice:
 
-### 2.2 Split `Home` by workflow, not state buckets
+- Large folders render the first 240 entries instead of mounting every file item immediately.
+- Grid and list views load additional 240-item batches automatically when scrolling near the bottom.
+- File view selection/favorite checks use `Set` lookups during rendering instead of repeated array scans.
+- `/api/files` accepts `limit` and `offset`, returns `total`/`hasMore`, and only stats entries in the requested page.
+- Files view requests the first 600 entries, then appends additional backend pages as the user scrolls near the end.
+- Thumbnails are skipped for GIFs and images larger than 8 MB, avoiding full raw-image fetches for expensive previews.
+- Inline text, image, and PDF previews now have size gates with explicit download/open fallbacks.
 
-**Problem:** `Home.tsx` remains over 1,100 lines and owns navigation, file commands, selection, search, desktop actions, dialogs, and rendering.
+Why now:
 
-**Files:**
-- `frontend/src/screens/Home.tsx`
-- `frontend/src/hooks/useFileActions.ts`
-- `frontend/src/hooks/useDialogStack.ts`
-- New focused hooks/components as needed
+- This is core to Volum's job as a file manager.
+- It directly matches the preview background-task issue already observed in Volum.
 
-**Plan:**
-- Replace state-bucket hooks with behavior-focused hooks.
-- Candidate hooks:
-  - `useFileBrowser` for loading entries, search, navigation, and folder preferences.
-  - `useSelection` for file/trash selection operations.
-  - `useFileCommands` for create, rename, delete, archive, extract, checksum, transfer, share.
-  - `useToasts` for toast creation/dismissal.
-- Keep `Home` responsible for composition only.
+References:
 
-**Acceptance:**
-- `Home.tsx` becomes materially smaller and mostly wires screen components together.
-- Hooks expose behavior, not raw unrelated setters.
-- Existing file operations still work through the same UI paths.
+- [File Browser: stuck loading with 10K+ files](https://github.com/filebrowser/filebrowser/issues/1566)
+- [File Browser: performance and sharing in folders with ~4000 files](https://github.com/filebrowser/filebrowser/issues/1689)
+- [File Browser: huge image thumbnails consuming resources](https://github.com/filebrowser/filebrowser/issues/3888)
+- [File Browser: GIF folders loading slowly](https://github.com/filebrowser/filebrowser/issues/3293)
 
-## Phase 3 - Component Boundaries
+## Priority 2: Preview Window Polish
 
-### 3.1 Reduce `FilesView` prop surface — ✅ Complete
+Status: started. The first slice adds in-preview next/previous navigation within the current folder or filtered result set.
 
-**Result:**
-- Removed 3 unused props: `entries`, `contextMenu`, `onCloseContextMenu`
-- Grouped remaining 30+ props into 7 cohesive objects: `navigation`, `search`, `selection`, `dragDrop`, `rename`, `context`, `loadError`, `touch`
-- `FilesViewProps` shrunk from 40+ flat props to 15 top-level keys (8 groups + 5 standalone)
-- Home.tsx FilesView JSX fully migrated to grouped props
+Users expect media previews to preserve browsing state, not reset scroll position, sorting, or folder context.
 
-### 3.2 Extract shared context menu shell — ✅ Complete
+Planned work:
 
-**Result:**
-- Created `ContextMenuShell.tsx` — handles x/y positioning, focus trap, keyboard nav, Escape, click-outside, role="menu", aria-orientation
-- Migrated 6 context menus: FileContextMenu, DesktopContextMenu, TrashContextMenu, FilesEmptyMenu, JobsEmptyMenu, TrashEmptyMenu
-- Each menu reduced to ~20-40 lines of item list JSX only
-- All menus retain identical keyboard and mouse behavior
+- Keep previews fully windowed inside the desktop workspace.
+- Preserve file list scroll position after closing preview.
+- Support next/previous navigation within the current folder or filtered result set.
+- Add safe fallback actions: open raw file, download, copy path, share.
+- Ensure preview cancellation happens when the window closes or the user navigates away.
 
-## Phase 4 - API And Utility Separation
+Completed slice:
 
-### 4.1 Split API types, endpoint functions, and file predicates — ✅ Complete
+- Preview controls show the current item position within the previewable files in the current folder/filter.
+- Previous/next buttons move through previewable files without closing the preview or leaving the folder.
+- ArrowLeft/ArrowRight shortcuts work while a preview is open.
+- Desktop preview windows update the existing preview window instead of opening extra windows.
+- Preview actions include copy path, share, download, and open raw file.
+- Text preview fetches abort on close/file change, and media/PDF preview elements explicitly unload resources on close/file change.
 
-**Result:**
-- Created `utils/fileTypes.ts` with `isImageExtension`, `isVideoExtension`, `isAudioExtension`, `isTextExtension`
-- `client.ts` no longer exports file-type predicates
-- `preview.ts`, `PreviewModal.tsx`, `FileItem.tsx` all import from `utils/fileTypes.ts` instead of `api/client.ts`
-- No behavior change in preview/download flows
+Why now:
 
-### 4.2 Tighten job type modeling — ✅ Complete
+- Volum already has preview windows.
+- Improving this is smaller than adding new feature areas and makes daily browsing feel much better.
 
-**Result:**
-- Added `JobType` (`'copy' | 'move' | 'upload' | 'extract' | 'archive' | 'checksum'`) and `JobStatus` (`'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'needs_attention'`) union types
-- `Job.type` and `Job.status` use the union types; `createJob` accepts `JobType`
-- `JobsPage.tsx` helper signatures use `JobStatus`
-- Unknown statuses/values from API are handled gracefully at runtime (strict equality checks simply return `false`)
+Reference:
 
-## Phase 5 - Settings And UI Consistency
+- [File Browser: preview media in an overlay to maintain navigation state](https://github.com/filebrowser/filebrowser/issues/1833)
 
-### 5.1 Fix settings search behavior — ✅ Complete
+## Priority 3: Search Result Actions
 
-**Result:**
-- Sidebar nav now renders `filteredCategories` when a search query is active, keeping nav and content in sync.
-- Added compact `EmptyState` when no categories match the search query.
-- Error retry uses `loadStatus()` instead of `window.location.reload()`.
+Status: completed.
 
-### 5.2 Move `ErrorBoundary` styles to CSS Module — ✅ Complete
+Large-folder users often search to find one item, then need to share, download, move, rename, or inspect it from the result itself.
 
-**Result:**
-- Created `ErrorBoundary.module.css` with `.wrapper`, `.title`, `.message` classes using theme CSS vars.
-- Replaced inline styles with CSS Module classes.
-- Replaced inline `<button>` with shared `<Button variant="primary">` component.
+Completed slice:
 
-## Phase 6 - Backend Quality Follow-Up
+- Created `SearchResultsView.tsx` — dedicated full-page search results view with a list showing icon, name, full path, size, and modified date.
+- Search results support right-click context menu with all file operations: preview, download, share, info, rename, copy, move, delete, archive, extract, checksum, and quick share.
+- Each action calls the appropriate backend API directly; the result list is preserved after actions by re-executing the search query.
+- Clicking a directory navigates to it; clicking a file opens preview (or download for non-previewable files).
+- Added "View all N results &rarr;" footer to the existing quick-search dropdown, which opens the full search results view with the current query pre-populated.
+- The search results view has its own search bar, loading skeleton, empty state, and error handling — fully self-contained.
+- All dialogs (confirm, text input, transfer, share, info, preview) are handled within the view.
+- Backend `GET /api/files/search` was already functional; no backend changes were needed.
 
-### 6.1 Review directory size semantics — ✅ Complete
+Why now:
 
-**Result:**
-- Renamed `entrySize` → `immediateDirSize` to clarify it sums only immediate file children (one level deep via `os.ReadDir`), not recursive subtree sizes.
-- Test assertion updated to reference the new name.
-- Frontend uses `formatBytes(entry.size)` without misleading labels; no frontend change needed.
+- This is a high-value workflow improvement with limited backend risk.
+- It reduces the need to navigate back into slow folders.
 
-### 6.2 Consolidate claim-next job logic — ✅ Complete
+References:
 
-**Result:**
-- Extracted private `claimNextJob(ctx, types...)` helper in `store_claiming.go` — handles the shared transaction + query + update + commit pattern.
-- Public methods (`ClaimNextTransferJob`, `ClaimNextArchiveJob`, `ClaimNextChecksumJob`) are one-liner wrappers.
-- Added `repeatParams` helper for dynamic `IN (?, ?, ...)` placeholders.
-- All existing store tests still pass.
+- [File Browser: performance and sharing from large folders](https://github.com/filebrowser/filebrowser/issues/1689)
+- [File Browser: share files/folders from search results](https://github.com/filebrowser/filebrowser/issues/1692)
 
-## Phase X — Transfers Page Redesign (JobsPage)
+## Priority 4: Conflict Handling
 
-### X.1 Fix bare `<p>` and UUID fallback — ✅ Complete
+Status: completed.
 
-**Problem:** Line 72 used a raw `<p>` with browser-default margins (~16px), and fell back to `job.id` (UUID) — useless noise.
+File operations need clearer duplicate handling, especially for move/copy jobs with many items.
 
-**Result:**
-- Added `.jobPath` CSS class in `JobsPage.module.css` with `text-overflow: ellipsis`, controlled `margin: var(--space-xs) 0 0`, and `color: var(--color-text-secondary)`
-- Replaced raw `<p>` with conditional rendering — only renders when `currentItem` or `sourcePath` is present; UUID never shows
-- Long paths are truncated with ellipsis instead of overflowing
+Completed:
 
-### X.2 Add job type icons — ✅ Complete
+- Added `skip_identical` conflict policy: before copying a file, compares size + SHA256 checksum; if both match, the destination is skipped and an audit log entry is created.
+- Added `hashFile()` helper in the worker package for server-side file checksumming.
+- TransferDialog UI now includes "Skip identical files (by size + checksum)" in the conflict policy dropdown.
+- Frontend `ConflictPolicy` type updated to include `skip_identical`.
+- Added interactive per-item conflict resolution: when a job encounters a conflict with the `"ask"` policy, it pauses with `needs_attention` status instead of failing.
+- Worker detects conflicts during per-item copy, marks the item as `"conflict"` and sets the job to `needs_attention`.
+- Backend `POST /api/jobs/{id}/resolve` accepts per-file decisions (`skip`, `overwrite`, `rename`) with an optional `defaultResolution` for remaining items.
+- Backend `GET /api/jobs/{id}/conflicts` lists conflicting items with source/destination paths.
+- Each resolution creates an audit log entry (`conflict_skip`, `conflict_overwrite`, `conflict_rename`).
+- When all conflicts are resolved, the job is automatically resumed (set back to `queued`).
+- Frontend `ConflictDialog` shows each conflicting file with per-item skip/overwrite/rename buttons and an "Apply to all" dropdown.
+- Jobs in `needs_attention` state show a prominent "Resolve Conflicts" button and an `active`-colored status badge.
+- `Cancel` supports `needs_attention` jobs.
+- Upload handler now trims leading/trailing spaces from filenames before storage.
 
-**Problem:** Jobs were distinguished only by text label ("Copy", "Move", "Archive", "Extract", "Checksum"). No visual differentiation made scanning slow.
+Why now:
 
-**Result:**
-- Added 6 icon mappings in `Icon.tsx` (`job-copy` → `Copy`, `job-move` → `ArrowRight`, `job-archive` → `Archive`, `job-extract` → `FileInput`, `job-upload` → `Upload`, `job-checksum` → `ListChecks`)
-- Rendered 15px icon next to job type label in the title row
-- Added `.jobTitleLabel` flex container with `gap: var(--space-xs)` for proper alignment
+- Volum already has a job engine and conflict policies.
+- Better conflict UX makes bulk operations safer without changing the core architecture.
 
-### X.3 Move Clear buttons to fixed toolbar — ✅ Complete
+Reference:
 
-**Problem:** "Clear completed" and "Clear failed" were at the bottom of the scrollable list. With many active jobs, the user had to scroll past everything to reach them.
+- [File Browser: option to skip duplicates when moving](https://github.com/filebrowser/filebrowser/issues/3655)
 
-**Result:**
-- Added `.jobToolbar` CSS class — flex row, right-aligned, `border-bottom` separator, `flex-shrink: 0`
-- Extracted Clear buttons from the scrollable `jobList` into a fixed toolbar above the list
-- Buttons only render when applicable (`hasCompleted` / `hasFailed` booleans)
-- Responsive padding on mobile
+## Priority 5: Upload Reliability
 
-### X.4 Add visual separator between active and terminal groups — ✅ Complete
+Status: started.
 
-**Result:**
-- Wrapped terminal jobs in `.terminalSection` with `border-top: 1px solid var(--color-border-subtle)` and `margin-top/padding-top` spacing
-- Replaced bare text toggle with a styled section header: `.terminalToggle` flex row with `go-next` chevron (rotates 90° on expand), "Completed" label, and pill-shaped `.terminalCount` badge pushed to the right via `margin-left: auto`
-- Chevron uses CSS `transition: transform 150ms ease` for smooth rotation
+Upload failures are a common source of trust loss in web file managers, especially with large files, many small files, folder drops, special characters, and reverse proxies.
 
-### X.5 Reserve space for speed/ETA to prevent layout shift — ✅ Complete
+Completed:
 
-**Result:**
-- Replaced conditional rendering (`{showLiveStats && ... ? <span>...</span> : null}`) with always-rendered spans
-- When not running, speed shows `—/s` and ETA shows `— left`
-- Placeholder values use `.mutedPlaceholder` class (`color: var(--color-text-muted)`)
-- Layout no longer shifts between running and paused states
+- Added backend tests for filenames with special characters (spaces, unicode, symbols, mixed punctuation) — all pass with the existing validator.
+- Added backend test for leading/trailing space normalization (`validUploadName` trims spaces, file lands under trimmed name).
+- Added backend test for path normalization (`filepath.Base` strips directory components from uploaded filenames — `subdir/file.txt` lands as `file.txt`).
+- Added backend tests for invalid name rejection (backslash, `.`, `..`) — all return 400.
+- Reviewed cleanup logic in `handleUploadChunk`: every error path removes the partial file, job ID file, and calls `FailJob`. No partial files are left behind.
 
-### X.6 Add item count for batch jobs — ✅ Complete
+Completed:
 
-**Result:**
-- When `job.totalItems > 1`, the `.jobMeta` row now prepends `{processedItems} / {totalItems} files` as the first span
-- Single-file jobs show no item count
-- Count updates live during execution via SSE
+- Improved toast and notification messages to be job-type-aware: "Upload completed", "Copy paused", "Move cancelled" instead of generic "Transfer completed", "Transfer paused", "Transfer cancelled".
+- SSE browser notifications now show e.g. "Upload completed" with the source path instead of "Transfer completed" with a redundant `[upload]` prefix.
+- Added `makeJobLabel(type, action)` utility in `utils/jobs.ts`.
 
-### X.7 Fix "paused" status color — ✅ Complete
+Planned work (remaining):
 
-**Result:**
-- Removed `|| status === 'paused'` from the `'warning'` branch in `jobVariant`
-- `'paused'` now falls through to `'disabled'` (neutral gray) instead of yellow warning
-- Running jobs still show `'warning'` (yellow)
+- Verify large upload behavior through reverse proxy path prefixes.
+- Add frontend tests for upload flow edge cases.
 
-### X.8 — Flat job list with pagination — ✅ Complete
+Why now:
 
-**Result:**
-- Removed `renderJobGroup` and active/terminal split entirely
-- All jobs render in a single flat list, sorted by arrival order
-- Added client-side pagination: 25 jobs per page, prev/next buttons with `pan-left`/`pan-right` icons, "Page X of Y" indicator
-- `currentPage` state auto-clamps via `useEffect` when job list changes (SSE refresh)
-- Removed `completedCollapsed` state from Home.tsx and `completedCollapsed`/`setCompletedCollapsed` props
+- Volum's backend already verifies size and uses partial files.
+- The next step is hardening edge cases and making failures understandable.
 
-### X.9 — Future: timestamps, error icons, mobile optimizations
+References:
 
-Deferred improvements for a later pass:
-- Timestamps: show created/completed time in the job card footer
-- Error icon prefix: add a small warning/danger icon next to error text
-- Mobile: ensure job cards collapse gracefully at narrow widths
+- [File Browser: folder upload double slash path bug](https://github.com/filebrowser/filebrowser/issues/5845)
+- [File Browser: Chrome crash with many small uploads](https://github.com/filebrowser/filebrowser/issues/3582)
+- [File Browser: large upload failures](https://github.com/filebrowser/filebrowser/issues/2931)
+- [File Browser: percent sign filename upload issue](https://github.com/filebrowser/filebrowser/issues/5612)
+- [File Browser: corrupted FLAC upload](https://github.com/filebrowser/filebrowser/issues/5664)
 
-## Verification Standard
+## Priority 6: Mobile And Responsive Desktop
 
-After each implementation phase:
+Dashboard users want layouts that adapt across screens without manually maintaining separate layouts.
 
-- Run frontend lint and type-check through Docker when possible.
-- Run backend tests through Docker because Go is not installed locally.
-- Run the relevant focused tests before full Docker build where practical.
-- Start the Docker dev server only after lint/type-check passes.
+Planned work:
+
+- Audit desktop, files, settings, jobs, preview, and service forms at mobile widths.
+- Make desktop icon layout predictable on narrow screens.
+- Keep touch actions first-class: long-press context menu, drag safety, readable controls.
+- Avoid separate mobile-only feature sets unless absolutely necessary.
+
+Why now:
+
+- Volum is a desktop-style app, but it should not break on phones and tablets.
+- The app already has touch support, so this is refinement rather than reinvention.
+
+Reference:
+
+- [Homarr: automatic layout for different screen sizes](https://github.com/homarr-labs/homarr/issues/4541)
+
+## Priority 7: Service Health And Notifications
+
+Service tiles benefit from health status, but polling and notifications must avoid noise.
+
+Planned work:
+
+- Keep client-side health polling visibility-aware.
+- Add backend-owned health monitoring only when notification delivery is implemented.
+- Add per-service health interval and notification toggle only if global defaults are not enough.
+- Add down/up transition events instead of notifying on every failed check.
+- Support notification channels later: browser notification first, webhook/email only if needed.
+
+Why later:
+
+- A health dot is useful now.
+- Alerting becomes product surface area and needs state, rate limiting, and user preferences.
+
+References:
+
+- [Homarr: health checks causing email flood](https://github.com/homarr-labs/homarr/issues/1905)
+- [Homepage: service health/API behavior around Radarr](https://github.com/gethomepage/homepage/issues/1142)
+
+## Priority 8: Service Widgets And Integrations
+
+Dashboard users often want integrations, not just links. This should stay constrained in Volum.
+
+Planned work:
+
+- Start with simple service metadata: health, open mode, icon, URL, description.
+- Consider optional lightweight widgets for common local services only after the service model stabilizes.
+- Prefer generic widgets before service-specific integrations.
+- Avoid becoming a full Homarr/Homepage replacement.
+
+Why later:
+
+- Volum's primary product is file management.
+- Service widgets are useful, but they can easily expand beyond the app's core.
+
+Reference:
+
+- [Homarr: Beszel integration request](https://github.com/homarr-labs/homarr/issues/2645)
+
+## Not Planned For Now
+
+- Full monitoring suite with alert rules, incidents, retention charts, and escalation policies.
+- Native Android/iOS apps.
+- Plugin marketplace.
+- Multi-board dashboard layout editor.
+- Service-specific widget catalog before generic service tiles are mature.
+
+These may become reasonable later, but they do not fit the next focused iteration.

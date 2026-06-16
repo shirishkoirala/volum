@@ -32,7 +32,7 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 		return TrashEntry{}, security.ErrOutsideRoots
 	}
 	trashRoot := filepath.Join(root.InternalPath, ".volum-trash")
-	if isPathInside(trashRoot, resolved) {
+	if security.PathInside(trashRoot, resolved) {
 		return TrashEntry{}, ErrTrashOperation
 	}
 

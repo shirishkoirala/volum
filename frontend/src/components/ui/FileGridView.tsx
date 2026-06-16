@@ -1,8 +1,9 @@
-import { DragEvent, KeyboardEvent, RefObject, TouchEvent } from 'react';
+import { DragEvent, KeyboardEvent, RefObject, TouchEvent, useEffect, useLayoutEffect, useMemo } from 'react';
 import { FileItem } from './FileItem';
 import type { FileEntry } from '../../api/client';
 import { isPreviewableFile, openFileExternally } from '../../utils/preview';
 import type { RenameState } from '../../types';
+import { useIncrementalEntries } from '../../hooks/useIncrementalEntries';
 import styles from './FileGridView.module.css';
 
 type FileGridViewProps = {
@@ -31,6 +32,11 @@ type FileGridViewProps = {
   onFileAreaMouseDown: (event: React.MouseEvent<HTMLElement>) => void;
   onFileAreaKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
   draggingUpload: boolean;
+  totalEntries?: number;
+  loadingMore?: boolean;
+  onLoadMoreEntries?: () => void;
+  onVisibleCountChange?: (renderedCount: number, totalCount: number) => void;
+  resetKey?: string;
   onEntryTouchStart?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
   onEntryTouchMove?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
   onEntryTouchEnd?: (entry: FileEntry, event: TouchEvent<HTMLElement>) => void;
@@ -61,9 +67,29 @@ export function FileGridView({
   onFileAreaDragOver, onFileAreaDragLeave, onFileAreaDrop,
   onFileAreaMouseDown, onFileAreaKeyDown,
   draggingUpload,
+  totalEntries, loadingMore, onLoadMoreEntries, onVisibleCountChange, resetKey,
   onEntryTouchStart, onEntryTouchMove, onEntryTouchEnd,
   onNavigate, onPreview,
 }: FileGridViewProps) {
+  const incrementalEntries = useIncrementalEntries(filteredEntries, {
+    totalCount: totalEntries,
+    loadingMore,
+    onLoadMore: onLoadMoreEntries,
+    resetKey,
+  });
+  const selectedPathSet = useMemo(() => new Set(selectedPaths), [selectedPaths]);
+  const favoritePathSet = useMemo(() => new Set(favorites), [favorites]);
+
+  useLayoutEffect(() => {
+    if (!fileGridRef?.current) return;
+    fileGridRef.current.scrollTop = 0;
+    fileGridRef.current.ownerDocument.defaultView?.scrollTo(0, 0);
+  }, [fileGridRef, resetKey]);
+
+  useEffect(() => {
+    onVisibleCountChange?.(incrementalEntries.renderedCount, incrementalEntries.totalCount);
+  }, [incrementalEntries.renderedCount, incrementalEntries.totalCount, onVisibleCountChange]);
+
   return (
     <section
       className={`${styles.fileGrid}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
@@ -75,17 +101,18 @@ export function FileGridView({
       onDrop={onFileAreaDrop}
       onMouseDown={onFileAreaMouseDown}
       onKeyDown={onFileAreaKeyDown}
+      onScroll={incrementalEntries.handleScroll}
       tabIndex={0}
     >
-      {filteredEntries.map((entry) => (
+      {incrementalEntries.visibleEntries.map((entry) => (
         <FileItem
           key={entry.path}
           entry={entry}
           viewMode="grid"
-          isSelected={selectedPaths.includes(entry.path)}
+          isSelected={selectedPathSet.has(entry.path)}
           isDragOver={dragOverPath === entry.path}
           canWrite={canWrite}
-          isFavorited={favorites.includes(entry.path)}
+          isFavorited={favoritePathSet.has(entry.path)}
           renameState={renameState}
           renameInputRef={renameInputRef}
           onContextMenu={(event) => onContextMenu(entry, event)}
@@ -103,6 +130,11 @@ export function FileGridView({
           className={styles.gridItem}
         />
       ))}
+      {incrementalEntries.hasMore && (
+        <div key={incrementalEntries.renderedCount} ref={incrementalEntries.loadMoreSentinelRef} className={styles.loadMoreStatus} aria-live="polite">
+          {incrementalEntries.loadingMore ? 'Loading more...' : 'Scroll to load more'}
+        </div>
+      )}
       {rubberBandStyle && <div className={styles.rubberBand} style={rubberBandStyle} />}
     </section>
   );

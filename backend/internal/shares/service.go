@@ -37,6 +37,32 @@ func NewStore(db *sql.DB) *Store {
 	return &Store{db: db}
 }
 
+const shareColumns = `id, path, token, COALESCE(password_hash,''), expires_at, max_downloads, download_count, enabled, created_by, created_at`
+
+type scanner interface {
+	Scan(dest ...any) error
+}
+
+func scanShare(row scanner) (Share, error) {
+	var sh Share
+	var expiresAt, passwordHash sql.NullString
+	var maxDownloads sql.NullInt64
+	var enabled int
+	if err := row.Scan(&sh.ID, &sh.Path, &sh.Token, &passwordHash, &expiresAt, &maxDownloads, &sh.DownloadCount, &enabled, &sh.CreatedBy, &sh.CreatedAt); err != nil {
+		return Share{}, err
+	}
+	sh.PasswordHash = passwordHash.String
+	if expiresAt.Valid {
+		sh.ExpiresAt = &expiresAt.String
+	}
+	if maxDownloads.Valid {
+		v := int(maxDownloads.Int64)
+		sh.MaxDownloads = &v
+	}
+	sh.Enabled = enabled == 1
+	return sh, nil
+}
+
 func (s *Store) Create(req CreateRequest, createdBy string) (*Share, error) {
 	token, err := generateToken()
 	if err != nil {
@@ -64,7 +90,7 @@ func (s *Store) Create(req CreateRequest, createdBy string) (*Share, error) {
 		Path:          req.Path,
 		Token:         token,
 		PasswordHash:  passwordHash,
-		ExpiresAt:     nullOrStringPtr(req.ExpiresAt),
+		ExpiresAt:     nullOrString(req.ExpiresAt),
 		MaxDownloads:  req.MaxDownloads,
 		DownloadCount: 0,
 		Enabled:       true,
@@ -75,7 +101,7 @@ func (s *Store) Create(req CreateRequest, createdBy string) (*Share, error) {
 
 func (s *Store) List() ([]Share, error) {
 	rows, err := s.db.Query(`
-		SELECT id, path, token, COALESCE(password_hash,''), expires_at, max_downloads, download_count, enabled, created_by, created_at
+		SELECT ` + shareColumns + `
 		FROM shares ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, fmt.Errorf("list shares: %w", err)
@@ -84,22 +110,10 @@ func (s *Store) List() ([]Share, error) {
 
 	var shares []Share
 	for rows.Next() {
-		var sh Share
-		var expiresAt, passwordHash sql.NullString
-		var maxDownloads sql.NullInt64
-		var enabled int
-		if err := rows.Scan(&sh.ID, &sh.Path, &sh.Token, &passwordHash, &expiresAt, &maxDownloads, &sh.DownloadCount, &enabled, &sh.CreatedBy, &sh.CreatedAt); err != nil {
+		sh, err := scanShare(rows)
+		if err != nil {
 			return nil, fmt.Errorf("scan share: %w", err)
 		}
-		sh.PasswordHash = passwordHash.String
-		if expiresAt.Valid {
-			sh.ExpiresAt = &expiresAt.String
-		}
-		if maxDownloads.Valid {
-			v := int(maxDownloads.Int64)
-			sh.MaxDownloads = &v
-		}
-		sh.Enabled = enabled == 1
 		shares = append(shares, sh)
 	}
 	if shares == nil {
@@ -109,29 +123,15 @@ func (s *Store) List() ([]Share, error) {
 }
 
 func (s *Store) GetByToken(token string) (*Share, error) {
-	var sh Share
-	var expiresAt, passwordHash sql.NullString
-	var maxDownloads sql.NullInt64
-	var enabled int
-	err := s.db.QueryRow(`
-		SELECT id, path, token, COALESCE(password_hash,''), expires_at, max_downloads, download_count, enabled, created_by, created_at
-		FROM shares WHERE token = ?`, token).Scan(
-		&sh.ID, &sh.Path, &sh.Token, &passwordHash, &expiresAt, &maxDownloads, &sh.DownloadCount, &enabled, &sh.CreatedBy, &sh.CreatedAt)
+	sh, err := scanShare(s.db.QueryRow(`
+		SELECT ` + shareColumns + `
+		FROM shares WHERE token = ?`, token))
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get share by token: %w", err)
 	}
-	sh.PasswordHash = passwordHash.String
-	if expiresAt.Valid {
-		sh.ExpiresAt = &expiresAt.String
-	}
-	if maxDownloads.Valid {
-		v := int(maxDownloads.Int64)
-		sh.MaxDownloads = &v
-	}
-	sh.Enabled = enabled == 1
 	return &sh, nil
 }
 
@@ -160,13 +160,6 @@ func generateID() string {
 }
 
 func nullOrString(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-func nullOrStringPtr(s string) *string {
 	if s == "" {
 		return nil
 	}

@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/volum-app/volum/backend/internal/jobs"
@@ -115,13 +114,22 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 	if job.SourcePath == nil || job.DestinationPath == nil {
 		return errors.New("transfer job requires source and destination paths")
 	}
-	if job.Type == jobs.TypeMove && job.ConflictPolicy == "skip" {
+	if job.Type == jobs.TypeMove && (job.ConflictPolicy == "skip" || job.ConflictPolicy == "skip_identical") {
 		return errors.New("skip conflict policy is not supported for move jobs")
 	}
 
 	source, err := w.guard.Resolve(*job.SourcePath)
 	if err != nil {
 		return err
+	}
+	if job.ConflictPolicy == "skip_identical" {
+		sourceInfo, err := os.Stat(source)
+		if err != nil {
+			return err
+		}
+		if sourceInfo.IsDir() {
+			return errors.New("skip_identical conflict policy is only supported for file copy jobs")
+		}
 	}
 	destination, err := w.guard.Resolve(*job.DestinationPath)
 	if err != nil {
@@ -130,7 +138,7 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 	if job.Type == jobs.TypeMove && w.guard.IsRoot(source) {
 		return errors.New("operation is not allowed on a configured root")
 	}
-	if containsPath(source, destination) {
+	if security.PathInside(source, destination) {
 		return errors.New("destination cannot be inside the source path")
 	}
 	items, processedBytes, processedItems, err := w.transferItems(ctx, job, source, destination)
@@ -156,6 +164,9 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 		copied, err := w.copyOne(ctx, job, item, processedBytes, processedItems)
 		if err != nil {
 			if errors.Is(err, errJobPaused) {
+				return nil
+			}
+			if errors.Is(err, errJobNeedsAttention) {
 				return nil
 			}
 			message := err.Error()
@@ -199,16 +210,18 @@ func (w *Worker) transferItems(ctx context.Context, job jobs.Job, source, destin
 
 	if policy := job.ConflictPolicy; policy == "cancel" {
 		return nil, 0, 0, errors.New("transfer cancelled by conflict policy")
-	} else if resolvedDestination, err := w.resolveConflictDestination(ctx, destination, policy); err != nil {
-		if errors.Is(err, errSkipDestination) {
-			if err := w.store.CompleteJob(ctx, job.ID); err != nil {
-				return nil, 0, 0, err
+	} else if policy != "ask" {
+		if resolvedDestination, err := w.resolveConflictDestination(ctx, source, destination, policy); err != nil {
+			if errors.Is(err, errSkipDestination) {
+				if err := w.store.CompleteJob(ctx, job.ID); err != nil {
+					return nil, 0, 0, err
+				}
+				return nil, 0, 0, nil
 			}
-			return nil, 0, 0, nil
+			return nil, 0, 0, err
+		} else {
+			destination = resolvedDestination
 		}
-		return nil, 0, 0, err
-	} else {
-		destination = resolvedDestination
 	}
 
 	items, err := w.planCopy(source, destination)
@@ -258,6 +271,11 @@ func (w *Worker) resumeTransferItems(ctx context.Context, jobID string, storedIt
 	for _, stored := range storedItems {
 		totalBytes += stored.SizeBytes
 		if stored.Status == jobs.StatusCompleted {
+			if stored.ConflictResolution != nil && *stored.ConflictResolution == "skip" {
+				processedBytes += stored.SizeBytes
+				processedItems++
+				continue
+			}
 			info, err := os.Stat(stored.DestinationPath)
 			if err != nil {
 				return nil, 0, 0, fmt.Errorf("completed destination missing for resume: %s", stored.DestinationPath)
@@ -360,10 +378,16 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 	if policy := job.ConflictPolicy; policy == "cancel" {
 		return 0, errors.New("transfer cancelled by conflict policy")
 	} else if !item.Persisted {
-		destination, err := w.resolveConflictDestination(ctx, item.Destination, policy)
+		destination, err := w.resolveConflictDestination(ctx, item.Source, item.Destination, policy)
 		if err != nil {
 			if errors.Is(err, errSkipDestination) {
 				return 0, nil
+			}
+			if errors.Is(err, errAskDestination) {
+				errMsg := fmt.Sprintf("destination already exists: %s", item.Destination)
+				_ = w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusConflict, 0, &errMsg)
+				_ = w.store.NeedsAttention(ctx, job.ID)
+				return 0, errJobNeedsAttention
 			}
 			return 0, err
 		}
@@ -414,6 +438,7 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 
 	buffer := make([]byte, 1024*1024)
 	copied := item.Processed
+	progress := newProgressThrottle(copied, 16*1024*1024, 500*time.Millisecond)
 	for {
 		if ctx.Err() != nil {
 			temp.Close()
@@ -451,13 +476,15 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 				return copied, io.ErrShortWrite
 			}
 			copied += int64(written)
-			if err := w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusRunning, copied, nil); err != nil {
-				temp.Close()
-				return copied, err
-			}
-			if err := w.store.UpdateJobProgress(ctx, job.ID, baseBytes+copied, processedItems, w.publicPath(item.Source)); err != nil {
-				temp.Close()
-				return copied, err
+			if progress.Ready(copied) {
+				if err := w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusRunning, copied, nil); err != nil {
+					temp.Close()
+					return copied, err
+				}
+				if err := w.store.UpdateJobProgress(ctx, job.ID, baseBytes+copied, processedItems, w.publicPath(item.Source)); err != nil {
+					temp.Close()
+					return copied, err
+				}
 			}
 		}
 		if errors.Is(readErr, io.EOF) {
@@ -514,47 +541,90 @@ func partialFileSize(path string, expectedSize int64) (int64, error) {
 
 var errSkipDestination = errors.New("destination skipped by conflict policy")
 var errJobPaused = errors.New("job paused")
+var errAskDestination = errors.New("destination already exists; needs user decision")
+var errJobNeedsAttention = errors.New("job needs user attention to resolve conflicts")
 
-func (w *Worker) resolveConflictDestination(ctx context.Context, destination, policy string) (string, error) {
+type progressThrottle struct {
+	lastBytes int64
+	lastTime  time.Time
+	minBytes  int64
+	minPeriod time.Duration
+}
+
+func newProgressThrottle(startBytes, minBytes int64, minPeriod time.Duration) *progressThrottle {
+	return &progressThrottle{
+		lastBytes: startBytes,
+		lastTime:  time.Now(),
+		minBytes:  minBytes,
+		minPeriod: minPeriod,
+	}
+}
+
+func (t *progressThrottle) Ready(currentBytes int64) bool {
+	now := time.Now()
+	if currentBytes-t.lastBytes < t.minBytes && now.Sub(t.lastTime) < t.minPeriod {
+		return false
+	}
+	t.lastBytes = currentBytes
+	t.lastTime = now
+	return true
+}
+
+func (w *Worker) resolveConflictDestination(ctx context.Context, source, destination, policy string) (string, error) {
 	if policy == "" {
 		policy = "ask"
 	}
 	if _, err := os.Stat(destination); err == nil {
 		switch policy {
-		case "skip":
-			return "", errSkipDestination
-		case "overwrite":
-			if err := w.store.CreateAuditLog(ctx, "overwrite", destination, "removed existing destination for transfer job"); err != nil {
-				return "", err
-			}
-			return destination, os.RemoveAll(destination)
-		case "rename":
-			return nextAvailablePath(destination)
+	case "ask":
+		return "", errAskDestination
+	case "skip":
+		return "", errSkipDestination
+	case "skip_identical":
+		return w.resolveSkipIdentical(ctx, source, destination)
+	case "overwrite":
+		if err := w.store.CreateAuditLog(ctx, "overwrite", destination, "removed existing destination for transfer job"); err != nil {
+			return "", err
 		}
-		return "", fmt.Errorf("destination already exists: %s", destination)
+		return destination, os.RemoveAll(destination)
+	case "rename":
+		return security.NextAvailablePath(destination)
+	}
+	return "", fmt.Errorf("destination already exists: %s", destination)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return "", err
 	}
 	return destination, nil
 }
 
-func nextAvailablePath(path string) (string, error) {
-	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		return path, nil
-	} else if err != nil {
+func (w *Worker) resolveSkipIdentical(ctx context.Context, source, destination string) (string, error) {
+	srcInfo, err := os.Stat(source)
+	if err != nil {
+		return "", fmt.Errorf("cannot stat source for skip_identical: %w", err)
+	}
+	dstInfo, err := os.Stat(destination)
+	if err != nil {
+		return "", fmt.Errorf("cannot stat destination for skip_identical: %w", err)
+	}
+	if srcInfo.Size() != dstInfo.Size() {
+		return "", fmt.Errorf("destination already exists and sizes differ: %s", destination)
+	}
+	srcHash, err := hashFile(source, "sha256")
+	if err != nil {
+		return "", fmt.Errorf("cannot hash source for skip_identical: %w", err)
+	}
+	dstHash, err := hashFile(destination, "sha256")
+	if err != nil {
+		return "", fmt.Errorf("cannot hash destination for skip_identical: %w", err)
+	}
+	if srcHash != dstHash {
+		return "", fmt.Errorf("destination already exists and checksums differ: %s", destination)
+	}
+	if err := w.store.CreateAuditLog(ctx, "skip_identical", destination,
+		fmt.Sprintf("skipped identical file (sha256: %s)", srcHash)); err != nil {
 		return "", err
 	}
-	ext := filepath.Ext(path)
-	base := path[:len(path)-len(ext)]
-	for i := 1; i <= 1000; i++ {
-		candidate := fmt.Sprintf("%s (%d)%s", base, i, ext)
-		if _, err := os.Stat(candidate); errors.Is(err, os.ErrNotExist) {
-			return candidate, nil
-		} else if err != nil {
-			return "", err
-		}
-	}
-	return "", fmt.Errorf("could not find available name for %s", path)
+	return "", errSkipDestination
 }
 
 func (w *Worker) finishMove(ctx context.Context, job jobs.Job, source string) error {
@@ -565,14 +635,6 @@ func (w *Worker) finishMove(ctx context.Context, job jobs.Job, source string) er
 		return err
 	}
 	return w.store.CreateAuditLog(ctx, "move", w.publicPath(source), fmt.Sprintf("moved to %s", deref(job.DestinationPath)))
-}
-
-func containsPath(parent, child string) bool {
-	rel, err := filepath.Rel(parent, child)
-	if err != nil {
-		return false
-	}
-	return rel == "." || (rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)))
 }
 
 func deref(value *string) string {
@@ -604,7 +666,7 @@ func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, erro
 	}
 	archivePath := dest
 	if _, err := os.Stat(dest); err == nil {
-		archivePath, err = nextAvailablePath(dest)
+		archivePath, err = security.NextAvailablePath(dest)
 		if err != nil {
 			return "", err
 		}

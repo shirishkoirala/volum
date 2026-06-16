@@ -7,12 +7,13 @@ interface NavStackOptions {
     setCurrentPath: (path: string) => void;
     navigateToPath: (path: string) => void;
   };
-  nav: {
+  nav?: {
     setShowingTrash: (v: boolean) => void;
     setShowingSettings: (v: boolean) => void;
     setShowingJobs: (v: boolean) => void;
     setShowingMyPC: (v: boolean) => void;
     setSelectedDriveName: (v: string | null) => void;
+    setShowingSearch?: (v: boolean) => void;
   };
   browser: {
     refresh: () => void;
@@ -36,21 +37,23 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
       backStackRef.current.push(viewPref.currentPath);
     }
     viewPref.navigateToPath(path);
-    nav.setShowingJobs(false);
+    nav?.setShowingJobs(false);
+    nav?.setShowingSearch?.(false);
     browser.setSearchOpen(false);
     browser.setSearchResults(null);
     browser.setQuery('');
-    nav.setSelectedDriveName(null);
-    nav.setShowingMyPC(false);
+    nav?.setSelectedDriveName(null);
+    nav?.setShowingMyPC(false);
   }, [viewPref, nav, browser]);
 
   const resetToDesktopView = useCallback(() => {
     viewPref.setCurrentPath('');
-    nav.setShowingTrash(false);
-    nav.setShowingSettings(false);
-    nav.setShowingJobs(false);
-    nav.setShowingMyPC(false);
-    nav.setSelectedDriveName(null);
+    nav?.setShowingTrash(false);
+    nav?.setShowingSettings(false);
+    nav?.setShowingJobs(false);
+    nav?.setShowingSearch?.(false);
+    nav?.setShowingMyPC(false);
+    nav?.setSelectedDriveName(null);
   }, [viewPref, nav]);
 
   const goBack = useCallback(() => {

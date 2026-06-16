@@ -1,18 +1,22 @@
 import { useEffect, useRef } from 'react';
-import { cancelJob, getJobs, pauseJob, resumeJob, retryJob, retryJobItem, clearCompletedJobs, clearFailedJobs } from '../api/client';
-import { refreshesFiles } from '../utils/jobs';
+import { cancelJob, getJobs, pauseJob, resumeJob, retryJob, retryJobItem, clearCompletedJobs, clearFailedJobs, resolveJobConflicts } from '../api/client';
+import { apiUrl } from '../api/baseUrl';
+import { makeJobLabel, refreshesFiles } from '../utils/jobs';
 import type { Job, Session } from '../api/client';
+import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
 
 interface UseJobsOptions {
   session: Session | null;
   sessionLoading: boolean;
   onRefresh: () => void;
   showToast: (title: string, variant?: 'success' | 'error', message?: string) => void;
+  services?: ServiceShortcut[];
+  browserNotifications?: boolean;
 }
 
 export function useJobs(
   setJobs: React.Dispatch<React.SetStateAction<Job[]>>,
-  { session, sessionLoading, onRefresh, showToast }: UseJobsOptions,
+  { session, sessionLoading, onRefresh, showToast, services, browserNotifications }: UseJobsOptions,
 ) {
   const knownJobIds = useRef(new Set<string>());
   const jobStatuses = useRef(new Map<string, string>());
@@ -20,6 +24,10 @@ export function useJobs(
   refreshRef.current = onRefresh;
   const toastRef = useRef(showToast);
   toastRef.current = showToast;
+  const servicesRef = useRef(services);
+  servicesRef.current = services;
+  const browserNotificationsRef = useRef(true);
+  browserNotificationsRef.current = browserNotifications ?? true;
 
   useEffect(() => {
     if (sessionLoading || (session?.authEnabled && !session.authenticated)) {
@@ -34,7 +42,7 @@ export function useJobs(
       })
       .catch((err) => console.error('Failed to fetch jobs:', err));
 
-    const events = new EventSource('/api/jobs/events');
+    const events = new EventSource(apiUrl('/api/jobs/events'));
     events.addEventListener('jobs', (event) => {
       let nextJobs: Job[] = [];
       try {
@@ -49,17 +57,39 @@ export function useJobs(
         if (job.status === 'completed' && previousStatus !== 'completed' && refreshesFiles(job)) {
           refreshRef.current();
         }
-        if (typeof Notification !== 'undefined' && !knownJobIds.current.has(job.id) && Notification.permission === 'granted') {
+        if (browserNotificationsRef.current && typeof Notification !== 'undefined' && !knownJobIds.current.has(job.id) && Notification.permission === 'granted') {
           if (job.status === 'completed') {
-            new Notification('Transfer completed', { body: `[${job.type}] ${job.sourcePath ?? job.id}` });
+            new Notification(makeJobLabel(job.type, 'completed'), { body: `${job.sourcePath ?? job.id}` });
           } else if (job.status === 'failed') {
-            new Notification('Transfer failed', { body: `[${job.type}] ${job.errorMessage ?? job.id}` });
+            new Notification(makeJobLabel(job.type, 'failed'), { body: `${job.errorMessage ?? job.id}` });
           }
         }
       }
       knownJobIds.current = new Set(nextJobs.map((j) => j.id));
       jobStatuses.current = new Map(nextJobs.map((j) => [j.id, j.status]));
       setJobs(nextJobs);
+    });
+    events.addEventListener('health', (event) => {
+      try {
+        const transition = JSON.parse((event as MessageEvent).data) as {
+          serviceId: string;
+          previous?: ServiceHealthResult | null;
+          current: ServiceHealthResult;
+        };
+        if (!transition.current) return;
+        const svc = servicesRef.current?.find((s) => s.id === transition.serviceId);
+        const name = svc?.name ?? transition.serviceId;
+        if (transition.current.status === 'unhealthy' && transition.previous?.status === 'healthy') {
+          toastRef.current(`${name} health check failed`, 'error');
+          if (browserNotificationsRef.current && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            new Notification(`${name} health check failed`, { body: transition.current.error ?? 'Service is unreachable' });
+          }
+        } else if (transition.current.status === 'healthy' && transition.previous?.status === 'unhealthy') {
+          toastRef.current(`${name} recovered`, 'success');
+        }
+      } catch {
+        /* ignore malformed health events */
+      }
     });
     events.onerror = () => {
       console.warn('SSE connection lost, will auto-reconnect');
@@ -78,20 +108,22 @@ export function useJobs(
     }
   };
 
-  const handleCancelJob = (id: string) => {
+  const handleCancelJob = (id: string, jobType?: string) => {
+    const label = jobType ? makeJobLabel(jobType, 'cancelled') : 'Transfer cancelled';
     void runWithToast(async () => {
       await cancelJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Transfer cancelled');
+    }, label);
   };
 
-  const handleRetryJob = (id: string) => {
+  const handleRetryJob = (id: string, jobType?: string) => {
+    const label = jobType ? makeJobLabel(jobType, 'queued for retry') : 'Transfer retried';
     void runWithToast(async () => {
       await retryJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Transfer retried');
+    }, label);
   };
 
   const handleRetryItem = (jobId: string, itemId: string) => {
@@ -102,20 +134,22 @@ export function useJobs(
     }, 'Item queued for retry');
   };
 
-  const handlePauseJob = (id: string) => {
+  const handlePauseJob = (id: string, jobType?: string) => {
+    const label = jobType ? makeJobLabel(jobType, 'paused') : 'Transfer paused';
     void runWithToast(async () => {
       await pauseJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Transfer paused');
+    }, label);
   };
 
-  const handleResumeJob = (id: string) => {
+  const handleResumeJob = (id: string, jobType?: string) => {
+    const label = jobType ? makeJobLabel(jobType, 'resumed') : 'Transfer resumed';
     void runWithToast(async () => {
       await resumeJob(id);
       const response = await getJobs();
       setJobs(response.jobs ?? []);
-    }, 'Transfer resumed');
+    }, label);
   };
 
   const handleClearCompleted = () => {
@@ -134,6 +168,26 @@ export function useJobs(
     }, 'Failed transfers cleared');
   };
 
+  const handleResolveConflicts = async (
+    jobId: string,
+    items: Array<{ itemId: string; resolution: 'skip' | 'overwrite' | 'rename' }>,
+    defaultResolution?: 'skip' | 'overwrite' | 'rename',
+  ) => {
+    try {
+      const result = await resolveJobConflicts(jobId, items, defaultResolution);
+      const response = await getJobs();
+      setJobs(response.jobs ?? []);
+      if (result.resumed) {
+        toastRef.current('Conflicts resolved, transfer resumed', 'success');
+      } else {
+        toastRef.current('Conflicts resolved', 'success');
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to resolve conflicts';
+      toastRef.current('Failed to resolve conflicts', 'error', msg);
+    }
+  };
+
   return {
     handleCancelJob,
     handleRetryJob,
@@ -142,5 +196,6 @@ export function useJobs(
     handleResumeJob,
     handleClearCompleted,
     handleClearFailed,
+    handleResolveConflicts,
   };
 }

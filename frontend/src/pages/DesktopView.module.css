@@ -29,6 +29,7 @@
   text-align: center;
   transition: background var(--transition-fast), border-color var(--transition-fast);
   user-select: none;
+  touch-action: manipulation;
 }
 
 .desktopIcon:hover {
@@ -68,6 +69,29 @@
   height: 64px;
 }
 
+.serviceHealthDot {
+  position: absolute;
+  right: -5px;
+  bottom: 5px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--color-surface);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+}
+
+.serviceHealthChecking {
+  background: var(--color-warning);
+}
+
+.serviceHealthHealthy {
+  background: var(--color-success);
+}
+
+.serviceHealthUnhealthy {
+  background: var(--color-danger);
+}
+
 .desktopTrashBadge {
   align-items: center;
   background: var(--color-danger);
@@ -90,6 +114,8 @@
     gap: var(--space-md);
     grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
     padding: var(--space-md);
+    overflow-y: auto;
+    align-content: flex-start;
   }
 
   .desktopIcon {

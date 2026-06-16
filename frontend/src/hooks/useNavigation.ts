@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import type { BlockDevice, Job } from '../api/client';
 import { filesIconUrl, jobsIconUrl, preferencesIconUrl, trashIconUrl, desktopDockIconUrl } from '../api/icons';
 import { countActiveTransfers } from '../utils/jobs';
-export type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives';
+export type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives' | 'search';
 
 export function useNavigation(
   devices: BlockDevice[],
@@ -16,6 +16,8 @@ export function useNavigation(
   const [showingJobs, setShowingJobs] = useState(false);
   const [showingMyPC, setShowingMyPC] = useState(false);
   const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
+  const [showingSearch, setShowingSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const topBarTitle = useMemo(() => {
     if (showingMyPC && selectedDriveName) {
@@ -23,21 +25,23 @@ export function useNavigation(
       return d?.model || selectedDriveName;
     }
     if (showingMyPC) return 'Drives';
+    if (showingSearch) return 'Search';
     if (showingTrash) return 'Trash';
     if (showingSettings) return 'Settings';
     if (showingJobs) return 'Transfers';
     if (currentPath) return 'Files';
     return undefined;
-  }, [showingMyPC, selectedDriveName, devices, showingTrash, showingSettings, showingJobs, currentPath]);
+  }, [showingMyPC, selectedDriveName, devices, showingSearch, showingTrash, showingSettings, showingJobs, currentPath]);
 
   const activeView = useMemo((): ActiveView => {
+    if (showingSearch) return 'search';
     if (showingSettings) return 'settings';
     if (showingJobs) return 'jobs';
     if (showingTrash) return 'trash';
     if (currentPath) return 'files';
     if (showingMyPC) return 'drives';
     return 'desktop';
-  }, [currentPath, showingTrash, showingSettings, showingJobs, showingMyPC]);
+  }, [currentPath, showingSearch, showingTrash, showingSettings, showingJobs, showingMyPC]);
 
   const activeJobCount = useMemo(() => countActiveTransfers(jobs), [jobs]);
   const transferBadgeCount = activeJobCount + pendingTransferCount;
@@ -56,6 +60,8 @@ export function useNavigation(
     showingJobs, setShowingJobs,
     showingMyPC, setShowingMyPC,
     selectedDriveName, setSelectedDriveName,
+    showingSearch, setShowingSearch,
+    searchQuery, setSearchQuery,
     topBarTitle, activeView, activeJobCount, dockItems,
   };
 }

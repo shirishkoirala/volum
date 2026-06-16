@@ -44,3 +44,13 @@
 .extra {
   margin-top: 4px;
 }
+
+@media (max-width: 760px) {
+  .emptyState {
+    padding: var(--space-lg) var(--space-md);
+  }
+
+  .subtitle {
+    max-width: 280px;
+  }
+}

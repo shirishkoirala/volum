@@ -8,17 +8,44 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/volum-app/volum/backend/internal/files"
 )
 
 func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Query().Get("path")
 	showHidden := r.URL.Query().Get("hidden") == "true"
-	entries, err := s.files.List(path, showHidden)
+	limit := parseBoundedInt(r.URL.Query().Get("limit"), 0, 0, 1000)
+	offset := parseBoundedInt(r.URL.Query().Get("offset"), 0, 0, 1_000_000)
+	listing, err := s.files.ListPage(path, showHidden, files.ListOptions{Limit: limit, Offset: offset})
 	if err != nil {
 		writeError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"entries": entries})
+	writeJSON(w, http.StatusOK, map[string]any{
+		"entries": listing.Entries,
+		"total":   listing.Total,
+		"limit":   listing.Limit,
+		"offset":  listing.Offset,
+		"hasMore": listing.HasMore,
+	})
+}
+
+func parseBoundedInt(raw string, fallback, minValue, maxValue int) int {
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil {
+		return fallback
+	}
+	if value < minValue {
+		return minValue
+	}
+	if maxValue > 0 && value > maxValue {
+		return maxValue
+	}
+	return value
 }
 
 func (s *Server) handleCreateFile(w http.ResponseWriter, r *http.Request) {
@@ -209,41 +236,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"results": results})
 }
 
-func (s *Server) handleDirSizes(w http.ResponseWriter, r *http.Request) {
-	parentPath := r.URL.Query().Get("path")
-	if parentPath == "" {
-		writeJSON(w, http.StatusOK, map[string]any{"sizes": map[string]int64{}})
-		return
-	}
-
-	resolved, err := s.guard.Resolve(parentPath)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	items, err := os.ReadDir(resolved)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-
-	publicPaths := make([]string, 0, len(items))
-	for _, item := range items {
-		if !item.IsDir() {
-			continue
-		}
-		itemPath := filepath.Join(resolved, item.Name())
-		publicPath, err := s.guard.PublicPath(itemPath)
-		if err != nil {
-			continue
-		}
-		publicPaths = append(publicPaths, publicPath)
-	}
-
-	sizes := s.files.GetDirSizes(publicPaths)
-	writeJSON(w, http.StatusOK, map[string]any{"sizes": sizes})
-}
-
 func (s *Server) handleAnalyzeDiskUsage(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Query().Get("path")
 	if path == "" {
@@ -289,5 +281,3 @@ func (s *Server) handleChmod(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, entry)
 }
-
-

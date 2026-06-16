@@ -42,7 +42,7 @@ func TestListReturnsDirectoryEntry(t *testing.T) {
 	}
 }
 
-func TestComputeDirSizes(t *testing.T) {
+func TestListReturnsImmediateDirectorySize(t *testing.T) {
 	root := t.TempDir()
 	folder := filepath.Join(root, "folder")
 	nested := filepath.Join(folder, "nested")
@@ -65,17 +65,15 @@ func TestComputeDirSizes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cache := testCache()
-	svc := NewService(guard, cache)
-
-	svc.computeDirSizes([]string{"/folder"})
-
-	got, ok := cache.Get("/folder")
-	if !ok {
-		t.Fatal("expected cached size for /folder")
+	entries, err := NewService(guard, testCache()).List("/", false)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if got != 5 {
-		t.Fatalf("expected immediateDirSize 5, got %d", got)
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 entry, got %d", len(entries))
+	}
+	if entries[0].Size != 5 {
+		t.Fatalf("expected immediateDirSize 5, got %d", entries[0].Size)
 	}
 }
 
@@ -108,6 +106,40 @@ func TestListShowsHiddenFiles(t *testing.T) {
 	}
 	if len(entries) != 2 {
 		t.Fatalf("expected 2 entries with hidden, got %d", len(entries))
+	}
+}
+
+func TestListPageReturnsSortedWindow(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range []string{"b.txt", "a.txt", "z.txt", "folder-b", "folder-a"} {
+		path := filepath.Join(root, name)
+		if filepath.Ext(name) == "" {
+			if err := os.MkdirAll(path, 0o755); err != nil {
+				t.Fatal(err)
+			}
+		} else if err := os.WriteFile(path, []byte("data"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	guard, err := security.NewRootGuard([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	listing, err := NewService(guard, testCache()).ListPage(root, false, ListOptions{Limit: 2, Offset: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if listing.Total != 5 || listing.Offset != 1 || listing.Limit != 2 || !listing.HasMore {
+		t.Fatalf("unexpected listing metadata: %#v", listing)
+	}
+	if len(listing.Entries) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(listing.Entries))
+	}
+	names := []string{listing.Entries[0].Name, listing.Entries[1].Name}
+	if names[0] != "folder-b" || names[1] != "a.txt" {
+		t.Fatalf("unexpected page names: %#v", names)
 	}
 }
 

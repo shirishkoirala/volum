@@ -1,8 +1,12 @@
 /**
- * Shared job-related predicates.
+ * Shared job-related predicates and helpers.
  */
 
 import type { Job } from '../api/client';
+
+export function makeJobLabel(type: string, action: string): string {
+  return `${type.charAt(0).toUpperCase() + type.slice(1)} ${action}`;
+}
 
 export function isActiveTransferJob(job: Job): boolean {
   return job.status === 'running' || job.status === 'queued' || job.status === 'paused';

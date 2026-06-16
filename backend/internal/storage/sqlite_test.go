@@ -40,7 +40,7 @@ func TestOpenAppliesMigrations(t *testing.T) {
 	}
 	defer db.Close()
 
-	tables := []string{"jobs", "job_items", "audit_logs", "shares"}
+	tables := []string{"jobs", "job_items", "audit_logs", "shares", "desktop_services"}
 	for _, table := range tables {
 		var name string
 		err := db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?", table).Scan(&name)
@@ -50,6 +50,23 @@ func TestOpenAppliesMigrations(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func TestMigrateAddsDesktopServiceHealthURL(t *testing.T) {
+	db, err := Open(filepath.Join(t.TempDir(), "services.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	var name string
+	err = db.QueryRow("SELECT name FROM pragma_table_info('desktop_services') WHERE name='health_url'").Scan(&name)
+	if err == sql.ErrNoRows {
+		t.Fatal("expected health_url column to exist")
+	}
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 

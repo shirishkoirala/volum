@@ -18,30 +18,32 @@ import (
 )
 
 type Server struct {
-	router    *chi.Mux
-	files     *files.Service
-	jobs      *jobs.Store
-	guard     *security.RootGuard
-	auth      *auth.Service
-	authStore *auth.Store
-	shares    *shares.Store
-	desktop   *desktop.Store
-	startTime time.Time
-	dbPath    string
+	router        *chi.Mux
+	files         *files.Service
+	jobs          *jobs.Store
+	guard         *security.RootGuard
+	auth          *auth.Service
+	authStore     *auth.Store
+	shares        *shares.Store
+	desktop       *desktop.Store
+	healthChecker *desktop.HealthChecker
+	startTime     time.Time
+	dbPath        string
 }
 
-func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service, authSt *auth.Store, shareStore *shares.Store, desktopStore *desktop.Store, dbPath string) *Server {
+func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service, authSt *auth.Store, shareStore *shares.Store, desktopStore *desktop.Store, healthChecker *desktop.HealthChecker, dbPath string) *Server {
 	s := &Server{
-		router:    chi.NewRouter(),
-		files:     filesService,
-		jobs:      jobStore,
-		guard:     guard,
-		auth:      authService,
-		authStore: authSt,
-		shares:    shareStore,
-		desktop:   desktopStore,
-		startTime: time.Now(),
-		dbPath:    dbPath,
+		router:        chi.NewRouter(),
+		files:         filesService,
+		jobs:          jobStore,
+		guard:         guard,
+		auth:          authService,
+		authStore:     authSt,
+		shares:        shareStore,
+		desktop:       desktopStore,
+		healthChecker: healthChecker,
+		startTime:     time.Now(),
+		dbPath:        dbPath,
 	}
 	s.routes()
 	return s
@@ -76,7 +78,6 @@ func (s *Server) routes() {
 			r.Get("/files/download", s.handleDownload)
 			r.Get("/files/raw", s.handleRaw)
 			r.Get("/files/search", s.handleSearch)
-			r.Get("/files/sizes", s.handleDirSizes)
 			r.Get("/files/analyze", s.handleAnalyzeDiskUsage)
 			r.Get("/trash", s.handleTrash)
 			r.Get("/jobs", s.handleJobs)
@@ -88,6 +89,7 @@ func (s *Server) routes() {
 			r.Delete("/favorites", s.handleRemoveFavorite)
 			r.Put("/favorites/reorder", s.handleReorderFavorites)
 			r.Get("/services", s.handleListServices)
+			r.Get("/services/health", s.handleServiceHealth)
 			r.Post("/services", s.handleCreateService)
 			r.Put("/services/{id}", s.handleUpdateService)
 			r.Delete("/services/{id}", s.handleDeleteService)
@@ -114,6 +116,8 @@ func (s *Server) routes() {
 			r.Post("/jobs/{id}/items/{itemId}/retry", s.handleRetryItem)
 			r.Post("/jobs/{id}/pause", s.handlePauseJob)
 			r.Post("/jobs/{id}/resume", s.handleResumeJob)
+			r.Get("/jobs/{id}/conflicts", s.handleJobConflicts)
+			r.Post("/jobs/{id}/resolve", s.handleResolveConflicts)
 			r.Delete("/jobs/clear-completed", s.handleClearCompleted)
 			r.Delete("/jobs/clear-failed", s.handleClearFailed)
 			r.Post("/shares", s.handleCreateShare)

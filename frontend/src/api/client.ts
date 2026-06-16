@@ -51,6 +51,10 @@ export type FileEntry = {
 
 export type FileResponse = {
   entries: FileEntry[] | null;
+  total?: number;
+  limit?: number;
+  offset?: number;
+  hasMore?: boolean;
 };
 
 export type TrashEntry = {
@@ -84,6 +88,17 @@ export type SearchResponse = {
 
 export type JobType = 'copy' | 'move' | 'upload' | 'extract' | 'archive' | 'checksum';
 export type JobStatus = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'needs_attention';
+
+export type ConflictItem = {
+  id: string;
+  jobId: string;
+  sourcePath: string;
+  destinationPath: string;
+  sizeBytes: number;
+  processedBytes: number;
+  status: JobStatus;
+  errorMessage?: string;
+};
 
 export type Job = {
   id: string;
@@ -124,10 +139,16 @@ export type UserInfo = {
   role: 'admin' | 'readonly';
 };
 
-export type ConflictPolicy = 'ask' | 'skip' | 'overwrite' | 'rename' | 'cancel';
+export type ConflictPolicy = 'ask' | 'skip' | 'overwrite' | 'rename' | 'cancel' | 'skip_identical';
+
+import { apiUrl } from './baseUrl';
+
+export function shareUrl(token: string): string {
+  return new URL(apiUrl(`/api/public/${token}`), window.location.origin).toString();
+}
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
+  const response = await fetch(apiUrl(url), {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     ...options
   });
@@ -141,15 +162,7 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 async function requestVoid(url: string, options?: RequestInit): Promise<void> {
-  const response = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options
-  });
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(body.error ?? response.statusText);
-  }
+  await request(url, options);
 }
 
 export function getRoots() {
@@ -215,8 +228,10 @@ export function changeRole(userId: string, role: 'admin' | 'readonly') {
   });
 }
 
-export function getFiles(path: string, hidden: boolean) {
+export function getFiles(path: string, hidden: boolean, options?: { limit?: number; offset?: number }) {
   const params = new URLSearchParams({ path, hidden: String(hidden) });
+  if (options?.limit) params.set('limit', String(options.limit));
+  if (options?.offset) params.set('offset', String(options.offset));
   return request<FileResponse>(`/api/files?${params.toString()}`);
 }
 
@@ -243,7 +258,7 @@ export function createJob(params: {
 
 export async function getUploadStatus(path: string, filename: string) {
   const params = new URLSearchParams({ path, filename });
-  const response = await fetch(`/api/files/upload-status?${params.toString()}`);
+  const response = await fetch(apiUrl(`/api/files/upload-status?${params.toString()}`));
   if (!response.ok) {
     const body = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(body.error ?? response.statusText);
@@ -264,7 +279,7 @@ export async function uploadChunk(
 ) {
   const params = new URLSearchParams({ path, filename, offset: String(offset), totalSize: String(totalSize) });
   if (jobId) params.set('jobId', jobId);
-  const response = await fetch(`/api/files/upload-chunk?${params.toString()}`, {
+  const response = await fetch(apiUrl(`/api/files/upload-chunk?${params.toString()}`), {
     method: 'POST',
     body: chunk,
     signal,
@@ -338,6 +353,17 @@ export function clearFailedJobs() {
   });
 }
 
+export function getJobConflicts(id: string) {
+  return request<{ items: ConflictItem[] }>(`/api/jobs/${id}/conflicts`);
+}
+
+export function resolveJobConflicts(id: string, items: Array<{ itemId: string; resolution: 'skip' | 'overwrite' | 'rename' }>, defaultResolution?: 'skip' | 'overwrite' | 'rename') {
+  return request<{ status: string; resumed?: boolean }>(`/api/jobs/${id}/resolve`, {
+    method: 'POST',
+    body: JSON.stringify({ items, defaultResolution }),
+  });
+}
+
 export function createFolder(path: string, name: string) {
   return request<FileEntry>('/api/files/folder', {
     method: 'POST',
@@ -387,17 +413,12 @@ export function deleteTrash(id: string) {
 
 export function downloadUrl(path: string) {
   const params = new URLSearchParams({ path });
-  return `/api/files/download?${params.toString()}`;
+  return apiUrl(`/api/files/download?${params.toString()}`);
 }
 
 export function rawUrl(path: string) {
   const params = new URLSearchParams({ path });
-  return `/api/files/raw?${params.toString()}`;
-}
-
-export function getDirSizes(path: string) {
-  const params = new URLSearchParams({ path });
-  return request<{ sizes: Record<string, number> }>(`/api/files/sizes?${params.toString()}`);
+  return apiUrl(`/api/files/raw?${params.toString()}`);
 }
 
 export type DiskUsageNode = {
@@ -500,7 +521,22 @@ export type ServiceInfo = {
   name: string;
   url: string;
   iconUrl: string;
+  healthUrl: string;
+  description?: string;
+  openMode?: 'embed' | 'tab';
   position: number;
+  lastHealthStatus?: string;
+  lastHealthCheckedAt?: string;
+  lastHealthStatusCode?: number;
+  lastHealthError?: string;
+};
+
+export type ServiceHealthInfo = {
+  serviceId: string;
+  status: 'healthy' | 'unhealthy';
+  checkedAt: string;
+  statusCode?: number;
+  error?: string;
 };
 
 export function listFavorites() {
@@ -532,17 +568,21 @@ export function listServices() {
   return request<ServiceInfo[]>('/api/services');
 }
 
-export function createService(name: string, url: string, iconUrl?: string) {
+export function listServiceHealth() {
+  return request<Record<string, ServiceHealthInfo>>('/api/services/health');
+}
+
+export function createService(name: string, url: string, iconUrl?: string, healthUrl?: string, description?: string, openMode?: string) {
   return request<ServiceInfo>('/api/services', {
     method: 'POST',
-    body: JSON.stringify({ name, url, iconUrl }),
+    body: JSON.stringify({ name, url, iconUrl, healthUrl, description, openMode }),
   });
 }
 
-export function updateService(id: string, name: string, url: string, iconUrl?: string) {
+export function updateService(id: string, name: string, url: string, iconUrl?: string, healthUrl?: string, description?: string, openMode?: string) {
   return request<ServiceInfo>(`/api/services/${encodeURIComponent(id)}`, {
     method: 'PUT',
-    body: JSON.stringify({ name, url, iconUrl }),
+    body: JSON.stringify({ name, url, iconUrl, healthUrl, description, openMode }),
   });
 }
 

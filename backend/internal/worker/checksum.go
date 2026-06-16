@@ -152,6 +152,15 @@ func (w *Worker) checksumDir(ctx context.Context, jobID, source, mode string) er
 	return w.store.CompleteJob(ctx, jobID)
 }
 
+func hashFile(path, mode string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	return hashReader(f, mode)
+}
+
 func hashReader(r io.Reader, mode string) (string, error) {
 	switch mode {
 	case "md5":

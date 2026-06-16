@@ -12,11 +12,12 @@ type DockItem = {
 type DockProps = {
   items: DockItem[];
   onActivate: (id: string) => void;
+  shellStatusVisible?: boolean;
 };
 
-export function Dock({ items, onActivate }: DockProps) {
+export function Dock({ items, onActivate, shellStatusVisible = false }: DockProps) {
   return (
-    <aside className={styles.dock} role="navigation" aria-label="App dock">
+    <aside className={`${styles.dock}${shellStatusVisible ? ` ${styles.withShellStatus}` : ''}`} role="navigation" aria-label="App dock">
       {items.map((item) => (
         <button
           key={item.id}

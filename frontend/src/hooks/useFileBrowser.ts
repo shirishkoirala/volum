@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileEntry, Job, BlockDevice, RootEntry, Session, TrashEntry, SearchResult,
-  getDevices, getFiles, getRoots, getTrash, searchFiles, getDirSizes,
+  getDevices, getFiles, getRoots, getTrash, searchFiles,
 } from '../api/client';
 import { uniquePaths } from '../utils/path';
+
+const FILE_PAGE_SIZE = 600;
 
 interface UseFileBrowserParams {
   currentPath: string;
@@ -21,13 +23,14 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [filePage, setFilePage] = useState({ total: 0, limit: FILE_PAGE_SIZE, offset: 0, hasMore: false });
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const entriesRef = useRef(entries);
   entriesRef.current = entries;
-  const pollingPathRef = useRef<string | null>(null);
 
   const canWrite = session.role === 'admin';
 
@@ -49,41 +52,45 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
   useEffect(() => { loadDevices(); }, [session, loadDevices]);
 
   useEffect(() => {
-    if (!currentPath) return;
+    if (!currentPath) { setLoading(false); return; }
     setLoading(true);
     setError(null);
-    getFiles(currentPath, showHidden)
-      .then((response) => { setEntries(response.entries ?? []); setError(null); })
+    setLoadingMore(false);
+    getFiles(currentPath, showHidden, { limit: FILE_PAGE_SIZE, offset: 0 })
+      .then((response) => {
+        const nextEntries = response.entries ?? [];
+        setEntries(nextEntries);
+        setFilePage({
+          total: response.total ?? nextEntries.length,
+          limit: response.limit ?? FILE_PAGE_SIZE,
+          offset: response.offset ?? 0,
+          hasMore: response.hasMore ?? false,
+        });
+        setError(null);
+      })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, [currentPath, refreshKey, showHidden]);
 
-  useEffect(() => {
-    if (!currentPath || loading) { pollingPathRef.current = null; return; }
-    if (pollingPathRef.current === currentPath) return;
-    const hasPendingDir = entriesRef.current.some((e) => e.type === 'directory' && e.size === 0);
-    if (!hasPendingDir) { pollingPathRef.current = null; return; }
-    pollingPathRef.current = currentPath;
-    const interval = setInterval(async () => {
-      try {
-        const response = await getDirSizes(currentPath);
-        const sizes = response.sizes ?? {};
-        setEntries((prev) => {
-          let changed = false;
-          const next = prev.map((e) => {
-            const newSize = sizes[e.path];
-            if (newSize !== undefined && e.size !== newSize) { changed = true; return { ...e, size: newSize }; }
-            return e;
-          });
-          if (!changed) return prev;
-          const allDone = !next.some((e) => e.type === 'directory' && e.size === 0);
-          if (allDone && pollingPathRef.current === currentPath) pollingPathRef.current = null;
-          return next;
+  const loadMoreEntries = useCallback(() => {
+    if (!currentPath || loadingMore || !filePage.hasMore) return;
+    setLoadingMore(true);
+    setError(null);
+    const offset = entriesRef.current.length;
+    getFiles(currentPath, showHidden, { limit: FILE_PAGE_SIZE, offset })
+      .then((response) => {
+        const nextEntries = response.entries ?? [];
+        setEntries((current) => [...current, ...nextEntries]);
+        setFilePage({
+          total: response.total ?? offset + nextEntries.length,
+          limit: response.limit ?? FILE_PAGE_SIZE,
+          offset: response.offset ?? offset,
+          hasMore: response.hasMore ?? false,
         });
-      } catch (e) { console.error('Dir sizes polling failed:', e); }
-    }, 500);
-    return () => { clearInterval(interval); if (pollingPathRef.current === currentPath) pollingPathRef.current = null; };
-  }, [currentPath, loading]);
+      })
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoadingMore(false));
+  }, [currentPath, filePage.hasMore, loadingMore, showHidden]);
 
   useEffect(() => {
     getTrash()
@@ -141,7 +148,7 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
     jobs, setJobs,
     roots,
     devices, deviceError, loadDevices,
-    loading, error, setError,
+    loading, loadingMore, error, setError,
     query, setQuery,
     searchOpen, setSearchOpen,
     searchResults, setSearchResults,
@@ -150,6 +157,8 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
     breadcrumbs,
     folderSuggestions,
     currentRoot,
+    filePage,
+    loadMoreEntries,
     selectedFileBytes,
     canWrite,
     refresh,
