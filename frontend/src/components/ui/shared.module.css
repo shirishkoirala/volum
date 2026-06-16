@@ -129,7 +129,29 @@
   display: flex;
   font-size: var(--font-size-base);
   gap: var(--space-sm);
+  justify-content: space-between;
   padding: var(--space-md) var(--space-lg);
+}
+
+.noticeContent {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.noticeDismiss {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  margin: -2px -4px -2px 0;
+  padding: 4px;
 }
 
 .error {
@@ -236,4 +258,3 @@
     gap: var(--space-xs);
   }
 }
-

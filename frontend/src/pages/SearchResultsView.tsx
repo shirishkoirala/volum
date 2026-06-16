@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, FileIcon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
+import { Notice } from '../components/ui/shared';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
 import { ShareDialog } from '../components/overlay/ShareDialog';
@@ -394,10 +395,9 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
       )}
 
       {error && (
-        <div className={styles.errorBanner}>
+        <Notice variant="error" className={styles.errorBanner} onDismiss={() => setError(null)}>
           {error}
-          <button type="button" className={styles.errorDismiss} onClick={() => setError(null)}>&times;</button>
-        </div>
+        </Notice>
       )}
 
       <div className={styles.resultsArea}>

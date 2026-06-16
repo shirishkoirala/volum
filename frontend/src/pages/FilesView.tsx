@@ -1,6 +1,7 @@
 import { KeyboardEvent, MouseEvent, RefObject, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { EmptyState } from '../components/ui/EmptyState';
+import { Notice } from '../components/ui/shared';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
 import { FileGridView } from '../components/ui/FileGridView';
 import { FileListView } from '../components/ui/FileListView';
@@ -498,10 +499,9 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           </BreadcrumbBar>
 
           {browser.error && (
-            <div className={styles.errorBanner}>
+            <Notice variant="error" className={styles.errorBanner} onDismiss={() => browser.setError(null)}>
               {browser.error}
-              <button type="button" className={styles.errorDismiss} onClick={() => browser.setError(null)} aria-label="Dismiss error">&times;</button>
-            </div>
+            </Notice>
           )}
           <div className={styles.fileFrame}>
             {browser.loading ? (
