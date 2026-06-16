@@ -88,7 +88,11 @@ function FileThumbnail({ entry, className, size }: { entry: FileEntry; className
   if (failed) return <FileIcon entry={entry} size={size} />;
 
   return (
-    <div ref={frameRef} className={`${styles.fileThumbFrame}${className ? ` ${className}` : ''}`}>
+    <div
+      ref={frameRef}
+      className={`${styles.fileThumbFrame}${className ? ` ${className}` : ''}`}
+      style={{ width: size, height: size }}
+    >
       {src ? (
         <img
           className={styles.fileThumbImage}

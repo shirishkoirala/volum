@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { isAudioExtension, isImageExtension, isTextExtension, isVideoExtension } from '../../utils/fileTypes';
 import { downloadUrl, rawUrl } from '../../api/client';
 import type { FileEntry } from '../../api/client';
@@ -11,68 +11,24 @@ import styles from './Preview.module.css';
 type CopyStatus = 'idle' | 'copied' | 'failed';
 
 function PreviewImage({ alt, src }: { alt: string; src: string }) {
-  const imageRef = useRef<HTMLImageElement>(null);
-
-  useEffect(() => {
-    const image = imageRef.current;
-    return () => {
-      if (image) image.src = '';
-    };
-  }, [src]);
-
-  return <img ref={imageRef} alt={alt} className={styles.previewImage} src={src} />;
+  return <img alt={alt} className={styles.previewImage} src={src} />;
 }
 
 function PreviewVideo({ src }: { src: string }) {
-  const mediaRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    const media = mediaRef.current;
-    return () => {
-      if (!media) return;
-      media.pause();
-      media.removeAttribute('src');
-      media.load();
-    };
-  }, [src]);
-
-  return <video ref={mediaRef} className={styles.previewVideo} controls preload="metadata" src={src} />;
+  return <video className={styles.previewVideo} controls preload="metadata" src={src} />;
 }
 
 function PreviewAudio({ name, src }: { name: string; src: string }) {
-  const mediaRef = useRef<HTMLAudioElement>(null);
-
-  useEffect(() => {
-    const media = mediaRef.current;
-    return () => {
-      if (!media) return;
-      media.pause();
-      media.removeAttribute('src');
-      media.load();
-    };
-  }, [src]);
-
   return (
     <div className={styles.previewAudioWrapper}>
       <p className={styles.previewAudioLabel}>{name}</p>
-      <audio ref={mediaRef} controls preload="metadata" src={src} />
+      <audio controls preload="metadata" src={src} />
     </div>
   );
 }
 
 function PreviewFrame({ name, src }: { name: string; src: string }) {
-  const frameRef = useRef<HTMLIFrameElement>(null);
-
-  useEffect(() => {
-    const frame = frameRef.current;
-    return () => {
-      if (!frame) return;
-      frame.src = 'about:blank';
-      frame.removeAttribute('src');
-    };
-  }, [src]);
-
-  return <iframe ref={frameRef} className={styles.previewIframe} src={src} title={name} />;
+  return <iframe className={styles.previewIframe} src={src} title={name} />;
 }
 
 type PreviewModalProps = {

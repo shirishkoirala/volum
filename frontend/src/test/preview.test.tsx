@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -74,16 +75,22 @@ describe('preview policy', () => {
     expect(signal?.aborted).toBe(true);
   });
 
-  it('unloads media previews when the preview closes', () => {
-    const pauseSpy = vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined);
-    const loadSpy = vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => undefined);
+  it('keeps image previews mounted in strict mode', () => {
+    render(
+      <StrictMode>
+        <PreviewContent entry={entry({ name: 'photo.jpg', path: '/storage/photo.jpg' })} />
+      </StrictMode>,
+    );
 
+    expect(screen.getByAltText('photo.jpg')).toHaveAttribute('src', '/api/files/raw?path=%2Fstorage%2Fphoto.jpg');
+  });
+
+  it('unloads media previews when the preview closes', () => {
     const { unmount } = render(<PreviewContent entry={entry({ name: 'clip.mp4', path: '/storage/clip.mp4' })} />);
 
     unmount();
 
-    expect(pauseSpy).toHaveBeenCalledOnce();
-    expect(loadSpy).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('video')).not.toBeInTheDocument();
   });
 
   it('renders next and previous preview controls when provided', async () => {
