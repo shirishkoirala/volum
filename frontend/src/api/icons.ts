@@ -96,8 +96,10 @@ export function emptyIconUrl() {
 
 export function fileTypeIconUrl(entry: FileEntry, size = '22') {
   if (entry.type === 'directory') return folderIconUrl(size);
+  const icon = mimetypeIconUrl(entry.name);
+  if (icon !== mimetypeAssetUrl('unknown')) return icon;
   if (entry.permissions.includes('x')) return mimetypeAssetUrl('station');
-  return mimetypeIconUrl(entry.name);
+  return icon;
 }
 
 function mimetypeIconUrl(filename: string): string {
