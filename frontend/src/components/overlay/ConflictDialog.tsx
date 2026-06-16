@@ -4,6 +4,7 @@ import type { ConflictItem } from '../../api/client';
 import { Icon } from '../ui/Icon';
 import { Button } from '../ui/shared';
 import { Overlay } from '../ui/shared';
+import { Select } from '../input/Select';
 import { formatBytes } from '../../utils/format';
 import styles from './ConflictDialog.module.css';
 
@@ -71,11 +72,10 @@ export function ConflictDialog({ jobId, onResolve, onClose }: Props) {
           <>
             <div className={styles.defaultRow}>
               <label className={styles.defaultLabel}>Apply to all:</label>
-              <select
-                className={styles.select}
+              <Select
                 value={defaultResolution ?? ''}
-                onChange={(e) => {
-                  const val = e.target.value as ConflictResolution | '';
+                onChange={(value) => {
+                  const val = value as ConflictResolution | '';
                   setDefaultResolution(val || null);
                 }}
               >
@@ -83,7 +83,7 @@ export function ConflictDialog({ jobId, onResolve, onClose }: Props) {
                 <option value="skip">Skip all</option>
                 <option value="overwrite">Overwrite all</option>
                 <option value="rename">Rename all</option>
-              </select>
+              </Select>
               {defaultResolution && (
                 <Button size="compact" onClick={() => {
                   const all: Record<string, ConflictResolution> = {};
