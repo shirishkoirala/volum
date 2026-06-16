@@ -122,6 +122,15 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 	if err != nil {
 		return err
 	}
+	if job.ConflictPolicy == "skip_identical" {
+		sourceInfo, err := os.Stat(source)
+		if err != nil {
+			return err
+		}
+		if sourceInfo.IsDir() {
+			return errors.New("skip_identical conflict policy is only supported for file copy jobs")
+		}
+	}
 	destination, err := w.guard.Resolve(*job.DestinationPath)
 	if err != nil {
 		return err

@@ -306,6 +306,16 @@ describe('apiUrl path prefix', () => {
     expect(baseUrl.apiUrl('/api/files')).toBe('/volum/api/files');
   });
 
+  it('builds unprefixed absolute share URLs when no prefix is set', () => {
+    import.meta.env.VITE_PUBLIC_PATH = '';
+    expect(client.shareUrl('abc123')).toBe(`${window.location.origin}/api/public/abc123`);
+  });
+
+  it('builds prefixed absolute share URLs when VITE_PUBLIC_PATH is set', () => {
+    import.meta.env.VITE_PUBLIC_PATH = '/volum';
+    expect(client.shareUrl('abc123')).toBe(`${window.location.origin}/volum/api/public/abc123`);
+  });
+
   it('assetUrl constructs correct asset path', () => {
     import.meta.env.VITE_PUBLIC_PATH = '';
     expect(baseUrl.assetUrl('assets/logo.png')).toBe('/assets/logo.png');

@@ -144,7 +144,7 @@ export type ConflictPolicy = 'ask' | 'skip' | 'overwrite' | 'rename' | 'cancel' 
 import { apiUrl } from './baseUrl';
 
 export function shareUrl(token: string): string {
-  return `${window.location.origin}/api/public/${token}`;
+  return new URL(apiUrl(`/api/public/${token}`), window.location.origin).toString();
 }
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {

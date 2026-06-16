@@ -117,8 +117,15 @@ export function TransferDialog({
   const title = dialog.mode === 'copy' ? 'Copy Items' : 'Move Items';
   const actionLabel = dialog.mode === 'copy' ? 'Copy' : 'Move';
   const itemLabel = dialog.entries.length === 1 ? dialog.entries[0]!.name : `${dialog.entries.length} selected items`;
+  const supportsSkipIdentical = dialog.mode === 'copy' && dialog.entries.every((entry) => entry.type === 'file');
 
   useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
+
+  useEffect(() => {
+    if (!supportsSkipIdentical && conflictPolicy === 'skip_identical') {
+      setConflictPolicy('ask');
+    }
+  }, [conflictPolicy, supportsSkipIdentical]);
 
   const handleSubmit = () => {
     if (destination.split('|').map((s) => s.trim()).filter(Boolean).length === 0) {
@@ -270,7 +277,7 @@ export function TransferDialog({
         <Select value={conflictPolicy} onChange={(value) => setConflictPolicy(value as ConflictPolicy)}>
           <option value="ask">Ask when needed</option>
           <option value="skip">Skip existing files</option>
-          <option value="skip_identical">Skip identical files (by size + checksum)</option>
+          {supportsSkipIdentical && <option value="skip_identical">Skip identical files (by size + checksum)</option>}
           <option value="overwrite">Overwrite existing files</option>
           <option value="rename">Rename new files</option>
           <option value="cancel">Cancel the job</option>

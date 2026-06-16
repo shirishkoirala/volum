@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/volum-app/volum/backend/internal/jobs"
@@ -557,6 +558,34 @@ func TestProcessChecksumDirectoryEmptyCompletesJob(t *testing.T) {
 	}
 	if got.ProcessedBytes != 0 {
 		t.Fatalf("expected processed bytes 0, got %d", got.ProcessedBytes)
+	}
+}
+
+func TestProcessTransferRejectsSkipIdenticalForDirectoryCopy(t *testing.T) {
+	root := t.TempDir()
+	source := filepath.Join(root, "source")
+	destination := filepath.Join(root, "destination")
+	if err := os.MkdirAll(source, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	w, store, ctx := setupWorker(t, root)
+	job, err := store.Create(ctx, jobs.CreateRequest{
+		Type:            jobs.TypeCopy,
+		SourcePath:      source,
+		DestinationPath: destination,
+		ConflictPolicy:  "skip_identical",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = w.processTransfer(ctx, job)
+	if err == nil {
+		t.Fatal("expected directory copy with skip_identical to fail")
+	}
+	if !strings.Contains(err.Error(), "only supported for file copy jobs") {
+		t.Fatalf("expected unsupported skip_identical error, got %v", err)
 	}
 }
 
