@@ -35,14 +35,14 @@ type FileItemProps = {
 function FileThumbnail({ entry, className, size }: { entry: FileEntry; className?: string; size: number }) {
   const [src, setSrc] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
-  const imgRef = useRef<HTMLImageElement | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setSrc(null);
     setFailed(false);
 
-    const img = imgRef.current;
-    if (!img) return;
+    const frame = frameRef.current;
+    if (!frame) return;
 
     let objectUrl: string | null = null;
     let observer: IntersectionObserver | null = null;
@@ -72,7 +72,7 @@ function FileThumbnail({ entry, className, size }: { entry: FileEntry; className
         observer?.disconnect();
         load();
       }, { rootMargin: '160px' });
-      observer.observe(img);
+      observer.observe(frame);
     } else {
       load();
     }
@@ -88,14 +88,19 @@ function FileThumbnail({ entry, className, size }: { entry: FileEntry; className
   if (failed) return <FileIcon entry={entry} size={size} />;
 
   return (
-    <img
-      ref={imgRef}
-      className={className}
-      src={src ?? undefined}
-      alt={entry.name}
-      loading="lazy"
-      decoding="async"
-    />
+    <div ref={frameRef} className={`${styles.fileThumbFrame}${className ? ` ${className}` : ''}`}>
+      {src ? (
+        <img
+          className={styles.fileThumbImage}
+          src={src}
+          alt={entry.name}
+          loading="lazy"
+          decoding="async"
+        />
+      ) : (
+        <FileIcon entry={entry} size={32} />
+      )}
+    </div>
   );
 }
 
@@ -141,7 +146,7 @@ export function FileItem({
       ) : canThumbnail(entry) ? (
         <FileThumbnail
           entry={entry}
-          className={viewMode === 'grid' ? styles.fileThumb : undefined}
+          className={viewMode === 'grid' ? styles.fileThumbFrame : undefined}
           size={fileIconSize}
         />
       ) : (
