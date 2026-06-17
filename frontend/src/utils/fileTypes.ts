@@ -11,5 +11,5 @@ export function isAudioExtension(name: string) {
 }
 
 export function isTextExtension(name: string) {
-  return /\.(cfg|conf|csv|css|env|go|html?|ini|java|jsx?|json|log|md|php|properties|py|rb|rst|sh|sql|svg|toml|tsx?|txt|xml|ya?ml)$/i.test(name);
+  return /\.(cfg|conf|csv|css|env|go|html?|ini|java|jsx?|json|log|md|php|properties|py|rb|rs|rst|sh|sql|svg|toml|tsx?|txt|xml|ya?ml)$/i.test(name);
 }

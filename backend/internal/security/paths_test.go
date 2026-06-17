@@ -1,6 +1,7 @@
 package security
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -140,6 +141,153 @@ func TestRootGuardHostPathMapping(t *testing.T) {
 	}
 	if publicPath != "/mnt/disk/folder" {
 		t.Fatalf("expected public path, got %s", publicPath)
+	}
+}
+
+func TestCleanAbs(t *testing.T) {
+	path, err := CleanAbs("/foo/bar/../baz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if path != "/foo/baz" {
+		t.Fatalf("expected /foo/baz, got %s", path)
+	}
+}
+
+func TestValidBaseName(t *testing.T) {
+	cases := []struct {
+		name  string
+		valid bool
+	}{
+		{"file.txt", true},
+		{"my file.pdf", true},
+		{"", false},
+		{".", false},
+		{"..", false},
+		{"  ", false},
+		{"path/with/slash", false},
+		{"/etc/passwd", false},
+	}
+	for _, tc := range cases {
+		got := ValidBaseName(tc.name)
+		if got != tc.valid {
+			t.Errorf("ValidBaseName(%q) = %v, want %v", tc.name, got, tc.valid)
+		}
+	}
+}
+
+func TestPathInside(t *testing.T) {
+	if !PathInside("/root", "/root") {
+		t.Error("expected root to be inside root")
+	}
+	if !PathInside("/root", "/root/sub") {
+		t.Error("expected subpath to be inside root")
+	}
+	if PathInside("/root", "/other") {
+		t.Error("expected other path to not be inside root")
+	}
+	if PathInside("/root", "/root/../outside") {
+		t.Error("expected traversal to not be inside root")
+	}
+}
+
+func TestIsRoot(t *testing.T) {
+	g, err := NewRootGuard([]string{"/storage", "/media"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !g.IsRoot("/storage") {
+		t.Error("expected /storage to be a root")
+	}
+	if !g.IsRoot("/media") {
+		t.Error("expected /media to be a root")
+	}
+	if g.IsRoot("/storage/sub") {
+		t.Error("expected /storage/sub to not be a root")
+	}
+	if g.IsRoot("/other") {
+		t.Error("expected /other to not be a root")
+	}
+}
+
+func TestRootFor(t *testing.T) {
+	g, err := NewRootGuard([]string{"/storage", "/media"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	root, ok := g.RootFor("/storage/file.txt")
+	if !ok || root.Path != "/storage" {
+		t.Errorf("expected /storage root, got %#v", root)
+	}
+	_, ok = g.RootFor("/other")
+	if ok {
+		t.Error("expected no root for /other")
+	}
+}
+
+func TestNextAvailablePath(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, "file.txt")
+	got, err := NextAvailablePath(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != p {
+		t.Errorf("expected original path, got %s", got)
+	}
+
+	os.WriteFile(p, []byte("content"), 0o644)
+	got, err = NextAvailablePath(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := filepath.Join(dir, "file (1).txt")
+	if got != expected {
+		t.Errorf("expected %s, got %s", expected, got)
+	}
+
+	for i := 1; i <= 5; i++ {
+		n := filepath.Join(dir, fmt.Sprintf("file (%d).txt", i))
+		os.WriteFile(n, []byte("content"), 0o644)
+	}
+	got, err = NextAvailablePath(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected = filepath.Join(dir, "file (6).txt")
+	if got != expected {
+		t.Errorf("expected %s, got %s", expected, got)
+	}
+}
+
+func TestNextAvailablePathDir(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, "folder")
+	os.MkdirAll(p, 0o755)
+
+	got, err := NextAvailablePath(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := filepath.Join(dir, "folder (1)")
+	if got != expected {
+		t.Errorf("expected %s, got %s", expected, got)
+	}
+}
+
+func TestNextAvailablePathExhausted(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, "file.txt")
+	for i := 0; i <= 1000; i++ {
+		name := "file.txt"
+		if i > 0 {
+			name = fmt.Sprintf("file (%d).txt", i)
+		}
+		os.WriteFile(filepath.Join(dir, name), []byte("content"), 0o644)
+	}
+	_, err := NextAvailablePath(p)
+	if err == nil {
+		t.Fatal("expected error after exhausting candidates")
 	}
 }
 
