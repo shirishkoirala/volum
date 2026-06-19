@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
 import { setup } from '../api/client';
 import type { Session } from '../api/client';
-import appIcon from '../assets/icon-light.png';
+import appIcon from '../assets/volum-glass-folder.svg';
 import styles from './LoginScreen.module.css';
 
 type SetupScreenProps = {

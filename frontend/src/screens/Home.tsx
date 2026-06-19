@@ -95,6 +95,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
   // ── Refs ──
   const filesViewRef = useRef<import('../pages/FilesView').FilesViewHandle>(null);
   const prevHealthRef = useRef<Record<string, ServiceHealthResult>>({});
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // ── Extracted behavior hooks ──
   const menus = useContextMenus();
@@ -408,6 +409,20 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           onLogout={onLogout}
           focusedWindowType={focusedWindow?.winType ?? null}
           focusedWindowExists={!isMobile && focusedWindow !== null}
+          searchQuery={browser.query}
+          searchOpen={browser.searchOpen}
+          searchResults={browser.searchResults}
+          onSearch={(q) => { browser.setQuery(q); if (searchTimerRef.current) clearTimeout(searchTimerRef.current); searchTimerRef.current = setTimeout(() => browser.handleGlobalSearch(q), 200); browser.setSearchOpen(true); }}
+          onClearSearch={() => { browser.setQuery(''); browser.setSearchResults(null); browser.setSearchOpen(false); }}
+          onSearchResultClick={(result) => {
+            if (result.type === 'directory') navActions.navigateTo(result.path);
+            else { const idx = result.path.lastIndexOf('/'); navActions.navigateTo(idx < 0 ? '/' : result.path.substring(0, idx) || '/'); }
+          }}
+          onShowAllSearchResults={(query) => { nav.setSearchQuery(query); nav.setShowingSearch(true); browser.setSearchOpen(false); }}
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          jobs={browser.jobs}
+          onOpenJobs={workspaceOpeners.openJobs}
           menuHandlers={{
             onCreateFolder: focusedCommands.onCreateFolder ?? (() => filesViewRef.current?.handleCreateFolder()),
             onUpload: focusedCommands.onUpload ?? (() => filesViewRef.current?.handleUpload()),

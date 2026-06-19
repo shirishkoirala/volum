@@ -70,7 +70,7 @@
 
 .settingsNavItem.active {
   background: var(--color-brand-bg);
-  color: var(--color-brand);
+  color: var(--color-brand-text);
   font-weight: 600;
 }
 

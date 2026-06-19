@@ -1,46 +1,72 @@
 .topbar {
   align-items: center;
   background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border-light);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border-light) 55%, transparent);
   display: flex;
-  height: 44px;
-  padding: 0 8px;
-  gap: 4px;
+  gap: 8px;
   grid-column: 1 / -1;
   grid-row: 1;
-  z-index: 10000;
+  height: 44px;
+  padding: 0 8px;
   position: relative;
+  z-index: 10000;
+}
+
+:global([data-theme="light"]) .topbar {
+  background: color-mix(in srgb, var(--color-bg) 58%, white);
+  border-bottom-color: var(--color-border);
 }
 
 .left {
   align-items: center;
   display: flex;
+  flex: 0 0 auto;
   gap: 4px;
-  flex: 1;
   min-width: 0;
+}
+
+.menuCluster {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.right {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.iconCluster {
+  align-items: center;
+  display: flex;
+  gap: 4px;
 }
 
 .brand {
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   color: var(--color-text);
   cursor: pointer;
   display: flex;
   gap: 8px;
-  padding: 4px 8px;
-  transition: background var(--transition-fast);
+  padding: 5px 9px;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .brand:hover {
-  background: var(--color-hover);
+  background: color-mix(in srgb, var(--color-hover) 84%, transparent);
 }
 
 .brandIcon {
   border-radius: var(--radius-sm);
-  height: 24px;
-  width: 24px;
+  height: 30px;
+  width: 30px;
 }
 
 .brandName {
@@ -52,20 +78,74 @@
   align-items: center;
   color: var(--color-text-muted);
   display: flex;
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  margin-left: auto;
-  padding: 0 8px;
+  letter-spacing: 0;
+  opacity: 1;
+  padding: 0 4px 0 8px;
   user-select: none;
   white-space: nowrap;
 }
 
-.userArea {
-  position: relative;
-  flex-shrink: 0;
+:global([data-theme="light"]) .clock {
+  color: var(--color-text-secondary);
+  opacity: 1;
 }
 
-.userButton {
+.toolbarIconButton {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 10px;
+  box-shadow: none;
+  color: var(--color-text-secondary);
+  height: 30px;
+  width: 30px;
+}
+
+.toolbarIconButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-hover) 88%, transparent);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.overflowArea {
+  position: relative;
+}
+
+.overflowButton {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  box-shadow: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  width: 34px;
+}
+
+.overflowButton:hover {
+  background: color-mix(in srgb, var(--color-hover) 88%, transparent);
+  border-color: transparent;
+}
+
+.overflowMenu {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu);
+  min-width: 180px;
+  padding: 6px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 10001;
+}
+
+.overflowItem {
   align-items: center;
   background: transparent;
   border: 0;
@@ -73,20 +153,70 @@
   color: var(--color-text);
   cursor: pointer;
   display: flex;
-  gap: 6px;
-  min-height: 32px;
+  gap: 10px;
+  min-height: 34px;
   padding: 0 10px;
+  text-align: left;
   transition: background var(--transition-fast);
-  white-space: nowrap;
+  width: 100%;
+}
+
+.overflowItem:hover:not(:disabled) {
+  background: var(--color-hover);
+}
+
+.overflowItem:disabled {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.activityArea {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.activityBadge {
+  align-items: center;
+  background: var(--color-danger);
+  border-radius: 50%;
+  color: var(--color-on-accent);
+  display: flex;
+  font-size: 10px;
+  font-weight: 700;
+  height: 16px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 16px;
+  padding: 0 3px;
+  position: absolute;
+  right: -4px;
+  top: -4px;
+}
+
+.userArea {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.userButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  width: 30px;
 }
 
 .userButton:hover {
   background: var(--color-hover);
-}
-
-.userButton span {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
+  color: var(--color-text);
 }
 
 .userDropdown {
@@ -109,9 +239,9 @@
 }
 
 .dropdownUsername {
+  color: var(--color-text);
   font-size: var(--font-size-base);
   font-weight: 600;
-  color: var(--color-text);
 }
 
 .dropdownRole {
@@ -136,13 +266,13 @@
   color: var(--color-text);
   cursor: pointer;
   display: flex;
+  font-size: var(--font-size-sm);
   gap: 8px;
   min-height: 34px;
   padding: 0 12px;
   text-align: left;
   transition: background var(--transition-fast);
   width: 100%;
-  font-size: var(--font-size-sm);
 }
 
 .dropdownItem:hover {
@@ -151,13 +281,13 @@
 
 @media (max-width: 760px) {
   .topbar {
-    padding-top: env(safe-area-inset-top, 0);
+    height: calc(44px + env(safe-area-inset-top, 0));
     padding-left: 4px;
     padding-right: 4px;
-    height: calc(44px + env(safe-area-inset-top, 0));
+    padding-top: env(safe-area-inset-top, 0);
   }
   .brandName { display: none; }
   .clock { display: none; }
   .brand { padding: 4px 6px; }
-  .brandIcon { height: 22px; width: 22px; }
+  .brandIcon { height: 28px; width: 28px; }
 }

@@ -15,6 +15,7 @@ export type WindowCommands = {
   onEmptyTrash?: () => void;
   canWrite?: boolean;
   canUpload?: boolean;
+  canPaste?: boolean;
   selectedCount?: number;
 };
 

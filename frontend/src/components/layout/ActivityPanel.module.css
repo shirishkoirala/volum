@@ -1,0 +1,103 @@
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  min-width: 280px;
+  max-width: 360px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 10001;
+}
+
+.empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: var(--space-lg) var(--space-md);
+  text-align: center;
+}
+
+.section:not(:last-child) {
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.sectionHeader {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: var(--space-sm) var(--space-md) var(--space-xs);
+  text-transform: uppercase;
+}
+
+.item {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  min-height: 34px;
+}
+
+.itemInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemName {
+  display: block;
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemStatus {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-transform: capitalize;
+}
+
+.itemError {
+  color: var(--color-danger-text);
+  display: block;
+  font-size: var(--font-size-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemProgress {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.viewAll {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-brand-text);
+  cursor: pointer;
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  gap: var(--space-sm);
+  justify-content: center;
+  padding: var(--space-sm) var(--space-md);
+  text-align: center;
+  transition: background var(--transition-fast);
+  width: 100%;
+}
+
+.viewAll:hover {
+  background: var(--color-hover);
+}
+
+@media (max-width: 760px) {
+  .panel {
+    min-width: 0;
+    width: calc(100vw - 2rem);
+  }
+}

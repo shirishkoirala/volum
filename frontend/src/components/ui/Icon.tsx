@@ -1,6 +1,6 @@
 import type { FileEntry } from '../../api/client';
 import {
-  AlertTriangle, Archive, ArrowRight, ArrowUpDown, Bookmark, ChevronDown, ChevronRight, ChevronUp, CheckSquare,
+  Activity as ActivityIcon, AlertTriangle, Archive, ArrowRight, ArrowUpDown, Bookmark, ChevronDown, ChevronRight, ChevronUp, CheckSquare,
   CircleStop, CircleUser, Clipboard, Columns3, Copy, Download, Eye, EyeOff, FileInput, Folder,
   FolderPlus, Globe, Grid3X3, HelpCircle, Home, Info, ListChecks, ListTree, LogOut,
   List, ListX, Monitor, Moon, MoreHorizontal, Pause, Pencil, Play, RefreshCw, RotateCcw,
@@ -13,6 +13,7 @@ import { fileTypeIconUrl, folderIconUrl, driveIconUrl, trashIconUrl } from '../.
 type IconProps = { name: string; size?: number; className?: string };
 
 const ACTION_ICONS: Record<string, LucideIcon> = {
+  activity: ActivityIcon,
   'archive-create': Archive,
   'archive-extract': Archive,
   'bookmark-new': Bookmark,

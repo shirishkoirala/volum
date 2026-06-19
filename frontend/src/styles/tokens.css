@@ -1,10 +1,12 @@
 :root {
   /* Colors */
   --color-bg: #f0f2f5;
+  --color-window: #f3f5f8;
   --color-surface: #ffffff;
+  --color-surface-raised: #f8fafc;
   --color-text: #1a1a2e;
   --color-text-secondary: #4a5568;
-  --color-text-muted: #8899aa;
+  --color-text-muted: #5f6b7a;
   --color-text-tertiary: #a0aec0;
   --color-border: #e2e8f0;
   --color-border-light: #e8ecf1;
@@ -77,10 +79,12 @@
 [data-theme="dark"] {
   /* Colors */
   --color-bg: #12141a;
+  --color-window: #20242e;
   --color-surface: #1a1d26;
+  --color-surface-raised: #252a35;
   --color-text: #e2e6ed;
   --color-text-secondary: #b4bac4;
-  --color-text-muted: #788196;
+  --color-text-muted: #7f899f;
   --color-text-tertiary: #697386;
   --color-border: #282c36;
   --color-border-light: #2d313c;
@@ -148,10 +152,12 @@
 
 [data-theme="dark"] {
   --color-bg: #12141a;
+  --color-window: #20242e;
   --color-surface: #1a1d26;
+  --color-surface-raised: #252a35;
   --color-text: #e2e6ed;
   --color-text-secondary: #b4bac4;
-  --color-text-muted: #788196;
+  --color-text-muted: #7f899f;
   --color-text-tertiary: #697386;
   --color-border: #282c36;
   --color-border-light: #2d313c;
@@ -211,7 +217,9 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
+  color: inherit;
   font: inherit;
 }
 
