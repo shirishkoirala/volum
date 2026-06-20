@@ -219,6 +219,15 @@ body {
 
 #root {
   height: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#root input,
+#root textarea,
+#root [contenteditable] {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 button,
