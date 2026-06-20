@@ -5,6 +5,17 @@
   min-height: 0;
 }
 
+.defaultWallpaper {
+  background-image: url('/background.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+:global([data-theme="dark"]) .defaultWallpaper {
+  background-image: url('/background_dark.png');
+}
+
 .desktop {
   align-content: start;
   display: grid;
@@ -110,6 +121,14 @@
 }
 
 @media (max-width: 760px) {
+  .defaultWallpaper {
+    background-image: url('/background_mobile_light.png');
+  }
+
+  :global([data-theme="dark"]) .defaultWallpaper {
+    background-image: url('/background_mobile_dark.png');
+  }
+
   .desktop {
     gap: var(--space-md);
     grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));

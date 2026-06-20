@@ -21,7 +21,6 @@ type DesktopViewProps = {
   onOpenFiles: () => void;
   onOpenService: (service: ServiceShortcut) => void;
   onShowMyPC: () => void;
-  wallpaperStyle?: React.CSSProperties;
   onItemContextMenu: (item: DesktopIconItem, event: React.MouseEvent<HTMLElement>) => void;
 };
 
@@ -57,7 +56,6 @@ export function DesktopView({
   trashEntries, jobs, pendingTransferCount = 0, favorites, services,
   serviceHealth,
   onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onOpenService, onShowMyPC,
-  wallpaperStyle,
   onItemContextMenu,
 }: DesktopViewProps) {
   const activeTransferCount = countActiveTransfers(jobs, pendingTransferCount);
@@ -285,8 +283,7 @@ export function DesktopView({
 
   return (
     <div
-      className={styles.desktopWrapper}
-      style={wallpaperStyle}
+      className={`${styles.desktopWrapper} ${styles.defaultWallpaper}`}
       onContextMenu={(event) => {
         onItemContextMenu({ id: '', type: 'emptySpace', label: '', ariaLabel: '', onClick: () => {} }, event);
       }}

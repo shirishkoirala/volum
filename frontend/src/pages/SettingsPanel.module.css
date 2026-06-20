@@ -190,6 +190,60 @@
   align-items: center;
 }
 
+.profileImageRow {
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-light);
+  display: flex;
+  gap: var(--space-sm);
+  padding: 0 0 var(--space-md);
+}
+
+.profileImage,
+.profileImageFallback {
+  align-items: center;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  border-radius: 50%;
+  display: flex;
+  flex: 0 0 52px;
+  height: 52px;
+  justify-content: center;
+  object-fit: cover;
+  width: 52px;
+}
+
+.profileImageDetails {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profileImageDetails strong {
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+}
+
+.profileImageDetails span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.profileImageActions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.avatarInput {
+  display: none;
+}
+
+.avatarError {
+  color: var(--color-danger-text);
+  font-size: var(--font-size-sm);
+  margin: var(--space-xs) 0 0;
+}
+
 .toggleLabel {
   align-items: center;
   cursor: pointer;
@@ -470,5 +524,15 @@
   .maintenanceActions,
   .settingsActions {
     gap: var(--space-xs);
+  }
+
+  .profileImageRow {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .profileImageActions {
+    flex-basis: 100%;
+    margin-left: 60px;
   }
 }

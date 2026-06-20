@@ -5,6 +5,10 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -138,6 +142,29 @@ func (ts *testServer) upload(path string, files map[string]string) *http.Respons
 	if ts.cookie != "" {
 		req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
 	}
+	w := httptest.NewRecorder()
+	ts.Server.Handler().ServeHTTP(w, req)
+	return w.Result()
+}
+
+func (ts *testServer) uploadAvatar(t *testing.T, content []byte, filename string) *http.Response {
+	t.Helper()
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+	part, err := writer.CreateFormFile("avatar", filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := part.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodPut, "/api/profile/avatar", &buf)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
 	w := httptest.NewRecorder()
 	ts.Server.Handler().ServeHTTP(w, req)
 	return w.Result()
@@ -582,6 +609,112 @@ func TestSessionWithoutAuth(t *testing.T) {
 	}
 	if body.UserId == "" || body.Username != "admin" {
 		t.Fatalf("expected user info in session: %#v", body)
+	}
+}
+
+func TestLoginRememberMeControlsCookiePersistence(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	for _, test := range []struct {
+		name       string
+		rememberMe bool
+		persistent bool
+	}{
+		{name: "session cookie", rememberMe: false, persistent: false},
+		{name: "persistent cookie", rememberMe: true, persistent: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			body := bytes.NewBufferString(`{"username":"admin","password":"adminpass","rememberMe":` + fmt.Sprint(test.rememberMe) + `}`)
+			req := httptest.NewRequest(http.MethodPost, "/api/login", body)
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
+			ts.Server.Handler().ServeHTTP(w, req)
+
+			if w.Code != http.StatusOK {
+				t.Fatalf("expected 200, got %d", w.Code)
+			}
+			cookies := w.Result().Cookies()
+			if len(cookies) != 1 {
+				t.Fatalf("expected one session cookie, got %d", len(cookies))
+			}
+			persistent := cookies[0].MaxAge > 0 && !cookies[0].Expires.IsZero()
+			if persistent != test.persistent {
+				t.Fatalf("expected persistent=%t, cookie=%#v", test.persistent, cookies[0])
+			}
+		})
+	}
+}
+
+func TestProfileAvatarLifecycle(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	var pngData bytes.Buffer
+	img := image.NewRGBA(image.Rect(0, 0, 2, 2))
+	img.Set(0, 0, color.RGBA{R: 40, G: 120, B: 220, A: 255})
+	if err := png.Encode(&pngData, img); err != nil {
+		t.Fatal(err)
+	}
+
+	putResp := ts.uploadAvatar(t, pngData.Bytes(), "avatar.png")
+	if putResp.StatusCode != http.StatusOK {
+		t.Fatalf("expected avatar upload 200, got %d", putResp.StatusCode)
+	}
+	var avatarState struct {
+		HasAvatar     bool  `json:"hasAvatar"`
+		AvatarVersion int64 `json:"avatarVersion"`
+	}
+	readJSON(t, putResp, &avatarState)
+	if !avatarState.HasAvatar || avatarState.AvatarVersion == 0 {
+		t.Fatalf("unexpected avatar state: %#v", avatarState)
+	}
+
+	getResp := ts.get("/api/profile/avatar")
+	defer getResp.Body.Close()
+	if getResp.StatusCode != http.StatusOK {
+		t.Fatalf("expected avatar fetch 200, got %d", getResp.StatusCode)
+	}
+	if getResp.Header.Get("Content-Type") != "image/png" {
+		t.Fatalf("expected image/png, got %q", getResp.Header.Get("Content-Type"))
+	}
+	gotData, err := io.ReadAll(getResp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(gotData, pngData.Bytes()) {
+		t.Fatal("fetched avatar does not match upload")
+	}
+
+	sessionResp := ts.get("/api/session")
+	var session struct {
+		HasAvatar bool `json:"hasAvatar"`
+	}
+	readJSON(t, sessionResp, &session)
+	if !session.HasAvatar {
+		t.Fatal("expected session to report avatar")
+	}
+
+	deleteResp := ts.del("/api/profile/avatar", nil)
+	if deleteResp.StatusCode != http.StatusOK {
+		t.Fatalf("expected avatar delete 200, got %d", deleteResp.StatusCode)
+	}
+	deleteResp.Body.Close()
+	missingResp := ts.get("/api/profile/avatar")
+	missingResp.Body.Close()
+	if missingResp.StatusCode != http.StatusNotFound {
+		t.Fatalf("expected deleted avatar to return 404, got %d", missingResp.StatusCode)
+	}
+}
+
+func TestProfileAvatarRejectsNonImage(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	resp := ts.uploadAvatar(t, []byte("not an image"), "avatar.txt")
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusUnsupportedMediaType {
+		t.Fatalf("expected 415, got %d", resp.StatusCode)
 	}
 }
 

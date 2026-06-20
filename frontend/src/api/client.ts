@@ -131,6 +131,13 @@ export type Session = {
   userId?: string;
   username?: string;
   role?: 'admin' | 'readonly' | '';
+  hasAvatar?: boolean;
+  avatarVersion?: number;
+};
+
+export type AvatarState = {
+  hasAvatar: boolean;
+  avatarVersion: number;
 };
 
 export type UserInfo = {
@@ -179,10 +186,30 @@ export function getSession() {
   return request<Session>('/api/session');
 }
 
-export function login(username: string, password: string) {
+export function profileAvatarUrl(version?: number): string {
+  const suffix = version ? `?v=${version}` : '';
+  return apiUrl(`/api/profile/avatar${suffix}`);
+}
+
+export async function uploadProfileAvatar(file: File): Promise<AvatarState> {
+  const form = new FormData();
+  form.append('avatar', file);
+  const response = await fetch(apiUrl('/api/profile/avatar'), {
+    method: 'PUT',
+    body: form,
+  });
+  if (!response.ok) throw await parseError(response);
+  return response.json() as Promise<AvatarState>;
+}
+
+export function deleteProfileAvatar(): Promise<AvatarState> {
+  return request<AvatarState>('/api/profile/avatar', { method: 'DELETE' });
+}
+
+export function login(username: string, password: string, rememberMe = false) {
   return request<Session>('/api/login', {
     method: 'POST',
-    body: JSON.stringify({ username, password })
+    body: JSON.stringify({ username, password, rememberMe })
   });
 }
 

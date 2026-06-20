@@ -5,7 +5,7 @@ import { ActivityPanel } from './ActivityPanel';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { IconButton } from '../ui/shared';
 import { Icon } from '../ui/Icon';
-import type { Session, SearchResult, Job } from '../../api/client';
+import { profileAvatarUrl, type Session, type SearchResult, type Job } from '../../api/client';
 import { countActiveTransfers } from '../../utils/jobs';
 import appIcon from '../../assets/volum-glass-folder.svg';
 import styles from './TopBar.module.css';
@@ -280,13 +280,28 @@ export function TopBar({
               aria-label={`User menu for ${session.username}`}
               aria-expanded={userMenuOpen}
             >
-              <Icon name="avatar-default" size={16} />
+              {session.hasAvatar ? (
+                <img
+                  className={styles.userAvatar}
+                  src={profileAvatarUrl(session.avatarVersion)}
+                  alt=""
+                />
+              ) : (
+                <Icon name="avatar-default" size={16} />
+              )}
             </button>
             {userMenuOpen && (
               <div className={styles.userDropdown} role="menu">
                 <div className={styles.dropdownHeader}>
-                  <span className={styles.dropdownUsername}>{session.username}</span>
-                  {session.role && <span className={styles.dropdownRole}>{session.role}</span>}
+                  {session.hasAvatar ? (
+                    <img className={styles.dropdownAvatar} src={profileAvatarUrl(session.avatarVersion)} alt="" />
+                  ) : (
+                    <span className={styles.dropdownAvatarFallback}><Icon name="avatar-default" size={18} /></span>
+                  )}
+                  <div className={styles.dropdownIdentity}>
+                    <span className={styles.dropdownUsername}>{session.username}</span>
+                    {session.role && <span className={styles.dropdownRole}>{session.role}</span>}
+                  </div>
                 </div>
                 <div className={styles.dropdownDivider} />
                 {onOpenSettings && (

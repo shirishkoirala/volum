@@ -72,6 +72,9 @@ func (s *Server) routes() {
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.requireUser)
+			r.Get("/profile/avatar", s.handleGetAvatar)
+			r.Put("/profile/avatar", s.handleUpdateAvatar)
+			r.Delete("/profile/avatar", s.handleDeleteAvatar)
 			r.Get("/roots", s.handleRoots)
 			r.Get("/devices", s.handleDevices)
 			r.Get("/files", s.handleFiles)

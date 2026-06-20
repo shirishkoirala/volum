@@ -30,13 +30,16 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 		"userId":        user.ID,
 		"username":      user.Username,
 		"role":          user.Role,
+		"hasAvatar":     user.HasAvatar,
+		"avatarVersion": user.AvatarVersion,
 	})
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
+		Username   string `json:"username"`
+		Password   string `json:"password"`
+		RememberMe bool   `json:"rememberMe"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
@@ -48,14 +51,18 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if s.auth.Enabled() {
-		http.SetCookie(w, &http.Cookie{
+		cookie := &http.Cookie{
 			Name:     "volum_session",
 			Value:    token,
 			Path:     "/",
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
-			MaxAge:   60 * 60 * 24 * 7,
-		})
+		}
+		if req.RememberMe {
+			cookie.MaxAge = 60 * 60 * 24 * 7
+			cookie.Expires = time.Now().Add(7 * 24 * time.Hour)
+		}
+		http.SetCookie(w, cookie)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"authEnabled":   s.auth.Enabled(),
@@ -64,6 +71,8 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		"userId":        user.ID,
 		"username":      user.Username,
 		"role":          user.Role,
+		"hasAvatar":     user.HasAvatar,
+		"avatarVersion": user.AvatarVersion,
 	})
 }
 
@@ -116,6 +125,8 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 		"userId":        record.ID,
 		"username":      record.Username,
 		"role":          auth.RoleAdmin,
+		"hasAvatar":     false,
+		"avatarVersion": record.UpdatedAt.UnixMilli(),
 	})
 	_ = user // user is unused for setup response
 }

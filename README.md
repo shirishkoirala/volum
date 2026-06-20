@@ -130,7 +130,6 @@ frontend/src/
 │   ├── useViewPreferences.ts     # View mode, sort, folder prefs + localStorage
 │   ├── useNavigation.ts          # showingTrash, showingSettings, etc.
 │   ├── useFavorites.ts           # Desktop folder shortcuts + localStorage
-│   ├── useWallpaper.ts           # Wallpaper config + localStorage
 │   ├── useFileActions.ts         # Preview, info, rename, search, context menu state
 │   ├── useDialogStack.ts         # Confirm, text input, transfer dialogs
 │   └── useLocalStorage.ts        # Generic localStorage hook
@@ -145,7 +144,7 @@ frontend/src/
 │   ├── layout/                   # TopBar (brand + clock), AppMenuBar, BreadcrumbBar, Dock, StatusBar
 │   ├── overlay/                  # Dialogs, Toast, InfoPanel, PreviewModal, ShareDialog, ShareManager,
 │   │                             # DiskUsageAnalyzer, KeyboardShortcuts, ContextMenus (File/Trash/Desktop)
-│   └── ui/                       # EmptyState, ProgressBar, Icon, WallpaperPicker, ServerInfo, GridTile,
+│   └── ui/                       # EmptyState, ProgressBar, Icon, ServerInfo, GridTile,
 │                                 # FileGridView/ListView, FileSearchBar, DriveSection
 ├── utils/                        # format.ts, path.ts, archive.ts, jobs.ts, view.ts, preview.ts, wallpaper.ts
 ├── types/                        # Shared TypeScript types

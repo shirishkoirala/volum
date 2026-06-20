@@ -66,9 +66,17 @@ func migrate(db *sql.DB) error {
 			username TEXT NOT NULL UNIQUE,
 			password_hash TEXT NOT NULL,
 			role TEXT NOT NULL DEFAULT 'readonly',
+			avatar_data BLOB,
+			avatar_mime TEXT DEFAULT '',
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL
 		)`)
+	if err := addColumnIfMissing(db, "users", "avatar_data", "BLOB"); err != nil {
+		return err
+	}
+	if err := addColumnIfMissing(db, "users", "avatar_mime", "TEXT DEFAULT ''"); err != nil {
+		return err
+	}
 	_, _ = db.Exec(`
 		CREATE TABLE IF NOT EXISTS desktop_favorites (
 			path TEXT NOT NULL PRIMARY KEY,

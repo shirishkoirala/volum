@@ -4,7 +4,6 @@ import { Button, MutedText } from '../components/ui/shared';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { ServerInfo } from '../components/ui/ServerInfo';
-import { WallpaperPicker } from '../components/ui/WallpaperPicker';
 import { formatBytes } from '../utils/format';
 import {
   getStatus,
@@ -16,25 +15,26 @@ import {
   deleteUser,
   changePassword,
   changeRole,
+  deleteProfileAvatar,
+  profileAvatarUrl,
+  uploadProfileAvatar,
   type StatusResponse,
   type RootEntry,
   type Session,
   type UserInfo,
 } from '../api/client';
-import type { WallpaperConfig } from '../utils/wallpaper';
 import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
 import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
   onOpenShares?: () => void;
-  wallpaper?: WallpaperConfig;
-  onWallpaperChange?: (config: WallpaperConfig) => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onOpenShortcuts: () => void;
   onLogout: () => void;
   session: Session | null;
+  onSessionChange: (session: Session) => void;
   services?: ServiceShortcut[];
   serviceHealth?: Record<string, ServiceHealthResult>;
   onAddService?: () => void;
@@ -56,13 +56,12 @@ const CATEGORIES: { id: CategoryId; label: string; icon: string }[] = [
 
 export function SettingsPanel({
   onOpenShares,
-  wallpaper,
-  onWallpaperChange,
   theme,
   onToggleTheme,
   onOpenShortcuts,
   onLogout,
   session,
+  onSessionChange,
   services,
   serviceHealth,
   onAddService,
@@ -94,6 +93,46 @@ export function SettingsPanel({
   const [pwdChangeValue, setPwdChangeValue] = useState('');
   const [userMsg, setUserMsg] = useState<string | null>(null);
   const [userError, setUserError] = useState<string | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarUpload = async (file: File | undefined) => {
+    if (!file || !session) return;
+    setAvatarError(null);
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      setAvatarError('Choose a PNG or JPEG image.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError('Profile image must be 2 MB or smaller.');
+      return;
+    }
+    setAvatarBusy(true);
+    try {
+      const avatar = await uploadProfileAvatar(file);
+      onSessionChange({ ...session, ...avatar });
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'Profile image upload failed');
+    } finally {
+      setAvatarBusy(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
+
+  const handleAvatarDelete = async () => {
+    if (!session) return;
+    setAvatarBusy(true);
+    setAvatarError(null);
+    try {
+      const avatar = await deleteProfileAvatar();
+      onSessionChange({ ...session, ...avatar });
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'Could not remove profile image');
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
 
   const loadStatus = useCallback(() => {
     setLoading(true);
@@ -245,6 +284,35 @@ export function SettingsPanel({
           {(!filterQuery.trim() ? activeCategory === 'general' : filteredCategories.some((c) => c.id === 'general')) && (
             <section className={styles.settingsSection}>
               <h4>General</h4>
+              {session?.authEnabled && (
+                <div className={styles.profileImageRow}>
+                  {session.hasAvatar ? (
+                    <img className={styles.profileImage} src={profileAvatarUrl(session.avatarVersion)} alt="Current profile" />
+                  ) : (
+                    <span className={styles.profileImageFallback}><Icon name="avatar-default" size={24} /></span>
+                  )}
+                  <div className={styles.profileImageDetails}>
+                    <strong>Profile image</strong>
+                    <span>PNG or JPEG, up to 2 MB</span>
+                  </div>
+                  <input
+                    ref={avatarInputRef}
+                    className={styles.avatarInput}
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    onChange={(event) => void handleAvatarUpload(event.target.files?.[0])}
+                  />
+                  <div className={styles.profileImageActions}>
+                    <Button size="compact" disabled={avatarBusy} onClick={() => avatarInputRef.current?.click()}>
+                      {avatarBusy ? 'Saving...' : session.hasAvatar ? 'Replace' : 'Upload'}
+                    </Button>
+                    {session.hasAvatar && (
+                      <Button size="compact" disabled={avatarBusy} onClick={() => void handleAvatarDelete()}>Remove</Button>
+                    )}
+                  </div>
+                </div>
+              )}
+              {avatarError && <p className={styles.avatarError}>{avatarError}</p>}
               <div className={styles.settingsActions}>
                 <Button size="compact" onClick={onToggleTheme}>
                   {theme === 'light' ? 'Use Dark Theme' : 'Use Light Theme'}
@@ -310,11 +378,6 @@ export function SettingsPanel({
 
           {(!filterQuery.trim() ? activeCategory === 'desktop' : filteredCategories.some((c) => c.id === 'desktop')) && (
             <>
-              {wallpaper && onWallpaperChange && (
-                <div className={styles.settingsSection}>
-                  <WallpaperPicker wallpaper={wallpaper} onChange={onWallpaperChange} />
-                </div>
-              )}
               {onAddService && (
                 <section className={styles.settingsSection}>
                   <h4>Services</h4>

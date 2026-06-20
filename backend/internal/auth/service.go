@@ -18,9 +18,11 @@ const (
 )
 
 type User struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Role     Role   `json:"role"`
+	ID            string `json:"id"`
+	Username      string `json:"username"`
+	Role          Role   `json:"role"`
+	HasAvatar     bool   `json:"hasAvatar"`
+	AvatarVersion int64  `json:"avatarVersion"`
 }
 
 type contextKey string
@@ -67,9 +69,11 @@ func (s *Service) Login(ctx context.Context, username, password string) (string,
 		return "", User{}, false
 	}
 	user := User{
-		ID:       record.ID,
-		Username: record.Username,
-		Role:     record.Role,
+		ID:            record.ID,
+		Username:      record.Username,
+		Role:          record.Role,
+		HasAvatar:     record.HasAvatar,
+		AvatarVersion: record.UpdatedAt.UnixMilli(),
 	}
 	return s.sign(record.ID, record.Role), user, true
 }
@@ -94,9 +98,11 @@ func (s *Service) UserFromRequest(r *http.Request) (User, bool) {
 		return User{}, false
 	}
 	return User{
-		ID:       record.ID,
-		Username: record.Username,
-		Role:     record.Role,
+		ID:            record.ID,
+		Username:      record.Username,
+		Role:          record.Role,
+		HasAvatar:     record.HasAvatar,
+		AvatarVersion: record.UpdatedAt.UnixMilli(),
 	}, true
 }
 

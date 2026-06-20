@@ -18,6 +18,12 @@ type UserRecord struct {
 	Role         Role
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	HasAvatar    bool
+}
+
+type Avatar struct {
+	Data []byte
+	MIME string
 }
 
 type Store struct {
@@ -54,7 +60,8 @@ func (s *Store) CreateUser(ctx context.Context, username, password string, role 
 
 func (s *Store) GetByUsername(ctx context.Context, username string) (*UserRecord, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, username, password_hash, role, created_at, updated_at FROM users WHERE username = ?`,
+		`SELECT id, username, password_hash, role, created_at, updated_at,
+			avatar_data IS NOT NULL AND length(avatar_data) > 0 FROM users WHERE username = ?`,
 		username,
 	)
 	return scanUser(row)
@@ -62,7 +69,8 @@ func (s *Store) GetByUsername(ctx context.Context, username string) (*UserRecord
 
 func (s *Store) GetByID(ctx context.Context, id string) (*UserRecord, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, username, password_hash, role, created_at, updated_at FROM users WHERE id = ?`,
+		`SELECT id, username, password_hash, role, created_at, updated_at,
+			avatar_data IS NOT NULL AND length(avatar_data) > 0 FROM users WHERE id = ?`,
 		id,
 	)
 	return scanUser(row)
@@ -70,7 +78,8 @@ func (s *Store) GetByID(ctx context.Context, id string) (*UserRecord, error) {
 
 func (s *Store) ListUsers(ctx context.Context) ([]UserRecord, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, username, password_hash, role, created_at, updated_at FROM users ORDER BY created_at ASC`,
+		`SELECT id, username, password_hash, role, created_at, updated_at,
+			avatar_data IS NOT NULL AND length(avatar_data) > 0 FROM users ORDER BY created_at ASC`,
 	)
 	if err != nil {
 		return nil, err
@@ -121,6 +130,50 @@ func (s *Store) UpdateRole(ctx context.Context, id string, role Role) error {
 	return sqlutil.RequireRowsAffected(res)
 }
 
+func (s *Store) GetAvatar(ctx context.Context, id string) (*Avatar, error) {
+	var avatar Avatar
+	err := s.db.QueryRowContext(ctx,
+		`SELECT avatar_data, avatar_mime FROM users WHERE id = ? AND avatar_data IS NOT NULL`, id,
+	).Scan(&avatar.Data, &avatar.MIME)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &avatar, nil
+}
+
+func (s *Store) UpdateAvatar(ctx context.Context, id string, data []byte, mime string) (time.Time, error) {
+	updatedAt := time.Now().UTC()
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE users SET avatar_data = ?, avatar_mime = ?, updated_at = ? WHERE id = ?`,
+		data, mime, updatedAt, id,
+	)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if err := sqlutil.RequireRowsAffected(res); err != nil {
+		return time.Time{}, err
+	}
+	return updatedAt, nil
+}
+
+func (s *Store) DeleteAvatar(ctx context.Context, id string) (time.Time, error) {
+	updatedAt := time.Now().UTC()
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE users SET avatar_data = NULL, avatar_mime = '', updated_at = ? WHERE id = ?`,
+		updatedAt, id,
+	)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if err := sqlutil.RequireRowsAffected(res); err != nil {
+		return time.Time{}, err
+	}
+	return updatedAt, nil
+}
+
 func (s *Store) Count(ctx context.Context) (int, error) {
 	var n int
 	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&n)
@@ -133,7 +186,7 @@ func (s *Store) VerifyPassword(record *UserRecord, password string) bool {
 
 func scanUser(row *sql.Row) (*UserRecord, error) {
 	var u UserRecord
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt)
+	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.HasAvatar)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -145,7 +198,7 @@ func scanUser(row *sql.Row) (*UserRecord, error) {
 
 func scanUserFromRows(row sqlutil.Scanner) (*UserRecord, error) {
 	var u UserRecord
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt)
+	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.HasAvatar)
 	if err != nil {
 		return nil, err
 	}

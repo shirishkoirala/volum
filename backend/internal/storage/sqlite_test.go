@@ -70,6 +70,25 @@ func TestMigrateAddsDesktopServiceHealthURL(t *testing.T) {
 	}
 }
 
+func TestMigrateAddsUserAvatarColumns(t *testing.T) {
+	db, err := Open(filepath.Join(t.TempDir(), "users.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	for _, column := range []string{"avatar_data", "avatar_mime"} {
+		var name string
+		err = db.QueryRow("SELECT name FROM pragma_table_info('users') WHERE name = ?", column).Scan(&name)
+		if err == sql.ErrNoRows {
+			t.Fatalf("expected %s column to exist", column)
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 func TestOpenIdempotent(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "twice.db")
 	db1, err := Open(dbPath)

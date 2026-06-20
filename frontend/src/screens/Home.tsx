@@ -26,7 +26,6 @@ import { useJobs } from '../hooks/useJobs';
 import { useViewPreferences } from '../hooks/useViewPreferences';
 import { useNavigation } from '../hooks/useNavigation';
 import { useFavorites } from '../hooks/useFavorites';
-import { useWallpaper } from '../hooks/useWallpaper';
 import { useFileActions } from '../hooks/useFileActions';
 import { useDialogStack } from '../hooks/useDialogStack';
 import { useToasts } from '../hooks/useToasts';
@@ -54,12 +53,13 @@ import styles from './Home.module.css';
 
 interface HomeProps {
   session: Session;
+  onSessionChange: (session: Session) => void;
   onLogout: () => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
 }
 
-export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
+export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme }: HomeProps) {
   // ── Core hooks ──
   const viewPref = useViewPreferences();
   const toast = useToasts();
@@ -70,7 +70,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
     session,
   });
 
-  const wallpaper = useWallpaper();
   const { services, health: serviceHealth, addService, updateService, removeService, reorderServices, refreshHealth: refreshServiceHealth } = useServiceShortcuts();
   const isMobile = useIsMobile();
   const notifPrefs = useNotificationPreferences();
@@ -197,13 +196,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
         return (
           <SettingsPanel
             onOpenShares={() => dialogs.setSharesOpen(true)}
-            wallpaper={wallpaper.wallpaper}
-            onWallpaperChange={wallpaper.setWallpaper}
             theme={theme}
             onToggleTheme={onToggleTheme}
             onOpenShortcuts={() => fileActions.setShortcutsOpen(true)}
             onLogout={onLogout}
             session={session}
+            onSessionChange={onSessionChange}
             services={services}
             serviceHealth={serviceHealth}
             onAddService={() => desktopActions.handleOpenServiceForm()}
@@ -248,7 +246,7 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
       default:
         return null;
     }
-  }, [session, favorites, navActions, addFavorite, removeFavorite, wallpaper, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, workspaceOpeners.openPreview, services, serviceHealth, desktopActions, reorderServices]);
+  }, [session, onSessionChange, favorites, navActions, addFavorite, removeFavorite, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, workspaceOpeners.openPreview, services, serviceHealth, desktopActions, reorderServices]);
 
   const {
     previewPositionLabel,
@@ -474,7 +472,6 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
               onOpenFiles={() => workspaceOpeners.openFiles()}
               onOpenService={workspaceOpeners.openService}
               onShowMyPC={workspaceOpeners.openDrives}
-              wallpaperStyle={wallpaper.wallpaperStyle}
               onItemContextMenu={handleDesktopItemContextMenu}
             />
           )}
@@ -513,13 +510,12 @@ export function Home({ session, onLogout, theme, onToggleTheme }: HomeProps) {
           {nav.activeView === 'settings' && (
             <SettingsPanel
               onOpenShares={() => { nav.setShowingSettings(false); dialogs.setSharesOpen(true); }}
-              wallpaper={wallpaper.wallpaper}
-              onWallpaperChange={wallpaper.setWallpaper}
               theme={theme}
               onToggleTheme={onToggleTheme}
               onOpenShortcuts={() => fileActions.setShortcutsOpen(true)}
               onLogout={onLogout}
               session={session}
+              onSessionChange={onSessionChange}
               services={services}
               serviceHealth={serviceHealth}
               onAddService={() => desktopActions.handleOpenServiceForm()}

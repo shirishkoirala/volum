@@ -340,7 +340,7 @@ if (isMobile) {
     <main className={styles.appShellDesktop}>
       <TopBar ... menuHandlers={{...}} />
       <Dock items={nav.dockItems} onActivate={handleDesktopDockActivate} />
-      <DesktopView wallpaperStyle={wallpaper.wallpaperStyle} ... />
+      <DesktopView ... />
       <WindowHost renderWindow={renderWindow} />
       <Taskbar />
       <StatusBar visible={true} ... />

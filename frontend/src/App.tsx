@@ -5,6 +5,7 @@ import { SetupScreen } from './screens/SetupScreen';
 import { Home } from './screens/Home';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { WindowManagerProvider } from './contexts/WindowManagerProvider';
+import { saveLastUser } from './utils/lastUser';
 import styles from './App.module.css';
 
 export function App() {
@@ -28,9 +29,17 @@ export function App() {
     localStorage.setItem('volum_theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    if (session?.authenticated && session.username) void saveLastUser(session);
+  }, [session]);
+
   const handleLoggedIn = (nextSession: Session) => setSession(nextSession);
   const handleLogout = () => {
-    void logout().then(setSession).catch(() => setSession(null));
+    const cacheUser = session?.authenticated ? saveLastUser(session) : Promise.resolve();
+    void cacheUser
+      .then(logout)
+      .then(setSession)
+      .catch(() => setSession(null));
   };
 
   if (loading) {
@@ -42,7 +51,7 @@ export function App() {
   }
 
   if (session?.authEnabled && !session.authenticated) {
-    return <LoginScreen onLoggedIn={handleLoggedIn} />;
+    return <LoginScreen onLoggedIn={handleLoggedIn} theme={theme} onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')} />;
   }
 
   return (
@@ -51,6 +60,7 @@ export function App() {
         <WindowManagerProvider>
           <Home
             session={session!}
+            onSessionChange={setSession}
             onLogout={handleLogout}
             theme={theme}
             onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
