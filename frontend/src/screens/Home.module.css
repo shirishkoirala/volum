@@ -18,6 +18,24 @@
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: 44px 1fr 56px;
   overflow: hidden;
+  background-image: url('/background.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+:global([data-theme="dark"]) .appShell {
+  background-image: url('/background_dark.png');
+}
+
+@media (max-width: 760px) {
+  .appShell {
+    background-image: url('/background_mobile_light.png');
+  }
+
+  :global([data-theme="dark"]) .appShell {
+    background-image: url('/background_mobile_dark.png');
+  }
 }
 
 .workspace {

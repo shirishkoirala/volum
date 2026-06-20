@@ -1,8 +1,10 @@
 .windowFrame {
-  background: var(--color-window);
-  border: 1px solid var(--color-border);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-bg);
+  border: 1px solid color-mix(in srgb, var(--color-border) 55%, transparent);
   border-radius: var(--radius-md);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--color-shadow) 80%, transparent);
   overflow: hidden;
   min-width: 360px;
   min-height: 240px;
@@ -24,8 +26,8 @@
   justify-content: space-between;
   height: 36px;
   padding: 0 var(--space-sm);
-  background: var(--color-window);
-  border-bottom: 1px solid var(--color-border-subtle);
+  background: transparent;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border-subtle) 55%, transparent);
   cursor: default;
   user-select: none;
   flex-shrink: 0;
@@ -71,7 +73,7 @@
 }
 
 .content {
-  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 46%, transparent);
   display: flex;
   flex: 1;
   flex-direction: column;

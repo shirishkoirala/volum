@@ -1,6 +1,8 @@
 .topbar {
   align-items: center;
-  background: var(--color-surface);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-bg);
   border-bottom: 1px solid color-mix(in srgb, var(--color-border-light) 55%, transparent);
   display: flex;
   gap: 8px;
@@ -10,11 +12,6 @@
   padding: 0 8px;
   position: relative;
   z-index: 10000;
-}
-
-:global([data-theme="light"]) .topbar {
-  background: color-mix(in srgb, var(--color-bg) 58%, white);
-  border-bottom-color: var(--color-border);
 }
 
 .left {

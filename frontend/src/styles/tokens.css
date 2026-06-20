@@ -70,6 +70,9 @@
   --shadow-card: 0 1px 3px var(--color-shadow);
   --shadow-card-hover: 0 4px 6px -1px var(--color-shadow), 0 2px 4px -2px var(--color-shadow);
   --shadow-menu: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 6%);
+  /* Glass */
+  --glass-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
+  --glass-backdrop: blur(6px) saturate(110%);
   /* Animation */
   --transition-fast: 120ms ease;
   --anim-skeleton: skeletonPulse 1.5s ease-in-out infinite;
@@ -145,6 +148,9 @@
   --shadow-card: 0 1px 3px var(--color-shadow);
   --shadow-card-hover: 0 4px 6px -1px var(--color-shadow), 0 2px 4px -2px var(--color-shadow);
   --shadow-menu: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 6%);
+  /* Glass */
+  --glass-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
+  --glass-backdrop: blur(6px) saturate(110%);
   /* Animation */
   --anim-skeleton: skeletonPulse 1.5s ease-in-out infinite;
   --anim-spin: spin 1s linear infinite;

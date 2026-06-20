@@ -283,7 +283,7 @@ export function DesktopView({
 
   return (
     <div
-      className={`${styles.desktopWrapper} ${styles.defaultWallpaper}`}
+      className={styles.desktopWrapper}
       onContextMenu={(event) => {
         onItemContextMenu({ id: '', type: 'emptySpace', label: '', ariaLabel: '', onClick: () => {} }, event);
       }}
