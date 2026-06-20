@@ -91,10 +91,25 @@ export function IconButton({ active = false, danger = false, className, type = '
   );
 }
 
-export function Notice({ variant, className, children }: { variant: 'error' | 'warning'; className?: string; children: ReactNode }) {
+type NoticeProps = {
+  variant: 'error' | 'warning';
+  className?: string;
+  children: ReactNode;
+  onDismiss?: () => void;
+  dismissLabel?: string;
+};
+
+export function Notice({ variant, className, children, onDismiss, dismissLabel = 'Dismiss' }: NoticeProps) {
   return (
     <div className={cx(styles.notice, variant === 'error' ? styles.error : styles.warning, className)}>
-      {children}
+      <div className={styles.noticeContent}>
+        {children}
+      </div>
+      {onDismiss && (
+        <button type="button" className={styles.noticeDismiss} onClick={onDismiss} aria-label={dismissLabel}>
+          <Icon name="window-close" size={14} />
+        </button>
+      )}
     </div>
   );
 }

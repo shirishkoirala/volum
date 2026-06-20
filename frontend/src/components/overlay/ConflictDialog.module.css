@@ -57,15 +57,6 @@
   white-space: nowrap;
 }
 
-.select {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-  font-size: 0.78rem;
-  padding: var(--space-xs) var(--space-sm);
-}
-
 .list {
   display: flex;
   flex-direction: column;
