@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useLongPress } from '../hooks/useLongPress';
 
@@ -14,7 +14,7 @@ describe('useLongPress', () => {
     const onLongPress = vi.fn();
     const onClick = vi.fn();
     const { result } = renderHook(() => useLongPress({ onClick, onLongPress, delay: 500 }));
-    result.current.onMouseDown({} as React.MouseEvent);
+    result.current.onMouseDown();
     expect(onLongPress).not.toHaveBeenCalled();
     vi.advanceTimersByTime(500);
     expect(onLongPress).toHaveBeenCalledOnce();
@@ -25,8 +25,8 @@ describe('useLongPress', () => {
     const onLongPress = vi.fn();
     const onClick = vi.fn();
     const { result } = renderHook(() => useLongPress({ onClick, onLongPress, delay: 500 }));
-    result.current.onMouseDown({} as React.MouseEvent);
-    result.current.onMouseUp({} as React.MouseEvent);
+    result.current.onMouseDown();
+    result.current.onMouseUp();
     vi.advanceTimersByTime(500);
     expect(onLongPress).not.toHaveBeenCalled();
     expect(onClick).toHaveBeenCalledOnce();
@@ -35,8 +35,8 @@ describe('useLongPress', () => {
   it('clears the timer on mouse leave', () => {
     const onLongPress = vi.fn();
     const { result } = renderHook(() => useLongPress({ onLongPress, delay: 500 }));
-    result.current.onTouchStart({} as React.TouchEvent);
-    result.current.onMouseLeave({} as React.MouseEvent);
+    result.current.onTouchStart();
+    result.current.onMouseLeave();
     vi.advanceTimersByTime(500);
     expect(onLongPress).not.toHaveBeenCalled();
   });
@@ -44,7 +44,7 @@ describe('useLongPress', () => {
   it('calls onLongPress on touch start after delay', () => {
     const onLongPress = vi.fn();
     const { result } = renderHook(() => useLongPress({ onLongPress, delay: 500 }));
-    result.current.onTouchStart({} as React.TouchEvent);
+    result.current.onTouchStart();
     vi.advanceTimersByTime(500);
     expect(onLongPress).toHaveBeenCalledOnce();
   });
@@ -52,8 +52,8 @@ describe('useLongPress', () => {
   it('calls onClick on touch end before the delay', () => {
     const onClick = vi.fn();
     const { result } = renderHook(() => useLongPress({ onClick, onLongPress: vi.fn(), delay: 500 }));
-    result.current.onTouchStart({} as React.TouchEvent);
-    result.current.onTouchEnd({} as React.TouchEvent);
+    result.current.onTouchStart();
+    result.current.onTouchEnd();
     vi.advanceTimersByTime(500);
     expect(onClick).toHaveBeenCalledOnce();
   });

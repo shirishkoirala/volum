@@ -21,7 +21,6 @@ describe('useAsyncData', () => {
   });
 
   it('re-fetches on refresh', async () => {
-    let count = 0;
     const fetcher = vi.fn().mockResolvedValue('data');
     const { result } = renderHook(() => useAsyncData(fetcher));
     await waitFor(() => expect(result.current.data).toBe('data'));

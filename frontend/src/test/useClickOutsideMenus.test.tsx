@@ -18,9 +18,9 @@ describe('useClickOutsideMenus', () => {
   });
 
   it('returns same state when no menus are open', () => {
-    let state = { menu1: false, menu2: false };
+    const state: Record<string, boolean> = { menu1: false, menu2: false };
     const setter = vi.fn((updater: (prev: Record<string, boolean>) => Record<string, boolean>) => {
-      state = updater(state);
+      Object.assign(state, updater(state));
     });
     renderHook(() => useClickOutsideMenus({ menu1: false, menu2: false }, setter));
     document.dispatchEvent(new MouseEvent('click'));
