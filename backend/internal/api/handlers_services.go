@@ -11,6 +11,16 @@ import (
 	"github.com/volum-app/volum/backend/internal/desktop"
 )
 
+func validateServiceHealthURL(healthURL string) error {
+	if healthURL == "" {
+		return nil
+	}
+	// At creation time, only validate the URL scheme to prevent obvious
+	// abuses like javascript:, file: etc. Full SSRF validation
+	// (private IP blocks, redirect following) happens at check time.
+	return desktop.ValidateHealthURLScheme(healthURL)
+}
+
 func (s *Server) handleListServices(w http.ResponseWriter, r *http.Request) {
 	services, err := s.desktop.ListServices(r.Context())
 	if err != nil {
@@ -40,6 +50,10 @@ func (s *Server) handleCreateService(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "name and url are required"})
 		return
 	}
+	if err := validateServiceHealthURL(req.HealthURL); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
 	svc, err := s.desktop.CreateService(r.Context(), req.Name, req.URL, req.IconURL, req.HealthURL, req.Description, req.OpenMode)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -64,6 +78,10 @@ func (s *Server) handleUpdateService(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Name == "" || req.URL == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "name and url are required"})
+		return
+	}
+	if err := validateServiceHealthURL(req.HealthURL); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
 	svc, err := s.desktop.UpdateService(r.Context(), id, req.Name, req.URL, req.IconURL, req.HealthURL, req.Description, req.OpenMode)

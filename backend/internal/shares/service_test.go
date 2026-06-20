@@ -151,13 +151,35 @@ func TestIncrementDownloadCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := s.IncrementDownloadCount(created.ID); err != nil {
+	ok, err := s.IncrementDownloadCount(created.ID, nil, 0)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected increment to succeed")
 	}
 
 	got, _ := s.GetByToken(created.Token)
 	if got.DownloadCount != 1 {
 		t.Fatalf("expected 1 download, got %d", got.DownloadCount)
+	}
+
+	// Test that a share at max rejects the increment.
+	maxDownloads := 2
+	ok, err = s.IncrementDownloadCount(created.ID, &maxDownloads, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected second increment to succeed")
+	}
+
+	ok, err = s.IncrementDownloadCount(created.ID, &maxDownloads, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok {
+		t.Fatal("expected third increment to be rejected")
 	}
 }
 
@@ -174,8 +196,12 @@ func TestFullFlow(t *testing.T) {
 		t.Fatal("expected to find share by token")
 	}
 
-	if err := s.IncrementDownloadCount(created.ID); err != nil {
+	ok, err := s.IncrementDownloadCount(created.ID, nil, 0)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected increment to succeed")
 	}
 
 	if err := s.Delete(created.ID); err != nil {

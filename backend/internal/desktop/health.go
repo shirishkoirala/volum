@@ -2,6 +2,7 @@ package desktop
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 	"sync"
 	"time"
 )
+
+const maxHealthBody int64 = 64 * 1024
 
 type ServiceHealthResult struct {
 	ServiceID  string `json:"serviceId"`
@@ -37,8 +40,11 @@ type HealthTransition struct {
 
 func NewHealthChecker(store *Store, log *slog.Logger) *HealthChecker {
 	return &HealthChecker{
-		store:       store,
-		client:      &http.Client{Timeout: 3 * time.Second},
+		store: store,
+		client: &http.Client{
+			Timeout:       3 * time.Second,
+			CheckRedirect: redirectBlocked,
+		},
 		interval:    60 * time.Second,
 		cache:       make(map[string]ServiceHealthResult),
 		subscribers: make(map[int]chan HealthTransition),
@@ -208,6 +214,12 @@ func (hc *HealthChecker) CheckOne(ctx context.Context, svc ServiceRecord) Servic
 		CheckedAt: now().Format(time.RFC3339),
 	}
 
+	if _, err := ValidateHealthURL(svc.HealthURL); err != nil {
+		result.Error = fmt.Sprintf("ssrf check failed: %v", err)
+		_ = hc.store.UpdateServiceHealth(ctx, svc.ID, result.Status, 0, result.Error)
+		return result
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, svc.HealthURL, nil)
 	if err != nil {
 		result.Error = err.Error()
@@ -222,7 +234,7 @@ func (hc *HealthChecker) CheckOne(ctx context.Context, svc ServiceRecord) Servic
 		return result
 	}
 	defer resp.Body.Close()
-	_, _ = io.Copy(io.Discard, resp.Body)
+	_, _ = io.CopyN(io.Discard, resp.Body, maxHealthBody)
 
 	result.StatusCode = resp.StatusCode
 	if resp.StatusCode >= 200 && resp.StatusCode < 400 {

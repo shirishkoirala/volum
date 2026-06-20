@@ -3,6 +3,7 @@ package worker
 import (
 	"archive/zip"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -72,11 +73,24 @@ func extractZip(store *jobs.Store, ctx context.Context, dest, jobID, source stri
 	for _, file := range reader.File {
 		totalBytes += int64(file.UncompressedSize64)
 	}
+	if totalBytes > maxExtractTotalBytes {
+		return fmt.Errorf("%w: declared %d bytes", errExtractLimit, totalBytes)
+	}
+	if len(reader.File) > maxExtractEntries {
+		return fmt.Errorf("%w: declared %d entries", errExtractLimit, len(reader.File))
+	}
 	_ = store.SetJobTotals(ctx, jobID, totalBytes, int64(len(reader.File)))
 
 	var processedBytes int64
 	var processedItems int64
 	for _, file := range reader.File {
+		if file.UncompressedSize64 > maxExtractPerFile {
+			return fmt.Errorf("archive entry %s exceeds per-file limit of %d bytes", file.Name, maxExtractPerFile)
+		}
+		parts := strings.Split(filepath.ToSlash(file.Name), "/")
+		if len(parts) > maxExtractPathDepth {
+			return fmt.Errorf("archive entry %s exceeds maximum path depth of %d", file.Name, maxExtractPathDepth)
+		}
 		cancelled, _ := store.IsCancelled(ctx, jobID)
 		if cancelled {
 			return nil
@@ -93,6 +107,12 @@ func extractZip(store *jobs.Store, ctx context.Context, dest, jobID, source stri
 
 		if file.FileInfo().IsDir() {
 			os.MkdirAll(filePath, 0o755)
+			continue
+		}
+
+		// Reject symlinks, hardlinks, devices, FIFOs, and other non-regular files.
+		mode := file.FileInfo().Mode()
+		if !mode.IsRegular() {
 			continue
 		}
 

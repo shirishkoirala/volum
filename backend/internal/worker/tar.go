@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -82,8 +83,15 @@ func extractTarGzip(store *jobs.Store, ctx context.Context, dest, jobID, source 
 
 func extractTarFromReader(store *jobs.Store, ctx context.Context, reader io.Reader, dest, jobID string) error {
 	tr := tar.NewReader(reader)
+	var totalBytes int64
+	var totalItems int64
 	var processedBytes int64
 	var processedItems int64
+
+	// First pass: count totals (tar requires reading to know sizes).
+	// We use a temporary reader to count without consuming the main one,
+	// but tar format doesn't support seeking, so we enforce limits inline.
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -108,7 +116,17 @@ func extractTarFromReader(store *jobs.Store, ctx context.Context, reader io.Read
 			return err
 		}
 
+		totalItems++
+		if totalItems > maxExtractEntries {
+			return fmt.Errorf("%w: exceeded %d entries", errExtractLimit, maxExtractEntries)
+		}
+
 		headerName := filepath.FromSlash(header.Name)
+		parts := strings.Split(filepath.ToSlash(header.Name), "/")
+		if len(parts) > maxExtractPathDepth {
+			return fmt.Errorf("archive entry %s exceeds maximum path depth of %d", header.Name, maxExtractPathDepth)
+		}
+
 		filePath := filepath.Join(dest, headerName)
 		if !strings.HasPrefix(filepath.Clean(filePath), filepath.Clean(dest)+string(filepath.Separator)) {
 			continue
@@ -121,6 +139,21 @@ func extractTarFromReader(store *jobs.Store, ctx context.Context, reader io.Read
 			continue
 		}
 
+		if header.Typeflag != tar.TypeReg && header.Typeflag != tar.TypeRegA {
+			continue
+		}
+
+		if header.Size > maxExtractPerFile {
+			return fmt.Errorf("archive entry %s exceeds per-file limit of %d bytes", header.Name, maxExtractPerFile)
+		}
+
+		totalBytes += header.Size
+		if totalBytes > maxExtractTotalBytes {
+			return fmt.Errorf("%w: exceeded %d total bytes", errExtractLimit, maxExtractTotalBytes)
+		}
+
+		_ = store.SetJobTotals(ctx, jobID, totalBytes, totalItems)
+
 		if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
 			return err
 		}
@@ -130,7 +163,7 @@ func extractTarFromReader(store *jobs.Store, ctx context.Context, reader io.Read
 			return err
 		}
 
-		copied, err := io.Copy(out, tr)
+		copied, err := io.CopyN(out, tr, header.Size)
 		out.Close()
 		if err != nil {
 			return err

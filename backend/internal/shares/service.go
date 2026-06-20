@@ -2,13 +2,13 @@ package shares
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"time"
 
 	"github.com/volum-app/volum/backend/internal/sqlutil"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Share struct {
@@ -71,8 +71,11 @@ func (s *Store) Create(req CreateRequest, createdBy string) (*Share, error) {
 	now := now().Format(time.RFC3339)
 	var passwordHash string
 	if req.Password != "" {
-		h := sha256.Sum256([]byte(req.Password))
-		passwordHash = hex.EncodeToString(h[:])
+		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, fmt.Errorf("hash share password: %w", err)
+		}
+		passwordHash = string(hash)
 	}
 
 	_, err = s.db.Exec(`
@@ -133,9 +136,29 @@ func (s *Store) GetByToken(token string) (*Share, error) {
 	return &sh, nil
 }
 
-func (s *Store) IncrementDownloadCount(id string) error {
-	_, err := s.db.Exec("UPDATE shares SET download_count = download_count + 1 WHERE id = ?", id)
-	return err
+func (s *Store) IncrementDownloadCount(id string, maxDownloads *int, currentCount int) (bool, error) {
+	if maxDownloads != nil && currentCount >= *maxDownloads {
+		return false, nil
+	}
+	res, err := s.db.Exec(
+		"UPDATE shares SET download_count = download_count + 1 WHERE id = ? AND (max_downloads IS NULL OR download_count < max_downloads)",
+		id,
+	)
+	if err != nil {
+		return false, err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return affected > 0, nil
+}
+
+func (s *Store) VerifyPassword(share *Share, password string) bool {
+	if share.PasswordHash == "" {
+		return true
+	}
+	return bcrypt.CompareHashAndPassword([]byte(share.PasswordHash), []byte(password)) == nil
 }
 
 func (s *Store) Delete(id string) error {

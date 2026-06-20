@@ -131,11 +131,37 @@ func (g *RootGuard) Resolve(input string) (string, error) {
 	}
 
 	resolved := filepath.Clean(internal)
+
+	// Resolve symlinks on the nearest existing ancestor so that
+	// paths like root/symlink/newfile (where symlink->/outside) are
+	// caught even when the final path does not exist yet.
 	if _, err := os.Lstat(resolved); err == nil {
+		// Path exists — evaluate its symlinks directly.
 		if evaluated, err := filepath.EvalSymlinks(resolved); err == nil {
 			resolved = filepath.Clean(evaluated)
 		}
+	} else {
+		// Walk up until we find an existing ancestor.
+		dir := resolved
+		for {
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			if _, err := os.Lstat(parent); err == nil {
+				if evaluated, err := filepath.EvalSymlinks(parent); err == nil {
+					rel, relErr := filepath.Rel(parent, resolved)
+					if relErr == nil {
+						resolved = filepath.Join(filepath.Clean(evaluated), rel)
+					}
+				}
+				break
+			}
+			dir = parent
+		}
 	}
+
+	resolved = filepath.Clean(resolved)
 	if PathInside(best.InternalPath, resolved) {
 		return resolved, nil
 	}

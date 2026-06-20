@@ -67,7 +67,7 @@ func setupTestServer(t *testing.T) (*testServer, func()) {
 	_ = workerService
 
 	healthChecker := desktop.NewHealthChecker(desktopStore, slogger)
-	s := New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, healthChecker, filepath.Join(root, "volum.db"))
+	s := New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, healthChecker, filepath.Join(root, "volum.db"), "")
 
 	ctx := context.Background()
 	_, err = authStore.CreateUser(ctx, "admin", "adminpass", auth.RoleAdmin)

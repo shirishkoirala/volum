@@ -29,21 +29,25 @@ type Server struct {
 	healthChecker *desktop.HealthChecker
 	startTime     time.Time
 	dbPath        string
+	loginLimiter  *rateLimiter
+	bootstrapToken string
 }
 
-func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service, authSt *auth.Store, shareStore *shares.Store, desktopStore *desktop.Store, healthChecker *desktop.HealthChecker, dbPath string) *Server {
+func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service, authSt *auth.Store, shareStore *shares.Store, desktopStore *desktop.Store, healthChecker *desktop.HealthChecker, dbPath, bootstrapToken string) *Server {
 	s := &Server{
-		router:        chi.NewRouter(),
-		files:         filesService,
-		jobs:          jobStore,
-		guard:         guard,
-		auth:          authService,
-		authStore:     authSt,
-		shares:        shareStore,
-		desktop:       desktopStore,
-		healthChecker: healthChecker,
-		startTime:     time.Now(),
-		dbPath:        dbPath,
+		router:         chi.NewRouter(),
+		files:          filesService,
+		jobs:           jobStore,
+		guard:          guard,
+		auth:           authService,
+		authStore:      authSt,
+		shares:         shareStore,
+		desktop:        desktopStore,
+		healthChecker:  healthChecker,
+		startTime:      time.Now(),
+		dbPath:         dbPath,
+		loginLimiter:   newRateLimiter(20, time.Minute),
+		bootstrapToken: bootstrapToken,
 	}
 	s.routes()
 	return s
@@ -58,6 +62,7 @@ func (s *Server) routes() {
 	s.router.Use(middleware.RealIP)
 	s.router.Use(middleware.Logger)
 	s.router.Use(middleware.Recoverer)
+	s.router.Use(securityHeaders)
 
 	s.router.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
@@ -65,9 +70,9 @@ func (s *Server) routes() {
 
 	s.router.Route("/api", func(r chi.Router) {
 		r.Get("/session", s.handleSession)
-		r.Post("/login", s.handleLogin)
+		r.With(s.rateLimitMiddleware).Post("/login", s.handleLogin)
 		r.Post("/logout", s.handleLogout)
-		r.Post("/setup", s.handleSetup)
+		r.With(s.rateLimitMiddleware).Post("/setup", s.handleSetup)
 		r.Get("/version", s.handleVersion)
 
 		r.Group(func(r chi.Router) {
@@ -93,15 +98,15 @@ func (s *Server) routes() {
 			r.Put("/favorites/reorder", s.handleReorderFavorites)
 			r.Get("/services", s.handleListServices)
 			r.Get("/services/health", s.handleServiceHealth)
-			r.Post("/services", s.handleCreateService)
-			r.Put("/services/{id}", s.handleUpdateService)
-			r.Delete("/services/{id}", s.handleDeleteService)
-			r.Put("/services/reorder", s.handleReorderServices)
 		})
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.requireUser)
 			r.Use(s.requireAdmin)
+			r.Post("/services", s.handleCreateService)
+			r.Put("/services/{id}", s.handleUpdateService)
+			r.Delete("/services/{id}", s.handleDeleteService)
+			r.Put("/services/reorder", s.handleReorderServices)
 			r.Post("/files/file", s.handleCreateFile)
 			r.Post("/files/folder", s.handleCreateFolder)
 			r.Patch("/files/rename", s.handleRename)

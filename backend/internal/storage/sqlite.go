@@ -77,6 +77,9 @@ func migrate(db *sql.DB) error {
 	if err := addColumnIfMissing(db, "users", "avatar_mime", "TEXT DEFAULT ''"); err != nil {
 		return err
 	}
+	if err := addColumnIfMissing(db, "users", "session_version", "INTEGER DEFAULT 0"); err != nil {
+		return err
+	}
 	_, _ = db.Exec(`
 		CREATE TABLE IF NOT EXISTS desktop_favorites (
 			path TEXT NOT NULL PRIMARY KEY,

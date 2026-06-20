@@ -1,8 +1,6 @@
 package api
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -34,6 +32,10 @@ func (s *Server) handleCreateShare(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid expiresAt format, use RFC3339"})
 			return
 		}
+	}
+	if req.MaxDownloads != nil && *req.MaxDownloads < 1 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "maxDownloads must be a positive number"})
+		return
 	}
 	user, _ := auth.UserFromContext(r.Context())
 	share, err := s.shares.Create(req, string(user.Role))
@@ -89,14 +91,9 @@ func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if share.MaxDownloads != nil && share.DownloadCount >= *share.MaxDownloads {
-		writeJSON(w, http.StatusGone, map[string]string{"error": "share has reached maximum downloads"})
-		return
-	}
 	if share.PasswordHash != "" {
 		password := r.URL.Query().Get("password")
-		h := sha256.Sum256([]byte(password))
-		if hex.EncodeToString(h[:]) != share.PasswordHash {
+		if !s.shares.VerifyPassword(share, password) {
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "password required or incorrect"})
 			return
 		}
@@ -119,8 +116,13 @@ func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.shares.IncrementDownloadCount(share.ID); err != nil {
+	ok, err := s.shares.IncrementDownloadCount(share.ID, share.MaxDownloads, share.DownloadCount)
+	if err != nil {
 		writeError(w, err)
+		return
+	}
+	if !ok {
+		writeJSON(w, http.StatusGone, map[string]string{"error": "share has reached maximum downloads"})
 		return
 	}
 

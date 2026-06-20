@@ -5,12 +5,20 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/volum-app/volum/backend/internal/auth"
 	"github.com/volum-app/volum/backend/internal/devices"
 	"github.com/volum-app/volum/backend/internal/version"
 )
+
+const maxBodyBytes = 1 << 20 // 1 MB limit for request bodies
+const minPasswordLen = 12
+
+func validPassword(pw string) bool {
+	return len(pw) >= minPasswordLen
+}
 
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 	user, ok := s.auth.UserFromRequest(r)
@@ -36,16 +44,21 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	var req struct {
 		Username   string `json:"username"`
 		Password   string `json:"password"`
 		RememberMe bool   `json:"rememberMe"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		if IsMaxBytesError(err) {
+			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "request body too large"})
+			return
+		}
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
 		return
 	}
-	token, user, ok := s.auth.Login(r.Context(), req.Username, req.Password)
+	token, user, ok := s.auth.Login(r.Context(), req.Username, req.Password, req.RememberMe)
 	if !ok {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
 		return
@@ -81,6 +94,18 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "auth is not enabled"})
 		return
 	}
+
+	if s.bootstrapToken != "" {
+		token := strings.TrimSpace(r.Header.Get("X-Bootstrap-Token"))
+		if token == "" {
+			token = r.URL.Query().Get("token")
+		}
+		if token != s.bootstrapToken {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "bootstrap token is required or invalid"})
+			return
+		}
+	}
+
 	needed, err := s.auth.SetupRequired(r.Context())
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -90,16 +115,26 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "users already exist"})
 		return
 	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	var req struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		if IsMaxBytesError(err) {
+			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "request body too large"})
+			return
+		}
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
 		return
 	}
-	if req.Username == "" || req.Password == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "username and password are required"})
+	if req.Username == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "username is required"})
+		return
+	}
+	if !validPassword(req.Password) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "password must be at least 12 characters"})
 		return
 	}
 	record, err := s.authStore.CreateUser(r.Context(), req.Username, req.Password, auth.RoleAdmin)
@@ -107,7 +142,7 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	token, user, _ := s.auth.Login(r.Context(), req.Username, req.Password)
+	token, user, _ := s.auth.Login(r.Context(), req.Username, req.Password, true)
 	if s.auth.Enabled() {
 		http.SetCookie(w, &http.Cookie{
 			Name:     "volum_session",

@@ -17,6 +17,7 @@ type Config struct {
 	AuthRequired  bool
 	HostRoot      string
 	PublicURL     string
+	BootstrapToken string
 }
 
 func Load() (Config, error) {
@@ -44,17 +45,30 @@ func Load() (Config, error) {
 	}
 
 	cfg := Config{
-		Roots:         roots,
-		DB:            db,
-		Port:          port,
-		SessionSecret: os.Getenv("VOLUM_SESSION_SECRET"),
-		AuthRequired:  parseBool(os.Getenv("VOLUM_AUTH_REQUIRED")),
-		HostRoot:      hostRoot,
-		PublicURL:     os.Getenv("VOLUM_PUBLIC_URL"),
+		Roots:          roots,
+		DB:             db,
+		Port:           port,
+		SessionSecret:  os.Getenv("VOLUM_SESSION_SECRET"),
+		AuthRequired:   parseBool(os.Getenv("VOLUM_AUTH_REQUIRED")),
+		HostRoot:       hostRoot,
+		PublicURL:      os.Getenv("VOLUM_PUBLIC_URL"),
+		BootstrapToken: os.Getenv("VOLUM_BOOTSTRAP_TOKEN"),
 	}
-	if cfg.AuthRequired && strings.TrimSpace(cfg.SessionSecret) == "" {
+
+	secret := strings.TrimSpace(cfg.SessionSecret)
+
+	if includeRoot && !cfg.AuthRequired {
+		return Config{}, errors.New("VOLUM_AUTH_REQUIRED must be true when VOLUM_INCLUDE_ROOT is enabled")
+	}
+
+	if cfg.AuthRequired && secret == "" {
 		return Config{}, errors.New("VOLUM_SESSION_SECRET is required when VOLUM_AUTH_REQUIRED=true")
 	}
+
+	if cfg.AuthRequired && secret != "" && len(secret) < 32 {
+		return Config{}, errors.New("VOLUM_SESSION_SECRET must be at least 32 characters long")
+	}
+
 	return cfg, nil
 }
 

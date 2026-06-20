@@ -57,10 +57,10 @@ func TestLoginAndVerify(t *testing.T) {
 	store, ctx := setupStore(t)
 	s, _ := New(store, "secret")
 
-	_, _ = store.CreateUser(ctx, "admin", "adminpass", RoleAdmin)
-	_, _ = store.CreateUser(ctx, "reader", "readerpass", RoleReadonly)
+	_, _ = store.CreateUser(ctx, "admin", "adminpass123456", RoleAdmin)
+	_, _ = store.CreateUser(ctx, "reader", "readerpass123456", RoleReadonly)
 
-	token, user, ok := s.Login(ctx, "admin", "adminpass")
+	token, user, ok := s.Login(ctx, "admin", "adminpass123456", false)
 	if !ok {
 		t.Fatal("expected login ok")
 	}
@@ -77,8 +77,8 @@ func TestLoginAndVerify(t *testing.T) {
 		t.Fatal("expected non-empty user ID")
 	}
 
-	userID, role, ok := s.verify(token)
-	if !ok || role != RoleAdmin || userID != user.ID {
+	claims, ok := s.verify(token)
+	if !ok || claims.role != RoleAdmin || claims.userID != user.ID {
 		t.Fatal("verify round-trip failed")
 	}
 }
@@ -88,7 +88,7 @@ func TestLoginReadonly(t *testing.T) {
 	s, _ := New(store, "secret")
 	_, _ = store.CreateUser(ctx, "reader", "readerpass", RoleReadonly)
 
-	_, user, ok := s.Login(ctx, "reader", "readerpass")
+	_, user, ok := s.Login(ctx, "reader", "readerpass", false)
 	if !ok {
 		t.Fatal("expected login ok")
 	}
@@ -102,7 +102,7 @@ func TestLoginWrongPassword(t *testing.T) {
 	s, _ := New(store, "secret")
 	_, _ = store.CreateUser(ctx, "admin", "adminpass", RoleAdmin)
 
-	_, _, ok := s.Login(ctx, "admin", "wrong")
+	_, _, ok := s.Login(ctx, "admin", "wrong", false)
 	if ok {
 		t.Fatal("expected login to fail")
 	}
@@ -111,7 +111,7 @@ func TestLoginWrongPassword(t *testing.T) {
 func TestLoginNonExistentUser(t *testing.T) {
 	store, ctx := setupStore(t)
 	s, _ := New(store, "secret")
-	_, _, ok := s.Login(ctx, "nobody", "anything")
+	_, _, ok := s.Login(ctx, "nobody", "anything", false)
 	if ok {
 		t.Fatal("expected login to fail for unknown user")
 	}
@@ -119,7 +119,7 @@ func TestLoginNonExistentUser(t *testing.T) {
 
 func TestLoginDisabledReturnsAdmin(t *testing.T) {
 	s, _ := New(nil, "")
-	token, user, ok := s.Login(context.Background(), "", "")
+	token, user, ok := s.Login(context.Background(), "", "", false)
 	if !ok {
 		t.Fatal("expected login ok for disabled auth")
 	}
@@ -135,7 +135,7 @@ func TestUserFromRequestWithValidCookie(t *testing.T) {
 	store, ctx := setupStore(t)
 	s, _ := New(store, "secret")
 	_, _ = store.CreateUser(ctx, "admin", "adminpass", RoleAdmin)
-	token, _, _ := s.Login(ctx, "admin", "adminpass")
+	token, _, _ := s.Login(ctx, "admin", "adminpass", false)
 
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	r.AddCookie(&http.Cookie{Name: "volum_session", Value: token})
@@ -189,9 +189,9 @@ func TestVerifyTamperedToken(t *testing.T) {
 	store, ctx := setupStore(t)
 	s, _ := New(store, "secret")
 	_, _ = store.CreateUser(ctx, "admin", "adminpass", RoleAdmin)
-	token, _, _ := s.Login(ctx, "admin", "adminpass")
+	token, _, _ := s.Login(ctx, "admin", "adminpass", false)
 	tampered := token + "x"
-	_, _, ok := s.verify(tampered)
+	_, ok := s.verify(tampered)
 	if ok {
 		t.Fatal("expected verify to reject tampered token")
 	}
@@ -200,11 +200,12 @@ func TestVerifyTamperedToken(t *testing.T) {
 func TestVerifyInvalidFormat(t *testing.T) {
 	store, _ := setupStore(t)
 	s, _ := New(store, "secret")
-	_, _, ok := s.verify("no-dot-separator")
+	_, ok := s.verify("no-dot-separator")
 	if ok {
 		t.Fatal("expected verify to reject invalid format")
 	}
-	_, _, ok = s.verify("base64.payload.invalid.signature")
+	ok = false
+	_, ok = s.verify("base64.payload.invalid.signature")
 	if ok {
 		t.Fatal("expected verify to reject triple-dot format")
 	}
@@ -231,20 +232,20 @@ func TestTokenEncodesUserID(t *testing.T) {
 	store, ctx := setupStore(t)
 	s, _ := New(store, "secret")
 	_, _ = store.CreateUser(ctx, "admin", "adminpass", RoleAdmin)
-	token, user, ok := s.Login(ctx, "admin", "adminpass")
+	token, user, ok := s.Login(ctx, "admin", "adminpass", false)
 	if !ok {
 		t.Fatal("expected login ok")
 	}
 
-	userID, role, ok := s.verify(token)
+	claims, ok := s.verify(token)
 	if !ok {
 		t.Fatal("expected verify ok")
 	}
-	if userID != user.ID {
-		t.Fatalf("expected userID %s, got %s", user.ID, userID)
+	if claims.userID != user.ID {
+		t.Fatalf("expected userID %s, got %s", user.ID, claims.userID)
 	}
-	if role != RoleAdmin {
-		t.Fatalf("expected admin role, got %s", role)
+	if claims.role != RoleAdmin {
+		t.Fatalf("expected admin role, got %s", claims.role)
 	}
 }
 
@@ -288,7 +289,7 @@ func TestUserFromRequestDeletedUser(t *testing.T) {
 	store, ctx := setupStore(t)
 	s, _ := New(store, "secret")
 	record, _ := store.CreateUser(ctx, "admin", "adminpass", RoleAdmin)
-	token, _, _ := s.Login(ctx, "admin", "adminpass")
+	token, _, _ := s.Login(ctx, "admin", "adminpass", false)
 
 	_ = store.DeleteUser(ctx, record.ID)
 

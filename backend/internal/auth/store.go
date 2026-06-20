@@ -12,13 +12,14 @@ import (
 )
 
 type UserRecord struct {
-	ID           string
-	Username     string
-	PasswordHash string
-	Role         Role
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	HasAvatar    bool
+	ID             string
+	Username       string
+	PasswordHash   string
+	Role           Role
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	HasAvatar      bool
+	SessionVersion int64
 }
 
 type Avatar struct {
@@ -58,10 +59,12 @@ func (s *Store) CreateUser(ctx context.Context, username, password string, role 
 	}, nil
 }
 
+const userColumns = `id, username, password_hash, role, created_at, updated_at, COALESCE(session_version, 0),
+	avatar_data IS NOT NULL AND length(avatar_data) > 0`
+
 func (s *Store) GetByUsername(ctx context.Context, username string) (*UserRecord, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, username, password_hash, role, created_at, updated_at,
-			avatar_data IS NOT NULL AND length(avatar_data) > 0 FROM users WHERE username = ?`,
+		`SELECT `+userColumns+` FROM users WHERE username = ?`,
 		username,
 	)
 	return scanUser(row)
@@ -69,8 +72,7 @@ func (s *Store) GetByUsername(ctx context.Context, username string) (*UserRecord
 
 func (s *Store) GetByID(ctx context.Context, id string) (*UserRecord, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, username, password_hash, role, created_at, updated_at,
-			avatar_data IS NOT NULL AND length(avatar_data) > 0 FROM users WHERE id = ?`,
+		`SELECT `+userColumns+` FROM users WHERE id = ?`,
 		id,
 	)
 	return scanUser(row)
@@ -78,8 +80,7 @@ func (s *Store) GetByID(ctx context.Context, id string) (*UserRecord, error) {
 
 func (s *Store) ListUsers(ctx context.Context) ([]UserRecord, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, username, password_hash, role, created_at, updated_at,
-			avatar_data IS NOT NULL AND length(avatar_data) > 0 FROM users ORDER BY created_at ASC`,
+		`SELECT `+userColumns+` FROM users ORDER BY created_at ASC`,
 	)
 	if err != nil {
 		return nil, err
@@ -110,8 +111,19 @@ func (s *Store) UpdatePassword(ctx context.Context, id, newPassword string) erro
 		return err
 	}
 	res, err := s.db.ExecContext(ctx,
-		`UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?`,
+		`UPDATE users SET password_hash = ?, session_version = session_version + 1, updated_at = ? WHERE id = ?`,
 		string(hash), now(), id,
+	)
+	if err != nil {
+		return err
+	}
+	return sqlutil.RequireRowsAffected(res)
+}
+
+func (s *Store) BumpSessionVersion(ctx context.Context, id string) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE users SET session_version = session_version + 1, updated_at = ? WHERE id = ?`,
+		now(), id,
 	)
 	if err != nil {
 		return err
@@ -186,7 +198,7 @@ func (s *Store) VerifyPassword(record *UserRecord, password string) bool {
 
 func scanUser(row *sql.Row) (*UserRecord, error) {
 	var u UserRecord
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.HasAvatar)
+	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.SessionVersion, &u.HasAvatar)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -198,7 +210,7 @@ func scanUser(row *sql.Row) (*UserRecord, error) {
 
 func scanUserFromRows(row sqlutil.Scanner) (*UserRecord, error) {
 	var u UserRecord
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.HasAvatar)
+	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.SessionVersion, &u.HasAvatar)
 	if err != nil {
 		return nil, err
 	}

@@ -179,7 +179,7 @@ Three compose files are provided:
 | `docker-compose.dev.yml` | Development with Vite hot reload, separate API + frontend containers |
 | `docker-compose.server.yml` | Production server: mounts host `/` → `/host`, auto-discovers drives |
 
-All env vars are configured through `.env` (see `.env.example`).
+All env vars are configured through `.env` (see `.env.development.example` or `.env.server.example`).
 
 ## Deployment
 

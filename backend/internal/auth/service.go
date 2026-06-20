@@ -6,8 +6,11 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type Role string
@@ -57,7 +60,7 @@ func (s *Service) Enabled() bool {
 	return s.enabled
 }
 
-func (s *Service) Login(ctx context.Context, username, password string) (string, User, bool) {
+func (s *Service) Login(ctx context.Context, username, password string, remember bool) (string, User, bool) {
 	if !s.enabled {
 		return "", User{Role: RoleAdmin}, true
 	}
@@ -75,7 +78,7 @@ func (s *Service) Login(ctx context.Context, username, password string) (string,
 		HasAvatar:     record.HasAvatar,
 		AvatarVersion: record.UpdatedAt.UnixMilli(),
 	}
-	return s.sign(record.ID, record.Role), user, true
+	return s.sign(record.ID, record.Role, record.SessionVersion, remember), user, true
 }
 
 func (s *Service) UserFromRequest(r *http.Request) (User, bool) {
@@ -86,15 +89,18 @@ func (s *Service) UserFromRequest(r *http.Request) (User, bool) {
 	if err != nil {
 		return User{}, false
 	}
-	userID, role, ok := s.verify(cookie.Value)
+	claims, ok := s.verify(cookie.Value)
 	if !ok {
 		return User{}, false
 	}
-	record, err := s.store.GetByID(r.Context(), userID)
+	record, err := s.store.GetByID(r.Context(), claims.userID)
 	if err != nil || record == nil {
 		return User{}, false
 	}
-	if record.Role != role {
+	if record.Role != claims.role {
+		return User{}, false
+	}
+	if record.SessionVersion != claims.sessionVer {
 		return User{}, false
 	}
 	return User{
@@ -126,36 +132,72 @@ func UserFromContext(ctx context.Context) (User, bool) {
 	return user, ok
 }
 
-func (s *Service) sign(userID string, role Role) string {
-	payload := userID + ":" + string(role)
+// tokenClaims holds the parsed session token fields.
+type tokenClaims struct {
+	userID        string
+	role          Role
+	issuedAt      int64
+	expiresAt     int64
+	sessionVer    int64
+}
+
+func (s *Service) sign(userID string, role Role, sessionVer int64, remember bool) string {
+	now := time.Now().Unix()
+	exp := now + 3600 // default: 1 hour
+	if remember {
+		exp = now + 7*24*3600 // 7 days
+	}
+	payload := fmt.Sprintf("%s:%s:%d:%d:%d", userID, role, now, exp, sessionVer)
 	mac := hmac.New(sha256.New, s.secret)
 	mac.Write([]byte(payload))
 	signature := mac.Sum(nil)
 	return base64.RawURLEncoding.EncodeToString([]byte(payload)) + "." + base64.RawURLEncoding.EncodeToString(signature)
 }
 
-func (s *Service) verify(value string) (string, Role, bool) {
+func (s *Service) verify(value string) (tokenClaims, bool) {
 	payload, signature, ok := strings.Cut(value, ".")
 	if !ok {
-		return "", "", false
+		return tokenClaims{}, false
 	}
 	decodedPayload, err := base64.RawURLEncoding.DecodeString(payload)
 	if err != nil {
-		return "", "", false
+		return tokenClaims{}, false
 	}
 	decodedSignature, err := base64.RawURLEncoding.DecodeString(signature)
 	if err != nil {
-		return "", "", false
+		return tokenClaims{}, false
 	}
 	mac := hmac.New(sha256.New, s.secret)
 	mac.Write(decodedPayload)
 	if !hmac.Equal(decodedSignature, mac.Sum(nil)) {
-		return "", "", false
+		return tokenClaims{}, false
 	}
-	userID, role, ok := strings.Cut(string(decodedPayload), ":")
-	if !ok {
-		return "", "", false
+
+	parts := strings.SplitN(string(decodedPayload), ":", 5)
+	if len(parts) != 5 {
+		return tokenClaims{}, false
 	}
-	roleTyped := Role(role)
-	return userID, roleTyped, roleTyped == RoleAdmin || roleTyped == RoleReadonly
+
+	userID := parts[0]
+	roleTyped := Role(parts[1])
+	iat, _ := strconv.ParseInt(parts[2], 10, 64)
+	exp, _ := strconv.ParseInt(parts[3], 10, 64)
+	sessionVer, _ := strconv.ParseInt(parts[4], 10, 64)
+
+	// Reject expired tokens.
+	if time.Now().Unix() > exp {
+		return tokenClaims{}, false
+	}
+
+	if roleTyped != RoleAdmin && roleTyped != RoleReadonly {
+		return tokenClaims{}, false
+	}
+
+	return tokenClaims{
+		userID:     userID,
+		role:       roleTyped,
+		issuedAt:   iat,
+		expiresAt:  exp,
+		sessionVer: sessionVer,
+	}, true
 }

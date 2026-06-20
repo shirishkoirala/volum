@@ -78,12 +78,16 @@ func run(log *slog.Logger) error {
 	desktopStore := desktop.NewStore(db)
 	healthChecker := desktop.NewHealthChecker(desktopStore, log)
 	go healthChecker.Start(ctx)
-	server := api.New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, healthChecker, cfg.DB)
+	server := api.New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, healthChecker, cfg.DB, cfg.BootstrapToken)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           server.Handler(),
 		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20, // 1 MB
 	}
 
 	errCh := make(chan error, 1)

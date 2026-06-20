@@ -194,7 +194,7 @@ func TestLoadRequiresSessionSecretWhenAuthRequired(t *testing.T) {
 		t.Fatal("expected auth-required config to reject missing session secret")
 	}
 
-	t.Setenv("VOLUM_SESSION_SECRET", "session-secret")
+	t.Setenv("VOLUM_SESSION_SECRET", "session-secret-012345678901234567890123456")
 	if _, err := Load(); err != nil {
 		t.Fatalf("expected auth-required config to load, got %v", err)
 	}

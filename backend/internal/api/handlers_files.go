@@ -4,13 +4,74 @@ import (
 	"archive/zip"
 	"encoding/json"
 	"io"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/volum-app/volum/backend/internal/files"
 )
+
+// Unsafe content types that should never render inline in the Volum origin.
+var unsafeInlineExts = map[string]bool{
+	".html":  true,
+	".htm":   true,
+	".shtml": true,
+	".svg":   true,
+	".xml":   true,
+	".xsl":   true,
+	".xslt":  true,
+	".js":    true,
+	".mjs":   true,
+	".swf":   true,
+	".hta":   true,
+}
+
+// Text-like extensions we can safely serve as text/plain.
+var textPreviewExts = map[string]bool{
+	".txt":    true,
+	".md":     true,
+	".json":   true,
+	".yaml":   true,
+	".yml":    true,
+	".toml":   true,
+	".ini":    true,
+	".cfg":    true,
+	".conf":   true,
+	".log":    true,
+	".sh":     true,
+	".bash":   true,
+	".zsh":    true,
+	".fish":   true,
+	".env":    true,
+	".gitignore": true,
+	".dockerignore": true,
+	".editorconfig": true,
+	".sql":    true,
+	".py":     true,
+	".rb":     true,
+	".pl":     true,
+	".php":    true,
+	".go":     true,
+	".rs":     true,
+	".ts":     true,
+	".tsx":    true,
+	".jsx":    true,
+	".css":    true,
+	".scss":   true,
+	".less":   true,
+	".vue":    true,
+	".svelte": true,
+	".c":      true,
+	".cpp":    true,
+	".h":      true,
+	".hpp":    true,
+	".java":   true,
+	".kt":     true,
+	".swift":  true,
+}
 
 func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Query().Get("path")
@@ -257,7 +318,35 @@ func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Disposition", "inline; filename="+strconv.Quote(info.Name()))
+	ext := strings.ToLower(filepath.Ext(info.Name()))
+	filename := strconv.Quote(info.Name())
+
+	if unsafeInlineExts[ext] {
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		http.ServeFile(w, r, path)
+		return
+	}
+
+	if textPreviewExts[ext] {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Content-Disposition", "inline; filename="+filename)
+		http.ServeFile(w, r, path)
+		return
+	}
+
+	// For images, audio, video, PDF, etc., let ServeFile detect the type
+	// but always add nosniff and a sandbox CSP for inline content.
+	ctype := mime.TypeByExtension(ext)
+	if ctype == "" {
+		ctype = "application/octet-stream"
+	}
+	w.Header().Set("Content-Type", ctype)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Content-Security-Policy", "sandbox; default-src 'none'; media-src 'self'; img-src 'self'; style-src 'unsafe-inline'")
+	w.Header().Set("Content-Disposition", "inline; filename="+filename)
 	http.ServeFile(w, r, path)
 }
 
