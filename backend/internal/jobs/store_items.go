@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -61,7 +60,7 @@ func (s *Store) CreateItem(ctx context.Context, item Item) (Item, error) {
 	if item.Status == "" {
 		item.Status = StatusQueued
 	}
-	now := time.Now().UTC()
+	now := now()
 	item.CreatedAt = now
 	item.UpdatedAt = now
 
@@ -79,7 +78,7 @@ func (s *Store) CreateItem(ctx context.Context, item Item) (Item, error) {
 }
 
 func (s *Store) UpdateItemStatus(ctx context.Context, itemID string, status Status, processedBytes int64, errMessage *string) error {
-	now := time.Now().UTC()
+	now := now()
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE job_items
 		SET status = ?, processed_bytes = ?, error_message = ?, updated_at = ?
@@ -89,7 +88,7 @@ func (s *Store) UpdateItemStatus(ctx context.Context, itemID string, status Stat
 }
 
 func (s *Store) UpdateItemConflictResolution(ctx context.Context, itemID, resolution string) error {
-	now := time.Now().UTC()
+	now := now()
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE job_items
 		SET conflict_resolution = ?, updated_at = ?
@@ -136,7 +135,7 @@ func (s *Store) CountConflicts(ctx context.Context, jobID string) (int, error) {
 }
 
 func (s *Store) UpdateItemDestination(ctx context.Context, itemID, newDest string) error {
-	now := time.Now().UTC()
+	now := now()
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE job_items
 		SET destination_path = ?, updated_at = ?
@@ -160,7 +159,7 @@ func (s *Store) RetryItem(ctx context.Context, jobID, itemID string) error {
 		return errors.New("item must be failed or cancelled to retry")
 	}
 
-	now := time.Now().UTC()
+	now := now()
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE job_items
 		SET status = ?, processed_bytes = 0, error_message = NULL, updated_at = ?
@@ -181,3 +180,5 @@ func (s *Store) RetryItem(ctx context.Context, jobID, itemID string) error {
 
 	return tx.Commit()
 }
+
+

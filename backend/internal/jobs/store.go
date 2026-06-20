@@ -40,7 +40,7 @@ func (s *Store) Create(ctx context.Context, req CreateRequest) (Job, error) {
 		req.VerifyMode = "size"
 	}
 
-	now := time.Now().UTC()
+	now := now()
 	job := Job{
 		ID:              uuid.NewString(),
 		Type:            req.Type,
@@ -99,7 +99,7 @@ func (s *Store) Get(ctx context.Context, id string) (Job, error) {
 }
 
 func (s *Store) Cancel(ctx context.Context, id string) error {
-	now := time.Now().UTC()
+	now := now()
 	result, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, updated_at = ?, completed_at = ?
@@ -112,7 +112,7 @@ func (s *Store) Cancel(ctx context.Context, id string) error {
 }
 
 func (s *Store) Retry(ctx context.Context, id string) error {
-	now := time.Now().UTC()
+	now := now()
 	result, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, processed_bytes = 0, processed_items = 0,
@@ -130,7 +130,7 @@ func (s *Store) Retry(ctx context.Context, id string) error {
 }
 
 func (s *Store) StartJob(ctx context.Context, jobID string) error {
-	now := time.Now().UTC()
+	now := now()
 	result, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, started_at = ?, updated_at = ?, error_message = NULL
@@ -143,7 +143,7 @@ func (s *Store) StartJob(ctx context.Context, jobID string) error {
 }
 
 func (s *Store) SetJobTotals(ctx context.Context, jobID string, totalBytes, totalItems int64) error {
-	now := time.Now().UTC()
+	now := now()
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET total_bytes = ?, total_items = ?, updated_at = ?
@@ -153,7 +153,7 @@ func (s *Store) SetJobTotals(ctx context.Context, jobID string, totalBytes, tota
 }
 
 func (s *Store) UpdateJobPaths(ctx context.Context, jobID, sourcePath, destinationPath string) error {
-	now := time.Now().UTC()
+	now := now()
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET source_path = ?, destination_path = ?, updated_at = ?
@@ -163,7 +163,7 @@ func (s *Store) UpdateJobPaths(ctx context.Context, jobID, sourcePath, destinati
 }
 
 func (s *Store) UpdateJobProgress(ctx context.Context, jobID string, processedBytes, processedItems int64, currentItem string) error {
-	now := time.Now().UTC()
+	now := now()
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET processed_bytes = ?, processed_items = ?, current_item = ?, updated_at = ?
@@ -173,7 +173,7 @@ func (s *Store) UpdateJobProgress(ctx context.Context, jobID string, processedBy
 }
 
 func (s *Store) CompleteJob(ctx context.Context, jobID string) error {
-	now := time.Now().UTC()
+	now := now()
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, current_item = NULL, error_message = NULL, updated_at = ?, completed_at = ?
@@ -200,7 +200,7 @@ func (s *Store) CompleteJob(ctx context.Context, jobID string) error {
 }
 
 func (s *Store) SetNextJob(ctx context.Context, jobID, nextJobID string) error {
-	now := time.Now().UTC()
+	now := now()
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET next_job_id = ?, updated_at = ?
@@ -210,7 +210,7 @@ func (s *Store) SetNextJob(ctx context.Context, jobID, nextJobID string) error {
 }
 
 func (s *Store) FailJob(ctx context.Context, jobID string, cause error) error {
-	now := time.Now().UTC()
+	now := now()
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, error_message = ?, updated_at = ?, completed_at = ?
@@ -238,7 +238,7 @@ func (s *Store) IsPaused(ctx context.Context, jobID string) (bool, error) {
 }
 
 func (s *Store) PauseJob(ctx context.Context, id string) error {
-	now := time.Now().UTC()
+	now := now()
 	result, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, updated_at = ?
@@ -251,7 +251,7 @@ func (s *Store) PauseJob(ctx context.Context, id string) error {
 }
 
 func (s *Store) ResumeJob(ctx context.Context, id string) error {
-	now := time.Now().UTC()
+	now := now()
 	result, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, updated_at = ?, error_message = NULL
@@ -264,7 +264,7 @@ func (s *Store) ResumeJob(ctx context.Context, id string) error {
 }
 
 func (s *Store) ResumeNeedsAttentionJob(ctx context.Context, id string) error {
-	now := time.Now().UTC()
+	now := now()
 	result, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, updated_at = ?, error_message = NULL
@@ -277,7 +277,7 @@ func (s *Store) ResumeNeedsAttentionJob(ctx context.Context, id string) error {
 }
 
 func (s *Store) NeedsAttention(ctx context.Context, jobID string) error {
-	now := time.Now().UTC()
+	now := now()
 	_, err := s.db.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, updated_at = ?, current_item = NULL
@@ -367,7 +367,7 @@ func (s *Store) CountByStatus(ctx context.Context) (active, completed, failed in
 }
 
 func (s *Store) MarkInterruptedRunningJobs(ctx context.Context) error {
-	now := time.Now().UTC()
+	now := now()
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -462,4 +462,8 @@ func validConflictPolicy(policy string) bool {
 	default:
 		return false
 	}
+}
+
+func now() time.Time {
+	return time.Now().UTC()
 }

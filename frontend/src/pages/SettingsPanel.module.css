@@ -303,7 +303,7 @@
 }
 
 .spin {
-  animation: spin 1s linear infinite;
+  animation: var(--anim-spin);
   flex-shrink: 0;
   margin-right: 4px;
 }

@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
 import { Button, MutedText } from '../components/ui/shared';
 import { EmptyState } from '../components/ui/EmptyState';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { ServerInfo } from '../components/ui/ServerInfo';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { formatBytes } from '../utils/format';
 import {
   getStatus,
@@ -18,7 +20,6 @@ import {
   deleteProfileAvatar,
   profileAvatarUrl,
   uploadProfileAvatar,
-  type StatusResponse,
   type RootEntry,
   type Session,
   type UserInfo,
@@ -69,8 +70,7 @@ export function SettingsPanel({
   onRemoveService,
   onReorderServices,
 }: SettingsPanelProps) {
-  const [status, setStatus] = useState<StatusResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: status, loading, error: statusError, refresh: loadStatus } = useAsyncData(() => getStatus());
   const [maintenanceMsg, setMaintenanceMsg] = useState<string | null>(null);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
   const [maintenanceBusy, setMaintenanceBusy] = useState<string | null>(null);
@@ -133,18 +133,6 @@ export function SettingsPanel({
       setAvatarBusy(false);
     }
   };
-
-  const loadStatus = useCallback(() => {
-    setLoading(true);
-    getStatus()
-      .then(setStatus)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    loadStatus();
-  }, [loadStatus]);
 
   const loadUsers = useCallback(() => {
     setUsersLoading(true);
@@ -278,7 +266,7 @@ export function SettingsPanel({
           <div className={`${styles.skeletonBlock} ${styles.short}`} />
         </div>
       ) : !status ? (
-        <p><MutedText>Failed to load status. <Button variant="link" onClick={loadStatus}>Retry</Button></MutedText></p>
+            <ErrorBanner message={statusError || 'Failed to load status.'} onRetry={loadStatus} />
       ) : (
         <>
           {(!filterQuery.trim() ? activeCategory === 'general' : filteredCategories.some((c) => c.id === 'general')) && (
@@ -490,7 +478,7 @@ export function SettingsPanel({
                   )}
                   {usersLoading && <MutedText>Loading...</MutedText>}
                   {usersError && (
-                    <p><MutedText>Error: {usersError}. <Button variant="link" onClick={loadUsers}>Retry</Button></MutedText></p>
+                    <ErrorBanner message={usersError} onRetry={loadUsers} />
                   )}
                   {users && (
                     <div className={styles.userList}>

@@ -2,13 +2,12 @@ package jobs
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 )
 
 func (s *Store) CreateAuditLog(ctx context.Context, action, path, details string) error {
-	now := time.Now().UTC()
+	now := now()
 	log := AuditLog{
 		ID:        uuid.NewString(),
 		Action:    action,
@@ -22,3 +21,5 @@ func (s *Store) CreateAuditLog(ctx context.Context, action, path, details string
 	`, log.ID, log.Action, log.Path, log.Details, log.CreatedAt)
 	return err
 }
+
+

@@ -107,7 +107,7 @@ func convertPartition(d lsblkDevice, roots []security.Root) BlockDevice {
 		if publicPath, root, ok := publicPathForMountPoint(pd.MountPoint, roots); ok {
 			pd.VolumPath = publicPath
 			pd.Label = root.Label
-			if total, free, used, err := diskUsage(pd.MountPoint); err == nil {
+			if total, free, used, err := sysutil.DiskUsage(pd.MountPoint); err == nil {
 				pd.TotalBytes = total
 				pd.FreeBytes = free
 				pd.UsedBytes = used
@@ -164,6 +164,4 @@ func publicPathForMountPoint(mountPoint string, roots []security.Root) (string, 
 	return filepath.Join(best.Path, rel), *best, true
 }
 
-func diskUsage(path string) (int64, int64, int64, error) {
-	return sysutil.DiskUsage(path)
-}
+

@@ -170,8 +170,8 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function requestVoid(url: string, options?: RequestInit): Promise<void> {
-  await request(url, options);
+async function requestVoid<T>(path: string, options: RequestInit = {}): Promise<void> {
+  await request<T>(path, options);
 }
 
 export function getRoots() {

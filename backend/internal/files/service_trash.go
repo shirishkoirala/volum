@@ -58,7 +58,7 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 		TrashPath:    trashPath,
 		Type:         entryType,
 		Size:         immediateDirSize(resolved, info),
-		DeletedAt:    time.Now().UTC(),
+		DeletedAt:    now(),
 		RootPath:     root.Path,
 	}
 
@@ -144,7 +144,7 @@ func (s *Service) DeleteTrash(id string) error {
 }
 
 func (s *Service) trashEntryByID(id string) (TrashEntry, string, error) {
-	if !validBaseName(id) {
+	if !security.ValidBaseName(id) {
 		return TrashEntry{}, "", ErrInvalidName
 	}
 	for _, root := range s.guard.RootEntries() {
@@ -247,4 +247,8 @@ func copyPath(src, dst string) error {
 		}
 		return copyFile(path, target)
 	})
+}
+
+func now() time.Time {
+	return time.Now().UTC()
 }

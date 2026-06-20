@@ -40,16 +40,10 @@ type Listing struct {
 }
 
 type Root struct {
-	Path       string `json:"path"`
-	Label      string `json:"label,omitempty"`
-	Source     string `json:"source,omitempty"`
-	FSType     string `json:"fsType,omitempty"`
-	Discovered bool   `json:"discovered"`
-	Available  bool   `json:"available"`
-	TotalBytes int64  `json:"totalBytes"`
-	FreeBytes  int64  `json:"freeBytes"`
-	UsedBytes  int64  `json:"usedBytes"`
-	IsHome     bool   `json:"isHome"`
+	security.Root
+	TotalBytes int64 `json:"totalBytes"`
+	FreeBytes  int64 `json:"freeBytes"`
+	UsedBytes  int64 `json:"usedBytes"`
 }
 
 type TrashEntry struct {
@@ -102,16 +96,8 @@ func (s *Service) RootUsage() []Root {
 	roots := s.guard.RootEntries()
 	usage := make([]Root, 0, len(roots))
 	for _, root := range roots {
-		item := Root{
-			Path:       root.Path,
-			Label:      root.Label,
-			Source:     root.Source,
-			FSType:     root.FSType,
-			Discovered: root.Discovered,
-			Available:  root.Available,
-			IsHome:     root.IsHome,
-		}
-		if total, free, err := diskUsage(root.InternalPath); err == nil {
+		item := Root{Root: root}
+		if total, free, _, err := sysutil.DiskUsage(root.InternalPath); err == nil {
 			item.TotalBytes = total
 			item.FreeBytes = free
 			item.UsedBytes = max(total-free, 0)
@@ -227,7 +213,7 @@ func (s *Service) ListPage(path string, showHidden bool, opts ListOptions) (List
 }
 
 func (s *Service) CreateFile(parentPath, name string) (Entry, error) {
-	if !validBaseName(name) {
+	if !security.ValidBaseName(name) {
 		return Entry{}, ErrInvalidName
 	}
 
@@ -259,7 +245,7 @@ func (s *Service) CreateFile(parentPath, name string) (Entry, error) {
 }
 
 func (s *Service) CreateFolder(parentPath, name string) (Entry, error) {
-	if !validBaseName(name) {
+	if !security.ValidBaseName(name) {
 		return Entry{}, ErrInvalidName
 	}
 
@@ -289,7 +275,7 @@ func (s *Service) CreateFolder(parentPath, name string) (Entry, error) {
 }
 
 func (s *Service) Rename(path, newName string) (Entry, error) {
-	if !validBaseName(newName) {
+	if !security.ValidBaseName(newName) {
 		return Entry{}, ErrInvalidName
 	}
 
@@ -466,14 +452,6 @@ func immediateDirSize(path string, info os.FileInfo) int64 {
 	return total
 }
 
-func diskUsage(path string) (int64, int64, error) {
-	total, free, _, err := sysutil.DiskUsage(path)
-	if err != nil {
-		return 0, 0, err
-	}
-	return total, free, nil
-}
-
 func (s *Service) Search(query string, maxResults int) ([]SearchResult, error) {
 	if strings.TrimSpace(query) == "" {
 		return nil, errors.New("search query is required")
@@ -549,8 +527,4 @@ var textExtensions = map[string]bool{
 func isTextFile(name string) bool {
 	ext := strings.ToLower(filepath.Ext(name))
 	return textExtensions[ext]
-}
-
-func validBaseName(name string) bool {
-	return security.ValidBaseName(name)
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
 
 	"github.com/volum-app/volum/backend/internal/sqlutil"
 )
@@ -28,7 +27,7 @@ func (s *Store) claimNextJob(ctx context.Context, types ...Type) (Job, bool, err
 	for _, t := range types {
 		args = append(args, t)
 	}
-	args = append(args, time.Now().UTC())
+	args = append(args, now())
 
 	row := tx.QueryRowContext(ctx, query, args...)
 	job, err := scanJob(row)
@@ -39,7 +38,7 @@ func (s *Store) claimNextJob(ctx context.Context, types ...Type) (Job, bool, err
 		return Job{}, false, err
 	}
 
-	now := time.Now().UTC()
+	now := now()
 	result, err := tx.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, started_at = ?, updated_at = ?, error_message = NULL
@@ -90,3 +89,5 @@ func (s *Store) ClaimNextArchiveJob(ctx context.Context) (Job, bool, error) {
 func (s *Store) ClaimNextChecksumJob(ctx context.Context) (Job, bool, error) {
 	return s.claimNextJob(ctx, TypeChecksum)
 }
+
+

@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Icon } from '../ui/Icon';
 import { Button, IconButton, StatusBadge } from '../ui/shared';
 import { Dialog } from './Dialog';
 import { EmptyState } from '../ui/EmptyState';
+import { ErrorBanner } from '../ui/ErrorBanner';
 import { getShares, deleteShare, shareUrl, type Share } from '../../api/client';
 import { ConfirmDialog } from './Dialogs';
-import dStyles from './Dialogs.module.css';
+import { useAsyncData } from '../../hooks/useAsyncData';
 import styles from './ShareManager.module.css';
 
 type ShareManagerProps = {
@@ -14,20 +15,15 @@ type ShareManagerProps = {
 
 export function ShareManager({ onClose }: ShareManagerProps) {
   const [shares, setShares] = useState<Share[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Share | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const loadShares = () => {
-    setLoading(true);
-    setError(null);
-    getShares()
-      .then((data) => { setShares(data.shares); setLoading(false); })
-      .catch((err) => { setError(err instanceof Error ? err.message : 'Failed to load shares'); setLoading(false); });
-  };
+  const { data: sharesData, loading, error, refresh: loadShares } = useAsyncData(() => getShares());
 
-  useEffect(() => { loadShares(); }, []);
+  useEffect(() => {
+    if (sharesData) setShares(sharesData.shares);
+  }, [sharesData]);
 
   const handleDelete = (share: Share) => setPendingDelete(share);
 
@@ -40,7 +36,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
       await deleteShare(id);
       setShares((prev) => prev.filter((s) => s.id !== id));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete share');
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete share');
     } finally {
       setDeleting(null);
     }
@@ -76,8 +72,8 @@ export function ShareManager({ onClose }: ShareManagerProps) {
               </div>
             ))}
           </div>
-        ) : error ? (
-          <p className={dStyles.dialogError}>{error} <Button variant="link" onClick={loadShares}>Retry</Button></p>
+        ) : error || deleteError ? (
+          <ErrorBanner message={error || deleteError || ''} onRetry={() => { loadShares(); setDeleteError(null); }} />
         ) : shares.length === 0 ? (
           <EmptyState compact title="No shares yet" subtitle="Right-click a file or folder and select Share to create one." />
         ) : (

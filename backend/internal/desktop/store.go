@@ -68,7 +68,7 @@ func (s *Store) ListFavorites(ctx context.Context) ([]string, error) {
 func (s *Store) AddFavorite(ctx context.Context, path string) error {
 	_, err := s.db.ExecContext(ctx,
 		`INSERT OR IGNORE INTO desktop_favorites (path, position, created_at) VALUES (?, 0, ?)`,
-		path, time.Now().UTC(),
+		path, now(),
 	)
 	return err
 }
@@ -113,7 +113,7 @@ func (s *Store) ListServices(ctx context.Context) ([]ServiceRecord, error) {
 
 func (s *Store) CreateService(ctx context.Context, name, url, iconURL, healthURL, description, openMode string) (*ServiceRecord, error) {
 	id := uuid.New().String()
-	now := time.Now().UTC()
+	now := now()
 	om := validOpenMode(openMode)
 	if _, err := s.db.ExecContext(ctx,
 		`INSERT INTO desktop_services (id, name, url, icon_url, health_url, description, open_mode, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)`,
@@ -168,7 +168,7 @@ func (s *Store) DeleteService(ctx context.Context, id string) error {
 }
 
 func (s *Store) UpdateServiceHealth(ctx context.Context, id, status string, statusCode int, errorMsg string) error {
-	now := time.Now().UTC().Format(time.RFC3339)
+	now := now().Format(time.RFC3339)
 	_, err := s.db.ExecContext(ctx,
 		`UPDATE desktop_services SET last_health_status = ?, last_health_checked_at = ?, last_health_status_code = ?, last_health_error = ? WHERE id = ?`,
 		status, now, statusCode, errorMsg, id,
@@ -188,6 +188,10 @@ func (s *Store) ReorderServices(ctx context.Context, ids []string) error {
 		}
 	}
 	return tx.Commit()
+}
+
+func now() time.Time {
+	return time.Now().UTC()
 }
 
 func validOpenMode(mode string) string {

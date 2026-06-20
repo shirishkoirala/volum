@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FolderIcon, FileIcon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { trashIconUrl } from '../api/icons';
 import type { TrashEntry } from '../api/client';
 import { getTrash, restoreTrash, deleteTrash } from '../api/client';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { formatBytes, formatGridDate } from '../utils/format';
 import { useToasts } from '../hooks/useToasts';
 import { GRID_ICON_SIZE, GridTile } from '../components/ui/GridTile';
@@ -19,15 +21,11 @@ export function TrashView() {
   const [trashEmptyMenu, setTrashEmptyMenu] = useState<{ x: number; y: number } | null>(null);
   const toast = useToasts();
 
-  const loadTrash = useCallback(() => {
-    getTrash().then((res) => {
-      setTrashEntries(res.entries ?? []);
-    }).catch(() => {});
-  }, []);
+  const { data: trashData, error: trashError, refresh: loadTrash } = useAsyncData(() => getTrash());
 
   useEffect(() => {
-    loadTrash();
-  }, [loadTrash]);
+    if (trashData) setTrashEntries(trashData.entries ?? []);
+  }, [trashData]);
 
   const handleSelectTrashItem = useCallback((entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => {
     setSelectedTrashIds((prev) => {
@@ -154,6 +152,7 @@ export function TrashView() {
 
   return (
     <>
+      {trashError && <ErrorBanner message={trashError} onRetry={loadTrash} />}
       {trashEntries.length === 0 ? (
         <div className={styles.emptyWrapper}>
           <EmptyState icon={trashIconUrl(false)} title="Trash is empty" />

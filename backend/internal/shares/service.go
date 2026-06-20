@@ -68,7 +68,7 @@ func (s *Store) Create(req CreateRequest, createdBy string) (*Share, error) {
 	}
 
 	id := generateID()
-	now := time.Now().UTC().Format(time.RFC3339)
+	now := now().Format(time.RFC3339)
 	var passwordHash string
 	if req.Password != "" {
 		h := sha256.Sum256([]byte(req.Password))
@@ -162,4 +162,8 @@ func nullOrString(s string) *string {
 		return nil
 	}
 	return &s
+}
+
+func now() time.Time {
+	return time.Now().UTC()
 }
