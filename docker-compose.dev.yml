@@ -12,7 +12,7 @@ services:
       - VOLUM_PORT=${VOLUM_PORT:-8090}
       - VOLUM_HOME=${VOLUM_HOME:-}
       - VOLUM_AUTH_REQUIRED=${VOLUM_AUTH_REQUIRED:-true}
-      - VOLUM_SESSION_SECRET=${VOLUM_SESSION_SECRET:-dev-secret}
+      - VOLUM_SESSION_SECRET=${VOLUM_SESSION_SECRET:-volum-development-session-secret}
 
   frontend:
     image: node:22-alpine

@@ -1,10 +1,13 @@
 package shares
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/volum-app/volum/backend/internal/sqlutil"
@@ -12,16 +15,16 @@ import (
 )
 
 type Share struct {
-	ID            string    `json:"id"`
-	Path          string    `json:"path"`
-	Token         string    `json:"token"`
-	PasswordHash  string    `json:"-"`
-	ExpiresAt     *string   `json:"expiresAt,omitempty"`
-	MaxDownloads  *int      `json:"maxDownloads,omitempty"`
-	DownloadCount int       `json:"downloadCount"`
-	Enabled       bool      `json:"enabled"`
-	CreatedBy     string    `json:"createdBy"`
-	CreatedAt     string    `json:"createdAt"`
+	ID            string  `json:"id"`
+	Path          string  `json:"path"`
+	Token         string  `json:"token"`
+	PasswordHash  string  `json:"-"`
+	ExpiresAt     *string `json:"expiresAt,omitempty"`
+	MaxDownloads  *int    `json:"maxDownloads,omitempty"`
+	DownloadCount int     `json:"downloadCount"`
+	Enabled       bool    `json:"enabled"`
+	CreatedBy     string  `json:"createdBy"`
+	CreatedAt     string  `json:"createdAt"`
 }
 
 type CreateRequest struct {
@@ -125,7 +128,7 @@ func (s *Store) List() ([]Share, error) {
 
 func (s *Store) GetByToken(token string) (*Share, error) {
 	sh, err := scanShare(s.db.QueryRow(`
-		SELECT ` + shareColumns + `
+		SELECT `+shareColumns+`
 		FROM shares WHERE token = ?`, token))
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -158,7 +161,23 @@ func (s *Store) VerifyPassword(share *Share, password string) bool {
 	if share.PasswordHash == "" {
 		return true
 	}
-	return bcrypt.CompareHashAndPassword([]byte(share.PasswordHash), []byte(password)) == nil
+	if strings.HasPrefix(share.PasswordHash, "$2") {
+		return bcrypt.CompareHashAndPassword([]byte(share.PasswordHash), []byte(password)) == nil
+	}
+
+	legacy := sha256.Sum256([]byte(password))
+	legacyHash := hex.EncodeToString(legacy[:])
+	if !hmac.Equal([]byte(legacyHash), []byte(share.PasswordHash)) {
+		return false
+	}
+
+	if upgraded, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost); err == nil {
+		_, _ = s.db.Exec(
+			`UPDATE shares SET password_hash = ? WHERE id = ? AND password_hash = ?`,
+			string(upgraded), share.ID, share.PasswordHash,
+		)
+	}
+	return true
 }
 
 func (s *Store) Delete(id string) error {

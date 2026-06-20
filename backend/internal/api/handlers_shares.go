@@ -115,6 +115,7 @@ func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "directory sharing not yet supported"})
 		return
 	}
+	disableWriteDeadline(w)
 
 	ok, err := s.shares.IncrementDownloadCount(share.ID, share.MaxDownloads, share.DownloadCount)
 	if err != nil {

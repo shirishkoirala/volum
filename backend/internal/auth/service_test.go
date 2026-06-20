@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -282,6 +283,20 @@ func TestSetupRequiredDisabled(t *testing.T) {
 	}
 	if req {
 		t.Fatal("expected no setup required when auth disabled")
+	}
+}
+
+func TestCreateInitialAdminOnlyOnce(t *testing.T) {
+	store, ctx := setupStore(t)
+	created, err := store.CreateInitialAdmin(ctx, "admin", "admin-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if created.Role != RoleAdmin {
+		t.Fatalf("expected admin role, got %s", created.Role)
+	}
+	if _, err := store.CreateInitialAdmin(ctx, "second", "second-password"); !errors.Is(err, ErrSetupComplete) {
+		t.Fatalf("expected setup complete error, got %v", err)
 	}
 }
 

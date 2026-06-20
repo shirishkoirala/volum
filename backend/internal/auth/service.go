@@ -132,13 +132,17 @@ func UserFromContext(ctx context.Context) (User, bool) {
 	return user, ok
 }
 
+func SecureEqual(left, right string) bool {
+	return hmac.Equal([]byte(left), []byte(right))
+}
+
 // tokenClaims holds the parsed session token fields.
 type tokenClaims struct {
-	userID        string
-	role          Role
-	issuedAt      int64
-	expiresAt     int64
-	sessionVer    int64
+	userID     string
+	role       Role
+	issuedAt   int64
+	expiresAt  int64
+	sessionVer int64
 }
 
 func (s *Service) sign(userID string, role Role, sessionVer int64, remember bool) string {

@@ -16,7 +16,9 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/volum-app/volum/backend/internal/auth"
 	"github.com/volum-app/volum/backend/internal/desktop"
@@ -228,41 +230,25 @@ func TestGetRoots(t *testing.T) {
 	}
 }
 
-func TestServiceHealthEndpoint(t *testing.T) {
+func TestServiceHealthBlocksLoopback(t *testing.T) {
 	ts, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	healthyServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	localServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
-	defer healthyServer.Close()
+	defer localServer.Close()
 
-	unhealthyServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusServiceUnavailable)
-	}))
-	defer unhealthyServer.Close()
-
-	createHealthy := ts.post("/api/services", map[string]string{
-		"name":      "Healthy",
-		"url":       healthyServer.URL,
-		"healthUrl": healthyServer.URL + "/health",
+	createLocal := ts.post("/api/services", map[string]string{
+		"name":      "Local",
+		"url":       localServer.URL,
+		"healthUrl": localServer.URL + "/health",
 	})
-	if createHealthy.StatusCode != http.StatusCreated {
-		t.Fatalf("expected healthy service create 201, got %d", createHealthy.StatusCode)
+	if createLocal.StatusCode != http.StatusCreated {
+		t.Fatalf("expected local service create 201, got %d", createLocal.StatusCode)
 	}
-	var healthySvc desktop.ServiceRecord
-	readJSON(t, createHealthy, &healthySvc)
-
-	createUnhealthy := ts.post("/api/services", map[string]string{
-		"name":      "Unhealthy",
-		"url":       unhealthyServer.URL,
-		"healthUrl": unhealthyServer.URL + "/health",
-	})
-	if createUnhealthy.StatusCode != http.StatusCreated {
-		t.Fatalf("expected unhealthy service create 201, got %d", createUnhealthy.StatusCode)
-	}
-	var unhealthySvc desktop.ServiceRecord
-	readJSON(t, createUnhealthy, &unhealthySvc)
+	var localService desktop.ServiceRecord
+	readJSON(t, createLocal, &localService)
 
 	createUnchecked := ts.post("/api/services", map[string]string{
 		"name": "Unchecked",
@@ -281,11 +267,9 @@ func TestServiceHealthEndpoint(t *testing.T) {
 	var body map[string]desktop.ServiceHealthResult
 	readJSON(t, resp, &body)
 
-	if body[healthySvc.ID].Status != "healthy" || body[healthySvc.ID].StatusCode != http.StatusNoContent {
-		t.Fatalf("expected healthy result, got %#v", body[healthySvc.ID])
-	}
-	if body[unhealthySvc.ID].Status != "unhealthy" || body[unhealthySvc.ID].StatusCode != http.StatusServiceUnavailable {
-		t.Fatalf("expected unhealthy result, got %#v", body[unhealthySvc.ID])
+	result := body[localService.ID]
+	if result.Status != "unhealthy" || !strings.Contains(result.Error, "blocked destination") {
+		t.Fatalf("expected loopback health URL to be blocked, got %#v", result)
 	}
 	if _, ok := body[uncheckedSvc.ID]; ok {
 		t.Fatal("did not expect service without health URL in health response")
@@ -612,6 +596,63 @@ func TestSessionWithoutAuth(t *testing.T) {
 	}
 }
 
+func TestInitialSetupRequiresToken(t *testing.T) {
+	root := t.TempDir()
+	guard, err := security.NewRootGuard([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	db, err := storage.Open(filepath.Join(root, "setup.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	authStore := auth.NewStore(db)
+	authService, err := auth.New(authStore, "setup-test-session-secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobStore := jobs.NewStore(db)
+	desktopStore := desktop.NewStore(db)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	server := New(
+		files.NewService(guard, files.NewDirSizeCache(0)),
+		jobStore,
+		guard,
+		authService,
+		authStore,
+		shares.NewStore(db),
+		desktopStore,
+		desktop.NewHealthChecker(desktopStore, logger),
+		filepath.Join(root, "setup.db"),
+		"expected-bootstrap-token",
+	)
+
+	requestSetup := func(token string) *httptest.ResponseRecorder {
+		body := bytes.NewBufferString(`{"username":"admin","password":"admin-password"}`)
+		req := httptest.NewRequest(http.MethodPost, "/api/setup", body)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Bootstrap-Token", token)
+		w := httptest.NewRecorder()
+		server.Handler().ServeHTTP(w, req)
+		return w
+	}
+
+	if w := requestSetup(""); w.Code != http.StatusForbidden {
+		t.Fatalf("expected missing token to return 403, got %d", w.Code)
+	}
+	if w := requestSetup("wrong"); w.Code != http.StatusForbidden {
+		t.Fatalf("expected wrong token to return 403, got %d", w.Code)
+	}
+	if w := requestSetup("expected-bootstrap-token"); w.Code != http.StatusCreated {
+		t.Fatalf("expected setup to succeed, got %d: %s", w.Code, w.Body.String())
+	}
+	if w := requestSetup("expected-bootstrap-token"); w.Code != http.StatusForbidden {
+		t.Fatalf("expected repeated setup to return 403, got %d", w.Code)
+	}
+}
+
 func TestLoginRememberMeControlsCookiePersistence(t *testing.T) {
 	ts, cleanup := setupTestServer(t)
 	defer cleanup()
@@ -643,6 +684,57 @@ func TestLoginRememberMeControlsCookiePersistence(t *testing.T) {
 				t.Fatalf("expected persistent=%t, cookie=%#v", test.persistent, cookies[0])
 			}
 		})
+	}
+}
+
+func TestLoginRateLimitIgnoresForwardedFor(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+	ts.loginLimiter = newRateLimiter(20, time.Minute)
+
+	for attempt := 1; attempt <= 21; attempt++ {
+		body := bytes.NewBufferString(`{"username":"admin","password":"wrong-password"}`)
+		req := httptest.NewRequest(http.MethodPost, "/api/login", body)
+		req.RemoteAddr = "192.0.2.20:1234"
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Forwarded-For", fmt.Sprintf("198.51.100.%d", attempt))
+		w := httptest.NewRecorder()
+		ts.Server.Handler().ServeHTTP(w, req)
+		if attempt <= 20 && w.Code != http.StatusUnauthorized {
+			t.Fatalf("attempt %d: expected 401, got %d", attempt, w.Code)
+		}
+		if attempt == 21 && w.Code != http.StatusTooManyRequests {
+			t.Fatalf("expected spoofed forwarding headers to remain rate limited, got %d", w.Code)
+		}
+	}
+}
+
+func TestLoginRateLimitDoesNotLockAccountAcrossIPs(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+	ts.loginLimiter = newRateLimiter(2, time.Minute)
+
+	requestLogin := func(remoteAddr, password string) int {
+		body := bytes.NewBufferString(fmt.Sprintf(`{"username":"admin","password":%q}`, password))
+		req := httptest.NewRequest(http.MethodPost, "/api/login", body)
+		req.RemoteAddr = remoteAddr
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		ts.Server.Handler().ServeHTTP(w, req)
+		return w.Code
+	}
+
+	if status := requestLogin("192.0.2.20:1234", "wrong-password"); status != http.StatusUnauthorized {
+		t.Fatalf("expected first failed login to return 401, got %d", status)
+	}
+	if status := requestLogin("192.0.2.20:1234", "wrong-password"); status != http.StatusUnauthorized {
+		t.Fatalf("expected second failed login to return 401, got %d", status)
+	}
+	if status := requestLogin("192.0.2.20:1234", "wrong-password"); status != http.StatusTooManyRequests {
+		t.Fatalf("expected source IP to be rate limited, got %d", status)
+	}
+	if status := requestLogin("198.51.100.30:1234", "adminpass"); status != http.StatusOK {
+		t.Fatalf("expected the account to remain available from another IP, got %d", status)
 	}
 }
 

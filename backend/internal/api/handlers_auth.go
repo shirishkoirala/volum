@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"runtime"
@@ -58,6 +59,10 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
 		return
 	}
+	if !s.allowLogin(r, req.Username) {
+		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many requests, try again later"})
+		return
+	}
 	token, user, ok := s.auth.Login(r.Context(), req.Username, req.Password, req.RememberMe)
 	if !ok {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid credentials"})
@@ -94,16 +99,15 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "auth is not enabled"})
 		return
 	}
+	if !s.allowSetup(r) {
+		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many requests, try again later"})
+		return
+	}
 
-	if s.bootstrapToken != "" {
-		token := strings.TrimSpace(r.Header.Get("X-Bootstrap-Token"))
-		if token == "" {
-			token = r.URL.Query().Get("token")
-		}
-		if token != s.bootstrapToken {
-			writeJSON(w, http.StatusForbidden, map[string]string{"error": "bootstrap token is required or invalid"})
-			return
-		}
+	token := strings.TrimSpace(r.Header.Get("X-Bootstrap-Token"))
+	if token == "" || !auth.SecureEqual(token, s.bootstrapToken) {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "bootstrap token is required or invalid"})
+		return
 	}
 
 	needed, err := s.auth.SetupRequired(r.Context())
@@ -137,8 +141,12 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "password must be at least 12 characters"})
 		return
 	}
-	record, err := s.authStore.CreateUser(r.Context(), req.Username, req.Password, auth.RoleAdmin)
+	record, err := s.authStore.CreateInitialAdmin(r.Context(), req.Username, req.Password)
 	if err != nil {
+		if errors.Is(err, auth.ErrSetupComplete) {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "users already exist"})
+			return
+		}
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}

@@ -18,18 +18,18 @@ import (
 )
 
 type Server struct {
-	router        *chi.Mux
-	files         *files.Service
-	jobs          *jobs.Store
-	guard         *security.RootGuard
-	auth          *auth.Service
-	authStore     *auth.Store
-	shares        *shares.Store
-	desktop       *desktop.Store
-	healthChecker *desktop.HealthChecker
-	startTime     time.Time
-	dbPath        string
-	loginLimiter  *rateLimiter
+	router         *chi.Mux
+	files          *files.Service
+	jobs           *jobs.Store
+	guard          *security.RootGuard
+	auth           *auth.Service
+	authStore      *auth.Store
+	shares         *shares.Store
+	desktop        *desktop.Store
+	healthChecker  *desktop.HealthChecker
+	startTime      time.Time
+	dbPath         string
+	loginLimiter   *rateLimiter
 	bootstrapToken string
 }
 
@@ -59,7 +59,6 @@ func (s *Server) Handler() http.Handler {
 
 func (s *Server) routes() {
 	s.router.Use(middleware.RequestID)
-	s.router.Use(middleware.RealIP)
 	s.router.Use(middleware.Logger)
 	s.router.Use(middleware.Recoverer)
 	s.router.Use(securityHeaders)
@@ -70,9 +69,9 @@ func (s *Server) routes() {
 
 	s.router.Route("/api", func(r chi.Router) {
 		r.Get("/session", s.handleSession)
-		r.With(s.rateLimitMiddleware).Post("/login", s.handleLogin)
+		r.Post("/login", s.handleLogin)
 		r.Post("/logout", s.handleLogout)
-		r.With(s.rateLimitMiddleware).Post("/setup", s.handleSetup)
+		r.Post("/setup", s.handleSetup)
 		r.Get("/version", s.handleVersion)
 
 		r.Group(func(r chi.Router) {

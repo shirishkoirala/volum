@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/volum-app/volum/backend/internal/auth"
 	"github.com/volum-app/volum/backend/internal/files"
@@ -20,6 +21,10 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 	if err := json.NewEncoder(w).Encode(value); err != nil {
 		slog.Error("writeJSON encode failed", "status", status, "error", err)
 	}
+}
+
+func disableWriteDeadline(w http.ResponseWriter) {
+	_ = http.NewResponseController(w).SetWriteDeadline(time.Time{})
 }
 
 func writeError(w http.ResponseWriter, err error) {

@@ -10,6 +10,7 @@ type SetupScreenProps = {
 };
 
 export function SetupScreen({ onComplete }: SetupScreenProps) {
+  const [bootstrapToken, setBootstrapToken] = useState('');
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -24,7 +25,7 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
     }
     setSubmitting(true);
     setError(null);
-    setup(username, password)
+    setup(username, password, bootstrapToken)
       .then(onComplete)
       .catch((err: Error) => setError(err.message))
       .finally(() => setSubmitting(false));
@@ -36,10 +37,18 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
         <img className={styles.brandMark} src={appIcon} alt="" />
         <h1>Setup Admin Account</h1>
         <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-          Create the first admin user to get started.
+          Enter the setup token from the server log and create the first administrator.
         </p>
         <input
           autoFocus
+          autoComplete="one-time-code"
+          placeholder="Setup token"
+          type="password"
+          value={bootstrapToken}
+          onChange={(event) => setBootstrapToken(event.target.value)}
+        />
+        <input
+          autoComplete="username"
           placeholder="Username"
           type="text"
           value={username}
@@ -58,7 +67,7 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
           onChange={(event) => setConfirm(event.target.value)}
         />
         {error && <p className={styles.loginError}>{error}</p>}
-        <button disabled={submitting || username.length === 0 || password.length === 0 || confirm.length === 0} type="submit">
+        <button disabled={submitting || bootstrapToken.length === 0 || username.length === 0 || password.length === 0 || confirm.length === 0} type="submit">
           {submitting ? <><Icon name="view-refresh" size={16} /> Creating...</> : 'Create Admin'}
         </button>
       </form>

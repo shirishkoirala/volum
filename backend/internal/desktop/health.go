@@ -33,9 +33,9 @@ type HealthChecker struct {
 }
 
 type HealthTransition struct {
-	ServiceID string              `json:"serviceId"`
+	ServiceID string               `json:"serviceId"`
 	Previous  *ServiceHealthResult `json:"previous,omitempty"`
-	Current   ServiceHealthResult `json:"current"`
+	Current   ServiceHealthResult  `json:"current"`
 }
 
 func NewHealthChecker(store *Store, log *slog.Logger) *HealthChecker {
@@ -44,6 +44,7 @@ func NewHealthChecker(store *Store, log *slog.Logger) *HealthChecker {
 		client: &http.Client{
 			Timeout:       3 * time.Second,
 			CheckRedirect: redirectBlocked,
+			Transport:     safeHealthTransport(),
 		},
 		interval:    60 * time.Second,
 		cache:       make(map[string]ServiceHealthResult),
@@ -242,5 +243,3 @@ func (hc *HealthChecker) CheckOne(ctx context.Context, svc ServiceRecord) Servic
 	}
 	return result
 }
-
-

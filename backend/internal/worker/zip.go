@@ -100,13 +100,10 @@ func extractZip(store *jobs.Store, ctx context.Context, dest, jobID, source stri
 			return errJobPaused
 		}
 
-		filePath := filepath.Join(dest, filepath.FromSlash(file.Name))
-		if !strings.HasPrefix(filepath.Clean(filePath), filepath.Clean(dest)+string(filepath.Separator)) && filepath.Clean(filePath) != filepath.Clean(dest) {
-			continue
-		}
-
 		if file.FileInfo().IsDir() {
-			os.MkdirAll(filePath, 0o755)
+			if err := ensureExtractDir(dest, file.Name); err != nil {
+				return err
+			}
 			continue
 		}
 
@@ -116,15 +113,11 @@ func extractZip(store *jobs.Store, ctx context.Context, dest, jobID, source stri
 			continue
 		}
 
-		if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
-			return err
-		}
-
 		src, err := file.Open()
 		if err != nil {
 			return err
 		}
-		out, err := os.Create(filePath)
+		out, err := openExtractFile(dest, file.Name)
 		if err != nil {
 			src.Close()
 			return err

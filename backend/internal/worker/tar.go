@@ -121,19 +121,13 @@ func extractTarFromReader(store *jobs.Store, ctx context.Context, reader io.Read
 			return fmt.Errorf("%w: exceeded %d entries", errExtractLimit, maxExtractEntries)
 		}
 
-		headerName := filepath.FromSlash(header.Name)
 		parts := strings.Split(filepath.ToSlash(header.Name), "/")
 		if len(parts) > maxExtractPathDepth {
 			return fmt.Errorf("archive entry %s exceeds maximum path depth of %d", header.Name, maxExtractPathDepth)
 		}
 
-		filePath := filepath.Join(dest, headerName)
-		if !strings.HasPrefix(filepath.Clean(filePath), filepath.Clean(dest)+string(filepath.Separator)) {
-			continue
-		}
-
 		if header.Typeflag == tar.TypeDir {
-			if err := os.MkdirAll(filePath, 0o755); err != nil {
+			if err := ensureExtractDir(dest, header.Name); err != nil {
 				return err
 			}
 			continue
@@ -154,11 +148,7 @@ func extractTarFromReader(store *jobs.Store, ctx context.Context, reader io.Read
 
 		_ = store.SetJobTotals(ctx, jobID, totalBytes, totalItems)
 
-		if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
-			return err
-		}
-
-		out, err := os.Create(filePath)
+		out, err := openExtractFile(dest, header.Name)
 		if err != nil {
 			return err
 		}

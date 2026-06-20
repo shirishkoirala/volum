@@ -1,7 +1,9 @@
 package api
 
 import (
+	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -14,8 +16,9 @@ type rateLimiter struct {
 }
 
 type visitor struct {
-	count    int
-	lastSeen time.Time
+	count       int
+	windowStart time.Time
+	lastSeen    time.Time
 }
 
 func newRateLimiter(rate int, window time.Duration) *rateLimiter {
@@ -46,27 +49,38 @@ func (rl *rateLimiter) allow(ip string) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
+	now := time.Now()
 	v, exists := rl.visitors[ip]
 	if !exists {
-		rl.visitors[ip] = &visitor{count: 1, lastSeen: time.Now()}
+		rl.visitors[ip] = &visitor{count: 1, windowStart: now, lastSeen: now}
 		return true
 	}
 
-	v.lastSeen = time.Now()
+	if now.Sub(v.windowStart) >= rl.window {
+		v.count = 1
+		v.windowStart = now
+		v.lastSeen = now
+		return true
+	}
+	v.lastSeen = now
 	v.count++
 	return v.count <= rl.rate
 }
 
-func (s *Server) rateLimitMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := r.RemoteAddr
-		if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-			ip = forwarded
-		}
-		if !s.loginLimiter.allow(ip) {
-			writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many requests, try again later"})
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+func clientIP(r *http.Request) string {
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil {
+		return host
+	}
+	return r.RemoteAddr
+}
+
+func (s *Server) allowLogin(r *http.Request, username string) bool {
+	ip := clientIP(r)
+	return s.loginLimiter.allow("login-ip:"+ip) &&
+		s.loginLimiter.allow("login-pair:"+ip+":"+strings.ToLower(strings.TrimSpace(username)))
+}
+
+func (s *Server) allowSetup(r *http.Request) bool {
+	return s.loginLimiter.allow("setup-ip:" + clientIP(r))
 }

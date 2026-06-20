@@ -31,46 +31,46 @@ var unsafeInlineExts = map[string]bool{
 
 // Text-like extensions we can safely serve as text/plain.
 var textPreviewExts = map[string]bool{
-	".txt":    true,
-	".md":     true,
-	".json":   true,
-	".yaml":   true,
-	".yml":    true,
-	".toml":   true,
-	".ini":    true,
-	".cfg":    true,
-	".conf":   true,
-	".log":    true,
-	".sh":     true,
-	".bash":   true,
-	".zsh":    true,
-	".fish":   true,
-	".env":    true,
-	".gitignore": true,
+	".txt":          true,
+	".md":           true,
+	".json":         true,
+	".yaml":         true,
+	".yml":          true,
+	".toml":         true,
+	".ini":          true,
+	".cfg":          true,
+	".conf":         true,
+	".log":          true,
+	".sh":           true,
+	".bash":         true,
+	".zsh":          true,
+	".fish":         true,
+	".env":          true,
+	".gitignore":    true,
 	".dockerignore": true,
 	".editorconfig": true,
-	".sql":    true,
-	".py":     true,
-	".rb":     true,
-	".pl":     true,
-	".php":    true,
-	".go":     true,
-	".rs":     true,
-	".ts":     true,
-	".tsx":    true,
-	".jsx":    true,
-	".css":    true,
-	".scss":   true,
-	".less":   true,
-	".vue":    true,
-	".svelte": true,
-	".c":      true,
-	".cpp":    true,
-	".h":      true,
-	".hpp":    true,
-	".java":   true,
-	".kt":     true,
-	".swift":  true,
+	".sql":          true,
+	".py":           true,
+	".rb":           true,
+	".pl":           true,
+	".php":          true,
+	".go":           true,
+	".rs":           true,
+	".ts":           true,
+	".tsx":          true,
+	".jsx":          true,
+	".css":          true,
+	".scss":         true,
+	".less":         true,
+	".vue":          true,
+	".svelte":       true,
+	".c":            true,
+	".cpp":          true,
+	".h":            true,
+	".hpp":          true,
+	".java":         true,
+	".kt":           true,
+	".swift":        true,
 }
 
 func (s *Server) handleFiles(w http.ResponseWriter, r *http.Request) {
@@ -227,6 +227,7 @@ func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
+	disableWriteDeadline(w)
 
 	if !info.IsDir() {
 		w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(info.Name()))
@@ -317,6 +318,7 @@ func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
+	disableWriteDeadline(w)
 
 	ext := strings.ToLower(filepath.Ext(info.Name()))
 	filename := strconv.Quote(info.Name())

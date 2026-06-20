@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -67,6 +70,22 @@ func run(log *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	bootstrapToken := strings.TrimSpace(cfg.BootstrapToken)
+	if cfg.AuthRequired {
+		setupRequired, err := authService.SetupRequired(ctx)
+		if err != nil {
+			return err
+		}
+		if setupRequired && bootstrapToken == "" {
+			randomToken := make([]byte, 24)
+			if _, err := rand.Read(randomToken); err != nil {
+				return err
+			}
+			bootstrapToken = base64.RawURLEncoding.EncodeToString(randomToken)
+			log.Warn("initial setup token generated", "token", bootstrapToken)
+		}
+	}
+
 	if err := backgroundWorker.Recover(ctx); err != nil {
 		return err
 	}
@@ -78,7 +97,7 @@ func run(log *slog.Logger) error {
 	desktopStore := desktop.NewStore(db)
 	healthChecker := desktop.NewHealthChecker(desktopStore, log)
 	go healthChecker.Start(ctx)
-	server := api.New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, healthChecker, cfg.DB, cfg.BootstrapToken)
+	server := api.New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, healthChecker, cfg.DB, bootstrapToken)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,

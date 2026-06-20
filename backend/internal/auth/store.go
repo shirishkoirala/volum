@@ -11,6 +11,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var ErrSetupComplete = errors.New("initial setup is already complete")
+
 type UserRecord struct {
 	ID             string
 	Username       string
@@ -57,6 +59,46 @@ func (s *Store) CreateUser(ctx context.Context, username, password string, role 
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}, nil
+}
+
+func (s *Store) CreateInitialAdmin(ctx context.Context, username, password string) (*UserRecord, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var count int
+	if err := tx.QueryRowContext(ctx, `SELECT COUNT(*) FROM users`).Scan(&count); err != nil {
+		return nil, err
+	}
+	if count != 0 {
+		return nil, ErrSetupComplete
+	}
+
+	now := now()
+	record := &UserRecord{
+		ID:           uuid.New().String(),
+		Username:     username,
+		PasswordHash: string(hash),
+		Role:         RoleAdmin,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO users (id, username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+		record.ID, record.Username, record.PasswordHash, string(record.Role), now, now,
+	); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return record, nil
 }
 
 const userColumns = `id, username, password_hash, role, created_at, updated_at, COALESCE(session_version, 0),

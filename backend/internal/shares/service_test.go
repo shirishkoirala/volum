@@ -1,6 +1,8 @@
 package shares
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"path/filepath"
 	"testing"
 
@@ -63,6 +65,34 @@ func TestCreateShareWithPassword(t *testing.T) {
 	}
 	if share.MaxDownloads == nil || *share.MaxDownloads != 5 {
 		t.Fatal("expected maxDownloads to be 5")
+	}
+}
+
+func TestVerifyLegacyPasswordUpgradesHash(t *testing.T) {
+	s := setupStore(t)
+	created, err := s.Create(CreateRequest{Path: "/mnt/data/docs"}, "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	legacy := sha256.Sum256([]byte("legacy-password"))
+	legacyHash := hex.EncodeToString(legacy[:])
+	if _, err := s.db.Exec(`UPDATE shares SET password_hash = ? WHERE id = ?`, legacyHash, created.ID); err != nil {
+		t.Fatal(err)
+	}
+	created.PasswordHash = legacyHash
+
+	if !s.VerifyPassword(created, "legacy-password") {
+		t.Fatal("expected legacy password to verify")
+	}
+	upgraded, err := s.GetByToken(created.Token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if upgraded == nil || upgraded.PasswordHash == legacyHash {
+		t.Fatal("expected legacy password hash to be upgraded")
+	}
+	if !s.VerifyPassword(upgraded, "legacy-password") {
+		t.Fatal("expected upgraded password to verify")
 	}
 }
 

@@ -164,10 +164,11 @@ VOLUM_DB=/data/volum.db              # SQLite database path
 VOLUM_PORT=8090                      # HTTP listen port
 VOLUM_AUTH_REQUIRED=false            # Enable authentication
 VOLUM_SESSION_SECRET=replace-with... # HMAC session signing key
+VOLUM_BOOTSTRAP_TOKEN=               # Optional fixed first-run setup token
 VOLUM_PUBLIC_URL=                    # Public URL for share links
 ```
 
-Authentication is controlled by `VOLUM_AUTH_REQUIRED`. When it is true, set a long random `VOLUM_SESSION_SECRET`; the first admin user is created from the setup screen.
+Authentication is controlled by `VOLUM_AUTH_REQUIRED`. When it is true, set a long random `VOLUM_SESSION_SECRET`; the first admin user is created from the setup screen using `VOLUM_BOOTSTRAP_TOKEN`, or the generated token printed in the server log.
 
 ## Docker Compose
 

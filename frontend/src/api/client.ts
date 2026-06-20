@@ -219,9 +219,10 @@ export function logout() {
   });
 }
 
-export function setup(username: string, password: string) {
+export function setup(username: string, password: string, bootstrapToken: string) {
   return request<Session>('/api/setup', {
     method: 'POST',
+    headers: { 'X-Bootstrap-Token': bootstrapToken },
     body: JSON.stringify({ username, password })
   });
 }

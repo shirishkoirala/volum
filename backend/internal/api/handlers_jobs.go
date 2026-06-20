@@ -34,6 +34,7 @@ func (s *Server) handleJobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
+	disableWriteDeadline(w)
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "streaming is not supported"})
@@ -259,8 +260,8 @@ func (s *Server) handleJobConflicts(w http.ResponseWriter, r *http.Request) {
 }
 
 type resolveRequest struct {
-	Items              []resolveItem `json:"items"`
-	DefaultResolution  *string       `json:"defaultResolution,omitempty"`
+	Items             []resolveItem `json:"items"`
+	DefaultResolution *string       `json:"defaultResolution,omitempty"`
 }
 
 type resolveItem struct {

@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"os"
@@ -313,6 +314,61 @@ func TestProcessExtractZip(t *testing.T) {
 	}
 	if string(data) != "extracted" {
 		t.Fatalf("expected 'extracted', got %s", string(data))
+	}
+}
+
+func TestExtractRejectsExistingDestinationSymlink(t *testing.T) {
+	for _, format := range []string{"zip", "tar"} {
+		t.Run(format, func(t *testing.T) {
+			root := t.TempDir()
+			outside := t.TempDir()
+			destination := filepath.Join(root, "destination")
+			if err := os.MkdirAll(destination, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(outside, filepath.Join(destination, "escape")); err != nil {
+				t.Fatal(err)
+			}
+
+			_, store, ctx := setupWorker(t, root)
+			var extractErr error
+			if format == "zip" {
+				archivePath := filepath.Join(root, "payload.zip")
+				var payload bytes.Buffer
+				writer := zip.NewWriter(&payload)
+				entry, err := writer.Create("escape/written.txt")
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, _ = entry.Write([]byte("outside"))
+				if err := writer.Close(); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(archivePath, payload.Bytes(), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				extractErr = extractZip(store, ctx, destination, "missing-job", archivePath)
+			} else {
+				var payload bytes.Buffer
+				writer := tar.NewWriter(&payload)
+				content := []byte("outside")
+				if err := writer.WriteHeader(&tar.Header{Name: "escape/written.txt", Mode: 0o644, Size: int64(len(content)), Typeflag: tar.TypeReg}); err != nil {
+					t.Fatal(err)
+				}
+				_, _ = writer.Write(content)
+				if err := writer.Close(); err != nil {
+					t.Fatal(err)
+				}
+				extractErr = extractTarFromReader(store, ctx, bytes.NewReader(payload.Bytes()), destination, "missing-job")
+			}
+
+			if !errors.Is(extractErr, errUnsafeExtractPath) {
+				t.Fatalf("expected unsafe extraction path error, got %v", extractErr)
+			}
+			if _, err := os.Stat(filepath.Join(outside, "written.txt")); !errors.Is(err, os.ErrNotExist) {
+				t.Fatalf("archive wrote outside destination: %v", err)
+			}
+		})
 	}
 }
 

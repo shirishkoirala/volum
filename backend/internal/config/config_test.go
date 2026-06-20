@@ -129,7 +129,7 @@ func TestDedupeRoots(t *testing.T) {
 
 func TestExcludedMountPath(t *testing.T) {
 	cases := []struct {
-		path  string
+		path     string
 		excluded bool
 	}{
 		{"", true},
@@ -197,5 +197,15 @@ func TestLoadRequiresSessionSecretWhenAuthRequired(t *testing.T) {
 	t.Setenv("VOLUM_SESSION_SECRET", "session-secret-012345678901234567890123456")
 	if _, err := Load(); err != nil {
 		t.Fatalf("expected auth-required config to load, got %v", err)
+	}
+}
+
+func TestLoadRejectsDiscoveryWithoutAuthentication(t *testing.T) {
+	t.Setenv("VOLUM_ROOTS", t.TempDir())
+	t.Setenv("VOLUM_DISCOVER_ROOTS", "true")
+	t.Setenv("VOLUM_INCLUDE_ROOT", "false")
+	t.Setenv("VOLUM_AUTH_REQUIRED", "false")
+	if _, err := Load(); err == nil {
+		t.Fatal("expected discovered roots without authentication to be rejected")
 	}
 }

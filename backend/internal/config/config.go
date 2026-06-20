@@ -10,13 +10,13 @@ import (
 )
 
 type Config struct {
-	Roots         []security.Root
-	DB            string
-	Port          string
-	SessionSecret string
-	AuthRequired  bool
-	HostRoot      string
-	PublicURL     string
+	Roots          []security.Root
+	DB             string
+	Port           string
+	SessionSecret  string
+	AuthRequired   bool
+	HostRoot       string
+	PublicURL      string
 	BootstrapToken string
 }
 
@@ -57,8 +57,8 @@ func Load() (Config, error) {
 
 	secret := strings.TrimSpace(cfg.SessionSecret)
 
-	if includeRoot && !cfg.AuthRequired {
-		return Config{}, errors.New("VOLUM_AUTH_REQUIRED must be true when VOLUM_INCLUDE_ROOT is enabled")
+	if (includeRoot || discoverRoots) && !cfg.AuthRequired {
+		return Config{}, errors.New("VOLUM_AUTH_REQUIRED must be true when root exposure or discovery is enabled")
 	}
 
 	if cfg.AuthRequired && secret == "" {
@@ -135,8 +135,6 @@ func parseRoots(value, hostRoot string) ([]security.Root, error) {
 	}
 	return roots, nil
 }
-
-
 
 func parseBool(value string) bool {
 	switch strings.ToLower(strings.TrimSpace(value)) {
