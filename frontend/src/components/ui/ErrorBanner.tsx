@@ -19,7 +19,7 @@ export function ErrorBanner({ message, onRetry, onDismiss }: ErrorBannerProps) {
           </button>
         )}
         {onDismiss && (
-          <button type="button" className={styles.dismissBtn} onClick={onDismiss}>
+          <button type="button" className={styles.dismissBtn} onClick={onDismiss} aria-label="Dismiss error">
             <Icon name="x" size={14} />
           </button>
         )}
