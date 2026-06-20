@@ -73,3 +73,29 @@ html, body, #root {
 .noWrap { white-space: nowrap; }
 .textMuted { color: var(--color-text-muted); }
 .textSecondary { color: var(--color-text-secondary); }
+
+/* Shared focus styles */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* Shared input base */
+input, select, textarea {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  min-height: 44px;
+  padding: 0 var(--space-md);
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-brand-bg);
+  outline: none;
+}

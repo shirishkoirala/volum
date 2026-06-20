@@ -17,6 +17,7 @@ import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
 import { FilesEmptyMenu } from '../components/overlay/FilesEmptyMenu';
 import { ProgressBar } from '../components/ui/ProgressBar';
+import { Skeleton } from '../components/ui/Skeleton';
 import { folderIconUrl } from '../api/icons';
 import { useWindowId, useCommandsContext } from '../contexts/WindowCommands';
 import type { FileEntry, Session } from '../api/client';
@@ -30,6 +31,9 @@ import { useDialogStack } from '../hooks/useDialogStack';
 import { useContextMenus } from '../hooks/useContextMenus';
 import { useDragDrop } from '../hooks/useDragDrop';
 import { useRubberBand } from '../hooks/useRubberBand';
+import { useLongPress } from '../hooks/useLongPress';
+import { useClickOutsideMenus } from '../hooks/useClickOutsideMenus';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { useNavStack } from '../hooks/useNavStack';
 import { usePreviewNavigation } from '../hooks/usePreviewNavigation';
 import { useShellContext } from '../contexts/ShellContext';
@@ -84,7 +88,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const fileGridRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const uploadFileInputRef = useRef<HTMLInputElement>(null);
-  const longPressTimerRef = useRef<number | null>(null);
   const longPressEntry = useRef<{ entry: FileEntry; x: number; y: number } | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -198,31 +201,38 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
 
   useEffect(() => { fileCommands.renameInputRef.current?.focus(); fileCommands.renameInputRef.current?.select(); }, [fileActions.renaming, fileCommands.renameInputRef]);
 
+  useKeyboardShortcuts({
+    '?': () => fileActions.setShortcutsOpen((p) => !p),
+    'Escape': () => {
+      if (browser.searchOpen) { browser.setSearchOpen(false); browser.setSearchResults(null); browser.setQuery(''); }
+      if (fileActions.shortcutsOpen) { fileActions.setShortcutsOpen(false); }
+    },
+  });
+
   useEffect(() => {
     const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === '?' && !(e.target instanceof HTMLInputElement)) { e.preventDefault(); fileActions.setShortcutsOpen((p) => !p); return; }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); searchRef.current?.focus(); browser.setSearchOpen(true); }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') { e.preventDefault(); fileActions.setLocationMode((v) => !v); }
-      if (e.key === 'Escape' && browser.searchOpen) { browser.setSearchOpen(false); browser.setSearchResults(null); browser.setQuery(''); }
-      if (e.key === 'Escape' && fileActions.shortcutsOpen) { fileActions.setShortcutsOpen(false); }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [browser, fileActions]);
 
-  useEffect(() => {
-    const closeMenus = () => {
-      fileActions.setContextMenu(null);
-      menus.setTrashContextMenu(null);
-      menus.setDesktopContextMenu(null);
-      menus.setFilesEmptyMenu(null);
-      menus.setTrashEmptyMenu(null);
-      menus.setJobsEmptyMenu(null);
-    };
-    window.addEventListener('click', closeMenus);
-    window.addEventListener('resize', closeMenus);
-    return () => { window.removeEventListener('click', closeMenus); window.removeEventListener('resize', closeMenus); };
+  const [menuStates, setMenuStates] = useState<Record<string, boolean>>({});
+
+  const closeAllFilesMenus = useCallback(() => {
+    fileActions.setContextMenu(null);
+    menus.setTrashContextMenu(null);
+    menus.setDesktopContextMenu(null);
+    menus.setFilesEmptyMenu(null);
+    menus.setTrashEmptyMenu(null);
+    menus.setJobsEmptyMenu(null);
   }, [fileActions, menus]);
+
+  useClickOutsideMenus(menuStates, (updater) => {
+    setMenuStates(updater);
+    closeAllFilesMenus();
+  });
 
   const handleContextMenuEvent = useCallback((entry: FileEntry, event: MouseEvent<HTMLElement>) => {
     event.preventDefault();
@@ -245,23 +255,30 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     menus.setFilesEmptyMenu({ x: event.clientX, y: event.clientY });
   }, [fileActions, menus]);
 
+  const { onTouchStart: hookTouchStart, onTouchEnd: hookTouchEnd } = useLongPress({
+    onLongPress: () => {
+      const lp = longPressEntry.current;
+      if (lp) {
+        fileActions.setContextMenu({ x: lp.x, y: lp.y, entry: lp.entry });
+        longPressEntry.current = null;
+      }
+    },
+    delay: 500,
+  });
+
   const handleEntryTouchStart = useCallback((entry: FileEntry, event: React.TouchEvent<HTMLElement>) => {
     const touch = event.touches[0]!;
     longPressEntry.current = { entry, x: touch.clientX, y: touch.clientY };
-    longPressTimerRef.current = window.setTimeout(() => {
-      const lp = longPressEntry.current;
-      if (lp) { fileActions.setContextMenu({ x: lp.x, y: lp.y, entry: lp.entry }); longPressEntry.current = null; }
-    }, 500);
-  }, [fileActions]);
+    hookTouchStart();
+  }, [hookTouchStart]);
 
   const handleEntryTouchMove = useCallback(() => {
     longPressEntry.current = null;
-    if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
   }, []);
 
   const handleEntryTouchEnd = useCallback(() => {
-    if (longPressTimerRef.current != null) { window.clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
-  }, []);
+    hookTouchEnd();
+  }, [hookTouchEnd]);
 
   const handleVisibleCountChange = useCallback((rendered: number, total: number) => {
     setVisibleCounts((current) => (
@@ -505,15 +522,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           )}
           <div className={styles.fileFrame}>
             {browser.loading ? (
-              <div className={styles.skeletonGrid}>
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <div key={i} className={styles.skeletonCard}>
-                    <div className={styles.skeletonIcon} />
-                    <div className={styles.skeletonLine} />
-                    <div className={`${styles.skeletonLine} ${styles.short}`} />
-                  </div>
-                ))}
-              </div>
+              <Skeleton variant="card" count={12} />
             ) : browser.filteredEntries.length === 0 ? (
               <div
                 className={`${styles.emptyDropZone}${dragDrop.draggingUpload ? ` ${styles.dragOver}` : ''}`}

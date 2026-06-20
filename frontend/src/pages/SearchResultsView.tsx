@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, FileIcon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
-import { Notice } from '../components/ui/shared';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
+import { Skeleton } from '../components/ui/Skeleton';
 import { ShareDialog } from '../components/overlay/ShareDialog';
 import { InfoPanel } from '../components/overlay/InfoPanel';
 import { PreviewModal } from '../components/overlay/PreviewModal';
@@ -395,21 +396,12 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
       )}
 
       {error && (
-        <Notice variant="error" className={styles.errorBanner} onDismiss={() => setError(null)}>
-          {error}
-        </Notice>
+        <ErrorBanner message={error} onDismiss={() => setError(null)} />
       )}
 
       <div className={styles.resultsArea}>
         {loading ? (
-          <div className={styles.skeletonList}>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className={styles.skeletonRow}>
-                <div className={styles.skeletonIcon} />
-                <div className={styles.skeletonLine} />
-              </div>
-            ))}
-          </div>
+          <Skeleton variant="row" count={8} />
         ) : query.trim().length < 2 ? (
           <EmptyState title="Search files" subtitle="Type at least 2 characters to search across all roots" />
         ) : results && results.length === 0 ? (

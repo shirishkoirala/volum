@@ -39,7 +39,7 @@ func (s *Store) CreateUser(ctx context.Context, username, password string, role 
 	if err != nil {
 		return nil, err
 	}
-	now := time.Now().UTC()
+	now := now()
 	id := uuid.New().String()
 	_, err = s.db.ExecContext(ctx,
 		`INSERT INTO users (id, username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
@@ -111,7 +111,7 @@ func (s *Store) UpdatePassword(ctx context.Context, id, newPassword string) erro
 	}
 	res, err := s.db.ExecContext(ctx,
 		`UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?`,
-		string(hash), time.Now().UTC(), id,
+		string(hash), now(), id,
 	)
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func (s *Store) UpdatePassword(ctx context.Context, id, newPassword string) erro
 func (s *Store) UpdateRole(ctx context.Context, id string, role Role) error {
 	res, err := s.db.ExecContext(ctx,
 		`UPDATE users SET role = ?, updated_at = ? WHERE id = ?`,
-		string(role), time.Now().UTC(), id,
+		string(role), now(), id,
 	)
 	if err != nil {
 		return err
@@ -145,7 +145,7 @@ func (s *Store) GetAvatar(ctx context.Context, id string) (*Avatar, error) {
 }
 
 func (s *Store) UpdateAvatar(ctx context.Context, id string, data []byte, mime string) (time.Time, error) {
-	updatedAt := time.Now().UTC()
+	updatedAt := now()
 	res, err := s.db.ExecContext(ctx,
 		`UPDATE users SET avatar_data = ?, avatar_mime = ?, updated_at = ? WHERE id = ?`,
 		data, mime, updatedAt, id,
@@ -160,7 +160,7 @@ func (s *Store) UpdateAvatar(ctx context.Context, id string, data []byte, mime s
 }
 
 func (s *Store) DeleteAvatar(ctx context.Context, id string) (time.Time, error) {
-	updatedAt := time.Now().UTC()
+	updatedAt := now()
 	res, err := s.db.ExecContext(ctx,
 		`UPDATE users SET avatar_data = NULL, avatar_mime = '', updated_at = ? WHERE id = ?`,
 		updatedAt, id,
@@ -203,4 +203,8 @@ func scanUserFromRows(row sqlutil.Scanner) (*UserRecord, error) {
 		return nil, err
 	}
 	return &u, nil
+}
+
+func now() time.Time {
+	return time.Now().UTC()
 }

@@ -170,8 +170,8 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-async function requestVoid(url: string, options?: RequestInit): Promise<void> {
-  await request(url, options);
+async function requestVoid<T>(path: string, options: RequestInit = {}): Promise<void> {
+  await request<T>(path, options);
 }
 
 export function getRoots() {
@@ -529,17 +529,9 @@ export function dbVacuum() {
   return request<{ status: string }>('/api/db/vacuum', { method: 'POST' });
 }
 
-export function dbPruneJobs(olderThan?: string) {
-  return pruneTable('/api/db/prune-jobs', olderThan);
-}
-
-export function dbPruneAuditLogs(olderThan?: string) {
-  return pruneTable('/api/db/prune-audit-logs', olderThan);
-}
-
-function pruneTable(endpoint: string, olderThan?: string) {
+export function pruneTable(table: 'jobs' | 'audit-logs', olderThan?: string): Promise<{ removed: number }> {
   const params = olderThan ? `?olderThan=${encodeURIComponent(olderThan)}` : '';
-  return request<{ removed: number }>(`${endpoint}${params}`, { method: 'POST' });
+  return request<{ removed: number }>(`/api/db/prune-${table}${params}`, { method: 'POST' });
 }
 
 export type ServiceInfo = {

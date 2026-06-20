@@ -2,14 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
 import { Button, MutedText } from '../components/ui/shared';
 import { EmptyState } from '../components/ui/EmptyState';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { ServerInfo } from '../components/ui/ServerInfo';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { formatBytes } from '../utils/format';
 import {
   getStatus,
   dbVacuum,
-  dbPruneJobs,
-  dbPruneAuditLogs,
+  pruneTable,
   listUsers,
   createUser,
   deleteUser,
@@ -18,13 +19,13 @@ import {
   deleteProfileAvatar,
   profileAvatarUrl,
   uploadProfileAvatar,
-  type StatusResponse,
   type RootEntry,
   type Session,
   type UserInfo,
 } from '../api/client';
 import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
+import { Skeleton } from '../components/ui/Skeleton';
 import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
@@ -69,8 +70,7 @@ export function SettingsPanel({
   onRemoveService,
   onReorderServices,
 }: SettingsPanelProps) {
-  const [status, setStatus] = useState<StatusResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: status, loading, error: statusError, refresh: loadStatus } = useAsyncData(() => getStatus());
   const [maintenanceMsg, setMaintenanceMsg] = useState<string | null>(null);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
   const [maintenanceBusy, setMaintenanceBusy] = useState<string | null>(null);
@@ -133,18 +133,6 @@ export function SettingsPanel({
       setAvatarBusy(false);
     }
   };
-
-  const loadStatus = useCallback(() => {
-    setLoading(true);
-    getStatus()
-      .then(setStatus)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    loadStatus();
-  }, [loadStatus]);
 
   const loadUsers = useCallback(() => {
     setUsersLoading(true);
@@ -236,7 +224,7 @@ export function SettingsPanel({
     setMaintenanceMsg(null);
     setMaintenanceError(null);
     try {
-      const result = await dbPruneJobs();
+      const result = await pruneTable('jobs');
       setMaintenanceMsg(`Pruned ${result.removed} old transfer records.`);
       loadStatus();
     } catch (err) {
@@ -251,7 +239,7 @@ export function SettingsPanel({
     setMaintenanceMsg(null);
     setMaintenanceError(null);
     try {
-      const result = await dbPruneAuditLogs();
+      const result = await pruneTable('audit-logs');
       setMaintenanceMsg(`Pruned ${result.removed} old audit log entries.`);
       loadStatus();
     } catch (err) {
@@ -273,12 +261,10 @@ export function SettingsPanel({
     <>
       {loading && !status ? (
         <div className={styles.settingsSkeleton}>
-          <div className={styles.skeletonBlock} />
-          <div className={styles.skeletonBlock} />
-          <div className={`${styles.skeletonBlock} ${styles.short}`} />
+          <Skeleton variant="block" count={3} />
         </div>
       ) : !status ? (
-        <p><MutedText>Failed to load status. <Button variant="link" onClick={loadStatus}>Retry</Button></MutedText></p>
+            <ErrorBanner message={statusError || 'Failed to load status.'} onRetry={loadStatus} />
       ) : (
         <>
           {(!filterQuery.trim() ? activeCategory === 'general' : filteredCategories.some((c) => c.id === 'general')) && (
@@ -490,7 +476,7 @@ export function SettingsPanel({
                   )}
                   {usersLoading && <MutedText>Loading...</MutedText>}
                   {usersError && (
-                    <p><MutedText>Error: {usersError}. <Button variant="link" onClick={loadUsers}>Retry</Button></MutedText></p>
+                    <ErrorBanner message={usersError} onRetry={loadUsers} />
                   )}
                   {users && (
                     <div className={styles.userList}>

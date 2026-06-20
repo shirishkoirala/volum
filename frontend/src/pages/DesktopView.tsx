@@ -5,6 +5,7 @@ import { preferencesIconUrl, jobsIconUrl, multidiskIconUrl, folderBookmarksIconU
 import type { TrashEntry, Job } from '../api/client';
 import { countActiveTransfers } from '../utils/jobs';
 import type { ServiceHealthResult, ServiceShortcut } from '../utils/services';
+import { useLongPress } from '../hooks/useLongPress';
 import styles from './DesktopView.module.css';
 
 type DesktopViewProps = {
@@ -251,35 +252,32 @@ export function DesktopView({
   }, []);
 
   // ── Touch long-press context menu ────────────────────────
-  const longPressTimerRef = useRef<number | null>(null);
   const longPressItemRef = useRef<{ item: DesktopIconItem; x: number; y: number } | null>(null);
 
-  const handleItemTouchStart = useCallback((item: DesktopIconItem, event: React.TouchEvent) => {
-    const touch = event.touches[0]!;
-    longPressItemRef.current = { item, x: touch.clientX, y: touch.clientY };
-    longPressTimerRef.current = window.setTimeout(() => {
+  const { onTouchStart: hookTouchStart, onTouchEnd: hookTouchEnd } = useLongPress({
+    onLongPress: () => {
       const lp = longPressItemRef.current;
       if (lp) {
         longPressItemRef.current = null;
         onItemContextMenu(lp.item, { clientX: lp.x, clientY: lp.y, preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.MouseEvent<HTMLElement>);
       }
-    }, 500);
-  }, [onItemContextMenu]);
+    },
+    delay: 500,
+  });
+
+  const handleItemTouchStart = useCallback((item: DesktopIconItem, event: React.TouchEvent) => {
+    const touch = event.touches[0]!;
+    longPressItemRef.current = { item, x: touch.clientX, y: touch.clientY };
+    hookTouchStart();
+  }, [hookTouchStart]);
 
   const handleItemTouchMove = useCallback(() => {
     longPressItemRef.current = null;
-    if (longPressTimerRef.current != null) {
-      window.clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
   }, []);
 
   const handleItemTouchEnd = useCallback(() => {
-    if (longPressTimerRef.current != null) {
-      window.clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
+    hookTouchEnd();
+  }, [hookTouchEnd]);
 
   return (
     <div

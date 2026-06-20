@@ -205,7 +205,7 @@ func (hc *HealthChecker) CheckOne(ctx context.Context, svc ServiceRecord) Servic
 	result := ServiceHealthResult{
 		ServiceID: svc.ID,
 		Status:    "unhealthy",
-		CheckedAt: time.Now().UTC().Format(time.RFC3339),
+		CheckedAt: now().Format(time.RFC3339),
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, svc.HealthURL, nil)
@@ -230,3 +230,5 @@ func (hc *HealthChecker) CheckOne(ctx context.Context, svc ServiceRecord) Servic
 	}
 	return result
 }
+
+

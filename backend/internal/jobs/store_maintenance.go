@@ -11,7 +11,7 @@ func (s *Store) Vacuum(ctx context.Context) error {
 }
 
 func (s *Store) PruneJobs(ctx context.Context, olderThan time.Duration) (int64, error) {
-	cutoff := time.Now().UTC().Add(-olderThan)
+	cutoff := now().Add(-olderThan)
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
@@ -39,10 +39,12 @@ func (s *Store) PruneJobs(ctx context.Context, olderThan time.Duration) (int64, 
 }
 
 func (s *Store) PruneAuditLogs(ctx context.Context, olderThan time.Duration) (int64, error) {
-	cutoff := time.Now().UTC().Add(-olderThan)
+	cutoff := now().Add(-olderThan)
 	result, err := s.db.ExecContext(ctx, `DELETE FROM audit_logs WHERE created_at < ?`, cutoff)
 	if err != nil {
 		return 0, err
 	}
 	return result.RowsAffected()
 }
+
+

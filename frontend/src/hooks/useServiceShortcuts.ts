@@ -1,46 +1,44 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { listServices, listServiceHealth, createService, updateService as apiUpdateService, deleteService, reorderServices as apiReorderServices } from '../api/client';
 import type { ServiceHealthResult, ServiceShortcut } from '../utils/services';
 
 export function useServiceShortcuts() {
   const [services, setServices] = useState<ServiceShortcut[]>([]);
   const [health, setHealth] = useState<Record<string, ServiceHealthResult>>({});
-  const [loading, setLoading] = useState(true);
+
+  const { data, loading } = useAsyncData(() => listServices());
 
   useEffect(() => {
-    listServices()
-      .then(data => {
-        const mapped: ServiceShortcut[] = data.map(s => ({
-          id: s.id,
-          name: s.name,
-          url: s.url,
-          iconUrl: s.iconUrl || undefined,
-          healthUrl: s.healthUrl || undefined,
-          description: s.description || undefined,
-          openMode: s.openMode === 'tab' ? 'tab' : 'embed',
-          lastHealthStatus: s.lastHealthStatus || undefined,
-          lastHealthCheckedAt: s.lastHealthCheckedAt || undefined,
-          lastHealthStatusCode: s.lastHealthStatusCode || undefined,
-          lastHealthError: s.lastHealthError || undefined,
-        }));
-        setServices(mapped);
-        const healthMap: Record<string, ServiceHealthResult> = {};
-        for (const svc of mapped) {
-          if (svc.lastHealthStatus) {
-            healthMap[svc.id] = {
-              serviceId: svc.id,
-              status: svc.lastHealthStatus as ServiceHealthResult['status'],
-              checkedAt: svc.lastHealthCheckedAt ?? '',
-              statusCode: svc.lastHealthStatusCode,
-              error: svc.lastHealthError,
-            };
-          }
-        }
-        setHealth(healthMap);
-      })
-      .catch(() => setServices([]))
-      .finally(() => setLoading(false));
-  }, []);
+    if (!data) return;
+    const mapped: ServiceShortcut[] = data.map(s => ({
+      id: s.id,
+      name: s.name,
+      url: s.url,
+      iconUrl: s.iconUrl || undefined,
+      healthUrl: s.healthUrl || undefined,
+      description: s.description || undefined,
+      openMode: s.openMode === 'tab' ? 'tab' : 'embed',
+      lastHealthStatus: s.lastHealthStatus || undefined,
+      lastHealthCheckedAt: s.lastHealthCheckedAt || undefined,
+      lastHealthStatusCode: s.lastHealthStatusCode || undefined,
+      lastHealthError: s.lastHealthError || undefined,
+    }));
+    setServices(mapped);
+    const healthMap: Record<string, ServiceHealthResult> = {};
+    for (const svc of mapped) {
+      if (svc.lastHealthStatus) {
+        healthMap[svc.id] = {
+          serviceId: svc.id,
+          status: svc.lastHealthStatus as ServiceHealthResult['status'],
+          checkedAt: svc.lastHealthCheckedAt ?? '',
+          statusCode: svc.lastHealthStatusCode,
+          error: svc.lastHealthError,
+        };
+      }
+    }
+    setHealth(healthMap);
+  }, [data]);
 
   const refreshHealth = useCallback(async () => {
     const data = await listServiceHealth();

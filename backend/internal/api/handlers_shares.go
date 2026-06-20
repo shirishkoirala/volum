@@ -84,7 +84,7 @@ func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
 	}
 	if share.ExpiresAt != nil {
 		expires, err := time.Parse(time.RFC3339, *share.ExpiresAt)
-		if err == nil && time.Now().UTC().After(expires) {
+		if err == nil && now().After(expires) {
 			writeJSON(w, http.StatusGone, map[string]string{"error": "share has expired"})
 			return
 		}
@@ -127,4 +127,8 @@ func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(realPath)))
 	w.Header().Set("Content-Type", "application/octet-stream")
 	http.ServeFile(w, r, realPath)
+}
+
+func now() time.Time {
+	return time.Now().UTC()
 }

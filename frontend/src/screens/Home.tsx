@@ -38,6 +38,8 @@ import { useDesktopActions } from '../hooks/useDesktopActions';
 import { useWorkspaceOpeners } from '../hooks/useWorkspaceOpeners';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
+import { useClickOutsideMenus } from '../hooks/useClickOutsideMenus';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { usePreviewNavigation } from '../hooks/usePreviewNavigation';
 import { useWindowManager, type WindowState } from '../contexts/WindowManager';
 import { CommandsContext, type WindowCommands } from '../contexts/WindowCommands';
@@ -294,26 +296,24 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
 
   useEffect(() => { fileCommands.renameInputRef.current?.focus(); fileCommands.renameInputRef.current?.select(); }, [fileActions.renaming, fileCommands.renameInputRef]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === '?' && !(e.target instanceof HTMLInputElement)) { e.preventDefault(); fileActions.setShortcutsOpen((p) => !p); }
-      if (e.key === 'Escape' && fileActions.shortcutsOpen) { fileActions.setShortcutsOpen(false); }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fileActions]);
+  useKeyboardShortcuts({
+    '?': () => fileActions.setShortcutsOpen((p) => !p),
+    'Escape': () => { if (fileActions.shortcutsOpen) fileActions.setShortcutsOpen(false); },
+  });
 
-  useEffect(() => {
-    const closeMenus = () => {
-      menus.setTrashContextMenu(null);
-      menus.setDesktopContextMenu(null);
-      menus.setTrashEmptyMenu(null);
-      menus.setJobsEmptyMenu(null);
-    };
-    window.addEventListener('click', closeMenus);
-    window.addEventListener('resize', closeMenus);
-    return () => { window.removeEventListener('click', closeMenus); window.removeEventListener('resize', closeMenus); };
+  const [homeMenuStates, setHomeMenuStates] = useState<Record<string, boolean>>({});
+
+  const closeAllHomeMenus = useCallback(() => {
+    menus.setTrashContextMenu(null);
+    menus.setDesktopContextMenu(null);
+    menus.setTrashEmptyMenu(null);
+    menus.setJobsEmptyMenu(null);
   }, [menus]);
+
+  useClickOutsideMenus(homeMenuStates, (updater) => {
+    setHomeMenuStates(updater);
+    closeAllHomeMenus();
+  });
 
   useEffect(() => { if (typeof Notification !== 'undefined' && Notification.permission === 'default') void Notification.requestPermission(); }, []);
 
