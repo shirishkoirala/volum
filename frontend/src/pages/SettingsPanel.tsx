@@ -10,8 +10,7 @@ import { formatBytes } from '../utils/format';
 import {
   getStatus,
   dbVacuum,
-  dbPruneJobs,
-  dbPruneAuditLogs,
+  pruneTable,
   listUsers,
   createUser,
   deleteUser,
@@ -26,6 +25,7 @@ import {
 } from '../api/client';
 import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
+import { Skeleton } from '../components/ui/Skeleton';
 import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
@@ -224,7 +224,7 @@ export function SettingsPanel({
     setMaintenanceMsg(null);
     setMaintenanceError(null);
     try {
-      const result = await dbPruneJobs();
+      const result = await pruneTable('jobs');
       setMaintenanceMsg(`Pruned ${result.removed} old transfer records.`);
       loadStatus();
     } catch (err) {
@@ -239,7 +239,7 @@ export function SettingsPanel({
     setMaintenanceMsg(null);
     setMaintenanceError(null);
     try {
-      const result = await dbPruneAuditLogs();
+      const result = await pruneTable('audit-logs');
       setMaintenanceMsg(`Pruned ${result.removed} old audit log entries.`);
       loadStatus();
     } catch (err) {
@@ -261,9 +261,7 @@ export function SettingsPanel({
     <>
       {loading && !status ? (
         <div className={styles.settingsSkeleton}>
-          <div className={styles.skeletonBlock} />
-          <div className={styles.skeletonBlock} />
-          <div className={`${styles.skeletonBlock} ${styles.short}`} />
+          <Skeleton variant="block" count={3} />
         </div>
       ) : !status ? (
             <ErrorBanner message={statusError || 'Failed to load status.'} onRetry={loadStatus} />

@@ -17,6 +17,7 @@ import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
 import { FilesEmptyMenu } from '../components/overlay/FilesEmptyMenu';
 import { ProgressBar } from '../components/ui/ProgressBar';
+import { Skeleton } from '../components/ui/Skeleton';
 import { folderIconUrl } from '../api/icons';
 import { useWindowId, useCommandsContext } from '../contexts/WindowCommands';
 import type { FileEntry, Session } from '../api/client';
@@ -521,15 +522,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           )}
           <div className={styles.fileFrame}>
             {browser.loading ? (
-              <div className={styles.skeletonGrid}>
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <div key={i} className={styles.skeletonCard}>
-                    <div className={styles.skeletonIcon} />
-                    <div className={styles.skeletonLine} />
-                    <div className={`${styles.skeletonLine} ${styles.short}`} />
-                  </div>
-                ))}
-              </div>
+              <Skeleton variant="card" count={12} />
             ) : browser.filteredEntries.length === 0 ? (
               <div
                 className={`${styles.emptyDropZone}${dragDrop.draggingUpload ? ` ${styles.dragOver}` : ''}`}

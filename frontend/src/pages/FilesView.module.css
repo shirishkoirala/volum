@@ -49,54 +49,6 @@
   margin-bottom: var(--space-md);
 }
 
-.skeletonGrid {
-  display: grid;
-  flex: 1;
-  gap: 18px 24px;
-  grid-template-columns: repeat(auto-fill, 124px);
-  justify-content: start;
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--space-lg);
-}
-
-.skeletonCard {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  min-height: 132px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-sm);
-}
-
-.skeletonIcon {
-  background: var(--color-border-row);
-  border-radius: var(--radius-md);
-  height: 52px;
-  width: 52px;
-}
-
-.skeletonLine {
-  background: var(--color-border-row);
-  border-radius: var(--radius-pill);
-  height: 10px;
-  width: 70%;
-}
-
-.skeletonLine.short {
-  width: 40%;
-}
-
-.skeletonCard,
-.skeletonIcon,
-.skeletonLine {
-  animation: var(--anim-skeleton);
-}
-
 .emptyDropZone {
   align-items: center;
   display: flex;
@@ -178,17 +130,6 @@
   .errorBanner {
     margin-bottom: var(--space-sm);
     padding: var(--space-sm) var(--space-md);
-  }
-
-  .skeletonGrid {
-    gap: 14px;
-    grid-template-columns: repeat(auto-fill, 108px);
-    padding: var(--space-md);
-  }
-
-  .skeletonCard {
-    min-height: 122px;
-    padding: var(--space-sm);
   }
 
   .emptyDropZone {

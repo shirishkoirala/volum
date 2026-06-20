@@ -6,6 +6,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { getShares, deleteShare, shareUrl, type Share } from '../../api/client';
 import { ConfirmDialog } from './Dialogs';
+import { Skeleton } from '../ui/Skeleton';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import styles from './ShareManager.module.css';
 
@@ -61,16 +62,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
               <span>Status</span>
               <span>Actions</span>
             </div>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className={styles.skeletonRow}>
-                <div className={`${styles.skeletonCell} ${styles.skelW60}`} />
-                <div className={`${styles.skeletonCell} ${styles.skelW40}`} />
-                <div className={`${styles.skeletonCell} ${styles.skelW50}`} />
-                <div className={`${styles.skeletonCell} ${styles.skelW30}`} />
-                <div className={`${styles.skeletonCell} ${styles.skelW40}`} />
-                <div className={`${styles.skeletonCell} ${styles.skelW50}`} />
-              </div>
-            ))}
+            <Skeleton variant="row" count={3} />
           </div>
         ) : error || deleteError ? (
           <ErrorBanner message={error || deleteError || ''} onRetry={() => { loadShares(); setDeleteError(null); }} />

@@ -147,7 +147,6 @@
   flex: 1;
   font-size: var(--font-size-md);
   min-width: 0;
-  outline: 0;
 }
 
 .loginField input::placeholder {
@@ -218,19 +217,12 @@
 .loginPanel > input {
   background: var(--color-window);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  font-size: var(--font-size-md);
   min-height: 48px;
-  outline: 0;
-  padding: 0 var(--space-md);
   transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .loginPanel > input:focus {
   background: var(--color-surface);
-  border-color: var(--color-brand);
-  box-shadow: 0 0 0 3px var(--color-brand-bg);
 }
 
 .loginPanel > input::placeholder {

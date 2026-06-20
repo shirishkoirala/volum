@@ -1,0 +1,33 @@
+.skeleton {
+  animation: var(--anim-skeleton);
+  background: color-mix(in srgb, var(--color-border-light) 30%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+.card {
+  border-radius: var(--radius-md);
+  height: 120px;
+  width: 100%;
+}
+
+.row {
+  border-radius: var(--radius-sm);
+  height: 20px;
+  width: 100%;
+}
+
+.block {
+  border-radius: var(--radius-md);
+  height: 40px;
+  width: 100%;
+  margin-bottom: var(--space-sm);
+}
+
+.block:last-child {
+  margin-bottom: 0;
+}
+
+.line {
+  border-radius: 4px;
+  height: 14px;
+}
