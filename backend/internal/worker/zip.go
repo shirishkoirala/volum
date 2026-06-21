@@ -71,22 +71,26 @@ func extractZip(store *jobs.Store, ctx context.Context, dest, jobID, source stri
 
 	var totalBytes int64
 	for _, file := range reader.File {
-		totalBytes += int64(file.UncompressedSize64)
-	}
-	if totalBytes > maxExtractTotalBytes {
-		return fmt.Errorf("%w: declared %d bytes", errExtractLimit, totalBytes)
+		if file.UncompressedSize64 > uint64(maxExtractPerFile) {
+			return fmt.Errorf("archive entry %s exceeds per-file limit of %d bytes", file.Name, maxExtractPerFile)
+		}
+		size := int64(file.UncompressedSize64)
+		if totalBytes > maxExtractTotalBytes-size {
+			return fmt.Errorf("%w: declared size exceeds %d bytes", errExtractLimit, maxExtractTotalBytes)
+		}
+		totalBytes += size
 	}
 	if len(reader.File) > maxExtractEntries {
 		return fmt.Errorf("%w: declared %d entries", errExtractLimit, len(reader.File))
+	}
+	if err := ensureExtractSpace(dest, totalBytes); err != nil {
+		return err
 	}
 	_ = store.SetJobTotals(ctx, jobID, totalBytes, int64(len(reader.File)))
 
 	var processedBytes int64
 	var processedItems int64
 	for _, file := range reader.File {
-		if file.UncompressedSize64 > maxExtractPerFile {
-			return fmt.Errorf("archive entry %s exceeds per-file limit of %d bytes", file.Name, maxExtractPerFile)
-		}
 		parts := strings.Split(filepath.ToSlash(file.Name), "/")
 		if len(parts) > maxExtractPathDepth {
 			return fmt.Errorf("archive entry %s exceeds maximum path depth of %d", file.Name, maxExtractPathDepth)
@@ -122,11 +126,14 @@ func extractZip(store *jobs.Store, ctx context.Context, dest, jobID, source stri
 			src.Close()
 			return err
 		}
-		copied, err := io.Copy(out, src)
+		copied, err := io.Copy(out, io.LimitReader(src, maxExtractPerFile+1))
 		src.Close()
 		out.Close()
 		if err != nil {
 			return err
+		}
+		if copied > maxExtractPerFile || processedBytes+copied > maxExtractTotalBytes {
+			return fmt.Errorf("%w: archive data exceeded declared extraction limits", errExtractLimit)
 		}
 		processedBytes += copied
 		processedItems++

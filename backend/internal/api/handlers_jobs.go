@@ -344,7 +344,7 @@ func (s *Server) handleResolveConflicts(w http.ResponseWriter, r *http.Request) 
 			_ = s.jobs.CreateAuditLog(r.Context(), "conflict_skip", item.SourcePath, details)
 
 		case "overwrite":
-			if err := os.RemoveAll(item.DestinationPath); err != nil {
+			if err := s.guard.RemoveAll(item.DestinationPath); err != nil {
 				writeError(w, err)
 				return
 			}

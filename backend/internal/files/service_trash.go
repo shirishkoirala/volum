@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"syscall"
 	"time"
 
 	"github.com/google/uuid"
@@ -39,10 +40,10 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 	id := uuid.NewString()
 	trashFiles := filepath.Join(trashRoot, "files")
 	trashMeta := filepath.Join(trashRoot, "meta")
-	if err := os.MkdirAll(trashFiles, 0o755); err != nil {
+	if err := s.guard.MkdirAll(trashFiles, 0o755); err != nil {
 		return TrashEntry{}, err
 	}
-	if err := os.MkdirAll(trashMeta, 0o755); err != nil {
+	if err := s.guard.MkdirAll(trashMeta, 0o755); err != nil {
 		return TrashEntry{}, err
 	}
 
@@ -62,11 +63,11 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 		RootPath:     root.Path,
 	}
 
-	if err := moveAcrossFS(resolved, trashPath); err != nil {
+	if err := s.moveAcrossFS(resolved, trashPath); err != nil {
 		return TrashEntry{}, err
 	}
-	if err := writeTrashEntry(filepath.Join(trashMeta, id+".json"), entry); err != nil {
-		_ = moveAcrossFS(trashPath, resolved)
+	if err := s.writeTrashEntry(filepath.Join(trashMeta, id+".json"), entry); err != nil {
+		_ = s.moveAcrossFS(trashPath, resolved)
 		return TrashEntry{}, err
 	}
 	return entry, nil
@@ -120,13 +121,13 @@ func (s *Service) RestoreTrash(id string) (Entry, error) {
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return Entry{}, err
 	}
-	if err := os.MkdirAll(filepath.Dir(originalPath), 0o755); err != nil {
+	if err := s.guard.MkdirAll(filepath.Dir(originalPath), 0o755); err != nil {
 		return Entry{}, err
 	}
-	if err := moveAcrossFS(entry.TrashPath, originalPath); err != nil {
+	if err := s.moveAcrossFS(entry.TrashPath, originalPath); err != nil {
 		return Entry{}, err
 	}
-	if err := os.Remove(metaPath); err != nil {
+	if err := s.guard.Remove(metaPath); err != nil {
 		return Entry{}, err
 	}
 	return s.entryFromPath(originalPath)
@@ -137,10 +138,10 @@ func (s *Service) DeleteTrash(id string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.RemoveAll(entry.TrashPath); err != nil {
+	if err := s.guard.RemoveAll(entry.TrashPath); err != nil {
 		return err
 	}
-	return os.Remove(metaPath)
+	return s.guard.Remove(metaPath)
 }
 
 func (s *Service) trashEntryByID(id string) (TrashEntry, string, error) {
@@ -176,40 +177,45 @@ func readTrashEntry(path string) (TrashEntry, error) {
 	return entry, nil
 }
 
-func writeTrashEntry(path string, entry TrashEntry) error {
+func (s *Service) writeTrashEntry(path string, entry TrashEntry) error {
 	data, err := json.MarshalIndent(entry, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0o644)
+	file, err := s.guard.CreateFile(path, 0o644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = file.Write(data)
+	return err
 }
 
-func moveAcrossFS(src, dst string) error {
-	err := os.Rename(src, dst)
+func (s *Service) moveAcrossFS(src, dst string) error {
+	err := s.guard.RenameNoReplace(src, dst)
 	if err == nil {
 		return nil
 	}
-	var linkErr *os.LinkError
-	if !errors.As(err, &linkErr) {
+	if !errors.Is(err, syscall.EXDEV) {
 		return err
 	}
-	if err := copyPath(src, dst); err != nil {
+	if err := s.copyPath(src, dst); err != nil {
 		return err
 	}
-	return os.RemoveAll(src)
+	return s.guard.RemoveAll(src)
 }
 
-func copyFile(src, dst string) error {
+func (s *Service) copyFile(src, dst string) error {
 	sf, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer sf.Close()
 
-	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+	if err := s.guard.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return err
 	}
-	df, err := os.Create(dst)
+	df, err := s.guard.CreateFile(dst, 0o644)
 	if err != nil {
 		return err
 	}
@@ -221,16 +227,16 @@ func copyFile(src, dst string) error {
 	return df.Sync()
 }
 
-func copyPath(src, dst string) error {
+func (s *Service) copyPath(src, dst string) error {
 	info, err := os.Stat(src)
 	if err != nil {
 		return err
 	}
 	if !info.IsDir() {
-		return copyFile(src, dst)
+		return s.copyFile(src, dst)
 	}
 
-	if err := os.MkdirAll(dst, 0o755); err != nil {
+	if err := s.guard.MkdirAll(dst, 0o755); err != nil {
 		return err
 	}
 	return filepath.WalkDir(src, func(path string, d os.DirEntry, walkErr error) error {
@@ -243,9 +249,9 @@ func copyPath(src, dst string) error {
 		}
 		target := filepath.Join(dst, rel)
 		if d.IsDir() {
-			return os.MkdirAll(target, 0o755)
+			return s.guard.MkdirAll(target, 0o755)
 		}
-		return copyFile(path, target)
+		return s.copyFile(path, target)
 	})
 }
 

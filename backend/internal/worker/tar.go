@@ -137,13 +137,16 @@ func extractTarFromReader(store *jobs.Store, ctx context.Context, reader io.Read
 			continue
 		}
 
-		if header.Size > maxExtractPerFile {
+		if header.Size < 0 || header.Size > maxExtractPerFile {
 			return fmt.Errorf("archive entry %s exceeds per-file limit of %d bytes", header.Name, maxExtractPerFile)
 		}
 
 		totalBytes += header.Size
 		if totalBytes > maxExtractTotalBytes {
 			return fmt.Errorf("%w: exceeded %d total bytes", errExtractLimit, maxExtractTotalBytes)
+		}
+		if err := ensureExtractSpace(dest, header.Size); err != nil {
+			return err
 		}
 
 		_ = store.SetJobTotals(ctx, jobID, totalBytes, totalItems)

@@ -84,3 +84,9 @@ func (s *Server) allowLogin(r *http.Request, username string) bool {
 func (s *Server) allowSetup(r *http.Request) bool {
 	return s.loginLimiter.allow("setup-ip:" + clientIP(r))
 }
+
+func (s *Server) allowShareUnlock(r *http.Request, token string) bool {
+	ip := clientIP(r)
+	return s.loginLimiter.allow("share-unlock-ip:"+ip) &&
+		s.loginLimiter.allow("share-unlock-pair:"+ip+":"+token)
+}

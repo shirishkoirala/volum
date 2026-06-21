@@ -28,7 +28,7 @@ function PreviewAudio({ name, src }: { name: string; src: string }) {
 }
 
 function PreviewFrame({ name, src }: { name: string; src: string }) {
-  return <iframe className={styles.previewIframe} src={src} title={name} />;
+  return <iframe className={styles.previewIframe} sandbox="" src={src} title={name} />;
 }
 
 type PreviewModalProps = {
@@ -183,7 +183,7 @@ export function PreviewContent({
           <IconButton onClick={() => onDownload?.()} title="Download">
             <Icon name="edit-download" size={18} />
           </IconButton>
-          <IconButton onClick={() => window.open(fileUrl, '_blank')} title="Open raw">
+          <IconButton onClick={() => window.open(fileUrl, '_blank', 'noopener,noreferrer')} title="Open raw">
             <Icon name="document-open" size={18} />
           </IconButton>
           {onClose && (

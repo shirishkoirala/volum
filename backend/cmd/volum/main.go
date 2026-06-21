@@ -98,6 +98,10 @@ func run(log *slog.Logger) error {
 	healthChecker := desktop.NewHealthChecker(desktopStore, log)
 	go healthChecker.Start(ctx)
 	server := api.New(filesService, jobStore, guard, authService, authStore, shareStore, desktopStore, healthChecker, cfg.DB, bootstrapToken)
+	if err := server.ConfigurePublicURL(cfg.PublicURL); err != nil {
+		return err
+	}
+	server.ConfigureAllowedHosts(cfg.AllowedHosts)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,

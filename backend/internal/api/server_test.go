@@ -14,6 +14,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -211,6 +212,39 @@ func TestHealthz(t *testing.T) {
 	}
 }
 
+func TestSecurityHeadersAndSensitiveCaching(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	resp := ts.get("/api/session")
+	if resp.Header.Get("Content-Security-Policy") == "" {
+		t.Fatal("expected Content-Security-Policy header")
+	}
+	if resp.Header.Get("Permissions-Policy") == "" {
+		t.Fatal("expected Permissions-Policy header")
+	}
+	if resp.Header.Get("Cache-Control") != "no-store" {
+		t.Fatalf("expected sensitive response to disable caching, got %q", resp.Header.Get("Cache-Control"))
+	}
+	resp.Body.Close()
+}
+
+func TestConfiguredPublicHostIsEnforced(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+	if err := ts.ConfigurePublicURL("https://volum.example.com"); err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	req.Host = "attacker.example.com"
+	w := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusMisdirectedRequest {
+		t.Fatalf("expected invalid host to return 421, got %d", w.Code)
+	}
+}
+
 func TestGetRoots(t *testing.T) {
 	ts, cleanup := setupTestServer(t)
 	defer cleanup()
@@ -273,6 +307,29 @@ func TestServiceHealthBlocksLoopback(t *testing.T) {
 	}
 	if _, ok := body[uncheckedSvc.ID]; ok {
 		t.Fatal("did not expect service without health URL in health response")
+	}
+}
+
+func TestReadonlyUserCannotMutateServices(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+	record, err := ts.authStore.CreateUser(context.Background(), "reader", "reader-password", auth.RoleReadonly)
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, _, ok := ts.auth.Login(context.Background(), record.Username, "reader-password", false)
+	if !ok {
+		t.Fatal("expected readonly login to succeed")
+	}
+
+	body := bytes.NewBufferString(`{"name":"Service","url":"https://example.com"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/services", body)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "volum_session", Value: token})
+	w := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected readonly service mutation to return 403, got %d", w.Code)
 	}
 }
 
@@ -687,6 +744,55 @@ func TestLoginRememberMeControlsCookiePersistence(t *testing.T) {
 	}
 }
 
+func TestHTTPSPublicURLSetsSecureSessionCookie(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+	if err := ts.ConfigurePublicURL("https://volum.example.com"); err != nil {
+		t.Fatal(err)
+	}
+	body := bytes.NewBufferString(`{"username":"admin","password":"adminpass"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/login", body)
+	req.Host = "volum.example.com"
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected login 200, got %d: %s", w.Code, w.Body.String())
+	}
+	found := false
+	for _, cookie := range w.Result().Cookies() {
+		if cookie.Name == "volum_session" {
+			found = true
+			if !cookie.Secure || !cookie.HttpOnly {
+				t.Fatalf("expected secure HttpOnly session cookie, got %#v", cookie)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("expected session cookie")
+	}
+}
+
+func TestLogoutRevokesExistingSession(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+	oldCookie := ts.cookie
+
+	resp := ts.post("/api/logout", nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected logout 200, got %d", resp.StatusCode)
+	}
+	resp.Body.Close()
+
+	req := httptest.NewRequest(http.MethodGet, "/api/roots", nil)
+	req.AddCookie(&http.Cookie{Name: "volum_session", Value: oldCookie})
+	w := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected old session to be revoked, got %d", w.Code)
+	}
+}
+
 func TestLoginRateLimitIgnoresForwardedFor(t *testing.T) {
 	ts, cleanup := setupTestServer(t)
 	defer cleanup()
@@ -845,6 +951,90 @@ func TestDownloadEndpoint(t *testing.T) {
 	resp.Body.Close()
 	if string(body) != "file content" {
 		t.Fatalf("expected 'file content', got %q", string(body))
+	}
+}
+
+func TestRawEndpointDoesNotRenderActiveOrUnknownContentInline(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+	for _, test := range []struct {
+		name    string
+		content string
+	}{
+		{name: "attack.html", content: `<script>fetch('/api/session')</script>`},
+		{name: "unknown.custom-extension", content: "unknown"},
+	} {
+		path := filepath.Join(ts.root, test.name)
+		if err := os.WriteFile(path, []byte(test.content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		resp := ts.get("/api/files/raw?path=" + url.QueryEscape(path))
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("expected raw response 200 for %s, got %d", test.name, resp.StatusCode)
+		}
+		if !strings.HasPrefix(resp.Header.Get("Content-Disposition"), "attachment") {
+			t.Fatalf("expected %s to be an attachment, got %q", test.name, resp.Header.Get("Content-Disposition"))
+		}
+		if resp.Header.Get("X-Content-Type-Options") != "nosniff" {
+			t.Fatalf("expected nosniff for %s", test.name)
+		}
+		resp.Body.Close()
+	}
+}
+
+func TestPasswordProtectedShareUsesUnlockCookie(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+	path := filepath.Join(ts.root, "shared.txt")
+	if err := os.WriteFile(path, []byte("shared content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	share, err := ts.shares.Create(shares.CreateRequest{Path: path, Password: "share-password"}, "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	request := func(method, target, body string, cookie *http.Cookie) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, target, strings.NewReader(body))
+		req.RemoteAddr = "192.0.2.40:1234"
+		if body != "" {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		if cookie != nil {
+			req.AddCookie(cookie)
+		}
+		w := httptest.NewRecorder()
+		ts.Handler().ServeHTTP(w, req)
+		return w
+	}
+
+	publicPath := "/api/public/" + share.Token
+	if w := request(http.MethodGet, publicPath+"?password=share-password", "", nil); w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected query-string password to be rejected, got %d", w.Code)
+	}
+	if w := request(http.MethodPost, publicPath+"/unlock", `{"password":"wrong"}`, nil); w.Code != http.StatusUnauthorized {
+		t.Fatalf("expected wrong password to return 401, got %d", w.Code)
+	}
+
+	unlock := request(http.MethodPost, publicPath+"/unlock", `{"password":"share-password"}`, nil)
+	if unlock.Code != http.StatusNoContent {
+		t.Fatalf("expected unlock to return 204, got %d: %s", unlock.Code, unlock.Body.String())
+	}
+	result := unlock.Result()
+	var accessCookie *http.Cookie
+	for _, cookie := range result.Cookies() {
+		if cookie.Name == shareAccessCookieName(share.Token) {
+			accessCookie = cookie
+		}
+	}
+	result.Body.Close()
+	if accessCookie == nil || !accessCookie.HttpOnly || accessCookie.SameSite != http.SameSiteStrictMode {
+		t.Fatalf("expected hardened share access cookie, got %#v", accessCookie)
+	}
+
+	download := request(http.MethodGet, publicPath, "", accessCookie)
+	if download.Code != http.StatusOK || download.Body.String() != "shared content" {
+		t.Fatalf("expected unlocked download, got %d: %s", download.Code, download.Body.String())
 	}
 }
 

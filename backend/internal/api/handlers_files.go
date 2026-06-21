@@ -343,7 +343,10 @@ func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
 	// but always add nosniff and a sandbox CSP for inline content.
 	ctype := mime.TypeByExtension(ext)
 	if ctype == "" {
-		ctype = "application/octet-stream"
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+		http.ServeFile(w, r, path)
+		return
 	}
 	w.Header().Set("Content-Type", ctype)
 	w.Header().Set("X-Content-Type-Options", "nosniff")

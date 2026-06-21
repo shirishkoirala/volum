@@ -1,6 +1,7 @@
 package security
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -311,5 +312,28 @@ func TestRootGuardRejectsHostMappingEscape(t *testing.T) {
 	}
 	if _, err := g.Resolve("/storage/link"); err == nil {
 		t.Fatal("expected symlink escape to be rejected")
+	}
+}
+
+func TestRootGuardCreateFileRejectsSymlinkParent(t *testing.T) {
+	root := t.TempDir()
+	outside := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(root, "escape")); err != nil {
+		t.Fatal(err)
+	}
+	guard, err := NewRootGuard([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	file, err := guard.CreateFile(filepath.Join(root, "escape", "created.txt"), 0o644)
+	if file != nil {
+		file.Close()
+	}
+	if err == nil {
+		t.Fatal("expected descriptor-relative create beneath symlink to fail")
+	}
+	if _, err := os.Stat(filepath.Join(outside, "created.txt")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected no file outside root, got %v", err)
 	}
 }

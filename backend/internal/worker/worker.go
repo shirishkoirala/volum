@@ -229,7 +229,7 @@ func (w *Worker) transferItems(ctx context.Context, job jobs.Job, source, destin
 		return nil, 0, 0, err
 	}
 	if len(items) == 0 {
-		if err := os.MkdirAll(destination, 0o755); err != nil {
+		if err := w.guard.MkdirAll(destination, 0o755); err != nil {
 			return nil, 0, 0, err
 		}
 		return nil, 0, 0, nil
@@ -345,7 +345,7 @@ func (w *Worker) planCopy(source, destination string) ([]copyItem, error) {
 		}
 		target := filepath.Join(destination, rel)
 		if entry.IsDir() {
-			return os.MkdirAll(target, 0o755)
+			return w.guard.MkdirAll(target, 0o755)
 		}
 		info, err := entry.Info()
 		if err != nil {
@@ -406,7 +406,7 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 		}
 	}
 
-	if err := os.MkdirAll(filepath.Dir(item.Temp), 0o755); err != nil {
+	if err := w.guard.MkdirAll(filepath.Dir(item.Temp), 0o755); err != nil {
 		return 0, err
 	}
 
@@ -425,7 +425,7 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 	if item.Processed == 0 {
 		flags |= os.O_TRUNC
 	}
-	temp, err := os.OpenFile(item.Temp, flags, 0o644)
+	temp, err := w.guard.OpenFile(item.Temp, flags, 0o644)
 	if err != nil {
 		return 0, err
 	}
@@ -512,13 +512,13 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 		return copied, fmt.Errorf("copy verification failed for %s: expected %d bytes, copied %d bytes", item.Source, item.Size, info.Size())
 	}
 
-	if err := os.MkdirAll(filepath.Dir(item.Destination), 0o755); err != nil {
+	if err := w.guard.MkdirAll(filepath.Dir(item.Destination), 0o755); err != nil {
 		return copied, err
 	}
-	if err := os.Rename(item.Temp, item.Destination); err != nil {
+	if err := w.guard.RenameNoReplace(item.Temp, item.Destination); err != nil {
 		return copied, err
 	}
-	_ = os.Remove(filepath.Dir(item.Temp))
+	_ = w.guard.Remove(filepath.Dir(item.Temp))
 	return copied, nil
 }
 
@@ -576,21 +576,21 @@ func (w *Worker) resolveConflictDestination(ctx context.Context, source, destina
 	}
 	if _, err := os.Stat(destination); err == nil {
 		switch policy {
-	case "ask":
-		return "", errAskDestination
-	case "skip":
-		return "", errSkipDestination
-	case "skip_identical":
-		return w.resolveSkipIdentical(ctx, source, destination)
-	case "overwrite":
-		if err := w.store.CreateAuditLog(ctx, "overwrite", destination, "removed existing destination for transfer job"); err != nil {
-			return "", err
+		case "ask":
+			return "", errAskDestination
+		case "skip":
+			return "", errSkipDestination
+		case "skip_identical":
+			return w.resolveSkipIdentical(ctx, source, destination)
+		case "overwrite":
+			if err := w.store.CreateAuditLog(ctx, "overwrite", destination, "removed existing destination for transfer job"); err != nil {
+				return "", err
+			}
+			return destination, w.guard.RemoveAll(destination)
+		case "rename":
+			return security.NextAvailablePath(destination)
 		}
-		return destination, os.RemoveAll(destination)
-	case "rename":
-		return security.NextAvailablePath(destination)
-	}
-	return "", fmt.Errorf("destination already exists: %s", destination)
+		return "", fmt.Errorf("destination already exists: %s", destination)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return "", err
 	}
@@ -631,7 +631,7 @@ func (w *Worker) finishMove(ctx context.Context, job jobs.Job, source string) er
 	if job.Type != jobs.TypeMove {
 		return nil
 	}
-	if err := os.RemoveAll(source); err != nil {
+	if err := w.guard.RemoveAll(source); err != nil {
 		return err
 	}
 	return w.store.CreateAuditLog(ctx, "move", w.publicPath(source), fmt.Sprintf("moved to %s", deref(job.DestinationPath)))
@@ -671,11 +671,11 @@ func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, erro
 			return "", err
 		}
 	}
-	if err := os.MkdirAll(filepath.Dir(archivePath), 0o755); err != nil {
+	if err := w.guard.MkdirAll(filepath.Dir(archivePath), 0o755); err != nil {
 		return "", err
 	}
 
-	archiveFile, err := os.Create(archivePath)
+	archiveFile, err := w.guard.CreateFile(archivePath, 0o644)
 	if err != nil {
 		return "", err
 	}
@@ -697,7 +697,7 @@ func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, erro
 		}
 	default:
 		archiveFile.Close()
-		os.Remove(archivePath)
+		_ = w.guard.Remove(archivePath)
 		return "", fmt.Errorf("unsupported archive format: %s (supported: .zip, .tar, .tar.gz, .tgz)", format)
 	}
 
@@ -717,7 +717,7 @@ func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, erro
 	return archivePath, nil
 }
 
-func (w *Worker) processExtract(ctx context.Context, job jobs.Job) (string, error) {
+func (w *Worker) processExtract(ctx context.Context, job jobs.Job) (result string, resultErr error) {
 	if job.SourcePath == nil || job.DestinationPath == nil {
 		return "", errors.New("extract job requires source and destination paths")
 	}
@@ -729,9 +729,28 @@ func (w *Worker) processExtract(ctx context.Context, job jobs.Job) (string, erro
 	if err != nil {
 		return "", err
 	}
-	if err := os.MkdirAll(dest, 0o755); err != nil {
+	if _, statErr := os.Stat(dest); statErr == nil {
+		dest, err = security.NextAvailablePath(dest)
+		if err != nil {
+			return "", err
+		}
+	} else if !errors.Is(statErr, os.ErrNotExist) {
+		return "", statErr
+	}
+	if err := w.guard.MkdirAll(dest, 0o755); err != nil {
 		return "", err
 	}
+	defer func() {
+		if resultErr == nil {
+			return
+		}
+		_ = w.guard.RemoveAll(dest)
+		action := "extract_failed"
+		if errors.Is(resultErr, errExtractLimit) {
+			action = "extract_rejected"
+		}
+		_ = w.store.CreateAuditLog(ctx, action, w.publicPath(dest), resultErr.Error())
+	}()
 	format := ArchiveFormat(source)
 	switch format {
 	case "zip":

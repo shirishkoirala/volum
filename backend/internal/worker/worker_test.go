@@ -317,6 +317,50 @@ func TestProcessExtractZip(t *testing.T) {
 	}
 }
 
+func TestProcessExtractCleansPartialDestinationOnFailure(t *testing.T) {
+	root := t.TempDir()
+	archivePath := filepath.Join(root, "unsafe.zip")
+	destination := filepath.Join(root, "output")
+
+	var payload bytes.Buffer
+	zw := zip.NewWriter(&payload)
+	good, err := zw.Create("good.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = good.Write([]byte("partial"))
+	bad, err := zw.Create("../escape.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = bad.Write([]byte("escape"))
+	if err := zw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(archivePath, payload.Bytes(), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	w, store, ctx := setupWorker(t, root)
+	job, err := store.Create(ctx, jobs.CreateRequest{
+		Type:            jobs.TypeExtract,
+		SourcePath:      archivePath,
+		DestinationPath: destination,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.processExtract(ctx, job); !errors.Is(err, errUnsafeExtractPath) {
+		t.Fatalf("expected unsafe path error, got %v", err)
+	}
+	if _, err := os.Stat(destination); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected failed extraction destination to be removed, got %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "escape.txt")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected no file outside extraction destination, got %v", err)
+	}
+}
+
 func TestExtractRejectsExistingDestinationSymlink(t *testing.T) {
 	for _, format := range []string{"zip", "tar"} {
 		t.Run(format, func(t *testing.T) {

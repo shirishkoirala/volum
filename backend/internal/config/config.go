@@ -18,6 +18,7 @@ type Config struct {
 	HostRoot       string
 	PublicURL      string
 	BootstrapToken string
+	AllowedHosts   string
 }
 
 func Load() (Config, error) {
@@ -53,6 +54,7 @@ func Load() (Config, error) {
 		HostRoot:       hostRoot,
 		PublicURL:      os.Getenv("VOLUM_PUBLIC_URL"),
 		BootstrapToken: os.Getenv("VOLUM_BOOTSTRAP_TOKEN"),
+		AllowedHosts:   os.Getenv("VOLUM_ALLOWED_HOSTS"),
 	}
 
 	secret := strings.TrimSpace(cfg.SessionSecret)

@@ -22,6 +22,7 @@ func validPassword(pw string) bool {
 }
 
 func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
+	sensitiveResponse(w)
 	user, ok := s.auth.UserFromRequest(r)
 
 	setupRequired := false
@@ -45,6 +46,7 @@ func (s *Server) handleSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	sensitiveResponse(w)
 	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	var req struct {
 		Username   string `json:"username"`
@@ -74,6 +76,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 			Value:    token,
 			Path:     "/",
 			HttpOnly: true,
+			Secure:   s.secureCookie(r),
 			SameSite: http.SameSiteLaxMode,
 		}
 		if req.RememberMe {
@@ -95,6 +98,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
+	sensitiveResponse(w)
 	if !s.auth.Enabled() {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "auth is not enabled"})
 		return
@@ -157,6 +161,7 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 			Value:    token,
 			Path:     "/",
 			HttpOnly: true,
+			Secure:   s.secureCookie(r),
 			SameSite: http.SameSiteLaxMode,
 			MaxAge:   60 * 60 * 24 * 7,
 		})
@@ -175,11 +180,16 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	sensitiveResponse(w)
+	if user, ok := s.auth.UserFromRequest(r); ok && user.ID != "" {
+		_ = s.authStore.BumpSessionVersion(r.Context(), user.ID)
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     "volum_session",
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
+		Secure:   s.secureCookie(r),
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   -1,
 	})

@@ -5,8 +5,10 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -139,13 +141,13 @@ func (s *Store) GetByToken(token string) (*Share, error) {
 	return &sh, nil
 }
 
-func (s *Store) IncrementDownloadCount(id string, maxDownloads *int, currentCount int) (bool, error) {
-	if maxDownloads != nil && currentCount >= *maxDownloads {
-		return false, nil
-	}
+func (s *Store) ReserveDownload(id string, at time.Time) (bool, error) {
 	res, err := s.db.Exec(
-		"UPDATE shares SET download_count = download_count + 1 WHERE id = ? AND (max_downloads IS NULL OR download_count < max_downloads)",
-		id,
+		`UPDATE shares SET download_count = download_count + 1
+		 WHERE id = ? AND enabled = 1
+		 AND (expires_at IS NULL OR julianday(expires_at) > julianday(?))
+		 AND (max_downloads IS NULL OR download_count < max_downloads)`,
+		id, at.UTC().Format(time.RFC3339),
 	)
 	if err != nil {
 		return false, err
@@ -155,6 +157,35 @@ func (s *Store) IncrementDownloadCount(id string, maxDownloads *int, currentCoun
 		return false, err
 	}
 	return affected > 0, nil
+}
+
+func AccessToken(share *Share, expiresAt time.Time) string {
+	payload := strconv.FormatInt(expiresAt.Unix(), 10)
+	mac := hmac.New(sha256.New, []byte(share.PasswordHash))
+	_, _ = mac.Write([]byte(share.Token + ":" + payload))
+	return base64.RawURLEncoding.EncodeToString([]byte(payload)) + "." + base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+}
+
+func VerifyAccessToken(share *Share, value string, at time.Time) bool {
+	payloadEncoded, signatureEncoded, ok := strings.Cut(value, ".")
+	if !ok {
+		return false
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(payloadEncoded)
+	if err != nil {
+		return false
+	}
+	expiresAt, err := strconv.ParseInt(string(payload), 10, 64)
+	if err != nil || at.Unix() > expiresAt {
+		return false
+	}
+	signature, err := base64.RawURLEncoding.DecodeString(signatureEncoded)
+	if err != nil {
+		return false
+	}
+	mac := hmac.New(sha256.New, []byte(share.PasswordHash))
+	_, _ = mac.Write([]byte(share.Token + ":" + string(payload)))
+	return hmac.Equal(signature, mac.Sum(nil))
 }
 
 func (s *Store) VerifyPassword(share *Share, password string) bool {
@@ -172,10 +203,15 @@ func (s *Store) VerifyPassword(share *Share, password string) bool {
 	}
 
 	if upgraded, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost); err == nil {
-		_, _ = s.db.Exec(
+		result, updateErr := s.db.Exec(
 			`UPDATE shares SET password_hash = ? WHERE id = ? AND password_hash = ?`,
 			string(upgraded), share.ID, share.PasswordHash,
 		)
+		if updateErr == nil {
+			if affected, rowsErr := result.RowsAffected(); rowsErr == nil && affected == 1 {
+				share.PasswordHash = string(upgraded)
+			}
+		}
 	}
 	return true
 }

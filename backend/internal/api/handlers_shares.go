@@ -1,8 +1,9 @@
 package api
 
 import (
+	"encoding/hex"
 	"encoding/json"
-	"fmt"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -13,7 +14,25 @@ import (
 	"github.com/volum-app/volum/backend/internal/shares"
 )
 
+const (
+	maxShareDownloads = 1_000_000
+	shareAccessTTL    = 15 * time.Minute
+)
+
+func validShareToken(token string) bool {
+	if len(token) != 64 {
+		return false
+	}
+	_, err := hex.DecodeString(token)
+	return err == nil
+}
+
+func shareAccessCookieName(token string) string {
+	return "volum_share_" + token[:16]
+}
+
 func (s *Server) handleCreateShare(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
 	var req shares.CreateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
@@ -35,6 +54,14 @@ func (s *Server) handleCreateShare(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.MaxDownloads != nil && *req.MaxDownloads < 1 {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "maxDownloads must be a positive number"})
+		return
+	}
+	if req.MaxDownloads != nil && *req.MaxDownloads > maxShareDownloads {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "maxDownloads is too large"})
+		return
+	}
+	if len(req.Password) > 72 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "share password must be 72 bytes or fewer"})
 		return
 	}
 	user, _ := auth.UserFromContext(r.Context())
@@ -65,8 +92,9 @@ func (s *Server) handleDeleteShare(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
+	sensitiveResponse(w)
 	token := chi.URLParam(r, "token")
-	if token == "" {
+	if !validShareToken(token) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "token is required"})
 		return
 	}
@@ -92,8 +120,8 @@ func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if share.PasswordHash != "" {
-		password := r.URL.Query().Get("password")
-		if !s.shares.VerifyPassword(share, password) {
+		cookie, err := r.Cookie(shareAccessCookieName(token))
+		if err != nil || !shares.VerifyAccessToken(share, cookie.Value, now()) {
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "password required or incorrect"})
 			return
 		}
@@ -117,7 +145,7 @@ func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
 	}
 	disableWriteDeadline(w)
 
-	ok, err := s.shares.IncrementDownloadCount(share.ID, share.MaxDownloads, share.DownloadCount)
+	ok, err := s.shares.ReserveDownload(share.ID, now())
 	if err != nil {
 		writeError(w, err)
 		return
@@ -127,9 +155,56 @@ func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(realPath)))
+	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filepath.Base(realPath)}))
 	w.Header().Set("Content-Type", "application/octet-stream")
 	http.ServeFile(w, r, realPath)
+}
+
+func (s *Server) handlePublicUnlock(w http.ResponseWriter, r *http.Request) {
+	sensitiveResponse(w)
+	token := chi.URLParam(r, "token")
+	if !validShareToken(token) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid share token"})
+		return
+	}
+	if !s.allowShareUnlock(r, token) {
+		writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "too many attempts, try again later"})
+		return
+	}
+
+	share, err := s.shares.GetByToken(token)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	if share == nil || !share.Enabled {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "share not found"})
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
+	var req struct {
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return
+	}
+	if !s.shares.VerifyPassword(share, req.Password) {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "password required or incorrect"})
+		return
+	}
+	expiresAt := now().Add(shareAccessTTL)
+	http.SetCookie(w, &http.Cookie{
+		Name:     shareAccessCookieName(token),
+		Value:    shares.AccessToken(share, expiresAt),
+		Path:     "/api/public/" + token,
+		HttpOnly: true,
+		Secure:   s.secureCookie(r),
+		SameSite: http.SameSiteStrictMode,
+		Expires:  expiresAt,
+		MaxAge:   int(shareAccessTTL.Seconds()),
+	})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func now() time.Time {

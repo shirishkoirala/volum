@@ -230,6 +230,31 @@ func (g *RootGuard) RootFor(path string) (Root, bool) {
 	return *best, true
 }
 
+func (g *RootGuard) internalRelative(path string) (Root, string, error) {
+	cleaned, err := CleanAbs(path)
+	if err != nil {
+		return Root{}, "", err
+	}
+	var best *Root
+	for _, root := range g.roots {
+		if PathInside(root.InternalPath, cleaned) && (best == nil || len(root.InternalPath) > len(best.InternalPath)) {
+			item := root
+			best = &item
+		}
+	}
+	if best == nil {
+		return Root{}, "", ErrOutsideRoots
+	}
+	rel, err := filepath.Rel(best.InternalPath, cleaned)
+	if err != nil || rel == "." {
+		return Root{}, "", ErrOutsideRoots
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return Root{}, "", ErrOutsideRoots
+	}
+	return *best, rel, nil
+}
+
 func cleanPublicInput(input string) (string, error) {
 	if strings.TrimSpace(input) == "" {
 		return "", ErrEmptyPath

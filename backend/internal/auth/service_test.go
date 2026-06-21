@@ -2,11 +2,16 @@ package auth
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/volum-app/volum/backend/internal/storage"
 )
@@ -195,6 +200,23 @@ func TestVerifyTamperedToken(t *testing.T) {
 	_, ok := s.verify(tampered)
 	if ok {
 		t.Fatal("expected verify to reject tampered token")
+	}
+}
+
+func TestVerifyRejectsExpiredToken(t *testing.T) {
+	store, ctx := setupStore(t)
+	s, _ := New(store, "secret")
+	record, err := store.CreateUser(ctx, "admin", "adminpass", RoleAdmin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().Unix()
+	payload := fmt.Sprintf("%s:%s:%d:%d:%d", record.ID, record.Role, now-3600, now-1, record.SessionVersion)
+	mac := hmac.New(sha256.New, s.secret)
+	_, _ = mac.Write([]byte(payload))
+	token := base64.RawURLEncoding.EncodeToString([]byte(payload)) + "." + base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	if _, ok := s.verify(token); ok {
+		t.Fatal("expected expired token to be rejected")
 	}
 }
 

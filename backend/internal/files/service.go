@@ -236,8 +236,11 @@ func (s *Service) CreateFile(parentPath, name string) (Entry, error) {
 		return Entry{}, err
 	}
 
-	f, err := os.Create(target)
+	f, err := s.guard.CreateFile(target, 0o644)
 	if err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return Entry{}, ErrDestinationExists
+		}
 		return Entry{}, err
 	}
 	f.Close()
@@ -268,7 +271,10 @@ func (s *Service) CreateFolder(parentPath, name string) (Entry, error) {
 		return Entry{}, err
 	}
 
-	if err := os.Mkdir(target, 0o755); err != nil {
+	if err := s.guard.Mkdir(target, 0o755); err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return Entry{}, ErrDestinationExists
+		}
 		return Entry{}, err
 	}
 	return s.entryFromPath(target)
@@ -301,7 +307,10 @@ func (s *Service) Rename(path, newName string) (Entry, error) {
 		return Entry{}, err
 	}
 
-	if err := os.Rename(source, target); err != nil {
+	if err := s.guard.RenameNoReplace(source, target); err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return Entry{}, ErrDestinationExists
+		}
 		return Entry{}, err
 	}
 	return s.entryFromPath(target)
@@ -325,7 +334,7 @@ func (s *Service) Chmod(path, mode string) (Entry, error) {
 	if err != nil {
 		return Entry{}, err
 	}
-	if err := os.Chmod(resolved, parsed); err != nil {
+	if err := s.guard.Chmod(resolved, parsed); err != nil {
 		return Entry{}, err
 	}
 	return s.entryFromPath(resolved)

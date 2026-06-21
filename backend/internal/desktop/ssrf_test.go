@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -39,5 +40,12 @@ func TestSafeDialRejectsLoopback(t *testing.T) {
 	_, err := safeDialContext(context.Background(), "tcp", "127.0.0.1:80")
 	if !errors.Is(err, errBlockedDestination) {
 		t.Fatalf("expected blocked destination error, got %v", err)
+	}
+}
+
+func TestRedirectRejectsPrivateDestination(t *testing.T) {
+	req := httptest.NewRequest("GET", "http://169.254.169.254/latest/meta-data", nil)
+	if err := redirectBlocked(req, nil); !errors.Is(err, errBlockedDestination) {
+		t.Fatalf("expected private redirect destination to be blocked, got %v", err)
 	}
 }

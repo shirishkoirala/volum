@@ -1,7 +1,10 @@
 package api
 
 import (
+	"errors"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,6 +34,36 @@ type Server struct {
 	dbPath         string
 	loginLimiter   *rateLimiter
 	bootstrapToken string
+	allowedHosts   map[string]struct{}
+	cookieSecure   bool
+}
+
+func (s *Server) ConfigurePublicURL(rawURL string) error {
+	rawURL = strings.TrimSpace(rawURL)
+	if rawURL == "" {
+		return nil
+	}
+	parsed, err := url.Parse(rawURL)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return errors.New("VOLUM_PUBLIC_URL must be an absolute http or https URL")
+	}
+	s.allowedHosts[strings.ToLower(parsed.Hostname())] = struct{}{}
+	s.cookieSecure = parsed.Scheme == "https"
+	return nil
+}
+
+func (s *Server) ConfigureAllowedHosts(value string) {
+	for _, host := range strings.Split(value, ",") {
+		host = strings.TrimSpace(strings.ToLower(host))
+		if host == "" {
+			continue
+		}
+		if parsedHost, _, err := net.SplitHostPort(host); err == nil {
+			host = parsedHost
+		}
+		host = strings.Trim(host, "[]")
+		s.allowedHosts[host] = struct{}{}
+	}
 }
 
 func New(filesService *files.Service, jobStore *jobs.Store, guard *security.RootGuard, authService *auth.Service, authSt *auth.Store, shareStore *shares.Store, desktopStore *desktop.Store, healthChecker *desktop.HealthChecker, dbPath, bootstrapToken string) *Server {
@@ -48,6 +81,7 @@ func New(filesService *files.Service, jobStore *jobs.Store, guard *security.Root
 		dbPath:         dbPath,
 		loginLimiter:   newRateLimiter(20, time.Minute),
 		bootstrapToken: bootstrapToken,
+		allowedHosts:   make(map[string]struct{}),
 	}
 	s.routes()
 	return s
@@ -61,7 +95,7 @@ func (s *Server) routes() {
 	s.router.Use(middleware.RequestID)
 	s.router.Use(middleware.Logger)
 	s.router.Use(middleware.Recoverer)
-	s.router.Use(securityHeaders)
+	s.router.Use(s.securityHeaders)
 
 	s.router.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
@@ -142,6 +176,7 @@ func (s *Server) routes() {
 	})
 
 	s.router.Get("/api/public/{token}", s.handlePublicDownload)
+	s.router.Post("/api/public/{token}/unlock", s.handlePublicUnlock)
 
 	if _, err := os.Stat("web/index.html"); err == nil {
 		fileServer := http.FileServer(http.Dir("web"))

@@ -142,4 +142,21 @@ describe('preview policy', () => {
     await user.click(screen.getByTitle('Share'));
     expect(onShare).toHaveBeenCalledOnce();
   });
+
+  it('sandboxes PDF previews', () => {
+    render(<PreviewContent entry={entry({ name: 'document.pdf' })} />);
+
+    expect(screen.getByTitle('document.pdf')).toHaveAttribute('sandbox');
+  });
+
+  it('opens raw previews without an opener reference', async () => {
+    const user = userEvent.setup();
+    const open = vi.fn();
+    vi.stubGlobal('open', open);
+    render(<PreviewContent entry={entry({ name: 'photo.jpg' })} />);
+
+    await user.click(screen.getByTitle('Open raw'));
+
+    expect(open).toHaveBeenCalledWith('/api/files/raw?path=%2Fstorage%2Ffile.txt', '_blank', 'noopener,noreferrer');
+  });
 });

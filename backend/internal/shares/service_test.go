@@ -4,7 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/volum-app/volum/backend/internal/storage"
 )
@@ -174,14 +176,15 @@ func TestDeleteShare(t *testing.T) {
 	}
 }
 
-func TestIncrementDownloadCount(t *testing.T) {
+func TestReserveDownload(t *testing.T) {
 	s := setupStore(t)
-	created, err := s.Create(CreateRequest{Path: "/mnt/data/docs"}, "admin")
+	maxDownloads := 2
+	created, err := s.Create(CreateRequest{Path: "/mnt/data/docs", MaxDownloads: &maxDownloads}, "admin")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ok, err := s.IncrementDownloadCount(created.ID, nil, 0)
+	ok, err := s.ReserveDownload(created.ID, now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,9 +197,7 @@ func TestIncrementDownloadCount(t *testing.T) {
 		t.Fatalf("expected 1 download, got %d", got.DownloadCount)
 	}
 
-	// Test that a share at max rejects the increment.
-	maxDownloads := 2
-	ok, err = s.IncrementDownloadCount(created.ID, &maxDownloads, 1)
+	ok, err = s.ReserveDownload(created.ID, now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -204,12 +205,47 @@ func TestIncrementDownloadCount(t *testing.T) {
 		t.Fatal("expected second increment to succeed")
 	}
 
-	ok, err = s.IncrementDownloadCount(created.ID, &maxDownloads, 2)
+	ok, err = s.ReserveDownload(created.ID, now())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if ok {
 		t.Fatal("expected third increment to be rejected")
+	}
+}
+
+func TestReserveDownloadRejectsExpiredOrDisabledShare(t *testing.T) {
+	s := setupStore(t)
+	expired := now().Add(-time.Minute).Format(time.RFC3339)
+	created, err := s.Create(CreateRequest{Path: "/mnt/data/docs", ExpiresAt: expired}, "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := s.ReserveDownload(created.ID, now()); err != nil || ok {
+		t.Fatalf("expected expired share reservation to fail, ok=%v err=%v", ok, err)
+	}
+
+	active, err := s.Create(CreateRequest{Path: "/mnt/data/docs"}, "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.db.Exec(`UPDATE shares SET enabled = 0 WHERE id = ?`, active.ID); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := s.ReserveDownload(active.ID, now()); err != nil || ok {
+		t.Fatalf("expected disabled share reservation to fail, ok=%v err=%v", ok, err)
+	}
+}
+
+func TestShareAccessTokenExpires(t *testing.T) {
+	share := &Share{Token: strings.Repeat("a", 64), PasswordHash: "$2a$hash"}
+	at := now()
+	token := AccessToken(share, at.Add(time.Minute))
+	if !VerifyAccessToken(share, token, at) {
+		t.Fatal("expected access token to verify before expiry")
+	}
+	if VerifyAccessToken(share, token, at.Add(2*time.Minute)) {
+		t.Fatal("expected access token to fail after expiry")
 	}
 }
 
@@ -226,7 +262,7 @@ func TestFullFlow(t *testing.T) {
 		t.Fatal("expected to find share by token")
 	}
 
-	ok, err := s.IncrementDownloadCount(created.ID, nil, 0)
+	ok, err := s.ReserveDownload(created.ID, now())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -15,7 +15,7 @@ import (
 const extractResolveFlags = unix.RESOLVE_BENEATH | unix.RESOLVE_NO_SYMLINKS
 
 func openExtractRoot(destination string) (int, error) {
-	fd, err := unix.Open(destination, unix.O_RDONLY|unix.O_DIRECTORY|unix.O_CLOEXEC|unix.O_NOFOLLOW, 0)
+	fd, err := unix.Open(destination, unix.O_PATH|unix.O_DIRECTORY|unix.O_CLOEXEC|unix.O_NOFOLLOW, 0)
 	if err != nil {
 		return -1, fmt.Errorf("open extraction destination: %w", err)
 	}
@@ -32,7 +32,7 @@ func openExtractDirs(rootFD int, parts []string) (int, error) {
 			continue
 		}
 		how := &unix.OpenHow{
-			Flags:   unix.O_RDONLY | unix.O_DIRECTORY | unix.O_CLOEXEC,
+			Flags:   unix.O_PATH | unix.O_DIRECTORY | unix.O_CLOEXEC,
 			Resolve: extractResolveFlags,
 		}
 		nextFD, openErr := unix.Openat2(currentFD, part, how)

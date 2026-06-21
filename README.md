@@ -48,6 +48,8 @@ Volum Desktop is a self-hosted web file manager for Ubuntu and Docker home serve
    VOLUM_ROOTS=/mnt/storage,/mnt/data,/opt/docker
    VOLUM_DB=/opt/docker/volum/data/volum.db
    VOLUM_PUBLIC_URL=https://volum.yourdomain.com
+   VOLUM_HOST_PATH=./storage
+   VOLUM_BIND_ADDRESS=127.0.0.1
    ```
 
 3. Start Volum:
@@ -55,11 +57,14 @@ Volum Desktop is a self-hosted web file manager for Ubuntu and Docker home serve
    docker compose up --build -d
    ```
 
-4. Open `http://your-server-ip:8090` and log in with the admin password.
+4. Open Volum through the reverse proxy configured for `VOLUM_PUBLIC_URL` and
+   use the bootstrap token from the server log to create the first administrator.
 
-For full server mode with host `/` access and automatic mounted-drive discovery, use `docker-compose.server.yml`:
+`docker-compose.server.yml` exposes only `./storage` by default. Full host `/`
+access must be selected explicitly and normally requires a privileged runtime
+user; use it only on a trusted, access-controlled server:
 ```sh
-docker compose -f docker-compose.server.yml up --build -d
+VOLUM_HOST_PATH=/ VOLUM_UID=0 VOLUM_GID=0 docker compose -f docker-compose.server.yml up --build -d
 ```
 
 ## Development
@@ -166,6 +171,11 @@ VOLUM_AUTH_REQUIRED=false            # Enable authentication
 VOLUM_SESSION_SECRET=replace-with... # HMAC session signing key
 VOLUM_BOOTSTRAP_TOKEN=               # Optional fixed first-run setup token
 VOLUM_PUBLIC_URL=                    # Public URL for share links
+VOLUM_ALLOWED_HOSTS=localhost,127.0.0.1 # Accepted request Host names
+VOLUM_HOST_PATH=./storage            # Host directory exposed to Volum; use / only deliberately
+VOLUM_BIND_ADDRESS=127.0.0.1         # Host interface used by Docker port publishing
+VOLUM_UID=1000                       # Unprivileged runtime user
+VOLUM_GID=1000                       # Unprivileged runtime group
 ```
 
 Authentication is controlled by `VOLUM_AUTH_REQUIRED`. When it is true, set a long random `VOLUM_SESSION_SECRET`; the first admin user is created from the setup screen using `VOLUM_BOOTSTRAP_TOKEN`, or the generated token printed in the server log.

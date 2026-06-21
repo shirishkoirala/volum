@@ -4,13 +4,21 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
-	"os"
 	slashpath "path"
 	"path/filepath"
 	"strings"
+
+	"github.com/volum-app/volum/backend/internal/sysutil"
 )
 
 const appBundleArchiveSuffix = ".app.zip"
+
+const (
+	maxAppBundleBytes     = int64(10 * 1024 * 1024 * 1024)
+	maxAppBundleFileBytes = int64(2 * 1024 * 1024 * 1024)
+	maxAppBundleEntries   = 100_000
+	minAppBundleFreeSpace = int64(64 * 1024 * 1024)
+)
 
 type finalizedAppBundle struct {
 	path       string
@@ -29,28 +37,28 @@ func (s *Server) finalizeAppBundleArchive(archivePath, archiveName, conflictPoli
 	appName := archiveName[:len(archiveName)-len(".zip")]
 	parentDir := filepath.Dir(archivePath)
 	tempDir := filepath.Join(parentDir, ".volum-tmp", appName+".extracting")
-	if err := os.RemoveAll(tempDir); err != nil {
+	if err := s.guard.RemoveAll(tempDir); err != nil {
 		return finalizedAppBundle{}, true, err
 	}
-	if err := os.MkdirAll(tempDir, 0o755); err != nil {
-		return finalizedAppBundle{}, true, err
-	}
-
-	if err := extractAppBundleArchive(archivePath, tempDir); err != nil {
-		_ = os.RemoveAll(tempDir)
+	if err := s.guard.MkdirAll(tempDir, 0o755); err != nil {
 		return finalizedAppBundle{}, true, err
 	}
 
-	appPath, err := resolveUploadConflict(filepath.Join(parentDir, appName), conflictPolicy)
+	if err := s.extractAppBundleArchive(archivePath, tempDir); err != nil {
+		_ = s.guard.RemoveAll(tempDir)
+		return finalizedAppBundle{}, true, err
+	}
+
+	appPath, err := s.resolveUploadConflict(filepath.Join(parentDir, appName), conflictPolicy)
 	if err != nil {
-		_ = os.RemoveAll(tempDir)
+		_ = s.guard.RemoveAll(tempDir)
 		return finalizedAppBundle{}, true, err
 	}
-	if err := os.Rename(tempDir, appPath); err != nil {
-		_ = os.RemoveAll(tempDir)
+	if err := s.guard.RenameNoReplace(tempDir, appPath); err != nil {
+		_ = s.guard.RemoveAll(tempDir)
 		return finalizedAppBundle{}, true, err
 	}
-	if err := os.Remove(archivePath); err != nil {
+	if err := s.guard.Remove(archivePath); err != nil {
 		return finalizedAppBundle{}, true, err
 	}
 
@@ -65,16 +73,40 @@ func (s *Server) finalizeAppBundleArchive(archivePath, archiveName, conflictPoli
 	}, true, nil
 }
 
-func extractAppBundleArchive(archivePath, tempDir string) error {
+func (s *Server) extractAppBundleArchive(archivePath, tempDir string) error {
 	reader, err := zip.OpenReader(archivePath)
 	if err != nil {
 		return err
 	}
 	defer reader.Close()
+	if len(reader.File) > maxAppBundleEntries {
+		return fmt.Errorf("app bundle archive exceeds %d entries", maxAppBundleEntries)
+	}
+	var totalBytes int64
+	for _, file := range reader.File {
+		if file.UncompressedSize64 > uint64(maxAppBundleFileBytes) {
+			return fmt.Errorf("app bundle entry %q exceeds %d bytes", file.Name, maxAppBundleFileBytes)
+		}
+		size := int64(file.UncompressedSize64)
+		if totalBytes > maxAppBundleBytes-size {
+			return fmt.Errorf("app bundle archive exceeds %d bytes", maxAppBundleBytes)
+		}
+		totalBytes += size
+	}
+	_, free, _, err := sysutil.DiskUsage(tempDir)
+	if err != nil {
+		return fmt.Errorf("check app bundle free space: %w", err)
+	}
+	if totalBytes > free-minAppBundleFreeSpace {
+		return fmt.Errorf("app bundle requires %d bytes with %d bytes available", totalBytes, free)
+	}
 
 	root := appBundleArchiveRoot(reader.File)
 	extracted := 0
 	for _, file := range reader.File {
+		if _, safe := cleanArchivePath(file.Name); !safe {
+			return fmt.Errorf("app bundle archive contains unsafe path %q", file.Name)
+		}
 		rel, ok := appBundleArchiveRelPath(file.Name, root)
 		if !ok {
 			continue
@@ -84,15 +116,15 @@ func extractAppBundleArchive(archivePath, tempDir string) error {
 			continue
 		}
 		if file.FileInfo().IsDir() {
-			if err := os.MkdirAll(target, 0o755); err != nil {
+			if err := s.guard.MkdirAll(target, 0o755); err != nil {
 				return err
 			}
 			continue
 		}
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		if err := s.guard.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 			return err
 		}
-		if err := writeZipFile(target, file); err != nil {
+		if err := s.writeZipFile(target, file); err != nil {
 			return err
 		}
 		extracted++
@@ -164,7 +196,7 @@ func withinDirectory(root, target string) bool {
 	return target == root || strings.HasPrefix(target, root+string(filepath.Separator))
 }
 
-func writeZipFile(target string, file *zip.File) error {
+func (s *Server) writeZipFile(target string, file *zip.File) error {
 	src, err := file.Open()
 	if err != nil {
 		return err
@@ -175,17 +207,20 @@ func writeZipFile(target string, file *zip.File) error {
 	if perm == 0 {
 		perm = 0o644
 	}
-	dst, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
+	dst, err := s.guard.CreateFile(target, perm)
 	if err != nil {
 		return err
 	}
-	_, copyErr := io.Copy(dst, src)
+	copied, copyErr := io.Copy(dst, io.LimitReader(src, maxAppBundleFileBytes+1))
 	closeErr := dst.Close()
 	if copyErr != nil {
 		return copyErr
 	}
+	if copied > maxAppBundleFileBytes {
+		return fmt.Errorf("app bundle entry %q exceeded %d bytes", file.Name, maxAppBundleFileBytes)
+	}
 	if closeErr != nil {
 		return closeErr
 	}
-	return os.Chmod(target, perm)
+	return s.guard.Chmod(target, perm)
 }
