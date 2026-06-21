@@ -54,6 +54,7 @@ export function LoginScreen({ onLoggedIn, onToggleTheme, theme }: LoginScreenPro
           <input
             aria-label="Username"
             autoComplete="username"
+            data-control="embedded"
             autoFocus
             placeholder="Username"
             type="text"
@@ -66,6 +67,7 @@ export function LoginScreen({ onLoggedIn, onToggleTheme, theme }: LoginScreenPro
           <input
             aria-label="Password"
             autoComplete="current-password"
+            data-control="embedded"
             placeholder="Password"
             type="password"
             value={password}

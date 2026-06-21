@@ -21,21 +21,21 @@ import (
 )
 
 type Server struct {
-	router         *chi.Mux
-	files          *files.Service
-	jobs           *jobs.Store
-	guard          *security.RootGuard
-	auth           *auth.Service
-	authStore      *auth.Store
-	shares         *shares.Store
-	desktop        *desktop.Store
-	healthChecker  *desktop.HealthChecker
-	startTime      time.Time
-	dbPath         string
-	loginLimiter   *rateLimiter
-	bootstrapToken string
-	allowedHosts   map[string]struct{}
-	cookieSecure   bool
+	router           *chi.Mux
+	files            *files.Service
+	jobs             *jobs.Store
+	guard            *security.RootGuard
+	auth             *auth.Service
+	authStore        *auth.Store
+	shares           *shares.Store
+	desktop          *desktop.Store
+	healthChecker    *desktop.HealthChecker
+	startTime        time.Time
+	dbPath           string
+	loginLimiter     *rateLimiter
+	bootstrapToken   string
+	allowedHosts     map[string]struct{}
+	secureCookieHost string
 }
 
 func (s *Server) ConfigurePublicURL(rawURL string) error {
@@ -47,8 +47,13 @@ func (s *Server) ConfigurePublicURL(rawURL string) error {
 	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
 		return errors.New("VOLUM_PUBLIC_URL must be an absolute http or https URL")
 	}
-	s.allowedHosts[strings.ToLower(parsed.Hostname())] = struct{}{}
-	s.cookieSecure = parsed.Scheme == "https"
+	publicHost := strings.ToLower(parsed.Hostname())
+	s.allowedHosts[publicHost] = struct{}{}
+	if parsed.Scheme == "https" {
+		s.secureCookieHost = publicHost
+	} else {
+		s.secureCookieHost = ""
+	}
 	return nil
 }
 

@@ -29,4 +29,30 @@ describe('useAsyncData', () => {
     await waitFor(() => expect(result.current.data).toBe('updated'));
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
+
+  it('does not refetch when an inline fetcher changes identity on render', async () => {
+    const fetcher = vi.fn().mockResolvedValue('data');
+    const { result, rerender } = renderHook(() => useAsyncData(() => fetcher()));
+
+    await waitFor(() => expect(result.current.data).toBe('data'));
+    rerender();
+
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('refresh uses the latest fetcher', async () => {
+    const first = vi.fn().mockResolvedValue('first');
+    const second = vi.fn().mockResolvedValue('second');
+    let fetcher = first;
+    const { result, rerender } = renderHook(() => useAsyncData(fetcher));
+
+    await waitFor(() => expect(result.current.data).toBe('first'));
+    fetcher = second;
+    rerender();
+    result.current.refresh();
+
+    await waitFor(() => expect(result.current.data).toBe('second'));
+    expect(first).toHaveBeenCalledTimes(1);
+    expect(second).toHaveBeenCalledTimes(1);
+  });
 });

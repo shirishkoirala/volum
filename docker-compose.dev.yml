@@ -9,7 +9,7 @@ services:
     environment:
       - VOLUM_ROOTS=${VOLUM_ROOTS:-/storage}
       - VOLUM_DB=${VOLUM_DB:-/data/volum.db}
-      - VOLUM_PORT=${VOLUM_PORT:-8090}
+      - VOLUM_PORT=8090
       - VOLUM_HOME=${VOLUM_HOME:-}
       - VOLUM_AUTH_REQUIRED=${VOLUM_AUTH_REQUIRED:-true}
       - VOLUM_SESSION_SECRET=${VOLUM_SESSION_SECRET:-volum-development-session-secret}
@@ -17,6 +17,8 @@ services:
       - VOLUM_INCLUDE_ROOT=false
       - VOLUM_DISCOVER_ROOTS=false
       - VOLUM_HOST_ROOT=
+      - VOLUM_PUBLIC_URL=http://localhost:8342
+      - VOLUM_ALLOWED_HOSTS=localhost,127.0.0.1,api
 
   frontend:
     image: node:22-alpine

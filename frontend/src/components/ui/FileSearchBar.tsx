@@ -28,6 +28,7 @@ export function FileSearchBar({
         <Icon name="edit-find" size={16} />
         <input
           ref={searchRef as RefObject<HTMLInputElement>}
+          data-control="embedded"
           placeholder="Search files"
           value={query}
           onFocus={() => { }}

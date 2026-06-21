@@ -773,6 +773,69 @@ func TestHTTPSPublicURLSetsSecureSessionCookie(t *testing.T) {
 	}
 }
 
+func TestHTTPSPublicURLDoesNotBreakLocalHTTPLogin(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+	if err := ts.ConfigurePublicURL("https://volum.example.com"); err != nil {
+		t.Fatal(err)
+	}
+	ts.ConfigureAllowedHosts("localhost")
+
+	body := bytes.NewBufferString(`{"username":"admin","password":"adminpass"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/login", body)
+	req.Host = "localhost:8342"
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected login 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	for _, cookie := range w.Result().Cookies() {
+		if cookie.Name == "volum_session" && cookie.Secure {
+			t.Fatalf("local HTTP session cookie must not be Secure, got %#v", cookie)
+		}
+	}
+}
+
+func TestLoginCookieAuthenticatesReloadAndProtectedRequest(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	body := bytes.NewBufferString(`{"username":"admin","password":"adminpass"}`)
+	loginReq := httptest.NewRequest(http.MethodPost, "/api/login", body)
+	loginReq.Header.Set("Content-Type", "application/json")
+	loginRecorder := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(loginRecorder, loginReq)
+	if loginRecorder.Code != http.StatusOK {
+		t.Fatalf("expected login 200, got %d: %s", loginRecorder.Code, loginRecorder.Body.String())
+	}
+
+	var sessionCookie *http.Cookie
+	for _, cookie := range loginRecorder.Result().Cookies() {
+		if cookie.Name == "volum_session" {
+			sessionCookie = cookie
+			break
+		}
+	}
+	if sessionCookie == nil {
+		t.Fatal("expected login to return a session cookie")
+	}
+
+	for _, path := range []string{"/api/session", "/api/roots"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		req.AddCookie(sessionCookie)
+		w := httptest.NewRecorder()
+		ts.Handler().ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected authenticated request to %s to return 200, got %d: %s", path, w.Code, w.Body.String())
+		}
+		if path == "/api/session" && !strings.Contains(w.Body.String(), `"authenticated":true`) {
+			t.Fatalf("expected refreshed session to remain authenticated, got %s", w.Body.String())
+		}
+	}
+}
+
 func TestLogoutRevokesExistingSession(t *testing.T) {
 	ts, cleanup := setupTestServer(t)
 	defer cleanup()

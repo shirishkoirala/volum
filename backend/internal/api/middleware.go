@@ -77,11 +77,7 @@ func (s *Server) requireAdmin(next http.Handler) http.Handler {
 
 func (s *Server) securityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		host := strings.ToLower(r.Host)
-		if parsedHost, _, err := net.SplitHostPort(host); err == nil {
-			host = parsedHost
-		}
-		host = strings.Trim(host, "[]")
+		host := requestHostname(r)
 		if len(s.allowedHosts) > 0 {
 			if _, allowed := s.allowedHosts[host]; !allowed {
 				writeJSON(w, http.StatusMisdirectedRequest, map[string]string{"error": "request host is not allowed"})
@@ -106,7 +102,15 @@ func sensitiveResponse(w http.ResponseWriter) {
 }
 
 func (s *Server) secureCookie(r *http.Request) bool {
-	return s.cookieSecure || r.TLS != nil
+	return r.TLS != nil || (s.secureCookieHost != "" && requestHostname(r) == s.secureCookieHost)
+}
+
+func requestHostname(r *http.Request) string {
+	host := strings.ToLower(r.Host)
+	if parsedHost, _, err := net.SplitHostPort(host); err == nil {
+		host = parsedHost
+	}
+	return strings.Trim(host, "[]")
 }
 
 func IsMaxBytesError(err error) bool {

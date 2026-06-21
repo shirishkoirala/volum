@@ -41,6 +41,7 @@ export function TopBarSearch({
       <input
         ref={searchRef as RefObject<HTMLInputElement>}
         aria-label="Search files"
+        data-control="embedded"
         placeholder="Search everywhere…"
         value={query}
         onChange={(event) => onSearch(event.target.value)}
