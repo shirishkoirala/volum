@@ -7,7 +7,7 @@
   gap: 16px;
   padding: 32px;
   color: var(--color-text);
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-ui);
 }
 
 .title {

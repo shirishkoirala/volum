@@ -37,8 +37,9 @@
 .brandHeader {
   align-items: center;
   display: flex;
+  font-family: var(--font-brand);
   font-size: var(--font-size-title);
-  font-weight: 700;
+  font-weight: 600;
   gap: var(--space-sm);
   left: var(--space-3xl);
   position: absolute;

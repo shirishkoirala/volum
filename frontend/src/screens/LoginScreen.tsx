@@ -3,7 +3,7 @@ import { Icon } from '../components/ui/Icon';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { login } from '../api/client';
 import type { Session } from '../api/client';
-import appIcon from '../assets/volum-glass-folder.svg';
+import { BRAND_ICON_URL } from '../utils/brand';
 import { loadLastUser } from '../utils/lastUser';
 import styles from './LoginScreen.module.css';
 
@@ -33,7 +33,7 @@ export function LoginScreen({ onLoggedIn, onToggleTheme, theme }: LoginScreenPro
   return (
     <main className={styles.authShell}>
       <div className={styles.brandHeader} aria-label="Volum Desktop">
-        <img src={appIcon} alt="" />
+        <img src={BRAND_ICON_URL} alt="" />
         <span>Volum</span>
       </div>
       <ThemeToggle theme={theme} onClick={onToggleTheme} className={styles.themeToggle} size={17} />

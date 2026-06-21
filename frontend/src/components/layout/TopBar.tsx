@@ -6,8 +6,8 @@ import { ThemeToggle } from '../ui/ThemeToggle';
 import { IconButton } from '../ui/shared';
 import { Icon } from '../ui/Icon';
 import { profileAvatarUrl, type Session, type SearchResult, type Job } from '../../api/client';
+import { BRAND_ICON_URL } from '../../utils/brand';
 import { countActiveTransfers } from '../../utils/jobs';
-import appIcon from '../../assets/volum-glass-folder.svg';
 import styles from './TopBar.module.css';
 
 type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives' | 'search';
@@ -168,7 +168,7 @@ export function TopBar({
     <header className={styles.topbar} ref={topbarRef}>
       <div className={styles.left} ref={leftRef}>
         <button className={styles.brand} onClick={onGoDesktop} type="button" title="Go to desktop" aria-label="Go to desktop">
-          <img className={styles.brandIcon} src={appIcon} alt="" />
+          <img className={styles.brandIcon} src={BRAND_ICON_URL} alt="" />
           <span className={styles.brandName}>{title ?? 'Volum Desktop'}</span>
         </button>
         {showMenu && (
