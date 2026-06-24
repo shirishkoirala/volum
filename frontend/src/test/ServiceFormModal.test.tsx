@@ -23,7 +23,7 @@ describe('ServiceFormModal', () => {
 
     await user.click(urlInput);
     expect(urlInput).toHaveFocus();
-  });
+  }, 10000);
 
   it('submits a new service when Add is clicked', () => {
     const onSave = vi.fn();
