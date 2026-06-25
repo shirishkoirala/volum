@@ -11,7 +11,7 @@
   overflow-y: auto;
   padding: var(--space-sm);
   position: fixed;
-  z-index: 150;
+  z-index: 10002;
 }
 
 .contextMenu button {
