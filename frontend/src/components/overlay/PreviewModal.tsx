@@ -158,8 +158,11 @@ export function PreviewContent({
     <div className={styles.previewShell}>
       <div className={styles.previewHeader}>
         <div className={styles.previewTitleGroup}>
-          <span className={styles.previewTitle}>{entry.name}</span>
-          {positionLabel && <span className={styles.previewPosition}>{positionLabel}</span>}
+          <span className={styles.previewTitle}>Preview</span>
+          <span className={styles.previewMeta}>
+            <span className={styles.previewFileName}>{entry.name}</span>
+            {positionLabel && <span className={styles.previewPosition}>{positionLabel}</span>}
+          </span>
         </div>
         <div className={styles.previewActions}>
           {onPrevious && (
