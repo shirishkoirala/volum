@@ -44,16 +44,21 @@ without losing the operation.
 
 ## Getting Started
 
-Clone the repo and start the server compose stack:
+Clone the repo and create a server environment file:
 
 ```sh
 git clone https://github.com/shirishkoirala/volum
 cd volum
-docker compose -f docker-compose.server.yml up --build -d
+cp .env.server.example .env
+sed -i.bak "s|^VOLUM_SESSION_SECRET=.*|VOLUM_SESSION_SECRET=$(openssl rand -base64 32)|" .env
 ```
 
-For a real server, copy `.env.server.example` to `.env` and configure your
-storage roots, database path, public URL, authentication, and runtime user.
+Edit `.env` for your storage roots, database path, public URL, authentication,
+and runtime user. Then start the server compose stack:
+
+```sh
+docker compose -f docker-compose.server.yml up --build -d
+```
 
 Common production values:
 
