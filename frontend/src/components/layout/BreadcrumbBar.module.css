@@ -274,7 +274,7 @@
   }
 
   .breadcrumbsInner {
-    min-height: 32px;
+    min-height: 40px;
   }
 
   .current {
@@ -283,10 +283,25 @@
 
   .locationToggle {
     grid-area: location;
+    height: 44px;
+    width: 44px;
+  }
+
+  .left button,
+  .right button,
+  .moreBtn,
+  .overflowBtn {
+    min-height: 44px;
+    min-width: 44px;
   }
 
   .moreMenu,
   .overflowMenu {
     max-width: calc(100vw - 32px);
+  }
+
+  .moreMenu button,
+  .overflowItem {
+    min-height: 44px;
   }
 }

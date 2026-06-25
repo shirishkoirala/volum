@@ -465,7 +465,7 @@
   }
 
   .settingsNavItem {
-    min-height: 32px;
+    min-height: 44px;
     padding: 0 8px;
   }
 
@@ -490,6 +490,23 @@
   .maintenanceActions,
   .settingsActions {
     gap: var(--space-xs);
+  }
+
+  .maintenanceActions button,
+  .settingsActions button,
+  .profileImageActions button,
+  .userActions button,
+  .serviceActions button {
+    min-height: 44px;
+  }
+
+  .toggleLabel {
+    min-height: 44px;
+  }
+
+  .toggleLabel input[type="checkbox"] {
+    height: 22px;
+    width: 22px;
   }
 
   .profileImageRow {

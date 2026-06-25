@@ -57,6 +57,9 @@ export function useWorkspaceOpeners({
   const openDrives = useCallback(() => {
     if (isMobile) {
       nav.setShowingMyPC(true);
+      nav.setShowingTrash(false);
+      nav.setShowingSettings(false);
+      nav.setShowingJobs(false);
       return;
     }
 
@@ -73,6 +76,10 @@ export function useWorkspaceOpeners({
   const openTrash = useCallback(() => {
     if (isMobile) {
       nav.setShowingTrash(true);
+      nav.setShowingSettings(false);
+      nav.setShowingJobs(false);
+      nav.setShowingMyPC(false);
+      nav.setSelectedDriveName(null);
       return;
     }
 
@@ -89,6 +96,10 @@ export function useWorkspaceOpeners({
   const openJobs = useCallback(() => {
     if (isMobile) {
       nav.setShowingJobs(true);
+      nav.setShowingTrash(false);
+      nav.setShowingSettings(false);
+      nav.setShowingMyPC(false);
+      nav.setSelectedDriveName(null);
       return;
     }
 
@@ -130,7 +141,7 @@ export function useWorkspaceOpeners({
     }
 
     wm.toggleWindow('preview', {
-      title: entry.name,
+      title: 'Preview',
       icon: fileTypeIconUrl(entry),
       winType: 'preview',
       params: { entry, entries },

@@ -313,6 +313,32 @@
   }
   .brandName { display: none; }
   .clock { display: none; }
-  .brand { padding: 4px 6px; }
+  .brand {
+    height: 44px;
+    justify-content: center;
+    padding: 0;
+    width: 44px;
+  }
   .brandIcon { height: 28px; width: 28px; }
+
+  .right,
+  .iconCluster {
+    gap: 2px;
+  }
+
+  .toolbarIconButton,
+  .userButton {
+    height: 44px;
+    width: 44px;
+  }
+
+  .overflowButton {
+    height: 44px;
+    width: 44px;
+  }
+
+  .dropdownItem,
+  .overflowItem {
+    min-height: 44px;
+  }
 }

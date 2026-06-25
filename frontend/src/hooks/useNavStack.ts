@@ -37,6 +37,8 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
       backStackRef.current.push(viewPref.currentPath);
     }
     viewPref.navigateToPath(path);
+    nav?.setShowingTrash(false);
+    nav?.setShowingSettings(false);
     nav?.setShowingJobs(false);
     nav?.setShowingSearch?.(false);
     browser.setSearchOpen(false);

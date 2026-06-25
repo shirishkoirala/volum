@@ -226,7 +226,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
             onShare={(shareEntry) => dialogs.setShareDialogPath({ path: shareEntry.path, name: shareEntry.name })}
             onSelectEntry={(nextEntry) => {
               wm.toggleWindow('preview', {
-                title: nextEntry.name,
+                title: 'Preview',
                 icon: fileTypeIconUrl(nextEntry),
                 winType: 'preview',
                 params: { entry: nextEntry, entries },
