@@ -9,8 +9,10 @@
 
 .searchBox {
   align-items: center;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--color-text-muted);
   display: flex;
@@ -23,6 +25,7 @@
 
 .searchBox:focus-within {
   border-color: var(--color-brand);
+  background: var(--glass-menu-bg);
 }
 
 .searchBox input {
@@ -55,8 +58,10 @@
 }
 
 .searchResultsDropdown {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-menu);
   left: 0;
@@ -106,7 +111,7 @@
 }
 
 .searchResultItem:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
 }
 
 .searchResultName {
@@ -126,7 +131,7 @@
 
 .showAllResults {
   align-items: center;
-  background: var(--color-hover);
+  background: var(--glass-control-bg);
   border: 0;
   border-top: 1px solid var(--color-border);
   color: var(--color-brand, #06c);
@@ -143,5 +148,5 @@
 }
 
 .showAllResults:hover {
-  background: var(--color-border);
+  background: var(--glass-hover-bg);
 }

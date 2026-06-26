@@ -228,18 +228,18 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
           aria-hidden="true"
         />
       )}
-      <div className={styles.windowFrame} style={style} onMouseDown={() => focusWindow(win.id)}>
-        <div className={styles.titleBar} onMouseDown={handleMouseDown} onDoubleClick={handleTitleDoubleClick}>
+      <div className={`${styles.windowFrame} appSurface`} style={style} onMouseDown={() => focusWindow(win.id)}>
+        <div className={`${styles.titleBar} appSurfaceHeader`} onMouseDown={handleMouseDown} onDoubleClick={handleTitleDoubleClick}>
           <span className={styles.titleText}>{win.title}</span>
           <div className={styles.controls}>
             {!isMobile && <>
-              <button className={styles.controlBtn} onClick={(e) => { e.stopPropagation(); toggleMinimize(win.id); }} aria-label="Minimize">─</button>
-              <button className={styles.controlBtn} onClick={(e) => { e.stopPropagation(); handleMaximizeClick(); }} aria-label={isMaximized ? 'Restore' : 'Maximize'}>{isMaximized ? '❐' : '□'}</button>
+              <button className={`${styles.controlBtn} appSurfaceControl`} onClick={(e) => { e.stopPropagation(); toggleMinimize(win.id); }} aria-label="Minimize">─</button>
+              <button className={`${styles.controlBtn} appSurfaceControl`} onClick={(e) => { e.stopPropagation(); handleMaximizeClick(); }} aria-label={isMaximized ? 'Restore' : 'Maximize'}>{isMaximized ? '❐' : '□'}</button>
             </>}
-            <button className={`${styles.controlBtn} ${styles.closeBtn}`} onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }} aria-label="Close">✕</button>
+            <button className={`${styles.controlBtn} ${styles.closeBtn} appSurfaceControl`} onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }} aria-label="Close">✕</button>
           </div>
         </div>
-        <div className={styles.content}>
+        <div className={`${styles.content} appSurfaceBody`}>
           {children}
         </div>
         {!isMaximized && !isMobile && <>

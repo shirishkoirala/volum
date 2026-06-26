@@ -154,12 +154,12 @@ export function TrashView() {
     <>
       {trashError && <ErrorBanner message={trashError} onRetry={loadTrash} />}
       {trashEntries.length === 0 ? (
-        <div className={styles.emptyWrapper}>
+        <div className={`${styles.emptyWrapper} glassPanel mobileAppPanel`}>
           <EmptyState icon={trashIconUrl(false)} title="Trash is empty" />
         </div>
       ) : (
         <section
-          className={styles.trashGrid}
+          className={`${styles.trashGrid} glassPanel mobileAppPanel`}
           onContextMenu={handleTrashEmptyContextMenu}
           tabIndex={-1}
           role="list"

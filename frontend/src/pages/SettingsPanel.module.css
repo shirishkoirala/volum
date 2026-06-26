@@ -1,13 +1,15 @@
 .settingsBodyPage {
   display: flex;
   flex: 1;
+  margin: var(--space-md);
   min-height: 0;
   overflow: hidden;
 }
 
 .settingsNav {
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border-light);
+  backdrop-filter: blur(18px) saturate(140%);
+  background: var(--glass-menu-bg);
+  border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
@@ -18,7 +20,9 @@
 }
 
 .settingsFilter {
-  border: 1px solid var(--color-border-light);
+  backdrop-filter: blur(14px) saturate(135%);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   padding: 6px 10px;
@@ -57,12 +61,12 @@
 }
 
 .settingsNavItem:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
   color: var(--color-text);
 }
 
 .settingsNavItem.active {
-  background: var(--color-brand-bg);
+  background: var(--glass-selected-bg);
   color: var(--color-brand-text);
   font-weight: 600;
 }
@@ -112,8 +116,9 @@
 }
 
 .settingsRootItem {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
+  backdrop-filter: blur(12px) saturate(130%);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   display: grid;
   gap: 6px;
@@ -194,8 +199,8 @@
 .profileImage,
 .profileImageFallback {
   align-items: center;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 50%;
   display: flex;
   flex: 0 0 52px;
@@ -297,8 +302,9 @@
 
 .userRow {
   align-items: center;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
+  backdrop-filter: blur(12px) saturate(130%);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
@@ -318,8 +324,8 @@
 }
 
 .userRole {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
   padding: 1px 8px;
@@ -340,7 +346,9 @@
 }
 
 .pwdInline input {
-  border: 1px solid var(--color-border-light);
+  backdrop-filter: blur(12px) saturate(130%);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   min-height: 28px;
@@ -369,7 +377,9 @@
 
 .createUserForm input,
 .createUserForm select {
-  border: 1px solid var(--color-border-light);
+  backdrop-filter: blur(12px) saturate(130%);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   min-height: 34px;
@@ -384,8 +394,9 @@
 
 .serviceRow {
   align-items: center;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
+  backdrop-filter: blur(12px) saturate(130%);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   display: flex;
   gap: var(--space-sm);
@@ -399,7 +410,7 @@
 
 .serviceRow.dragOver {
   border-color: var(--color-brand);
-  background: var(--color-brand-bg);
+  background: var(--glass-selected-bg);
 }
 
 .serviceDragHandle {
@@ -441,6 +452,8 @@
 @media (max-width: 760px) {
   .settingsBodyPage {
     flex-direction: column;
+    margin: var(--space-sm);
+    margin-bottom: 0;
   }
 
   .settingsNav {

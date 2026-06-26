@@ -617,7 +617,7 @@ export function SettingsPanel({
   );
 
   return (
-    <div className={styles.settingsBodyPage}>
+    <div className={`${styles.settingsBodyPage} glassPanel mobileAppPanel`}>
       {sidebarNav}
       <div className={styles.settingsContent}>
         {content}

@@ -366,7 +366,7 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
   const entryCount = results?.length ?? 0;
 
   return (
-    <div className={styles.searchView}>
+    <div className={`${styles.searchView} glassPanel mobileAppPanel`}>
       <div className={styles.searchHeader}>
         <button type="button" className={styles.backBtn} onClick={onClose} aria-label="Back">
           <Icon name="go-previous" size={18} />
