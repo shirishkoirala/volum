@@ -1,5 +1,7 @@
 .select {
-  background: var(--color-surface);
+  backdrop-filter: blur(14px) saturate(135%);
+  background: var(--glass-control-bg);
+  border-color: var(--glass-border);
   color-scheme: light dark;
   font-size: var(--font-size-base);
   padding: 0 10px;

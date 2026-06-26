@@ -75,7 +75,7 @@
 }
 
 .permToggle.on {
-  background: var(--color-brand-bg);
+  background: var(--glass-selected-bg);
   border-color: var(--color-brand);
   color: var(--color-brand);
 }

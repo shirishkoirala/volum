@@ -73,11 +73,37 @@
   --shadow-menu: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 6%);
   /* Glass */
   --glass-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
+  --glass-menu-bg: color-mix(in srgb, var(--color-surface) 78%, transparent);
+  --glass-control-bg: color-mix(in srgb, var(--color-surface) 62%, transparent);
+  --glass-hover-bg: color-mix(in srgb, var(--color-hover) 78%, transparent);
+  --glass-selected-bg: color-mix(in srgb, var(--color-brand-bg) 72%, transparent);
+  --glass-border: color-mix(in srgb, var(--color-border) 62%, transparent);
   --glass-backdrop: blur(6px) saturate(110%);
+  --app-surface-bg: var(--glass-bg);
+  --app-surface-header-bg: var(--glass-bg);
+  --app-surface-body-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
+  --app-surface-control-bg: var(--glass-control-bg);
+  --app-surface-control-hover-bg: var(--glass-hover-bg);
+  --app-surface-control-selected-bg: var(--glass-selected-bg);
+  --app-surface-border: color-mix(in srgb, var(--color-border) 55%, transparent);
+  --app-surface-divider: color-mix(in srgb, var(--color-border-subtle) 55%, transparent);
+  --app-surface-shadow: 0 8px 32px color-mix(in srgb, var(--color-shadow) 80%, transparent);
   /* Animation */
   --transition-fast: 120ms ease;
   --anim-skeleton: skeletonPulse 1.5s ease-in-out infinite;
   --anim-spin: spin 1s linear infinite;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --glass-bg: color-mix(in srgb, var(--color-surface) 58%, transparent);
+    --glass-menu-bg: color-mix(in srgb, var(--color-surface) 88%, transparent);
+    --glass-control-bg: color-mix(in srgb, var(--color-surface) 74%, transparent);
+    --glass-hover-bg: color-mix(in srgb, var(--color-hover) 88%, transparent);
+    --glass-selected-bg: color-mix(in srgb, var(--color-brand-bg) 82%, transparent);
+    --glass-border: color-mix(in srgb, var(--color-border) 78%, transparent);
+    --glass-backdrop: blur(10px) saturate(125%);
+  }
 }
 
 [data-theme="dark"] {
@@ -147,55 +173,40 @@
   --radius-pill: 999px;
   /* Shadow */
   --shadow-card: 0 1px 3px var(--color-shadow);
-  --shadow-card-hover: 0 4px 6px -1px var(--color-shadow), 0 2px 4px -2px var(--color-shadow);
-  --shadow-menu: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 6%);
+  --shadow-card-hover: 0 4px 12px rgb(0 0 0 / 40%);
+  --shadow-menu: 0 12px 28px rgb(0 0 0 / 50%);
   /* Glass */
   --glass-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
+  --glass-menu-bg: color-mix(in srgb, var(--color-surface) 74%, transparent);
+  --glass-control-bg: color-mix(in srgb, var(--color-surface) 58%, transparent);
+  --glass-hover-bg: color-mix(in srgb, var(--color-hover) 76%, transparent);
+  --glass-selected-bg: color-mix(in srgb, var(--color-brand-bg) 68%, transparent);
+  --glass-border: color-mix(in srgb, var(--color-border) 66%, transparent);
   --glass-backdrop: blur(6px) saturate(110%);
+  --app-surface-bg: var(--glass-bg);
+  --app-surface-header-bg: var(--glass-bg);
+  --app-surface-body-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
+  --app-surface-control-bg: var(--glass-control-bg);
+  --app-surface-control-hover-bg: var(--glass-hover-bg);
+  --app-surface-control-selected-bg: var(--glass-selected-bg);
+  --app-surface-border: color-mix(in srgb, var(--color-border) 55%, transparent);
+  --app-surface-divider: color-mix(in srgb, var(--color-border-subtle) 55%, transparent);
+  --app-surface-shadow: 0 8px 32px color-mix(in srgb, var(--color-shadow) 80%, transparent);
   /* Animation */
   --anim-skeleton: skeletonPulse 1.5s ease-in-out infinite;
   --anim-spin: spin 1s linear infinite;
 }
 
-[data-theme="dark"] {
-  --color-bg: #12141a;
-  --color-window: #20242e;
-  --color-surface: #1a1d26;
-  --color-surface-raised: #252a35;
-  --color-text: #e2e6ed;
-  --color-text-secondary: #b4bac4;
-  --color-text-muted: #7f899f;
-  --color-text-tertiary: #697386;
-  --color-border: #282c36;
-  --color-border-light: #2d313c;
-  --color-border-subtle: #2d313c;
-  --color-border-row: #22262f;
-  --color-brand: #60a5fa;
-  --color-brand-bg: #1e2a3a;
-  --color-brand-text: #93c5fd;
-  --color-brand-border: #334155;
-  --color-danger: #f87171;
-  --color-danger-bg: #2d1b1b;
-  --color-danger-border: #4a2020;
-  --color-danger-text: #fca5a5;
-  --color-warning: #fbbf24;
-  --color-warning-bg: #2b2112;
-  --color-warning-border: #5f4318;
-  --color-warning-text: #fde68a;
-  --color-success: #4ade80;
-  --color-success-bg: #14261a;
-  --color-success-border: #285b36;
-  --color-success-text: #bbf7d0;
-  --color-on-accent: #ffffff;
-  --color-hover: #22262f;
-  --color-selected: #1e293b;
-  --color-code-bg: #0d1117;
-  --color-code-text: #c9d1d9;
-  --color-overlay: rgb(0 0 0 / 70%);
-  --color-badge: #22262f;
-  --color-shadow: rgb(0 0 0 / 20%);
-  --shadow-card-hover: 0 4px 12px rgb(0 0 0 / 40%);
-  --shadow-menu: 0 12px 28px rgb(0 0 0 / 50%);
+@media (max-width: 760px) {
+  [data-theme="dark"] {
+    --glass-bg: color-mix(in srgb, var(--color-surface) 60%, transparent);
+    --glass-menu-bg: color-mix(in srgb, var(--color-surface) 86%, transparent);
+    --glass-control-bg: color-mix(in srgb, var(--color-surface) 72%, transparent);
+    --glass-hover-bg: color-mix(in srgb, var(--color-hover) 86%, transparent);
+    --glass-selected-bg: color-mix(in srgb, var(--color-brand-bg) 78%, transparent);
+    --glass-border: color-mix(in srgb, var(--color-border) 82%, transparent);
+    --glass-backdrop: blur(10px) saturate(125%);
+  }
 }
 
 * {

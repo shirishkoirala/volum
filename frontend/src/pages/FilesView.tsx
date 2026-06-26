@@ -520,7 +520,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
               {browser.error}
             </Notice>
           )}
-          <div className={styles.fileFrame}>
+          <div className={`${styles.fileFrame} glassPanel mobileAppPanel`}>
             {browser.loading ? (
               <Skeleton variant="card" count={12} />
             ) : browser.filteredEntries.length === 0 ? (

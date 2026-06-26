@@ -28,6 +28,9 @@
 .dialogField input,
 .dialogField textarea,
 .dialogField select {
+  backdrop-filter: blur(14px) saturate(135%);
+  background: var(--glass-control-bg);
+  border-color: var(--glass-border);
   min-height: 38px;
 }
 
@@ -70,8 +73,9 @@
 }
 
 .dialogSuggestions button {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  backdrop-filter: blur(12px) saturate(130%);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-pill);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
@@ -84,6 +88,7 @@
 }
 
 .dialogSuggestions button:hover {
+  background: var(--glass-hover-bg);
   border-color: var(--color-brand);
   color: var(--color-brand-text);
 }
@@ -135,7 +140,7 @@
 }
 
 .previewItem:nth-child(even) {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
 }
 
 .fateBadge {

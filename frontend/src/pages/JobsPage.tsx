@@ -175,7 +175,7 @@ export function JobsPage({ session, sessionLoading }: JobsPageProps) {
 
   return (
     <>
-      <main className={styles.jobsPage} onContextMenu={handleJobsEmptyContextMenu}>
+      <main className={`${styles.jobsPage} glassPanel mobileAppPanel`} onContextMenu={handleJobsEmptyContextMenu}>
         {jobs.length > 0 && (
           <div className={styles.jobToolbar}>
             {hasFailed && (

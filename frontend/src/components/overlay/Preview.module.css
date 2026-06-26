@@ -7,8 +7,9 @@
 
 .previewHeader {
   align-items: center;
-  background: var(--color-bg);
-  border-bottom: 1px solid var(--color-border-light);
+  backdrop-filter: blur(18px) saturate(140%);
+  background: var(--glass-menu-bg);
+  border-bottom: 1px solid var(--glass-border);
   display: flex;
   flex-shrink: 0;
   justify-content: space-between;

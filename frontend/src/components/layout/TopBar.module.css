@@ -2,8 +2,8 @@
   align-items: center;
   -webkit-backdrop-filter: var(--glass-backdrop);
   backdrop-filter: var(--glass-backdrop);
-  background: var(--glass-bg);
-  border-bottom: 1px solid color-mix(in srgb, var(--color-border-light) 55%, transparent);
+  background: var(--app-surface-header-bg);
+  border-bottom: 1px solid var(--app-surface-divider);
   display: flex;
   gap: 8px;
   grid-column: 1 / -1;
@@ -57,7 +57,7 @@
 }
 
 .brand:hover {
-  background: color-mix(in srgb, var(--color-hover) 84%, transparent);
+  background: var(--app-surface-control-hover-bg);
 }
 
 .brandIcon {
@@ -102,7 +102,7 @@
 }
 
 .toolbarIconButton:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-hover) 88%, transparent);
+  background: var(--app-surface-control-hover-bg);
   border-color: transparent;
   box-shadow: none;
 }
@@ -126,13 +126,15 @@
 }
 
 .overflowButton:hover {
-  background: color-mix(in srgb, var(--color-hover) 88%, transparent);
+  background: var(--app-surface-control-hover-bg);
   border-color: transparent;
 }
 
 .overflowMenu {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-menu);
   min-width: 180px;
@@ -160,7 +162,7 @@
 }
 
 .overflowItem:hover:not(:disabled) {
-  background: var(--color-hover);
+  background: var(--app-surface-control-hover-bg);
 }
 
 .overflowItem:disabled {
@@ -213,7 +215,7 @@
 }
 
 .userButton:hover {
-  background: var(--color-hover);
+  background: var(--app-surface-control-hover-bg);
   color: var(--color-text);
 }
 
@@ -225,10 +227,12 @@
 }
 
 .userDropdown {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-menu);
   min-width: 180px;
   position: absolute;
   right: 0;
@@ -246,7 +250,7 @@
 .dropdownAvatar,
 .dropdownAvatarFallback {
   align-items: center;
-  background: var(--color-bg);
+  background: var(--glass-control-bg);
   border-radius: 50%;
   display: flex;
   flex: 0 0 34px;
@@ -270,7 +274,7 @@
 }
 
 .dropdownRole {
-  background: var(--color-brand-bg);
+  background: var(--app-surface-control-selected-bg);
   border-radius: var(--radius-pill);
   color: var(--color-brand);
   font-size: var(--font-size-xs);
@@ -301,7 +305,7 @@
 }
 
 .dropdownItem:hover {
-  background: var(--color-hover);
+  background: var(--app-surface-control-hover-bg);
 }
 
 @media (max-width: 760px) {

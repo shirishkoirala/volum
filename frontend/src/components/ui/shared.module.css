@@ -39,8 +39,10 @@
 
 .iconButton {
   align-items: center;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   display: inline-flex;
@@ -61,7 +63,7 @@
 }
 
 .iconButtonActive {
-  background: var(--color-brand-bg);
+  background: var(--glass-selected-bg);
   border-color: var(--color-brand);
 }
 
@@ -70,7 +72,7 @@
 }
 
 .button:hover:not(:disabled) {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
   border-color: var(--color-text-muted);
   color: var(--color-text);
 }
@@ -175,7 +177,7 @@
 }
 
 .active {
-  background: var(--color-brand-bg);
+  background: var(--glass-selected-bg);
   color: var(--color-brand);
 }
 

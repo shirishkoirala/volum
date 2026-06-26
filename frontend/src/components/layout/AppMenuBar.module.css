@@ -28,13 +28,15 @@
 
 .menuTrigger:hover,
 .menuTriggerOpen {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
   color: var(--color-text);
 }
 
 .menuDropdown {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-menu);
   display: flex;
@@ -66,7 +68,7 @@
 }
 
 .menuItem:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
   color: var(--color-text);
 }
 

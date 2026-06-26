@@ -62,7 +62,7 @@
 }
 
 .crumbBtn:hover {
-  background: var(--color-border-row);
+  background: var(--glass-hover-bg);
 }
 
 .current {
@@ -83,8 +83,8 @@
 
 .overflowBtn {
   align-items: center;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-muted);
   cursor: pointer;
@@ -99,13 +99,15 @@
 }
 
 .overflowBtn:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
   color: var(--color-text-secondary);
 }
 
 .overflowMenu {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-menu);
   left: 0;
@@ -131,7 +133,7 @@
 }
 
 .overflowItem:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
 }
 
 .locationInputWrap {
@@ -142,8 +144,8 @@
 }
 
 .locationInput {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   color: var(--color-text);
   font-size: var(--font-size-base);
@@ -179,14 +181,16 @@
 }
 
 .moreBtn:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
   border-color: var(--color-text-muted);
   color: var(--color-text);
 }
 
 .moreMenu {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-menu);
   max-height: 320px;
@@ -239,7 +243,7 @@
 }
 
 .locationToggle:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
   color: var(--color-text);
 }
 

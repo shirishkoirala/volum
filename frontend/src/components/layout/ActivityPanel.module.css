@@ -1,6 +1,8 @@
 .panel {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   min-width: 280px;
@@ -92,7 +94,7 @@
 }
 
 .viewAll:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
 }
 
 @media (max-width: 760px) {

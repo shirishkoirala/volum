@@ -55,8 +55,8 @@
 .themeToggle {
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-  background: color-mix(in srgb, var(--color-surface) 46%, transparent);
-  border-color: color-mix(in srgb, var(--color-border) 82%, transparent);
+  background: var(--glass-control-bg);
+  border-color: var(--glass-border);
   height: 36px;
   position: absolute;
   right: var(--space-3xl);
@@ -65,8 +65,8 @@
 }
 
 .themeToggle:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
-  border-color: var(--color-border);
+  background: var(--glass-hover-bg);
+  border-color: var(--glass-border);
 }
 
 .loginPanel {
@@ -123,8 +123,9 @@
 
 .loginField {
   align-items: center;
-  background: var(--color-window);
-  border: 1px solid var(--color-border-light);
+  backdrop-filter: blur(14px) saturate(135%);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--color-text-muted);
   display: flex;
@@ -135,7 +136,7 @@
 }
 
 .loginField:focus-within {
-  background: var(--color-surface);
+  background: var(--glass-menu-bg);
   border-color: var(--color-brand);
   box-shadow: inset 0 0 0 1px var(--color-brand);
   color: var(--color-text-secondary);
@@ -175,8 +176,8 @@
   appearance: none;
   accent-color: var(--color-brand);
   align-items: center;
-  background: color-mix(in srgb, var(--color-window) 82%, transparent);
-  border: 1px solid var(--color-border);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xs);
   cursor: pointer;
   display: inline-flex;
@@ -223,14 +224,15 @@
 }
 
 .loginPanel > input {
-  background: var(--color-window);
-  border: 1px solid var(--color-border-light);
+  backdrop-filter: blur(14px) saturate(135%);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   min-height: 48px;
   transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .loginPanel > input:focus {
-  background: var(--color-surface);
+  background: var(--glass-menu-bg);
 }
 
 .loginPanel > input::placeholder {
@@ -284,8 +286,20 @@
     padding: var(--space-sm);
   }
 
+  .authShell::before {
+    background:
+      radial-gradient(circle at 50% 18%, rgb(255 255 255 / 20%), transparent 42%),
+      linear-gradient(180deg, rgb(255 255 255 / 24%) 0%, rgb(255 255 255 / 14%) 52%, rgb(255 255 255 / 28%) 100%);
+  }
+
   :global([data-theme="dark"]) .authShell {
     background-image: url('/background_mobile_dark.png');
+  }
+
+  :global([data-theme="dark"]) .authShell::before {
+    background:
+      radial-gradient(circle at 50% 18%, rgb(37 99 235 / 12%), transparent 44%),
+      linear-gradient(180deg, rgb(3 7 18 / 38%) 0%, rgb(3 7 18 / 22%) 52%, rgb(3 7 18 / 46%) 100%);
   }
 
   .brandHeader {

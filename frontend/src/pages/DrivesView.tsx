@@ -70,7 +70,7 @@ export function DrivesView({ onBackToDesktop }: DrivesViewProps) {
           onBack={() => setSelectedDriveName(null)}
           onNavigate={() => {}}
         />
-        <div className={`${styles.drivesContainer} ${styles.partitionGrid}`}>
+        <div className={`${styles.drivesContainer} ${styles.partitionGrid} glassPanel mobileAppPanel`}>
           {d?.partitions?.map((part) =>
             part.volumPath ? (
               <button key={part.name} className={styles.drivePartitionItem} onClick={() => handleNavigateTo(part.volumPath!)} type="button">
@@ -110,7 +110,7 @@ export function DrivesView({ onBackToDesktop }: DrivesViewProps) {
         onBack={handleBackToDesktop}
         onNavigate={() => {}}
       />
-      <div className={`${styles.drivesContainer} ${styles.drivesList}`}>
+      <div className={`${styles.drivesContainer} ${styles.drivesList} glassPanel mobileAppPanel`}>
         {deviceError && (
           <Notice variant="error">
             <IconImg src={warningIconUrl()} alt="" width={18} height={18} />
