@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
@@ -21,8 +20,7 @@ func (s *Server) handleAddFavorite(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Path string `json:"path"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 	if req.Path == "" {
@@ -40,8 +38,7 @@ func (s *Server) handleRemoveFavorite(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Path string `json:"path"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 	if req.Path == "" {
@@ -59,8 +56,11 @@ func (s *Server) handleReorderFavorites(w http.ResponseWriter, r *http.Request) 
 	var req struct {
 		Paths []string `json:"paths"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
+		return
+	}
+	if len(req.Paths) > maxJSONItems {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "too many favorites"})
 		return
 	}
 	if err := s.desktop.ReorderFavorites(r.Context(), req.Paths); err != nil {

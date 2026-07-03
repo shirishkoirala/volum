@@ -3,10 +3,12 @@ package api
 import (
 	"encoding/hex"
 	"encoding/json"
+	"io"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -143,6 +145,12 @@ func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "directory sharing not yet supported"})
 		return
 	}
+	file, err := os.Open(realPath)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	defer file.Close()
 	disableWriteDeadline(w)
 
 	ok, err := s.shares.ReserveDownload(share.ID, now())
@@ -157,7 +165,11 @@ func (s *Server) handlePublicDownload(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": filepath.Base(realPath)}))
 	w.Header().Set("Content-Type", "application/octet-stream")
-	http.ServeFile(w, r, realPath)
+	w.Header().Set("Content-Length", strconv.FormatInt(info.Size(), 10))
+	if _, err := io.Copy(w, file); err != nil {
+		_ = s.shares.ReleaseDownload(share.ID)
+		return
+	}
 }
 
 func (s *Server) handlePublicUnlock(w http.ResponseWriter, r *http.Request) {

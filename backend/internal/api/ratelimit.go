@@ -77,8 +77,10 @@ func clientIP(r *http.Request) string {
 
 func (s *Server) allowLogin(r *http.Request, username string) bool {
 	ip := clientIP(r)
+	account := strings.ToLower(strings.TrimSpace(username))
 	return s.loginLimiter.allow("login-ip:"+ip) &&
-		s.loginLimiter.allow("login-pair:"+ip+":"+strings.ToLower(strings.TrimSpace(username)))
+		s.loginLimiter.allow("login-account:"+account) &&
+		s.loginLimiter.allow("login-pair:"+ip+":"+account)
 }
 
 func (s *Server) allowSetup(r *http.Request) bool {

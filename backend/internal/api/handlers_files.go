@@ -2,7 +2,6 @@ package api
 
 import (
 	"archive/zip"
-	"encoding/json"
 	"io"
 	"mime"
 	"net/http"
@@ -114,8 +113,7 @@ func (s *Server) handleCreateFile(w http.ResponseWriter, r *http.Request) {
 		Path string `json:"path"`
 		Name string `json:"name"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 
@@ -132,8 +130,7 @@ func (s *Server) handleCreateFolder(w http.ResponseWriter, r *http.Request) {
 		Path string `json:"path"`
 		Name string `json:"name"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 
@@ -150,8 +147,7 @@ func (s *Server) handleRename(w http.ResponseWriter, r *http.Request) {
 		Path    string `json:"path"`
 		NewName string `json:"newName"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 
@@ -172,12 +168,15 @@ func (s *Server) handleBatchRename(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Items []batchRenameItem `json:"items"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 	if len(req.Items) == 0 {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no items provided"})
+		return
+	}
+	if len(req.Items) > maxJSONItems {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "too many items"})
 		return
 	}
 
@@ -200,8 +199,7 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		Path        string `json:"path"`
 		ConfirmName string `json:"confirmName"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 	if req.ConfirmName == "" || filepath.Base(req.Path) != req.ConfirmName {
@@ -243,6 +241,12 @@ func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
 	err = filepath.WalkDir(path, func(filePath string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
+		}
+		// Skip symlinks: WalkDir does not recurse into symlinked directories,
+		// but a symlinked file would be followed by os.Open below and could
+		// leak out-of-root contents into the download zip.
+		if entry.Type()&os.ModeSymlink != 0 {
+			return nil
 		}
 		rel, err := filepath.Rel(path, filePath)
 		if err != nil {
@@ -360,8 +364,7 @@ func (s *Server) handleChmod(w http.ResponseWriter, r *http.Request) {
 		Path string `json:"path"`
 		Mode string `json:"mode"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 	if req.Path == "" || req.Mode == "" {

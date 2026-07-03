@@ -214,6 +214,39 @@ func TestReserveDownload(t *testing.T) {
 	}
 }
 
+func TestReleaseDownload(t *testing.T) {
+	s := setupStore(t)
+	maxDownloads := 1
+	created, err := s.Create(CreateRequest{Path: "/mnt/data/docs", MaxDownloads: &maxDownloads}, "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok, err := s.ReserveDownload(created.ID, now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected reservation to succeed")
+	}
+	if err := s.ReleaseDownload(created.ID); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.GetByToken(created.Token)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.DownloadCount != 0 {
+		t.Fatalf("expected released download count to be 0, got %d", got.DownloadCount)
+	}
+	ok, err = s.ReserveDownload(created.ID, now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected reservation after release to succeed")
+	}
+}
+
 func TestReserveDownloadRejectsExpiredOrDisabledShare(t *testing.T) {
 	s := setupStore(t)
 	expired := now().Add(-time.Minute).Format(time.RFC3339)

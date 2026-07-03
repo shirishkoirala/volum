@@ -73,6 +73,7 @@ var (
 	ErrRootOperation     = errors.New("operation is not allowed on a configured root")
 	ErrDirectoryDownload = errors.New("directories cannot be downloaded yet")
 	ErrTrashOperation    = errors.New("items in trash must be restored or permanently deleted")
+	ErrSymlinkRead       = errors.New("symlink reads are not allowed")
 )
 
 type Service struct {
@@ -370,9 +371,12 @@ func (s *Service) DownloadPath(path string) (string, os.FileInfo, error) {
 		return "", nil, err
 	}
 
-	info, err := os.Stat(resolved)
+	info, err := os.Lstat(resolved)
 	if err != nil {
 		return "", nil, err
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return "", nil, ErrSymlinkRead
 	}
 	if info.IsDir() {
 		return "", nil, ErrDirectoryDownload
@@ -387,9 +391,12 @@ func (s *Service) ThumbnailPath(path string) (string, os.FileInfo, error) {
 		return "", nil, err
 	}
 
-	info, err := os.Stat(resolved)
+	info, err := os.Lstat(resolved)
 	if err != nil {
 		return "", nil, err
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return "", nil, ErrSymlinkRead
 	}
 	if info.IsDir() {
 		return "", nil, ErrDirectoryDownload

@@ -11,7 +11,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/volum-app/volum/backend/internal/desktop"
 	"github.com/volum-app/volum/backend/internal/jobs"
-	"github.com/volum-app/volum/backend/internal/security"
 	"github.com/volum-app/volum/backend/internal/worker"
 )
 
@@ -101,8 +100,7 @@ func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleCreateJob(w http.ResponseWriter, r *http.Request) {
 	var req jobs.CreateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 
@@ -283,12 +281,15 @@ func (s *Server) handleResolveConflicts(w http.ResponseWriter, r *http.Request) 
 	}
 
 	var req resolveRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 	if len(req.Items) == 0 && req.DefaultResolution == nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "must provide items or a default resolution"})
+		return
+	}
+	if len(req.Items) > maxJSONItems {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "too many conflict resolutions"})
 		return
 	}
 
@@ -353,7 +354,7 @@ func (s *Server) handleResolveConflicts(w http.ResponseWriter, r *http.Request) 
 			_ = s.jobs.CreateAuditLog(r.Context(), "conflict_overwrite", item.DestinationPath, details)
 
 		case "rename":
-			newDest, err := security.NextAvailablePath(item.DestinationPath)
+			newDest, err := s.guard.NextAvailablePath(item.DestinationPath)
 			if err != nil {
 				writeError(w, err)
 				return

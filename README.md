@@ -73,7 +73,12 @@ VOLUM_BIND_ADDRESS=127.0.0.1
 ```
 
 When auth is enabled, create the first admin account from the setup screen using
-`VOLUM_BOOTSTRAP_TOKEN`, or the generated token printed in the server logs.
+`VOLUM_BOOTSTRAP_TOKEN`, or the generated token written to
+`volum-initial-setup-token` beside the configured database. The server log
+prints the token file path, not the token value.
+Authentication is required by default when `VOLUM_AUTH_REQUIRED` is unset.
+Disabling it requires `VOLUM_AUTH_REQUIRED=false` and the explicit local-only
+opt-in `VOLUM_ALLOW_INSECURE_AUTH_DISABLED=true`.
 
 ## Deployment
 

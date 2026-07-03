@@ -78,6 +78,21 @@ func TestParseBool(t *testing.T) {
 	}
 }
 
+func TestParseBoolDefault(t *testing.T) {
+	if !parseBoolDefault("", true) {
+		t.Fatal("expected empty value to use true fallback")
+	}
+	if parseBoolDefault("", false) {
+		t.Fatal("expected empty value to use false fallback")
+	}
+	if parseBoolDefault("false", true) {
+		t.Fatal("expected explicit false to override fallback")
+	}
+	if !parseBoolDefault("true", false) {
+		t.Fatal("expected explicit true to override fallback")
+	}
+}
+
 func TestParseRoots(t *testing.T) {
 	roots, err := parseRoots("/data,/mnt/media", "")
 	if err != nil {
@@ -200,11 +215,58 @@ func TestLoadRequiresSessionSecretWhenAuthRequired(t *testing.T) {
 	}
 }
 
+func TestLoadDefaultsAuthenticationOn(t *testing.T) {
+	t.Setenv("VOLUM_ROOTS", t.TempDir())
+	t.Setenv("VOLUM_AUTH_REQUIRED", "")
+	t.Setenv("VOLUM_SESSION_SECRET", "")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("expected default auth-required config to reject missing session secret")
+	}
+
+	t.Setenv("VOLUM_SESSION_SECRET", "session-secret-012345678901234567890123456")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("expected default auth-required config to load, got %v", err)
+	}
+	if !cfg.AuthRequired {
+		t.Fatal("expected auth to default to required")
+	}
+}
+
+func TestLoadRejectsDisabledAuthenticationWithoutInsecureOptIn(t *testing.T) {
+	t.Setenv("VOLUM_ROOTS", t.TempDir())
+	t.Setenv("VOLUM_AUTH_REQUIRED", "false")
+	t.Setenv("VOLUM_ALLOW_INSECURE_AUTH_DISABLED", "")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("expected disabled auth without explicit insecure opt-in to be rejected")
+	}
+}
+
+func TestLoadAllowsDisabledAuthenticationWithInsecureOptIn(t *testing.T) {
+	t.Setenv("VOLUM_ROOTS", t.TempDir())
+	t.Setenv("VOLUM_AUTH_REQUIRED", "false")
+	t.Setenv("VOLUM_ALLOW_INSECURE_AUTH_DISABLED", "true")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("expected explicit insecure auth-disabled config to load, got %v", err)
+	}
+	if cfg.AuthRequired {
+		t.Fatal("expected auth to be disabled")
+	}
+	if !cfg.InsecureNoAuth {
+		t.Fatal("expected insecure no-auth opt-in to be recorded")
+	}
+}
+
 func TestLoadRejectsDiscoveryWithoutAuthentication(t *testing.T) {
 	t.Setenv("VOLUM_ROOTS", t.TempDir())
 	t.Setenv("VOLUM_DISCOVER_ROOTS", "true")
 	t.Setenv("VOLUM_INCLUDE_ROOT", "false")
 	t.Setenv("VOLUM_AUTH_REQUIRED", "false")
+	t.Setenv("VOLUM_ALLOW_INSECURE_AUTH_DISABLED", "true")
 	if _, err := Load(); err == nil {
 		t.Fatal("expected discovered roots without authentication to be rejected")
 	}

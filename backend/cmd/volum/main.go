@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -82,7 +83,11 @@ func run(log *slog.Logger) error {
 				return err
 			}
 			bootstrapToken = base64.RawURLEncoding.EncodeToString(randomToken)
-			log.Warn("initial setup token generated", "token", bootstrapToken)
+			tokenPath, err := writeBootstrapTokenFile(cfg.DB, bootstrapToken)
+			if err != nil {
+				return err
+			}
+			log.Warn("initial setup token generated", "path", tokenPath)
 		}
 	}
 
@@ -130,4 +135,19 @@ func run(log *slog.Logger) error {
 		}
 		return err
 	}
+}
+
+func writeBootstrapTokenFile(dbPath, token string) (string, error) {
+	dir := filepath.Dir(dbPath)
+	if dir == "." || strings.TrimSpace(dir) == "" {
+		dir = "."
+	}
+	path := filepath.Join(dir, "volum-initial-setup-token")
+	if err := os.WriteFile(path, []byte(token+"\n"), 0o600); err != nil {
+		return "", err
+	}
+	if err := os.Chmod(path, 0o600); err != nil {
+		return "", err
+	}
+	return path, nil
 }

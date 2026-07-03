@@ -159,6 +159,18 @@ func (s *Store) ReserveDownload(id string, at time.Time) (bool, error) {
 	return affected > 0, nil
 }
 
+func (s *Store) ReleaseDownload(id string) error {
+	res, err := s.db.Exec(
+		`UPDATE shares SET download_count = download_count - 1
+		 WHERE id = ? AND download_count > 0`,
+		id,
+	)
+	if err != nil {
+		return err
+	}
+	return sqlutil.RequireRowsAffected(res)
+}
+
 func AccessToken(share *Share, expiresAt time.Time) string {
 	payload := strconv.FormatInt(expiresAt.Unix(), 10)
 	mac := hmac.New(sha256.New, []byte(share.PasswordHash))

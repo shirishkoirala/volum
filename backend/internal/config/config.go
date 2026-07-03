@@ -15,6 +15,7 @@ type Config struct {
 	Port           string
 	SessionSecret  string
 	AuthRequired   bool
+	InsecureNoAuth bool
 	HostRoot       string
 	PublicURL      string
 	BootstrapToken string
@@ -45,12 +46,16 @@ func Load() (Config, error) {
 		return Config{}, errors.New("VOLUM_PORT must be a number")
 	}
 
+	authRequired := parseBoolDefault(os.Getenv("VOLUM_AUTH_REQUIRED"), true)
+	insecureNoAuth := parseBool(os.Getenv("VOLUM_ALLOW_INSECURE_AUTH_DISABLED"))
+
 	cfg := Config{
 		Roots:          roots,
 		DB:             db,
 		Port:           port,
 		SessionSecret:  os.Getenv("VOLUM_SESSION_SECRET"),
-		AuthRequired:   parseBool(os.Getenv("VOLUM_AUTH_REQUIRED")),
+		AuthRequired:   authRequired,
+		InsecureNoAuth: insecureNoAuth,
 		HostRoot:       hostRoot,
 		PublicURL:      os.Getenv("VOLUM_PUBLIC_URL"),
 		BootstrapToken: os.Getenv("VOLUM_BOOTSTRAP_TOKEN"),
@@ -58,6 +63,10 @@ func Load() (Config, error) {
 	}
 
 	secret := strings.TrimSpace(cfg.SessionSecret)
+
+	if !cfg.AuthRequired && !cfg.InsecureNoAuth {
+		return Config{}, errors.New("VOLUM_AUTH_REQUIRED=false requires VOLUM_ALLOW_INSECURE_AUTH_DISABLED=true")
+	}
 
 	if (includeRoot || discoverRoots) && !cfg.AuthRequired {
 		return Config{}, errors.New("VOLUM_AUTH_REQUIRED must be true when root exposure or discovery is enabled")
@@ -145,4 +154,11 @@ func parseBool(value string) bool {
 	default:
 		return false
 	}
+}
+
+func parseBoolDefault(value string, fallback bool) bool {
+	if strings.TrimSpace(value) == "" {
+		return fallback
+	}
+	return parseBool(value)
 }

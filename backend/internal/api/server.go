@@ -115,6 +115,7 @@ func (s *Server) routes() {
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.requireUser)
+			r.Use(s.requireAPIRequest)
 			r.Get("/profile/avatar", s.handleGetAvatar)
 			r.Put("/profile/avatar", s.handleUpdateAvatar)
 			r.Delete("/profile/avatar", s.handleDeleteAvatar)
@@ -140,6 +141,7 @@ func (s *Server) routes() {
 
 		r.Group(func(r chi.Router) {
 			r.Use(s.requireUser)
+			r.Use(s.requireAPIRequest)
 			r.Use(s.requireAdmin)
 			r.Post("/services", s.handleCreateService)
 			r.Put("/services/{id}", s.handleUpdateService)
@@ -177,6 +179,7 @@ func (s *Server) routes() {
 			r.Delete("/users/{id}", s.handleDeleteUser)
 			r.Patch("/users/{id}/password", s.handleChangePassword)
 			r.Patch("/users/{id}/role", s.handleChangeRole)
+			r.Post("/users/{id}/revoke-sessions", s.handleRevokeUserSessions)
 		})
 	})
 

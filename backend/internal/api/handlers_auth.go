@@ -77,7 +77,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 			Path:     "/",
 			HttpOnly: true,
 			Secure:   s.secureCookie(r),
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteStrictMode,
 		}
 		if req.RememberMe {
 			cookie.MaxAge = 60 * 60 * 24 * 7
@@ -162,7 +162,7 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 			Path:     "/",
 			HttpOnly: true,
 			Secure:   s.secureCookie(r),
-			SameSite: http.SameSiteLaxMode,
+			SameSite: http.SameSiteStrictMode,
 			MaxAge:   60 * 60 * 24 * 7,
 		})
 	}

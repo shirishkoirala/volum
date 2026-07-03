@@ -173,9 +173,34 @@ func (s *Store) BumpSessionVersion(ctx context.Context, id string) error {
 	return sqlutil.RequireRowsAffected(res)
 }
 
+func (s *Store) RotateSessionVersion(ctx context.Context, id string) (int64, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	res, err := tx.ExecContext(ctx, `UPDATE users SET session_version = session_version + 1 WHERE id = ?`, id)
+	if err != nil {
+		return 0, err
+	}
+	if err := sqlutil.RequireRowsAffected(res); err != nil {
+		return 0, err
+	}
+
+	var version int64
+	if err := tx.QueryRowContext(ctx, `SELECT COALESCE(session_version, 0) FROM users WHERE id = ?`, id).Scan(&version); err != nil {
+		return 0, err
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+	return version, nil
+}
+
 func (s *Store) UpdateRole(ctx context.Context, id string, role Role) error {
 	res, err := s.db.ExecContext(ctx,
-		`UPDATE users SET role = ?, updated_at = ? WHERE id = ?`,
+		`UPDATE users SET role = ?, session_version = session_version + 1, updated_at = ? WHERE id = ?`,
 		string(role), now(), id,
 	)
 	if err != nil {

@@ -159,10 +159,20 @@ async function parseError(response: Response): Promise<Error> {
   return new Error(body.error ?? response.statusText);
 }
 
+function requestHeaders(options?: RequestInit): HeadersInit {
+  const headers = new Headers(options?.headers);
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  const method = (options?.method ?? 'GET').toUpperCase();
+  if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+    headers.set('X-Volum-Request', 'fetch');
+  }
+  return headers;
+}
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(apiUrl(url), {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options
+    ...options,
+    headers: requestHeaders(options),
   });
 
   if (!response.ok) throw await parseError(response);
@@ -196,6 +206,7 @@ export async function uploadProfileAvatar(file: File): Promise<AvatarState> {
   form.append('avatar', file);
   const response = await fetch(apiUrl('/api/profile/avatar'), {
     method: 'PUT',
+    headers: { 'X-Volum-Request': 'fetch' },
     body: form,
   });
   if (!response.ok) throw await parseError(response);
@@ -258,6 +269,12 @@ export function changeRole(userId: string, role: 'admin' | 'readonly') {
   });
 }
 
+export function revokeUserSessions(userId: string) {
+  return requestVoid(`/api/users/${userId}/revoke-sessions`, {
+    method: 'POST'
+  });
+}
+
 export function getFiles(path: string, hidden: boolean, options?: { limit?: number; offset?: number }) {
   const params = new URLSearchParams({ path, hidden: String(hidden) });
   if (options?.limit) params.set('limit', String(options.limit));
@@ -308,6 +325,7 @@ export async function uploadChunk(
   if (jobId) params.set('jobId', jobId);
   const response = await fetch(apiUrl(`/api/files/upload-chunk?${params.toString()}`), {
     method: 'POST',
+    headers: { 'X-Volum-Request': 'fetch' },
     body: chunk,
     signal,
   });

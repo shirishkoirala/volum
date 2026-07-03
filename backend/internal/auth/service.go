@@ -71,6 +71,10 @@ func (s *Service) Login(ctx context.Context, username, password string, remember
 	if !s.store.VerifyPassword(record, password) {
 		return "", User{}, false
 	}
+	sessionVersion, err := s.store.RotateSessionVersion(ctx, record.ID)
+	if err != nil {
+		return "", User{}, false
+	}
 	user := User{
 		ID:            record.ID,
 		Username:      record.Username,
@@ -78,7 +82,7 @@ func (s *Service) Login(ctx context.Context, username, password string, remember
 		HasAvatar:     record.HasAvatar,
 		AvatarVersion: record.UpdatedAt.UnixMilli(),
 	}
-	return s.sign(record.ID, record.Role, record.SessionVersion, remember), user, true
+	return s.sign(record.ID, record.Role, sessionVersion, remember), user, true
 }
 
 func (s *Service) UserFromRequest(r *http.Request) (User, bool) {

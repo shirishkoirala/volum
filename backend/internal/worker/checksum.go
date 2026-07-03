@@ -31,6 +31,11 @@ func (w *Worker) processChecksum(ctx context.Context, job jobs.Job) error {
 	if err != nil {
 		return err
 	}
+	if linfo, err := os.Lstat(source); err != nil {
+		return err
+	} else if linfo.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("symlink checksums are not allowed: %s", source)
+	}
 
 	if job.Status == jobs.StatusQueued {
 		if err := w.store.StartJob(ctx, job.ID); err != nil {
@@ -81,6 +86,9 @@ func (w *Worker) checksumDir(ctx context.Context, jobID, source, mode string) er
 		if walkErr != nil {
 			return walkErr
 		}
+		if entry.Type()&os.ModeSymlink != 0 {
+			return nil
+		}
 		if !entry.IsDir() {
 			totalItems++
 		}
@@ -104,6 +112,9 @@ func (w *Worker) checksumDir(ctx context.Context, jobID, source, mode string) er
 	if err := filepath.WalkDir(source, func(path string, entry os.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
+		}
+		if entry.Type()&os.ModeSymlink != 0 {
+			return nil
 		}
 		if entry.IsDir() {
 			return nil
@@ -153,6 +164,13 @@ func (w *Worker) checksumDir(ctx context.Context, jobID, source, mode string) er
 }
 
 func hashFile(path, mode string) (string, error) {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return "", err
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		return "", fmt.Errorf("symlink checksums are not allowed: %s", path)
+	}
 	f, err := os.Open(path)
 	if err != nil {
 		return "", err
