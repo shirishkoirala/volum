@@ -1,5 +1,5 @@
 .dialog {
-  backdrop-filter: blur(22px) saturate(145%);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-menu-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);

@@ -11,6 +11,7 @@ import { useJobs } from '../hooks/useJobs';
 import { useToasts } from '../hooks/useToasts';
 import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
 import { ConflictDialog } from '../components/overlay/ConflictDialog';
+import { AppPanel } from '../components/layout/AppPanel';
 import styles from './JobsPage.module.css';
 
 const jobVariant = (status: JobStatus): 'success' | 'warning' | 'danger' | 'disabled' | 'active' => {
@@ -173,50 +174,57 @@ export function JobsPage({ session, sessionLoading }: JobsPageProps) {
     setJobsEmptyMenu({ x: event.clientX, y: event.clientY });
   };
 
+  const toolbar = jobs.length > 0 ? (
+    <div className={styles.jobToolbar}>
+      {hasFailed && (
+        <Button size="compact" onClick={handleClearFailed}>
+          Clear failed
+        </Button>
+      )}
+      {hasCompleted && (
+        <Button size="compact" onClick={handleClearCompleted}>
+          Clear completed
+        </Button>
+      )}
+    </div>
+  ) : null;
+
+  const pagination = totalPages > 1 ? (
+    <div className={styles.pagination}>
+      <span className={styles.paginationInfo}>
+        Page {currentPage} of {totalPages}
+      </span>
+      <div className={styles.paginationButtons}>
+        <Button size="compact" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
+          <Icon name="pan-left" size={15} />
+        </Button>
+        <Button size="compact" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
+          <Icon name="pan-right" size={15} />
+        </Button>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <>
-      <main className={`${styles.jobsPage} glassPanel mobileAppPanel`} onContextMenu={handleJobsEmptyContextMenu}>
-        {jobs.length > 0 && (
-          <div className={styles.jobToolbar}>
-            {hasFailed && (
-              <Button size="compact" onClick={handleClearFailed}>
-                Clear failed
-              </Button>
-            )}
-            {hasCompleted && (
-              <Button size="compact" onClick={handleClearCompleted}>
-                Clear completed
-              </Button>
-            )}
-          </div>
+      <AppPanel
+        as="main"
+        bodyClassName={styles.jobList}
+        bodyProps={{ onKeyDown: handleJobListKeyDown, role: 'list' }}
+        footer={pagination}
+        header={toolbar}
+        onContextMenu={handleJobsEmptyContextMenu}
+      >
+        {jobs.length === 0 ? (
+          <EmptyState icon={jobsIconUrl()} title="No transfers yet" subtitle="File operations like copy, move, and archive will appear here." />
+        ) : (
+          <>
+            {pageJobs.map((job) => (
+              <JobItem key={job.id} job={job} onCancel={handleCancelJob} onPause={handlePauseJob} onResume={handleResumeJob} onRetry={handleRetryJob} onResolve={setConflictDialogJobId} />
+            ))}
+          </>
         )}
-        <div className={styles.jobList} onKeyDown={handleJobListKeyDown} role="list">
-          {jobs.length === 0 ? (
-            <EmptyState icon={jobsIconUrl()} title="No transfers yet" subtitle="File operations like copy, move, and archive will appear here." />
-          ) : (
-            <>
-              {pageJobs.map((job) => (
-                <JobItem key={job.id} job={job} onCancel={handleCancelJob} onPause={handlePauseJob} onResume={handleResumeJob} onRetry={handleRetryJob} onResolve={setConflictDialogJobId} />
-              ))}
-            </>
-          )}
-        </div>
-        {totalPages > 1 && (
-          <div className={styles.pagination}>
-            <span className={styles.paginationInfo}>
-              Page {currentPage} of {totalPages}
-            </span>
-            <div className={styles.paginationButtons}>
-              <Button size="compact" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>
-                <Icon name="pan-left" size={15} />
-              </Button>
-              <Button size="compact" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>
-                <Icon name="pan-right" size={15} />
-              </Button>
-            </div>
-          </div>
-        )}
-      </main>
+      </AppPanel>
       {jobsEmptyMenu && (
         <JobsEmptyMenu
           x={jobsEmptyMenu.x} y={jobsEmptyMenu.y}

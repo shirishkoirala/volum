@@ -23,7 +23,7 @@
   inset: 0;
   pointer-events: none;
   position: absolute;
-  z-index: -1;
+  z-index: var(--z-behind);
 }
 
 :global([data-theme="dark"]) .authShell::before {
@@ -53,8 +53,8 @@
 }
 
 .themeToggle {
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border-color: var(--glass-border);
   height: 36px;
@@ -123,7 +123,7 @@
 
 .loginField {
   align-items: center;
-  backdrop-filter: blur(14px) saturate(135%);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
@@ -224,7 +224,7 @@
 }
 
 .loginPanel > input {
-  backdrop-filter: blur(14px) saturate(135%);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
   min-height: 48px;

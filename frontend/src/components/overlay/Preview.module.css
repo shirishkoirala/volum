@@ -7,7 +7,7 @@
 
 .previewHeader {
   align-items: center;
-  backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-menu-bg);
   border-bottom: 1px solid var(--glass-border);
   display: flex;

@@ -9,9 +9,9 @@
   grid-column: 1;
   grid-row: 3;
   overflow-x: auto;
-  z-index: 10000;
-  gap: 2px;
-  padding: 0 8px;
+  z-index: var(--z-chrome);
+  gap: var(--space-xxs);
+  padding: 0 var(--space-sm);
 }
 
 /* ── Launcher items (always visible, icon only) ── */
@@ -56,7 +56,7 @@
 .launcher.focused::after {
   width: 16px;
   height: 3px;
-  border-radius: 2px;
+  border-radius: var(--space-xxs);
   bottom: 1px;
 }
 
@@ -72,7 +72,7 @@
   justify-content: center;
   line-height: 1;
   min-width: 16px;
-  padding: 0 4px;
+  padding: 0 var(--space-xs);
   position: absolute;
   right: 0;
   top: 0;
@@ -83,7 +83,7 @@
   width: 1px;
   height: 28px;
   background: var(--color-border-light);
-  margin: 0 4px;
+  margin: 0 var(--space-xs);
   flex-shrink: 0;
 }
 
@@ -91,8 +91,8 @@
 .item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 12px;
+  gap: var(--space-sm);
+  padding: 0 var(--space-md);
   border: none;
   background: transparent;
   color: var(--color-text-secondary);
@@ -132,7 +132,7 @@
   justify-content: center;
   width: 18px;
   height: 18px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   font-size: 10px;
   opacity: 0;
   transition: opacity var(--transition-fast), background var(--transition-fast);

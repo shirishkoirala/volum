@@ -1,5 +1,5 @@
 .folderPicker {
-  backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-menu-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
@@ -148,7 +148,7 @@
 }
 
 .dialogSuggestions button {
-  backdrop-filter: blur(12px) saturate(130%);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-pill);

@@ -1,19 +1,19 @@
 .actions {
   align-items: center;
-  backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: var(--radius-panel);
   box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
   display: flex;
-  gap: 2px;
-  padding: 2px;
+  gap: var(--space-xxs);
+  padding: var(--space-xxs);
 }
 
 .actionButton {
   background: transparent;
   border-color: transparent;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   box-shadow: none;
   color: var(--color-text-muted);
   height: 30px;

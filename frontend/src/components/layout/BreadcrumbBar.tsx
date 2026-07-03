@@ -17,10 +17,11 @@ type BreadcrumbBarProps = {
   onLocationNavigate?: (path: string) => void;
   locationMode?: boolean;
   onToggleLocationMode?: () => void;
+  flush?: boolean;
   children?: ReactNode;
 };
 
-export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNavigate, locationMode, onToggleLocationMode, children }: BreadcrumbBarProps) {
+export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNavigate, locationMode, onToggleLocationMode, flush = false, children }: BreadcrumbBarProps) {
   const navRef = useRef<HTMLDivElement>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
@@ -35,7 +36,7 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
 
   const childrenArray = useMemo(() => Children.toArray(children), [children]);
   const hasToolbar = childrenArray.length > 0 && !locationMode;
-  const headerClassName = `${styles.header}${hasToolbar ? ` ${styles.withToolbar}` : ''}`;
+  const headerClassName = `${styles.header}${hasToolbar ? ` ${styles.withToolbar}` : ''}${flush ? ` ${styles.flush}` : ''}`;
 
   useEffect(() => {
     if (locationMode && locationInputRef.current) {

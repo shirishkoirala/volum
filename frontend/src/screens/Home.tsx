@@ -242,8 +242,9 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       case 'service': {
         const name = typeof win.params.name === 'string' ? win.params.name : win.title;
         const url = typeof win.params.url === 'string' ? win.params.url : '';
+        const iconUrl = typeof win.params.iconUrl === 'string' ? win.params.iconUrl : undefined;
         if (!url) return null;
-        return <ServiceWindow name={name} url={url} />;
+        return <ServiceWindow name={name} url={url} iconUrl={iconUrl} />;
       }
       default:
         return null;

@@ -3,7 +3,7 @@ import {
   Activity as ActivityIcon, AlertTriangle, Archive, ArrowRight, ArrowUpDown, Bookmark, ChevronDown, ChevronRight, ChevronUp, CheckSquare,
   CircleStop, CircleUser, Clipboard, Columns3, Copy, Download, Eye, EyeOff, FileInput, Folder,
   FolderPlus, Globe, Grid3X3, HelpCircle, Home, Info, ListChecks, ListTree, LogOut,
-  List, ListX, LockKeyhole, Monitor, Moon, MoreHorizontal, Pause, Pencil, Play, RefreshCw, RotateCcw,
+  List, ListX, LockKeyhole, Maximize2, Minimize2, Minus, Monitor, Moon, MoreHorizontal, Pause, Pencil, Play, RefreshCw, RotateCcw,
   Scissors, Search, Send, Settings, Square, Sun, Trash2, Upload, Usb, X, HardDrive, ArrowDown,
   type LucideIcon,
 } from 'lucide-react';
@@ -58,6 +58,9 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'weather-clear': Sun,
   'weather-clear-night': Moon,
   'window-close': X,
+  'window-maximize': Maximize2,
+  'window-minimize': Minus,
+  'window-restore': Minimize2,
   'sort-desc': ArrowUpDown,
   'go-home': Home,
   'internet-web-browser': Globe,

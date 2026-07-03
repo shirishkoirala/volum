@@ -12,7 +12,7 @@
 
 .appShell {
   position: fixed;
-  z-index: 200;
+  z-index: var(--z-taskbar);
   inset: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -36,7 +36,7 @@
   inset: 0;
   pointer-events: none;
   position: absolute;
-  z-index: 0;
+  z-index: var(--z-base);
 }
 
 :global([data-theme="dark"]) .appShell {
@@ -82,7 +82,7 @@
   min-height: 0;
   overflow: hidden;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-floating);
 }
 
 .uploadProgress {
@@ -101,7 +101,7 @@
   right: var(--space-xl);
   top: calc(var(--space-xl) + 92px);
   width: 360px;
-  z-index: 139;
+  z-index: var(--z-workspace-chrome);
 }
 
 .uploadProgressHeader {

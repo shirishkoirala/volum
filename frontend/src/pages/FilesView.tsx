@@ -1,5 +1,6 @@
 import { KeyboardEvent, MouseEvent, RefObject, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
+import { AppPanel } from '../components/layout/AppPanel';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Notice } from '../components/ui/shared';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
@@ -498,8 +499,16 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
             }
           }}
         />
-        <div className={styles.fileContent} onContextMenu={handleFilesEmptyContextMenu}>
-          <BreadcrumbBar crumbs={breadcrumbs} onBack={handleGoBack} onGoUp={handleGoUp} onNavigate={handleNavigate} locationMode={locationMode} onLocationNavigate={(path: string) => handleNavigate(path.startsWith('/') ? path : `/${path}`)} onToggleLocationMode={() => fileActions.setLocationMode((v) => !v)}>
+        <AppPanel
+          bodyClassName={styles.fileBody}
+          className={styles.fileContent}
+          footer={(
+            <div className={styles.fileStatusBar} role="status" aria-live="polite">
+              Showing {visibleCounts.rendered.toLocaleString()} of {visibleCounts.total.toLocaleString()} files
+            </div>
+          )}
+          header={(
+            <BreadcrumbBar crumbs={breadcrumbs} onBack={handleGoBack} onGoUp={handleGoUp} onNavigate={handleNavigate} locationMode={locationMode} onLocationNavigate={(path: string) => handleNavigate(path.startsWith('/') ? path : `/${path}`)} onToggleLocationMode={() => fileActions.setLocationMode((v) => !v)} flush>
             <FileSearchBar
               query={browser.query} searchOpen={browser.searchOpen} searchResults={browser.searchResults}
               onSearch={(q) => { browser.setQuery(q); if (searchTimerRef.current) clearTimeout(searchTimerRef.current); searchTimerRef.current = setTimeout(() => browser.handleGlobalSearch(q), 200); browser.setSearchOpen(true); }}
@@ -513,14 +522,19 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
               searchRef={searchRef as React.RefObject<HTMLInputElement | null>}
               onShowAllResults={onShowAllSearchResults ? (q) => onShowAllSearchResults(q) : undefined}
             />
-          </BreadcrumbBar>
+            </BreadcrumbBar>
+          )}
+          onContextMenu={handleFilesEmptyContextMenu}
+          padding="none"
+          scroll={false}
+        >
 
           {browser.error && (
             <Notice variant="error" className={styles.errorBanner} onDismiss={() => browser.setError(null)}>
               {browser.error}
             </Notice>
           )}
-          <div className={`${styles.fileFrame} glassPanel mobileAppPanel`}>
+          <div className={styles.fileFrame}>
             {browser.loading ? (
               <Skeleton variant="card" count={12} />
             ) : browser.filteredEntries.length === 0 ? (
@@ -535,11 +549,8 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
             ) : (
               renderEntries()
             )}
-            <div className={styles.fileStatusBar} role="status" aria-live="polite">
-              Showing {visibleCounts.rendered.toLocaleString()} of {visibleCounts.total.toLocaleString()} files
-            </div>
           </div>
-        </div>
+        </AppPanel>
       </div>
 
       {fileActions.contextMenu && (

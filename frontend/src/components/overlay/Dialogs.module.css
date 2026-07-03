@@ -28,7 +28,7 @@
 .dialogField input,
 .dialogField textarea,
 .dialogField select {
-  backdrop-filter: blur(14px) saturate(135%);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border-color: var(--glass-border);
   min-height: 38px;
@@ -73,7 +73,7 @@
 }
 
 .dialogSuggestions button {
-  backdrop-filter: blur(12px) saturate(130%);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-pill);
@@ -82,7 +82,7 @@
   min-height: 30px;
   max-width: 100%;
   overflow: hidden;
-  padding: 0 10px;
+  padding: 0 var(--space-md);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -189,7 +189,7 @@
 .faviconPreview {
   width: 20px;
   height: 20px;
-  border-radius: 4px;
+  border-radius: var(--radius-2xs);
   flex-shrink: 0;
   object-fit: contain;
 }

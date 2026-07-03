@@ -209,11 +209,11 @@ export function TransferDialog({
         <div className={styles.previewItemList}>
           {previewItems.map((item) => {
             let fateClass = styles.fateNew;
-            let fateIcon = '✦';
-            if (item.fate.startsWith('Skip')) { fateClass = styles.fateSkip; fateIcon = '−'; }
-            else if (item.fate.startsWith('Over')) { fateClass = styles.fateOverwrite; fateIcon = '✦'; }
-            else if (item.fate.startsWith('Ren')) { fateClass = styles.fateRename; fateIcon = '↻'; }
-            else if (item.fate.startsWith('Can')) { fateClass = styles.fateCancel; fateIcon = '✕'; }
+            let fateIcon = '*';
+            if (item.fate.startsWith('Skip')) { fateClass = styles.fateSkip; fateIcon = '-'; }
+            else if (item.fate.startsWith('Over')) { fateClass = styles.fateOverwrite; fateIcon = '*'; }
+            else if (item.fate.startsWith('Ren')) { fateClass = styles.fateRename; fateIcon = 'R'; }
+            else if (item.fate.startsWith('Can')) { fateClass = styles.fateCancel; fateIcon = 'x'; }
             else if (item.fate.startsWith('Ask')) { fateClass = styles.fateAsk; fateIcon = '?'; }
             return (
               <div key={item.name} className={styles.previewItem}>

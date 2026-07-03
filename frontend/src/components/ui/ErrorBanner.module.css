@@ -57,5 +57,5 @@
 
 .dismissBtn:hover {
   background: color-mix(in srgb, var(--color-danger) 24%, transparent);
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--glass-backdrop);
 }

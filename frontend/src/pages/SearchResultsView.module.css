@@ -33,7 +33,7 @@
 
 .backBtn:hover {
   background: var(--app-surface-control-hover-bg);
-  color: var(--color-text-primary);
+  color: var(--color-text);
 }
 
 .searchInputWrap {
@@ -55,8 +55,8 @@
   border: none;
   background: transparent;
   padding: var(--space-xs) 0;
-  font-size: 0.875rem;
-  color: var(--color-text-primary);
+  color: var(--color-text);
+  font-size: var(--font-size-base);
   outline: none;
 }
 
@@ -76,14 +76,14 @@
 
 .clearBtn:hover {
   background: var(--app-surface-control-hover-bg);
-  color: var(--color-text-primary);
+  color: var(--color-text);
 }
 
 .resultMeta {
-  padding: var(--space-xs) var(--space-md);
-  font-size: 0.8rem;
   color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
   flex-shrink: 0;
+  padding: var(--space-xs) var(--space-md);
   background: var(--app-surface-header-bg);
   border-bottom: 1px solid var(--app-surface-divider);
 }
@@ -124,38 +124,38 @@
 }
 
 .resultName {
+  color: var(--color-text);
   flex: 0 0 auto;
+  font-size: var(--font-size-base);
   min-width: 180px;
-  font-size: 0.875rem;
-  color: var(--color-text-primary);
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .resultPath {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.8rem;
   color: var(--color-text-muted);
-  white-space: nowrap;
+  font-family: var(--font-mono);
+  flex: 1;
+  font-size: var(--font-size-sm);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: var(--font-mono);
+  white-space: nowrap;
 }
 
 .resultSize {
-  flex: 0 0 80px;
-  text-align: right;
-  font-size: 0.8rem;
   color: var(--color-text-secondary);
+  flex: 0 0 80px;
+  font-size: var(--font-size-sm);
+  text-align: right;
 }
 
 .resultDate {
-  flex: 0 0 120px;
-  text-align: right;
-  font-size: 0.8rem;
   color: var(--color-text-secondary);
+  flex: 0 0 120px;
+  font-size: var(--font-size-sm);
+  text-align: right;
 }
 
 @media (max-width: 760px) {
@@ -177,28 +177,28 @@
   .resultRow {
     flex-wrap: wrap;
     padding: var(--space-xs) var(--space-sm);
-    gap: 2px var(--space-sm);
+    gap: var(--space-xxs) var(--space-sm);
   }
 
   .resultName {
     min-width: 0;
     flex: 1 1 auto;
-    font-size: 0.8rem;
+    font-size: var(--font-size-sm);
   }
 
   .resultPath {
     flex: 0 0 100%;
-    font-size: 0.72rem;
+    font-size: var(--font-size-xs);
     order: 1;
   }
 
   .resultSize {
     flex: 0 0 auto;
-    font-size: 0.72rem;
+    font-size: var(--font-size-xs);
   }
 
   .resultDate {
     flex: 0 0 auto;
-    font-size: 0.72rem;
+    font-size: var(--font-size-xs);
   }
 }

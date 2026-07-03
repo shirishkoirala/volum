@@ -26,6 +26,7 @@ import {
 import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
 import { Skeleton } from '../components/ui/Skeleton';
+import { AppPanel } from '../components/layout/AppPanel';
 import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
@@ -617,12 +618,9 @@ export function SettingsPanel({
   );
 
   return (
-    <div className={`${styles.settingsBodyPage} glassPanel mobileAppPanel`}>
-      {sidebarNav}
-      <div className={styles.settingsContent}>
-        {content}
-      </div>
-    </div>
+    <AppPanel layout="split" sidebar={sidebarNav}>
+      {content}
+    </AppPanel>
   );
 }
 

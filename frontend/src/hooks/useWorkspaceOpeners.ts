@@ -164,6 +164,7 @@ export function useWorkspaceOpeners({
       params: {
         name: service.name,
         url: service.url,
+        iconUrl: service.iconUrl,
       },
       width: 980,
       height: 640,

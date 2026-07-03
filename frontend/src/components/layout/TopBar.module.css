@@ -5,20 +5,20 @@
   background: var(--app-surface-header-bg);
   border-bottom: 1px solid var(--app-surface-divider);
   display: flex;
-  gap: 8px;
+  gap: var(--space-sm);
   grid-column: 1 / -1;
   grid-row: 1;
   height: 44px;
-  padding: 0 8px;
+  padding: 0 var(--space-sm);
   position: relative;
-  z-index: 10000;
+  z-index: var(--z-chrome);
 }
 
 .left {
   align-items: center;
   display: flex;
   flex: 0 0 auto;
-  gap: 4px;
+  gap: var(--space-xs);
   min-width: 0;
 }
 
@@ -33,25 +33,25 @@
   align-items: center;
   display: flex;
   flex: 0 0 auto;
-  gap: 6px;
+  gap: var(--space-sm);
   margin-left: auto;
 }
 
 .iconCluster {
   align-items: center;
   display: flex;
-  gap: 4px;
+  gap: var(--space-xs);
 }
 
 .brand {
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   color: var(--color-text);
   cursor: pointer;
   display: flex;
-  gap: 8px;
+  gap: var(--space-sm);
   padding: 5px 9px;
   transition: background var(--transition-fast), color var(--transition-fast);
 }
@@ -81,7 +81,7 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
   opacity: 1;
-  padding: 0 4px 0 8px;
+  padding: 0 var(--space-xs) 0 var(--space-sm);
   user-select: none;
   white-space: nowrap;
 }
@@ -94,7 +94,7 @@
 .toolbarIconButton {
   background: transparent;
   border-color: transparent;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   box-shadow: none;
   color: var(--color-text-secondary);
   height: 30px;
@@ -115,7 +115,7 @@
   align-items: center;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   box-shadow: none;
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -138,11 +138,11 @@
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-menu);
   min-width: 180px;
-  padding: 6px;
+  padding: var(--radius-sm);
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
-  z-index: 10001;
+  z-index: var(--z-chrome-dropdown);
 }
 
 .overflowItem {
@@ -153,9 +153,9 @@
   color: var(--color-text);
   cursor: pointer;
   display: flex;
-  gap: 10px;
+  gap: var(--space-md);
   min-height: 34px;
-  padding: 0 10px;
+  padding: 0 var(--space-md);
   text-align: left;
   transition: background var(--transition-fast);
   width: 100%;
@@ -187,7 +187,7 @@
   justify-content: center;
   line-height: 1;
   min-width: 16px;
-  padding: 0 3px;
+  padding: 0 var(--radius-xs);
   position: absolute;
   right: -4px;
   top: -4px;
@@ -202,7 +202,7 @@
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-compact);
   box-shadow: none;
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -237,14 +237,14 @@
   position: absolute;
   right: 0;
   top: 100%;
-  z-index: 10001;
+  z-index: var(--z-chrome-dropdown);
 }
 
 .dropdownHeader {
   align-items: center;
   display: flex;
-  gap: 8px;
-  padding: 10px 12px 8px;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-md) var(--space-sm);
 }
 
 .dropdownAvatar,
@@ -279,13 +279,13 @@
   color: var(--color-brand);
   font-size: var(--font-size-xs);
   font-weight: 600;
-  padding: 1px 8px;
+  padding: 1px var(--space-sm);
   text-transform: capitalize;
 }
 
 .dropdownDivider {
   border-top: 1px solid var(--color-border-light);
-  margin: 0 4px;
+  margin: 0 var(--space-xs);
 }
 
 .dropdownItem {
@@ -296,9 +296,9 @@
   cursor: pointer;
   display: flex;
   font-size: var(--font-size-sm);
-  gap: 8px;
+  gap: var(--space-sm);
   min-height: 34px;
-  padding: 0 12px;
+  padding: 0 var(--space-md);
   text-align: left;
   transition: background var(--transition-fast);
   width: 100%;
@@ -327,7 +327,7 @@
 
   .right,
   .iconCluster {
-    gap: 2px;
+    gap: var(--space-xxs);
   }
 
   .toolbarIconButton,

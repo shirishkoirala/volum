@@ -7,6 +7,11 @@
   margin-bottom: var(--space-md);
 }
 
+.header.flush {
+  margin-bottom: 0;
+  width: 100%;
+}
+
 .left {
   align-items: center;
   display: flex;
@@ -57,7 +62,7 @@
   display: inline-flex;
   font-size: var(--font-size-base);
   gap: var(--space-xxs);
-  padding: 4px 6px;
+  padding: var(--space-xs) var(--radius-sm);
   transition: background var(--transition-fast);
 }
 
@@ -71,7 +76,7 @@
   font-weight: 600;
   max-width: 360px;
   overflow: hidden;
-  padding: 4px 6px;
+  padding: var(--space-xs) var(--radius-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -94,7 +99,7 @@
   justify-content: center;
   letter-spacing: 1px;
   min-width: 28px;
-  padding: 0 4px;
+  padding: 0 var(--space-xs);
   transition: background var(--transition-fast);
 }
 
@@ -116,7 +121,7 @@
   overflow-y: auto;
   position: absolute;
   top: 100%;
-  z-index: 10000;
+  z-index: var(--z-chrome);
 }
 
 .overflowItem {
@@ -126,7 +131,7 @@
   cursor: pointer;
   display: block;
   font-size: var(--font-size-base);
-  padding: 8px 14px;
+  padding: var(--space-sm) var(--radius-lg);
   text-align: left;
   transition: background var(--transition-fast);
   width: 100%;
@@ -151,7 +156,7 @@
   font-size: var(--font-size-base);
   min-height: 32px;
   outline: none;
-  padding: 0 10px;
+  padding: 0 var(--space-md);
   width: 100%;
 }
 
@@ -200,24 +205,24 @@
   position: absolute;
   right: 0;
   top: 100%;
-  z-index: 10000;
+  z-index: var(--z-chrome);
 }
 
 .moreMenu button {
   justify-content: flex-start;
-  padding: 6px 10px;
+  padding: var(--radius-sm) var(--space-md);
   width: 100%;
-  gap: 8px;
+  gap: var(--space-sm);
   font-size: var(--font-size-base);
 }
 
 .moreMenu label {
-  padding: 6px 10px;
+  padding: var(--radius-sm) var(--space-md);
   white-space: nowrap;
 }
 
 .moreMenu select {
-  margin: 4px 8px;
+  margin: var(--space-xs) var(--space-sm);
 }
 
 .measureContainer {

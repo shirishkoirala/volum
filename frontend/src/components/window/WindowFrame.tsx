@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useWindowManager, type WindowState } from '../../contexts/WindowManager';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { Icon } from '../ui/Icon';
 import styles from './WindowFrame.module.css';
 
 type ResizeDir = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
@@ -233,10 +234,16 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
           <span className={styles.titleText}>{win.title}</span>
           <div className={styles.controls}>
             {!isMobile && <>
-              <button className={`${styles.controlBtn} appSurfaceControl`} onClick={(e) => { e.stopPropagation(); toggleMinimize(win.id); }} aria-label="Minimize">─</button>
-              <button className={`${styles.controlBtn} appSurfaceControl`} onClick={(e) => { e.stopPropagation(); handleMaximizeClick(); }} aria-label={isMaximized ? 'Restore' : 'Maximize'}>{isMaximized ? '❐' : '□'}</button>
+              <button className={`${styles.controlBtn} appSurfaceControl`} onClick={(e) => { e.stopPropagation(); toggleMinimize(win.id); }} aria-label="Minimize">
+                <Icon name="window-minimize" size={14} />
+              </button>
+              <button className={`${styles.controlBtn} appSurfaceControl`} onClick={(e) => { e.stopPropagation(); handleMaximizeClick(); }} aria-label={isMaximized ? 'Restore' : 'Maximize'}>
+                <Icon name={isMaximized ? 'window-restore' : 'window-maximize'} size={14} />
+              </button>
             </>}
-            <button className={`${styles.controlBtn} ${styles.closeBtn} appSurfaceControl`} onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }} aria-label="Close">✕</button>
+            <button className={`${styles.controlBtn} ${styles.closeBtn} appSurfaceControl`} onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }} aria-label="Close">
+              <Icon name="window-close" size={14} />
+            </button>
           </div>
         </div>
         <div className={`${styles.content} appSurfaceBody`}>

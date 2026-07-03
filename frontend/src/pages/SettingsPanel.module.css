@@ -1,31 +1,21 @@
-.settingsBodyPage {
+.settingsNav {
   display: flex;
   flex: 1;
-  margin: var(--space-md);
-  min-height: 0;
-  overflow: hidden;
-}
-
-.settingsNav {
-  backdrop-filter: blur(18px) saturate(140%);
-  background: var(--glass-menu-bg);
-  border-right: 1px solid var(--glass-border);
-  display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-  min-width: 200px;
   overflow-y: auto;
   padding: var(--space-sm);
-  width: 200px;
+  width: 100%;
 }
 
 .settingsFilter {
-  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
-  padding: 6px 10px;
+  padding: var(--space-sm) var(--space-md);
   width: 100%;
   transition: border-color var(--transition-fast);
 }
@@ -52,9 +42,9 @@
   cursor: pointer;
   display: flex;
   font-size: var(--font-size-base);
-  gap: 10px;
+  gap: var(--space-md);
   min-height: 36px;
-  padding: 0 10px;
+  padding: 0 var(--space-md);
   text-align: left;
   transition: background var(--transition-fast);
   width: 100%;
@@ -69,13 +59,6 @@
   background: var(--glass-selected-bg);
   color: var(--color-brand-text);
   font-weight: 600;
-}
-
-.settingsContent {
-  color: var(--color-text);
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--space-md) var(--space-lg) var(--space-lg);
 }
 
 .settingsSection {
@@ -93,7 +76,7 @@
 
 .settingsDetails {
   display: grid;
-  gap: 4px;
+  gap: var(--space-xs);
   margin: 0;
 }
 
@@ -116,12 +99,13 @@
 }
 
 .settingsRootItem {
-  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   display: grid;
-  gap: 6px;
+  gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
 }
 
@@ -246,7 +230,7 @@
   align-items: center;
   cursor: pointer;
   display: flex;
-  gap: 6px;
+  gap: var(--space-sm);
   font-size: var(--font-size-sm);
 }
 
@@ -277,8 +261,8 @@
   align-items: center;
   color: var(--color-danger-text);
   display: inline-flex;
-  gap: 3px;
-  margin-left: 8px;
+  gap: var(--space-xs);
+  margin-left: var(--space-sm);
   font-size: var(--font-size-xs);
   font-weight: 700;
   text-transform: none;
@@ -291,18 +275,19 @@
 .spin {
   animation: var(--anim-spin);
   flex-shrink: 0;
-  margin-right: 4px;
+  margin-right: var(--space-xs);
 }
 
 .userList {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-sm);
 }
 
 .userRow {
   align-items: center;
-  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
@@ -335,24 +320,25 @@
 
 .userActions {
   display: flex;
-  gap: 4px;
+  gap: var(--space-xs);
   align-items: center;
 }
 
 .pwdInline {
   display: flex;
-  gap: 4px;
+  gap: var(--space-xs);
   align-items: center;
 }
 
 .pwdInline input {
-  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   min-height: 28px;
-  padding: 0 8px;
+  padding: 0 var(--space-sm);
   width: 140px;
 }
 
@@ -377,24 +363,26 @@
 
 .createUserForm input,
 .createUserForm select {
-  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   min-height: 34px;
-  padding: 0 10px;
+  padding: 0 var(--space-md);
 }
 
 .serviceList {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-sm);
 }
 
 .serviceRow {
   align-items: center;
-  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
@@ -445,27 +433,17 @@
 
 .serviceActions {
   display: flex;
-  gap: 4px;
+  gap: var(--space-xs);
   align-items: center;
 }
 
 @media (max-width: 760px) {
-  .settingsBodyPage {
-    flex-direction: column;
-    margin: var(--space-sm);
-    margin-bottom: 0;
-  }
-
   .settingsNav {
-    border-bottom: 1px solid var(--color-border-light);
-    border-right: 0;
     flex-direction: row;
     flex-wrap: wrap;
     gap: var(--space-xs);
-    min-width: 0;
     overflow-x: auto;
     padding: var(--space-sm);
-    width: 100%;
   }
 
   .settingsFilter {
@@ -479,11 +457,7 @@
 
   .settingsNavItem {
     min-height: 44px;
-    padding: 0 8px;
-  }
-
-  .settingsContent {
-    padding: var(--space-md);
+    padding: 0 var(--space-sm);
   }
 
   .settingsSection {
@@ -497,7 +471,7 @@
   .settingsRootName {
     align-items: flex-start;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--space-xxs);
   }
 
   .maintenanceActions,

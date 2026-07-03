@@ -75,7 +75,7 @@
     overflow: hidden;
     padding: 6px;
     padding-bottom: calc(6px + env(safe-area-inset-bottom, 0));
-    z-index: 10000;
+    z-index: var(--z-chrome);
     position: relative;
   }
 

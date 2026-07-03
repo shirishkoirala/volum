@@ -51,7 +51,7 @@
   opacity: var(--opacity-ghost);
   pointer-events: none;
   position: absolute;
-  z-index: 10;
+  z-index: var(--z-raised);
 }
 
 @media (max-width: 760px) {

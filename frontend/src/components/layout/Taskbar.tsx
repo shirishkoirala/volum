@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useWindowManager } from '../../contexts/WindowManager';
+import { Icon } from '../ui/Icon';
 import { IconImg } from '../ui/shared';
 import styles from './Taskbar.module.css';
 
@@ -85,7 +86,7 @@ export function Taskbar({ launcherItems, onActivateLauncher }: TaskbarProps) {
               aria-label={`Close ${win.title}`}
               tabIndex={-1}
             >
-              ✕
+              <Icon name="window-close" size={12} />
             </span>
           </button>
         );
