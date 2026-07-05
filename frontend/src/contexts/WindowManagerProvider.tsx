@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { WindowManagerContext, type WindowState } from './WindowManager';
+import { STANDARD_WINDOW_W, STANDARD_WINDOW_H } from '../utils/window';
 
 let nextZIndex = 100;
 const MAX_Z_INDEX = 9990;
@@ -43,8 +44,8 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
         params: opts.params,
         x: opts.x ?? 100,
         y: opts.y ?? 80,
-        width: opts.width ?? 800,
-        height: opts.height ?? 500,
+        width: opts.width ?? STANDARD_WINDOW_W,
+        height: opts.height ?? STANDARD_WINDOW_H,
         minimized: false,
         maximized: false,
         zIndex: z,
@@ -91,6 +92,8 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
         icon: opts.icon,
         winType: opts.winType,
         params: opts.params,
+        width: opts.width ?? STANDARD_WINDOW_W,
+        height: opts.height ?? STANDARD_WINDOW_H,
         minimized: false,
         zIndex: z,
       } : w));
@@ -112,8 +115,8 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
       params: opts.params,
       x: opts.x ?? x,
       y: opts.y ?? y,
-      width: opts.width ?? 800,
-      height: opts.height ?? 500,
+      width: opts.width ?? STANDARD_WINDOW_W,
+      height: opts.height ?? STANDARD_WINDOW_H,
       minimized: false,
       maximized: false,
       zIndex: z,
