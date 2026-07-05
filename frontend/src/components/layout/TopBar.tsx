@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { AppMenuBar, type AppMenuHandlers } from './AppMenuBar';
 import { TopBarSearch } from './TopBarSearch';
 import { ActivityPanel } from './ActivityPanel';
+import { Calendar } from '../overlay/Calendar';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { IconButton } from '../ui/shared';
 import { Icon } from '../ui/Icon';
@@ -65,6 +66,7 @@ export function TopBar({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [overflowOpen, setOverflowOpen] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [searchExpanded, setSearchExpanded] = useState(() => searchQuery.length > 0 || searchOpen);
   const [visibleActionCount, setVisibleActionCount] = useState(Number.MAX_SAFE_INTEGER);
   const topbarRef = useRef<HTMLElement>(null);
@@ -75,6 +77,7 @@ export function TopBar({
   const activityRef = useRef<HTMLDivElement>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -87,10 +90,11 @@ export function TopBar({
     setUserMenuOpen(false);
     setActivityOpen(false);
     setOverflowOpen(false);
+    setCalendarOpen(false);
   }, []);
 
   useEffect(() => {
-    if (!userMenuOpen && !activityOpen && !overflowOpen) return;
+    if (!userMenuOpen && !activityOpen && !overflowOpen && !calendarOpen) return;
     const handleClick = (e: MouseEvent) => {
       if (userMenuOpen && menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
@@ -101,10 +105,13 @@ export function TopBar({
       if (overflowOpen && overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
         setOverflowOpen(false);
       }
+      if (calendarOpen && calendarRef.current && !calendarRef.current.contains(e.target as Node)) {
+        setCalendarOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [userMenuOpen, activityOpen, overflowOpen]);
+  }, [userMenuOpen, activityOpen, overflowOpen, calendarOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e: globalThis.KeyboardEvent) => {
@@ -326,7 +333,18 @@ export function TopBar({
             )}
           </div>
         )}
-        <span className={styles.clock}>{dateTime}</span>
+        <div className={styles.calendarArea} ref={calendarRef}>
+          <button
+            type="button"
+            className={styles.clock}
+            onClick={() => setCalendarOpen((v) => !v)}
+            aria-label="Toggle calendar"
+            aria-expanded={calendarOpen}
+          >
+            {dateTime}
+          </button>
+          {calendarOpen && <Calendar onClose={() => setCalendarOpen(false)} />}
+        </div>
       </div>
     </header>
   );
