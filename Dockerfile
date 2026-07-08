@@ -5,17 +5,19 @@ COPY backend/go.mod backend/go.sum ./
 RUN go mod download
 RUN CGO_ENABLED=0 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.3.1
 COPY backend ./
-RUN golangci-lint run --timeout=20m ./...
-RUN go vet ./...
-RUN go test ./...
+ARG RUN_BACKEND_CHECKS=true
+RUN if [ "${RUN_BACKEND_CHECKS}" = "true" ]; then golangci-lint run --timeout=20m ./...; fi
+RUN if [ "${RUN_BACKEND_CHECKS}" = "true" ]; then go vet ./...; fi
+RUN if [ "${RUN_BACKEND_CHECKS}" = "true" ]; then go test ./...; fi
 
 FROM node:22-alpine AS frontend
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend ./
-RUN npm run format:check
-RUN npm run test:ci
+ARG RUN_FRONTEND_CHECKS=true
+RUN if [ "${RUN_FRONTEND_CHECKS}" = "true" ]; then npm run format:check; fi
+RUN if [ "${RUN_FRONTEND_CHECKS}" = "true" ]; then npm run test:ci; fi
 ARG VITE_PUBLIC_PATH=""
 RUN VITE_PUBLIC_PATH=${VITE_PUBLIC_PATH} npm run build
 
