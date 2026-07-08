@@ -17,24 +17,24 @@ function root(path: string, options: Partial<RootEntry> = {}): RootEntry {
 
 describe('defaultRootPath', () => {
   it('prefers the available home root', () => {
-    expect(defaultRootPath([
-      root('/storage'),
-      root('/home/shirish', { isHome: true }),
-    ])).toBe('/home/shirish');
+    expect(defaultRootPath([root('/storage'), root('/home/shirish', { isHome: true })])).toBe(
+      '/home/shirish',
+    );
   });
 
   it('falls back to the first available root when no home root is set', () => {
-    expect(defaultRootPath([
-      root('/storage', { available: false }),
-      root('/mnt/media'),
-    ])).toBe('/mnt/media');
+    expect(defaultRootPath([root('/storage', { available: false }), root('/mnt/media')])).toBe(
+      '/mnt/media',
+    );
   });
 
   it('falls back to the home root when it is unavailable', () => {
-    expect(defaultRootPath([
-      root('/storage', { available: false }),
-      root('/home/shirish', { available: false, isHome: true }),
-    ])).toBe('/home/shirish');
+    expect(
+      defaultRootPath([
+        root('/storage', { available: false }),
+        root('/home/shirish', { available: false, isHome: true }),
+      ]),
+    ).toBe('/home/shirish');
   });
 
   it('falls back to / when no roots exist', () => {

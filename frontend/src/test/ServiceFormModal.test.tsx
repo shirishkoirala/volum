@@ -102,10 +102,14 @@ describe('ServiceFormModal', () => {
 
     fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Invalid Health' } });
     fireEvent.change(screen.getByLabelText('URL'), { target: { value: 'https://example.com' } });
-    fireEvent.change(screen.getByLabelText('Health Check URL (optional)'), { target: { value: 'ftp://example.com/health' } });
+    fireEvent.change(screen.getByLabelText('Health Check URL (optional)'), {
+      target: { value: 'ftp://example.com/health' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
-    expect(screen.getByText('Enter a valid health check http:// or https:// URL.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Enter a valid health check http:// or https:// URL.'),
+    ).toBeInTheDocument();
     expect(onSave).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -130,7 +134,9 @@ describe('ServiceFormModal', () => {
 
     expect(screen.getByRole('heading', { name: 'Edit Service' })).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('URL'), { target: { value: 'https://new.example.com' } });
+    fireEvent.change(screen.getByLabelText('URL'), {
+      target: { value: 'https://new.example.com' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(onClose).toHaveBeenCalledOnce();

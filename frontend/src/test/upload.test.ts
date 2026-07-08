@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { unsupportedUploadReason, uploadFileWithResume, uploadFilesWithResume } from '../utils/upload';
+import {
+  unsupportedUploadReason,
+  uploadFileWithResume,
+  uploadFilesWithResume,
+} from '../utils/upload';
 import * as client from '../api/client';
 import * as baseUrl from '../api/baseUrl';
 
@@ -32,12 +36,16 @@ describe('upload utilities', () => {
   describe('unsupportedUploadReason', () => {
     it('rejects app bundles before upload starts', () => {
       const file = new File([], 'Nextcloud.app');
-      expect(unsupportedUploadReason(file)).toBe('Folder and app-bundle uploads are not supported yet');
+      expect(unsupportedUploadReason(file)).toBe(
+        'Folder and app-bundle uploads are not supported yet',
+      );
     });
 
     it('rejects app bundles case-insensitively', () => {
       const file = new File([], 'Example.APP');
-      expect(unsupportedUploadReason(file)).toBe('Folder and app-bundle uploads are not supported yet');
+      expect(unsupportedUploadReason(file)).toBe(
+        'Folder and app-bundle uploads are not supported yet',
+      );
     });
 
     it('allows ordinary zero-byte files', () => {
@@ -57,13 +65,25 @@ describe('upload utilities', () => {
       expect(result).toEqual({ jobId: 'job-1', complete: true });
       expect(mockGetUploadStatus).toHaveBeenCalledWith('/target', 'test.txt');
       expect(mockUploadChunk).toHaveBeenCalledTimes(1);
-      expect(mockUploadChunk).toHaveBeenCalledWith('/target', 'test.txt', 0, 500, expect.any(Blob), undefined, undefined);
+      expect(mockUploadChunk).toHaveBeenCalledWith(
+        '/target',
+        'test.txt',
+        0,
+        500,
+        expect.any(Blob),
+        undefined,
+        undefined,
+      );
     });
 
     it('uploads a multi-chunk file (2 MB span)', async () => {
       const fileSize = 3 * 1024 * 1024 + 100;
       const file = createFile(fileSize, 'large.bin');
-      mockGetUploadStatus.mockResolvedValue({ filename: 'large.bin', received: 0, complete: false });
+      mockGetUploadStatus.mockResolvedValue({
+        filename: 'large.bin',
+        received: 0,
+        complete: false,
+      });
       mockUploadChunk
         .mockResolvedValueOnce({ received: 1024 * 1024, complete: false, jobId: 'job-1' })
         .mockResolvedValueOnce({ received: 2 * 1024 * 1024, complete: false, jobId: 'job-1' })
@@ -77,18 +97,36 @@ describe('upload utilities', () => {
 
     it('resumes from existing partial upload', async () => {
       const file = createFile(2000);
-      mockGetUploadStatus.mockResolvedValue({ filename: 'test.txt', received: 500, complete: false, jobId: 'job-1' });
+      mockGetUploadStatus.mockResolvedValue({
+        filename: 'test.txt',
+        received: 500,
+        complete: false,
+        jobId: 'job-1',
+      });
       mockUploadChunk.mockResolvedValue({ received: 2000, complete: true, jobId: 'job-1' });
 
       const result = await uploadFileWithResume('/target', file);
 
       expect(result).toEqual({ jobId: 'job-1', complete: true });
-      expect(mockUploadChunk).toHaveBeenCalledWith('/target', 'test.txt', 500, 2000, expect.any(Blob), 'job-1', undefined);
+      expect(mockUploadChunk).toHaveBeenCalledWith(
+        '/target',
+        'test.txt',
+        500,
+        2000,
+        expect.any(Blob),
+        'job-1',
+        undefined,
+      );
     });
 
     it('returns early if file is already fully received', async () => {
       const file = createFile(100);
-      mockGetUploadStatus.mockResolvedValue({ filename: 'test.txt', received: 100, complete: true, jobId: 'job-1' });
+      mockGetUploadStatus.mockResolvedValue({
+        filename: 'test.txt',
+        received: 100,
+        complete: true,
+        jobId: 'job-1',
+      });
 
       const result = await uploadFileWithResume('/target', file);
 
@@ -107,8 +145,16 @@ describe('upload utilities', () => {
       await uploadFileWithResume('/target', file, undefined, progressCb);
 
       expect(progressCb).toHaveBeenCalledTimes(2);
-      expect(progressCb).toHaveBeenNthCalledWith(1, { filename: 'test.txt', received: 1024, total: 1500 });
-      expect(progressCb).toHaveBeenNthCalledWith(2, { filename: 'test.txt', received: 1500, total: 1500 });
+      expect(progressCb).toHaveBeenNthCalledWith(1, {
+        filename: 'test.txt',
+        received: 1024,
+        total: 1500,
+      });
+      expect(progressCb).toHaveBeenNthCalledWith(2, {
+        filename: 'test.txt',
+        received: 1500,
+        total: 1500,
+      });
     });
 
     it('reports job id via callback on first chunk', async () => {
@@ -124,7 +170,12 @@ describe('upload utilities', () => {
 
     it('reports job id for resumed upload on startup', async () => {
       const file = createFile(100);
-      mockGetUploadStatus.mockResolvedValue({ filename: 'test.txt', received: 50, complete: false, jobId: 'job-resumed' });
+      mockGetUploadStatus.mockResolvedValue({
+        filename: 'test.txt',
+        received: 50,
+        complete: false,
+        jobId: 'job-resumed',
+      });
       mockUploadChunk.mockResolvedValue({ received: 100, complete: true, jobId: 'job-resumed' });
 
       const jobStartedCb = vi.fn();
@@ -136,13 +187,22 @@ describe('upload utilities', () => {
     it('cancels mid-upload when signal is aborted', async () => {
       const file = createFile(3000);
       type ChunkResponse = { received: number; complete: boolean; jobId?: string };
-      type StatusResponse = { filename: string; received: number; complete: boolean; jobId?: string };
+      type StatusResponse = {
+        filename: string;
+        received: number;
+        complete: boolean;
+        jobId?: string;
+      };
 
       let resolveChunk: (v: ChunkResponse) => void;
-      const chunkPromise = new Promise<ChunkResponse>((resolve) => { resolveChunk = resolve; });
+      const chunkPromise = new Promise<ChunkResponse>((resolve) => {
+        resolveChunk = resolve;
+      });
 
       let resolveStatus: (v: StatusResponse) => void;
-      const statusPromise = new Promise<StatusResponse>((resolve) => { resolveStatus = resolve; });
+      const statusPromise = new Promise<StatusResponse>((resolve) => {
+        resolveStatus = resolve;
+      });
 
       mockGetUploadStatus.mockImplementationOnce(() => statusPromise);
       mockUploadChunk.mockImplementationOnce(() => chunkPromise);
@@ -195,6 +255,39 @@ describe('upload utilities', () => {
       expect(mockUploadChunk).toHaveBeenCalledTimes(2);
     });
 
+    it('uploads many small files sequentially without dropping progress callbacks', async () => {
+      const files = Array.from({ length: 25 }, (_, index) => createFile(32, `small-${index}.txt`));
+      for (const file of files) {
+        mockGetUploadStatus.mockResolvedValueOnce({
+          filename: file.name,
+          received: 0,
+          complete: false,
+        });
+        mockUploadChunk.mockResolvedValueOnce({
+          received: file.size,
+          complete: true,
+          jobId: `job-${file.name}`,
+        });
+      }
+
+      const onFileComplete = vi.fn();
+      const onFileJobStarted = vi.fn();
+      const result = await uploadFilesWithResume(
+        '/target',
+        files,
+        undefined,
+        undefined,
+        onFileComplete,
+        onFileJobStarted,
+      );
+
+      expect(result).toEqual({ jobId: 'job-small-24.txt', completed: 25 });
+      expect(mockGetUploadStatus).toHaveBeenCalledTimes(25);
+      expect(mockUploadChunk).toHaveBeenCalledTimes(25);
+      expect(onFileComplete).toHaveBeenCalledTimes(25);
+      expect(onFileJobStarted).toHaveBeenCalledTimes(25);
+    });
+
     it('reports per-file progress', async () => {
       const file1 = createFile(100, 'a.txt');
       const file2 = createFile(100, 'b.txt');
@@ -207,7 +300,14 @@ describe('upload utilities', () => {
 
       const onFileComplete = vi.fn();
       const onFileJobStarted = vi.fn();
-      await uploadFilesWithResume('/target', [file1, file2], undefined, undefined, onFileComplete, onFileJobStarted);
+      await uploadFilesWithResume(
+        '/target',
+        [file1, file2],
+        undefined,
+        undefined,
+        onFileComplete,
+        onFileJobStarted,
+      );
 
       expect(onFileComplete).toHaveBeenCalledTimes(2);
       expect(onFileComplete).toHaveBeenNthCalledWith(1, 'a.txt');
@@ -223,13 +323,22 @@ describe('upload utilities', () => {
       const file3 = createFile(100, 'c.txt');
 
       type ChunkResponse2 = { received: number; complete: boolean; jobId?: string };
-      type StatusResponse2 = { filename: string; received: number; complete: boolean; jobId?: string };
+      type StatusResponse2 = {
+        filename: string;
+        received: number;
+        complete: boolean;
+        jobId?: string;
+      };
 
       let resolveChunk: (v: ChunkResponse2) => void;
-      const chunkPromise = new Promise<ChunkResponse2>((resolve) => { resolveChunk = resolve; });
+      const chunkPromise = new Promise<ChunkResponse2>((resolve) => {
+        resolveChunk = resolve;
+      });
 
       let resolveStatus: (v: StatusResponse2) => void;
-      const statusPromise = new Promise<StatusResponse2>((resolve) => { resolveStatus = resolve; });
+      const statusPromise = new Promise<StatusResponse2>((resolve) => {
+        resolveStatus = resolve;
+      });
 
       mockGetUploadStatus.mockImplementationOnce(() => statusPromise);
       mockUploadChunk.mockImplementationOnce(() => chunkPromise);
@@ -264,10 +373,12 @@ describe('upload utilities', () => {
 
     it('returns with paused interruption on UploadPausedError', async () => {
       const file1 = createFile(100, 'a.txt');
-      mockGetUploadStatus
-        .mockResolvedValueOnce({ filename: 'a.txt', received: 0, complete: false });
-      mockUploadChunk
-        .mockRejectedValueOnce(new UploadPausedError('a.txt'));
+      mockGetUploadStatus.mockResolvedValueOnce({
+        filename: 'a.txt',
+        received: 0,
+        complete: false,
+      });
+      mockUploadChunk.mockRejectedValueOnce(new UploadPausedError('a.txt'));
 
       const result = await uploadFilesWithResume('/target', [file1]);
 
@@ -288,12 +399,15 @@ describe('apiUrl path prefix', () => {
 
   afterEach(() => {
     import.meta.env.VITE_PUBLIC_PATH = ORIGINAL_VITE;
+    vi.unstubAllGlobals();
   });
 
   it('returns unchanged path when no prefix is set', () => {
     import.meta.env.VITE_PUBLIC_PATH = '';
     expect(baseUrl.apiUrl('/api/files')).toBe('/api/files');
-    expect(baseUrl.apiUrl('/api/files/upload-chunk?path=/&filename=a.txt')).toBe('/api/files/upload-chunk?path=/&filename=a.txt');
+    expect(baseUrl.apiUrl('/api/files/upload-chunk?path=/&filename=a.txt')).toBe(
+      '/api/files/upload-chunk?path=/&filename=a.txt',
+    );
   });
 
   it('prefixes path when VITE_PUBLIC_PATH is set', () => {
@@ -322,5 +436,62 @@ describe('apiUrl path prefix', () => {
 
     import.meta.env.VITE_PUBLIC_PATH = '/volum';
     expect(baseUrl.assetUrl('assets/logo.png')).toBe('/volum/assets/logo.png');
+  });
+
+  it('getUploadStatus uses prefixed URL and encodes path plus filename parameters', async () => {
+    const actualClient = await vi.importActual<typeof import('../api/client')>('../api/client');
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          filename: 'résumé + notes.txt',
+          received: 0,
+          complete: false,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    import.meta.env.VITE_PUBLIC_PATH = '/volum';
+    await actualClient.getUploadStatus('/target folder', 'résumé + notes.txt');
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const url = fetchMock.mock.calls[0]![0] as string;
+    expect(url).toBe(
+      '/volum/api/files/upload-status?path=%2Ftarget+folder&filename=r%C3%A9sum%C3%A9+%2B+notes.txt',
+    );
+  });
+
+  it('uploadChunk uses prefixed URL, encoded query params, and CSRF marker header', async () => {
+    const actualClient = await vi.importActual<typeof import('../api/client')>('../api/client');
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          received: 5,
+          complete: true,
+          jobId: 'job-1',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    import.meta.env.VITE_PUBLIC_PATH = '/volum/';
+    await actualClient.uploadChunk(
+      '/target folder',
+      'résumé + notes.txt',
+      0,
+      5,
+      new Blob(['hello']),
+      'job-1',
+    );
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(
+      '/volum/api/files/upload-chunk?path=%2Ftarget+folder&filename=r%C3%A9sum%C3%A9+%2B+notes.txt&offset=0&totalSize=5&jobId=job-1',
+    );
+    expect(options.method).toBe('POST');
+    expect(options.headers).toEqual({ 'X-Volum-Request': 'fetch' });
   });
 });

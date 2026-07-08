@@ -37,7 +37,7 @@
 }
 
 .shareRow:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
 }
 
 .shareColPath {
@@ -135,5 +135,4 @@
     grid-column: 2;
     grid-row: 2 / span 4;
   }
-
 }

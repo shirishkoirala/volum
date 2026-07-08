@@ -15,14 +15,23 @@ export function useFileActions() {
   const [locationMode, setLocationMode] = useState(false);
 
   return {
-    renaming, setRenaming,
-    contextMenu, setContextMenu,
-    previewEntry, setPreviewEntry,
-    infoEntry, setInfoEntry,
-    analyzePath, setAnalyzePath,
-    batchRenameOpen, setBatchRenameOpen,
-    fileClipboard, setFileClipboard,
-    shortcutsOpen, setShortcutsOpen,
-    locationMode, setLocationMode,
+    renaming,
+    setRenaming,
+    contextMenu,
+    setContextMenu,
+    previewEntry,
+    setPreviewEntry,
+    infoEntry,
+    setInfoEntry,
+    analyzePath,
+    setAnalyzePath,
+    batchRenameOpen,
+    setBatchRenameOpen,
+    fileClipboard,
+    setFileClipboard,
+    shortcutsOpen,
+    setShortcutsOpen,
+    locationMode,
+    setLocationMode,
   };
 }

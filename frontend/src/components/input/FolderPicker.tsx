@@ -77,13 +77,31 @@ export function FolderPicker({
       <div className={styles.folderPickerHeader}>
         <span className={styles.folderPickerTitle}>Select destination</span>
         <div className={styles.folderPickerNav}>
-          <IconButton className={styles.folderPickerNavButton} onClick={goBack} disabled={history.length === 0} title="Back">
-            <RotatedIcon><Icon name="go-next" size={16} /></RotatedIcon>
+          <IconButton
+            className={styles.folderPickerNavButton}
+            onClick={goBack}
+            disabled={history.length === 0}
+            title="Back"
+          >
+            <RotatedIcon>
+              <Icon name="go-next" size={16} />
+            </RotatedIcon>
           </IconButton>
-          <IconButton className={styles.folderPickerNavButton} onClick={goUp} disabled={currentDir === '/'} title="Up">
-            <RotatedIcon quarterTurns={1}><Icon name="go-next" size={16} /></RotatedIcon>
+          <IconButton
+            className={styles.folderPickerNavButton}
+            onClick={goUp}
+            disabled={currentDir === '/'}
+            title="Up"
+          >
+            <RotatedIcon quarterTurns={1}>
+              <Icon name="go-next" size={16} />
+            </RotatedIcon>
           </IconButton>
-          <IconButton className={styles.folderPickerNavButton} onClick={() => loadSubdirs(currentDir)} title="Refresh">
+          <IconButton
+            className={styles.folderPickerNavButton}
+            onClick={() => loadSubdirs(currentDir)}
+            title="Refresh"
+          >
             <Icon name="view-refresh" size={16} />
           </IconButton>
         </div>
@@ -109,7 +127,7 @@ export function FolderPicker({
                   <button
                     type="button"
                     className={`${styles.folderPickerCrumb}${isLast ? ` ${styles.folderPickerCrumbActive}` : ''}`}
-                    onClick={() => isLast ? null : setCurrentDir(path)}
+                    onClick={() => (isLast ? null : setCurrentDir(path))}
                   >
                     {part}
                   </button>
@@ -121,9 +139,14 @@ export function FolderPicker({
       </div>
       <div className={styles.folderPickerBody}>
         {loading ? (
-        <div className={styles.folderPickerLoading}>Loading...</div>
-      ) : error ? (
-        <div className={styles.folderPickerError}>{error} <Button variant="link" onClick={() => loadSubdirs(currentDir)}>Retry</Button></div>
+          <div className={styles.folderPickerLoading}>Loading...</div>
+        ) : error ? (
+          <div className={styles.folderPickerError}>
+            {error}{' '}
+            <Button variant="link" onClick={() => loadSubdirs(currentDir)}>
+              Retry
+            </Button>
+          </div>
         ) : subdirs.length === 0 ? (
           <EmptyState compact icon={folderIconUrl('64')} title="No subdirectories" />
         ) : (
@@ -134,7 +157,10 @@ export function FolderPicker({
                 key={dir}
                 type="button"
                 className={styles.folderPickerItem}
-                onClick={() => { navigateTo(dir); onSelect(dir); }}
+                onClick={() => {
+                  navigateTo(dir);
+                  onSelect(dir);
+                }}
                 title={dir}
               >
                 <Icon name="folder-new" size={18} />
@@ -147,8 +173,12 @@ export function FolderPicker({
       <div className={styles.folderPickerFooter}>
         <span className={`${styles.folderPickerPath} ${styles.truncate}`}>{currentDir}</span>
         <div className={styles.folderPickerActions}>
-          <Button size="compact" onClick={onClose}>Cancel</Button>
-          <Button size="compact" variant="primary" onClick={() => onSelect(currentDir)}>Choose</Button>
+          <Button size="compact" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button size="compact" variant="primary" onClick={() => onSelect(currentDir)}>
+            Choose
+          </Button>
         </div>
       </div>
     </div>
@@ -158,7 +188,7 @@ export function FolderPicker({
 export function FolderSuggestions({
   label,
   paths,
-  onSelect
+  onSelect,
 }: {
   label: string;
   paths: string[];
@@ -170,7 +200,7 @@ export function FolderSuggestions({
       <div>
         {paths.map((path) => (
           <button key={path} type="button" onClick={() => onSelect(path)} title={path}>
-            {path === '/' ? '/' : (path.split('/').filter(Boolean).pop() || path)}
+            {path === '/' ? '/' : path.split('/').filter(Boolean).pop() || path}
           </button>
         ))}
       </div>

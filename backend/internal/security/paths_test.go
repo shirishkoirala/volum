@@ -80,6 +80,17 @@ func TestRootGuardResolveEmpty(t *testing.T) {
 	}
 }
 
+func TestRootGuardResolveRejectsControlBytes(t *testing.T) {
+	g, _ := NewRootGuard([]string{"/storage"})
+
+	if _, err := g.Resolve("/storage/bad\x00name"); !errors.Is(err, ErrInvalidPath) {
+		t.Fatalf("expected ErrInvalidPath for NUL byte, got %v", err)
+	}
+	if _, err := g.Resolve("/storage/bad\nname"); !errors.Is(err, ErrInvalidPath) {
+		t.Fatalf("expected ErrInvalidPath for newline, got %v", err)
+	}
+}
+
 func TestRootGuardMultipleRoots(t *testing.T) {
 	g, err := NewRootGuard([]string{"/storage", "/backup", "/media"})
 	if err != nil {
@@ -166,6 +177,8 @@ func TestValidBaseName(t *testing.T) {
 		{".", false},
 		{"..", false},
 		{"  ", false},
+		{"bad\x00name", false},
+		{"bad\nname", false},
 		{"path/with/slash", false},
 		{"/etc/passwd", false},
 	}
@@ -289,6 +302,33 @@ func TestNextAvailablePathExhausted(t *testing.T) {
 	_, err := NextAvailablePath(p)
 	if err == nil {
 		t.Fatal("expected error after exhausting candidates")
+	}
+}
+
+func TestRootGuardNextAvailablePath(t *testing.T) {
+	hostRoot := t.TempDir()
+	internalRoot := filepath.Join(hostRoot, "storage")
+	if err := os.MkdirAll(internalRoot, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(internalRoot, "file.txt")
+	if err := os.WriteFile(path, []byte("content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	g, err := NewRootGuardWithRoots([]Root{{Path: "/storage", InternalPath: internalRoot}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := g.NextAvailablePath(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := filepath.Join(internalRoot, "file (1).txt")
+	if got != expected {
+		t.Fatalf("expected %s, got %s", expected, got)
+	}
+	if _, err := g.NextAvailablePath(filepath.Join(hostRoot, "outside.txt")); !errors.Is(err, ErrOutsideRoots) {
+		t.Fatalf("expected ErrOutsideRoots for outside path, got %v", err)
 	}
 }
 

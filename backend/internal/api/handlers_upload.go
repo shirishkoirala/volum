@@ -18,9 +18,13 @@ import (
 	"github.com/volum-app/volum/backend/internal/security"
 )
 
-const maxUploadChunkBytes int64 = 2 * 1024 * 1024
+const (
+	maxUploadChunkBytes     int64 = 2 * 1024 * 1024
+	maxAggregateUploadBytes int64 = 20 * 1024 * 1024 * 1024
+)
 
 func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, maxAggregateUploadBytes)
 	targetPublic := r.URL.Query().Get("path")
 	targetDir, err := s.guard.Resolve(targetPublic)
 	if err != nil {
@@ -39,6 +43,10 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	reader, err := r.MultipartReader()
 	if err != nil {
+		if IsMaxBytesError(err) {
+			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "upload is too large"})
+			return
+		}
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "expected multipart upload"})
 		return
 	}
@@ -51,12 +59,20 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		if err != nil {
+			if IsMaxBytesError(err) {
+				writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "upload is too large"})
+				return
+			}
 			writeError(w, err)
 			return
 		}
 		if part.FileName() == "" && part.FormName() == "manifest" {
 			if err := uploadSizes.Read(part); err != nil {
 				part.Close()
+				if IsMaxBytesError(err) {
+					writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "upload is too large"})
+					return
+				}
 				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid upload manifest"})
 				return
 			}
@@ -72,6 +88,10 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 		job, err := s.uploadPart(r.Context(), targetPublic, targetDir, part, uploadConflictPolicy(r), expectedBytes)
 		part.Close()
 		if err != nil {
+			if IsMaxBytesError(err) {
+				writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "upload is too large"})
+				return
+			}
 			writeError(w, err)
 			return
 		}
@@ -387,7 +407,7 @@ func (s *Server) resolveUploadConflict(destination, policy string) (string, erro
 	case "overwrite":
 		return destination, s.guard.RemoveAll(destination)
 	case "rename":
-		return security.NextAvailablePath(destination)
+		return s.guard.NextAvailablePath(destination)
 	default:
 		return "", files.ErrDestinationExists
 	}
@@ -442,8 +462,12 @@ func (s *Server) handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	totalSize, err := strconv.ParseInt(totalSizeStr, 10, 64)
-	if err != nil || totalSize <= 0 {
+	if err != nil || totalSize <= 0 || totalSize > maxAggregateUploadBytes {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid totalSize"})
+		return
+	}
+	if offset > totalSize {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "offset exceeds totalSize"})
 		return
 	}
 
@@ -478,6 +502,10 @@ func (s *Server) handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 	}
 	if int64(len(chunkData)) > maxUploadChunkBytes {
 		writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "upload chunk is too large"})
+		return
+	}
+	if offset+int64(len(chunkData)) > totalSize {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "chunk exceeds totalSize"})
 		return
 	}
 

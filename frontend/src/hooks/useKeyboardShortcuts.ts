@@ -10,7 +10,8 @@ export function useKeyboardShortcuts(shortcuts: ShortcutMap) {
         event.target instanceof HTMLInputElement ||
         event.target instanceof HTMLTextAreaElement ||
         (event.target as HTMLElement)?.isContentEditable
-      ) return;
+      )
+        return;
 
       const action = shortcuts[event.key];
       if (action) {

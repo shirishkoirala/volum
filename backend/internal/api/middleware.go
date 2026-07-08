@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -16,6 +17,8 @@ import (
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/security"
 )
+
+const maxJSONItems = 1000
 
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
@@ -32,16 +35,20 @@ func disableWriteDeadline(w http.ResponseWriter) {
 func writeError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, security.ErrEmptyPath),
+		errors.Is(err, security.ErrInvalidPath),
 		errors.Is(err, security.ErrPathTraversal),
 		errors.Is(err, security.ErrOutsideRoots),
 		errors.Is(err, files.ErrInvalidName),
 		errors.Is(err, files.ErrRootOperation),
 		errors.Is(err, files.ErrDirectoryDownload),
 		errors.Is(err, files.ErrTrashOperation),
+		errors.Is(err, files.ErrSymlinkRead),
 		errors.Is(err, jobs.ErrInvalidConflictPolicy):
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 	case errors.Is(err, files.ErrDestinationExists):
 		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
+	case errors.Is(err, security.ErrUnsupportedMutation):
+		writeJSON(w, http.StatusNotImplemented, map[string]string{"error": err.Error()})
 	case errors.Is(err, os.ErrPermission):
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "permission denied"})
 	case errors.Is(err, os.ErrNotExist):
@@ -64,6 +71,27 @@ func (s *Server) requireUser(next http.Handler) http.Handler {
 	})
 }
 
+func (s *Server) requireAPIRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if safeMethod(r.Method) {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if r.Header.Get("X-Volum-Request") != "fetch" {
+			writeJSON(w, http.StatusForbidden, map[string]string{"error": "missing CSRF request header"})
+			return
+		}
+		if origin := strings.TrimSpace(r.Header.Get("Origin")); origin != "" {
+			originURL, err := url.Parse(origin)
+			if err != nil || !sameRequestHost(originURL.Host, r.Host) {
+				writeJSON(w, http.StatusForbidden, map[string]string{"error": "request origin is not allowed"})
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (s *Server) requireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user, ok := auth.UserFromContext(r.Context())
@@ -73,6 +101,19 @@ func (s *Server) requireAdmin(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func decodeJSONBody(w http.ResponseWriter, r *http.Request, dest any) bool {
+	r.Body = http.MaxBytesReader(w, r.Body, maxBodyBytes)
+	if err := json.NewDecoder(r.Body).Decode(dest); err != nil {
+		if IsMaxBytesError(err) {
+			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "request body too large"})
+			return false
+		}
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+		return false
+	}
+	return true
 }
 
 func (s *Server) securityHeaders(next http.Handler) http.Handler {
@@ -94,6 +135,19 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func safeMethod(method string) bool {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions, http.MethodTrace:
+		return true
+	default:
+		return false
+	}
+}
+
+func sameRequestHost(left, right string) bool {
+	return requestHostname(&http.Request{Host: left}) == requestHostname(&http.Request{Host: right})
 }
 
 func sensitiveResponse(w http.ResponseWriter) {

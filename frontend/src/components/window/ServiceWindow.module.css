@@ -1,48 +1,54 @@
 .serviceWindow {
+  background: var(--color-window);
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  background: var(--color-window);
 }
 
 .toolbar {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
+  background: var(--app-surface-header-bg);
+  border-bottom: 1px solid var(--app-surface-divider);
+  display: flex;
   gap: var(--space-sm);
+  justify-content: space-between;
   padding: var(--space-xs) var(--space-sm);
-  border-bottom: 1px solid var(--color-border-subtle);
-  background: var(--color-surface-raised);
 }
 
 .address {
-  min-width: 0;
-  display: flex;
   align-items: baseline;
+  display: flex;
   gap: var(--space-sm);
+  min-width: 0;
+}
+
+.serviceIcon {
+  align-self: center;
+  border-radius: var(--radius-2xs);
+  flex-shrink: 0;
 }
 
 .serviceName {
   color: var(--color-text);
-  font-size: 13px;
+  font-size: var(--font-size-base);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .origin {
-  min-width: 0;
   color: var(--color-text-muted);
-  font-size: 12px;
+  font-size: var(--font-size-sm);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .actions {
-  display: flex;
   align-items: center;
-  gap: var(--space-xs);
+  display: flex;
   flex-shrink: 0;
+  gap: var(--space-xs);
 }
 
 .actions button {
@@ -51,20 +57,42 @@
   gap: var(--space-xs);
 }
 
-.frame {
+.frameWrapper {
   flex: 1;
-  width: 100%;
   min-height: 0;
+  position: relative;
+}
+
+.frame {
+  background: var(--color-surface);
   border: 0;
-  background: #fff;
+  height: 100%;
+  width: 100%;
+}
+
+.loadingOverlay {
+  align-items: center;
+  background: var(--app-surface-body-bg);
+  color: var(--color-text-secondary);
+  display: flex;
+  font-size: var(--font-size-sm);
+  gap: var(--space-sm);
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+  z-index: var(--z-floating);
+}
+
+.spinner {
+  animation: var(--anim-spin);
 }
 
 .embedHint {
-  padding: 6px var(--space-sm);
-  border-top: 1px solid var(--color-border-subtle);
+  background: var(--app-surface-header-bg);
+  border-top: 1px solid var(--app-surface-divider);
   color: var(--color-text-muted);
-  font-size: 12px;
-  background: var(--color-surface-raised);
+  font-size: var(--font-size-sm);
+  padding: var(--space-sm);
 }
 
 @media (max-width: 760px) {

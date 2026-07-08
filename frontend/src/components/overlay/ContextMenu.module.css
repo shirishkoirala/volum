@@ -1,6 +1,8 @@
 .contextMenu {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-menu);
   display: flex;
@@ -11,7 +13,7 @@
   overflow-y: auto;
   padding: var(--space-sm);
   position: fixed;
-  z-index: 150;
+  z-index: var(--z-context-menu);
 }
 
 .contextMenu button {
@@ -23,15 +25,15 @@
   cursor: pointer;
   display: flex;
   font-size: var(--font-size-base);
-  gap: 10px;
+  gap: var(--space-md);
   min-height: 32px;
-  padding: 0 10px;
+  padding: 0 var(--space-md);
   text-align: left;
   transition: background var(--transition-fast);
 }
 
 .contextMenu button:hover:not(:disabled) {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
 }
 
 .contextMenu button:focus-visible {
@@ -62,8 +64,8 @@
   }
 
   .contextMenu button {
-    font-size: 0.8rem;
+    font-size: var(--font-size-sm);
     min-height: 36px;
-    padding: 0 8px;
+    padding: 0 var(--space-sm);
   }
 }

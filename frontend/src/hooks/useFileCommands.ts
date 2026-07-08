@@ -1,15 +1,26 @@
 import { KeyboardEvent, useRef } from 'react';
 import type { FileEntry, TrashEntry, ConflictPolicy } from '../api/client';
 import {
-  createFile, createFolder, createJob, deleteTrash, deletePath,
-  getTrash, renamePath, restoreTrash,
-  createShare, shareUrl,
+  createFile,
+  createFolder,
+  createJob,
+  deleteTrash,
+  deletePath,
+  getTrash,
+  renamePath,
+  restoreTrash,
+  createShare,
+  shareUrl,
 } from '../api/client';
 import type { UploadProgress } from '../utils/upload';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
 import { joinPath } from '../utils/path';
 import type { RenameState, ContextMenuState } from '../types';
-import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } from '../components/overlay/Dialogs';
+import type {
+  ConfirmDialogState,
+  TextInputDialogState,
+  TransferDialogState,
+} from '../components/overlay/Dialogs';
 import type { Toast } from '../components/overlay/Toast';
 import { useArchiveCommands } from './useArchiveCommands';
 import { useUploadCommands } from './useUploadCommands';
@@ -38,7 +49,9 @@ interface FileCommandDeps {
   setConfirmDialog: React.Dispatch<React.SetStateAction<ConfirmDialogState>>;
   setTextInputDialog: React.Dispatch<React.SetStateAction<TextInputDialogState>>;
   setTransferDialog: React.Dispatch<React.SetStateAction<TransferDialogState>>;
-  setTrashContextMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number; entry: TrashEntry } | null>>;
+  setTrashContextMenu: React.Dispatch<
+    React.SetStateAction<{ x: number; y: number; entry: TrashEntry } | null>
+  >;
   setFilesEmptyMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
   setUploadProgress: React.Dispatch<React.SetStateAction<UploadProgress | null>>;
   setPendingUploadCount: React.Dispatch<React.SetStateAction<number>>;
@@ -73,17 +86,37 @@ export function useFileCommands(deps: FileCommandDeps) {
   const { runAction } = useCommandHelpers(deps);
 
   const {
-    currentPath, canWrite, folderSuggestions, setError,
-    setTrashEntries, setJobs, selectedEntries,
-    setSelectedPaths, setLastSelectedPath,
-    renaming, setRenaming, setContextMenu,
-    setPreviewEntry, setInfoEntry, setBatchRenameOpen, setAnalyzePath,
-    fileClipboard, setFileClipboard,
-    setConfirmDialog, setTextInputDialog, setTransferDialog,
-    setTrashContextMenu, setFilesEmptyMenu, setUploadProgress, setPendingUploadCount,
-    showToastObj, contextMenu,
+    currentPath,
+    canWrite,
+    folderSuggestions,
+    setError,
+    setTrashEntries,
+    setJobs,
+    selectedEntries,
+    setSelectedPaths,
+    setLastSelectedPath,
+    renaming,
+    setRenaming,
+    setContextMenu,
+    setPreviewEntry,
+    setInfoEntry,
+    setBatchRenameOpen,
+    setAnalyzePath,
+    fileClipboard,
+    setFileClipboard,
+    setConfirmDialog,
+    setTextInputDialog,
+    setTransferDialog,
+    setTrashContextMenu,
+    setFilesEmptyMenu,
+    setUploadProgress,
+    setPendingUploadCount,
+    showToastObj,
+    contextMenu,
     navigateTo,
-    selectedTrashIds, setSelectedTrashIds, setLastSelectedTrashId,
+    selectedTrashIds,
+    setSelectedTrashIds,
+    setLastSelectedTrashId,
     emptyMenuBlockedRef,
   } = deps;
 
@@ -96,7 +129,9 @@ export function useFileCommands(deps: FileCommandDeps) {
       label: 'Folder name',
       placeholder: 'Folder name',
       confirmLabel: 'Create',
-      onSubmit: (value) => { void runAction(() => createFolder(currentPath, value.trim()), 'Folder created'); }
+      onSubmit: (value) => {
+        void runAction(() => createFolder(currentPath, value.trim()), 'Folder created');
+      },
     });
   };
 
@@ -107,7 +142,9 @@ export function useFileCommands(deps: FileCommandDeps) {
       label: 'File name',
       placeholder: 'file.txt',
       confirmLabel: 'Create',
-      onSubmit: (value) => { void runAction(() => createFile(currentPath, value.trim()), 'File created'); }
+      onSubmit: (value) => {
+        void runAction(() => createFile(currentPath, value.trim()), 'File created');
+      },
     });
   };
 
@@ -127,18 +164,35 @@ export function useFileCommands(deps: FileCommandDeps) {
   const commitRename = (entry: FileEntry) => {
     if (renaming?.path !== entry.path) return;
     const nextName = renaming.value.trim();
-    if (!nextName || nextName === entry.name) { cancelRename(); return; }
+    if (!nextName || nextName === entry.name) {
+      cancelRename();
+      return;
+    }
     const oldName = entry.name;
     const oldPath = entry.path;
     setRenaming(null);
     void runAction(() => renamePath(oldPath, nextName), 'Item renamed');
-    showToastObj({
-      title: 'Item renamed', message: `${oldName} → ${nextName}`, variant: 'success',
-      action: {
-        label: 'Undo',
-        onClick: () => { void runAction(() => renamePath(joinPath(oldPath.substring(0, oldPath.lastIndexOf('/')), nextName), oldName), 'Rename undone'); }
-      }
-    }, 8000);
+    showToastObj(
+      {
+        title: 'Item renamed',
+        message: `${oldName} → ${nextName}`,
+        variant: 'success',
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            void runAction(
+              () =>
+                renamePath(
+                  joinPath(oldPath.substring(0, oldPath.lastIndexOf('/')), nextName),
+                  oldName,
+                ),
+              'Rename undone',
+            );
+          },
+        },
+      },
+      8000,
+    );
   };
 
   // ── Delete ────────────────────────────────────────────
@@ -146,7 +200,10 @@ export function useFileCommands(deps: FileCommandDeps) {
   const handleDelete = () => {
     if (selectedEntries.length === 0) return;
     const entriesToDelete = [...selectedEntries];
-    const label = entriesToDelete.length === 1 ? `"${entriesToDelete[0]!.name}"` : `${entriesToDelete.length} selected items`;
+    const label =
+      entriesToDelete.length === 1
+        ? `"${entriesToDelete[0]!.name}"`
+        : `${entriesToDelete.length} selected items`;
     setConfirmDialog({
       title: 'Move to Trash',
       message: `Move ${label} to trash? You can restore it from the Trash panel.`,
@@ -158,15 +215,34 @@ export function useFileCommands(deps: FileCommandDeps) {
           const response = await getTrash();
           setTrashEntries(response.entries ?? []);
         }, 'Moved to trash');
-      }
+      },
     });
   };
 
   // ── Trash ─────────────────────────────────────────────
 
   const handleRestoreTrash = (entry: TrashEntry) => {
-    void runAction(async () => { await restoreTrash(entry.id); const r = await getTrash(); setTrashEntries(r.entries ?? []); });
-    showToastObj({ title: 'Item restored', message: entry.originalPath, variant: 'success', action: { label: 'Undo', onClick: () => { void deletePath(entry.originalPath, entry.name); getTrash().then((r) => setTrashEntries(r.entries ?? [])); showToastObj({ title: 'Restore undone', variant: 'success' }); } } }, 8000);
+    void runAction(async () => {
+      await restoreTrash(entry.id);
+      const r = await getTrash();
+      setTrashEntries(r.entries ?? []);
+    });
+    showToastObj(
+      {
+        title: 'Item restored',
+        message: entry.originalPath,
+        variant: 'success',
+        action: {
+          label: 'Undo',
+          onClick: () => {
+            void deletePath(entry.originalPath, entry.name);
+            getTrash().then((r) => setTrashEntries(r.entries ?? []));
+            showToastObj({ title: 'Restore undone', variant: 'success' });
+          },
+        },
+      },
+      8000,
+    );
   };
 
   const handleDeleteTrash = (entry: TrashEntry) => {
@@ -174,8 +250,15 @@ export function useFileCommands(deps: FileCommandDeps) {
     setConfirmDialog({
       title: 'Delete Permanently',
       message: `Permanently delete "${entry.name}"? This cannot be undone.`,
-      confirmLabel: 'Delete Permanently', danger: true,
-      onConfirm: () => { void runAction(async () => { await deleteTrash(entry.id); const r = await getTrash(); setTrashEntries(r.entries ?? []); }, 'Item deleted permanently'); }
+      confirmLabel: 'Delete Permanently',
+      danger: true,
+      onConfirm: () => {
+        void runAction(async () => {
+          await deleteTrash(entry.id);
+          const r = await getTrash();
+          setTrashEntries(r.entries ?? []);
+        }, 'Item deleted permanently');
+      },
     });
   };
 
@@ -227,26 +310,42 @@ export function useFileCommands(deps: FileCommandDeps) {
   const handleCopy = () => {
     if (selectedEntries.length === 0) return;
     setContextMenu(null);
-    setTransferDialog({ mode: 'copy', entries: [...selectedEntries], initialDestination: currentPath });
+    setTransferDialog({
+      mode: 'copy',
+      entries: [...selectedEntries],
+      initialDestination: currentPath,
+    });
   };
 
   const handleMove = () => {
     if (selectedEntries.length === 0) return;
     setContextMenu(null);
-    setTransferDialog({ mode: 'move', entries: [...selectedEntries], initialDestination: currentPath });
+    setTransferDialog({
+      mode: 'move',
+      entries: [...selectedEntries],
+      initialDestination: currentPath,
+    });
   };
 
   const setClipboardFromSelection = (mode: 'copy' | 'move') => {
     if (!canWrite || selectedEntries.length === 0) return;
     const entriesToStore = [...selectedEntries];
     setFileClipboard({ mode, entries: entriesToStore });
-    showToastObj({ title: mode === 'copy' ? 'Copied to clipboard' : 'Cut to clipboard', message: `${entriesToStore.length} item${entriesToStore.length === 1 ? '' : 's'}`, variant: 'success' });
+    showToastObj({
+      title: mode === 'copy' ? 'Copied to clipboard' : 'Cut to clipboard',
+      message: `${entriesToStore.length} item${entriesToStore.length === 1 ? '' : 's'}`,
+      variant: 'success',
+    });
   };
 
   const handlePaste = () => {
     if (!fileClipboard || !canWrite) return;
     setContextMenu(null);
-    setTransferDialog({ mode: fileClipboard.mode, entries: [...fileClipboard.entries], initialDestination: currentPath });
+    setTransferDialog({
+      mode: fileClipboard.mode,
+      entries: [...fileClipboard.entries],
+      initialDestination: currentPath,
+    });
   };
 
   const handleQuickShare = async () => {
@@ -258,46 +357,56 @@ export function useFileCommands(deps: FileCommandDeps) {
       await navigator.clipboard.writeText(shareUrl(share.token));
       showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
     } catch (err) {
-      showToastObj({ title: 'Quick share failed', message: err instanceof Error ? err.message : undefined, variant: 'error' });
+      showToastObj({
+        title: 'Quick share failed',
+        message: err instanceof Error ? err.message : undefined,
+        variant: 'error',
+      });
     }
   };
 
-  const handleTransferSubmit = (dialog: TransferDialogState, destinationValue: string, conflictPolicy: ConflictPolicy) => {
+  const handleTransferSubmit = (
+    dialog: TransferDialogState,
+    destinationValue: string,
+    conflictPolicy: ConflictPolicy,
+  ) => {
     if (!dialog) return;
-    const destinations = destinationValue.split('|').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
+    const destinations = destinationValue
+      .split('|')
+      .map((s) => s.trim().replace(/\/+$/, ''))
+      .filter(Boolean);
     if (destinations.length === 0) return;
     setTransferDialog(null);
-    void runAction(async () => {
-      for (const entry of dialog.entries) {
-        for (const dest of destinations) {
-          const targetPath = joinPath(dest, entry.name);
-          await createJob({
-            type: dialog.mode === 'copy' ? 'copy' : 'move',
-            sourcePath: entry.path,
-            destinationPath: targetPath,
-            conflictPolicy,
-            verifyMode: 'size'
-          });
+    void runAction(
+      async () => {
+        for (const entry of dialog.entries) {
+          for (const dest of destinations) {
+            const targetPath = joinPath(dest, entry.name);
+            await createJob({
+              type: dialog.mode === 'copy' ? 'copy' : 'move',
+              sourcePath: entry.path,
+              destinationPath: targetPath,
+              conflictPolicy,
+              verifyMode: 'size',
+            });
+          }
         }
-      }
-      if (dialog.mode === 'move') setFileClipboard(null);
-    }, dialog.mode === 'copy' ? 'Copy transfer started' : 'Move transfer started');
+        if (dialog.mode === 'move') setFileClipboard(null);
+      },
+      dialog.mode === 'copy' ? 'Copy transfer started' : 'Move transfer started',
+    );
   };
 
-  const {
-    handleCreateArchive,
-    handleExtractArchive,
-    handleAnalyze,
-    handleCreateChecksum,
-  } = useArchiveCommands({
-    currentPath,
-    folderSuggestions,
-    selectedEntries,
-    setContextMenu,
-    setTextInputDialog,
-    setAnalyzePath,
-    runAction,
-  });
+  const { handleCreateArchive, handleExtractArchive, handleAnalyze, handleCreateChecksum } =
+    useArchiveCommands({
+      currentPath,
+      folderSuggestions,
+      selectedEntries,
+      setContextMenu,
+      setTextInputDialog,
+      setAnalyzePath,
+      runAction,
+    });
 
   // ── Trash context menu handler ────────────────────────
 
@@ -305,7 +414,9 @@ export function useFileCommands(deps: FileCommandDeps) {
     event.preventDefault();
     event.stopPropagation();
     emptyMenuBlockedRef.current = true;
-    queueMicrotask(() => { emptyMenuBlockedRef.current = false; });
+    queueMicrotask(() => {
+      emptyMenuBlockedRef.current = false;
+    });
     if (!selectedTrashIds.includes(entry.id)) {
       setSelectedTrashIds([entry.id]);
       setLastSelectedTrashId(entry.id);
@@ -316,15 +427,49 @@ export function useFileCommands(deps: FileCommandDeps) {
   // ── File area keyboard ────────────────────────────────
 
   const handleFileAreaKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (renaming) { if (event.key === 'Escape') cancelRename(); return; }
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') { event.preventDefault(); return; } // handled via handleSelectAll
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'c') { event.preventDefault(); setClipboardFromSelection('copy'); return; }
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'x') { event.preventDefault(); setClipboardFromSelection('move'); return; }
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'v') { event.preventDefault(); handlePaste(); return; }
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'i') { event.preventDefault(); return; } // handled via handleInvertSelection
-    if (event.key === 'F2' && canWrite && deps.selectedEntries.length === 1) { event.preventDefault(); handleRename(); return; }
-    if (event.key === 'Delete' && canWrite && deps.selectedEntries.length > 0) { event.preventDefault(); handleDelete(); return; }
-    if (event.key === 'Escape') { setSelectedPaths([]); setContextMenu(null); setLastSelectedPath(null); return; }
+    if (renaming) {
+      if (event.key === 'Escape') cancelRename();
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
+      event.preventDefault();
+      return;
+    } // handled via handleSelectAll
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'c') {
+      event.preventDefault();
+      setClipboardFromSelection('copy');
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'x') {
+      event.preventDefault();
+      setClipboardFromSelection('move');
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'v') {
+      event.preventDefault();
+      handlePaste();
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'i') {
+      event.preventDefault();
+      return;
+    } // handled via handleInvertSelection
+    if (event.key === 'F2' && canWrite && deps.selectedEntries.length === 1) {
+      event.preventDefault();
+      handleRename();
+      return;
+    }
+    if (event.key === 'Delete' && canWrite && deps.selectedEntries.length > 0) {
+      event.preventDefault();
+      handleDelete();
+      return;
+    }
+    if (event.key === 'Escape') {
+      setSelectedPaths([]);
+      setContextMenu(null);
+      setLastSelectedPath(null);
+      return;
+    }
     if (event.key === 'Enter' && selectedEntries.length === 1) {
       const entry = selectedEntries[0]!;
       if (entry.type === 'directory') navigateTo(entry.path);

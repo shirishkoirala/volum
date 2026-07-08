@@ -42,19 +42,29 @@ export function useArchiveCommands({
       suggestionLabel: 'Create in',
       applyFolderSuggestion: (path) => joinPath(path, archiveName),
       onSubmit: (value) => {
-        void runAction(() => createJob({
-          type: 'archive',
-          sourcePath: entry.path,
-          destinationPath: value.trim(),
-          conflictPolicy: 'rename',
-        }), 'Archive transfer started');
+        void runAction(
+          () =>
+            createJob({
+              type: 'archive',
+              sourcePath: entry.path,
+              destinationPath: value.trim(),
+              conflictPolicy: 'rename',
+            }),
+          'Archive transfer started',
+        );
       },
     });
   };
 
   const handleExtractArchive = () => {
     const entry = selectedEntries[0];
-    if (!entry || selectedEntries.length !== 1 || entry.type !== 'file' || !isArchiveFile(entry.name)) return;
+    if (
+      !entry ||
+      selectedEntries.length !== 1 ||
+      entry.type !== 'file' ||
+      !isArchiveFile(entry.name)
+    )
+      return;
     const defaultPath = joinPath(currentPath, archiveBaseName(entry.name));
     setContextMenu(null);
     setTextInputDialog({
@@ -67,11 +77,15 @@ export function useArchiveCommands({
       suggestionLabel: 'Extract to',
       applyFolderSuggestion: (path) => normalizeFolderPath(path),
       onSubmit: (value) => {
-        void runAction(() => createJob({
-          type: 'extract',
-          sourcePath: entry.path,
-          destinationPath: value.trim(),
-        }), 'Extract transfer started');
+        void runAction(
+          () =>
+            createJob({
+              type: 'extract',
+              sourcePath: entry.path,
+              destinationPath: value.trim(),
+            }),
+          'Extract transfer started',
+        );
       },
     });
   };
@@ -95,7 +109,10 @@ export function useArchiveCommands({
       confirmLabel: 'Generate',
       onSubmit: (value) => {
         const mode = value.trim().toLowerCase() === 'md5' ? 'md5' : 'sha256';
-        void runAction(() => createJob({ type: 'checksum', sourcePath: entry.path, verifyMode: mode }), `Checksum (${mode}) transfer started`);
+        void runAction(
+          () => createJob({ type: 'checksum', sourcePath: entry.path, verifyMode: mode }),
+          `Checksum (${mode}) transfer started`,
+        );
       },
     });
   };

@@ -1,27 +1,21 @@
-.settingsBodyPage {
+.settingsNav {
   display: flex;
   flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.settingsNav {
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border-light);
-  display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-  min-width: 200px;
   overflow-y: auto;
   padding: var(--space-sm);
-  width: 200px;
+  width: 100%;
 }
 
 .settingsFilter {
-  border: 1px solid var(--color-border-light);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
-  padding: 6px 10px;
+  padding: var(--space-sm) var(--space-md);
   width: 100%;
   transition: border-color var(--transition-fast);
 }
@@ -48,30 +42,23 @@
   cursor: pointer;
   display: flex;
   font-size: var(--font-size-base);
-  gap: 10px;
+  gap: var(--space-md);
   min-height: 36px;
-  padding: 0 10px;
+  padding: 0 var(--space-md);
   text-align: left;
   transition: background var(--transition-fast);
   width: 100%;
 }
 
 .settingsNavItem:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
   color: var(--color-text);
 }
 
 .settingsNavItem.active {
-  background: var(--color-brand-bg);
+  background: var(--glass-selected-bg);
   color: var(--color-brand-text);
   font-weight: 600;
-}
-
-.settingsContent {
-  color: var(--color-text);
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--space-md) var(--space-lg) var(--space-lg);
 }
 
 .settingsSection {
@@ -89,7 +76,7 @@
 
 .settingsDetails {
   display: grid;
-  gap: 4px;
+  gap: var(--space-xs);
   margin: 0;
 }
 
@@ -112,11 +99,13 @@
 }
 
 .settingsRootItem {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   display: grid;
-  gap: 6px;
+  gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
 }
 
@@ -194,8 +183,8 @@
 .profileImage,
 .profileImageFallback {
   align-items: center;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 50%;
   display: flex;
   flex: 0 0 52px;
@@ -241,11 +230,11 @@
   align-items: center;
   cursor: pointer;
   display: flex;
-  gap: 6px;
+  gap: var(--space-sm);
   font-size: var(--font-size-sm);
 }
 
-.toggleLabel input[type="checkbox"] {
+.toggleLabel input[type='checkbox'] {
   accent-color: var(--color-brand);
 }
 
@@ -272,8 +261,8 @@
   align-items: center;
   color: var(--color-danger-text);
   display: inline-flex;
-  gap: 3px;
-  margin-left: 8px;
+  gap: var(--space-xs);
+  margin-left: var(--space-sm);
   font-size: var(--font-size-xs);
   font-weight: 700;
   text-transform: none;
@@ -286,19 +275,21 @@
 .spin {
   animation: var(--anim-spin);
   flex-shrink: 0;
-  margin-right: 4px;
+  margin-right: var(--space-xs);
 }
 
 .userList {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-sm);
 }
 
 .userRow {
   align-items: center;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   display: flex;
   justify-content: space-between;
@@ -318,8 +309,8 @@
 }
 
 .userRole {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
   padding: 1px 8px;
@@ -329,22 +320,25 @@
 
 .userActions {
   display: flex;
-  gap: 4px;
+  gap: var(--space-xs);
   align-items: center;
 }
 
 .pwdInline {
   display: flex;
-  gap: 4px;
+  gap: var(--space-xs);
   align-items: center;
 }
 
 .pwdInline input {
-  border: 1px solid var(--color-border-light);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   min-height: 28px;
-  padding: 0 8px;
+  padding: 0 var(--space-sm);
   width: 140px;
 }
 
@@ -369,28 +363,35 @@
 
 .createUserForm input,
 .createUserForm select {
-  border: 1px solid var(--color-border-light);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   min-height: 34px;
-  padding: 0 10px;
+  padding: 0 var(--space-md);
 }
 
 .serviceList {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-sm);
 }
 
 .serviceRow {
   align-items: center;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-light);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   display: flex;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .serviceRow.dragging {
@@ -399,7 +400,7 @@
 
 .serviceRow.dragOver {
   border-color: var(--color-brand);
-  background: var(--color-brand-bg);
+  background: var(--glass-selected-bg);
 }
 
 .serviceDragHandle {
@@ -434,25 +435,17 @@
 
 .serviceActions {
   display: flex;
-  gap: 4px;
+  gap: var(--space-xs);
   align-items: center;
 }
 
 @media (max-width: 760px) {
-  .settingsBodyPage {
-    flex-direction: column;
-  }
-
   .settingsNav {
-    border-bottom: 1px solid var(--color-border-light);
-    border-right: 0;
     flex-direction: row;
     flex-wrap: wrap;
     gap: var(--space-xs);
-    min-width: 0;
     overflow-x: auto;
     padding: var(--space-sm);
-    width: 100%;
   }
 
   .settingsFilter {
@@ -465,12 +458,8 @@
   }
 
   .settingsNavItem {
-    min-height: 32px;
-    padding: 0 8px;
-  }
-
-  .settingsContent {
-    padding: var(--space-md);
+    min-height: 44px;
+    padding: 0 var(--space-sm);
   }
 
   .settingsSection {
@@ -484,12 +473,29 @@
   .settingsRootName {
     align-items: flex-start;
     flex-direction: column;
-    gap: 2px;
+    gap: var(--space-xxs);
   }
 
   .maintenanceActions,
   .settingsActions {
     gap: var(--space-xs);
+  }
+
+  .maintenanceActions button,
+  .settingsActions button,
+  .profileImageActions button,
+  .userActions button,
+  .serviceActions button {
+    min-height: 44px;
+  }
+
+  .toggleLabel {
+    min-height: 44px;
+  }
+
+  .toggleLabel input[type='checkbox'] {
+    height: 22px;
+    width: 22px;
   }
 
   .profileImageRow {

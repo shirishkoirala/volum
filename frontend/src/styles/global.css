@@ -1,4 +1,6 @@
-html, body, #root {
+html,
+body,
+#root {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
 }
@@ -32,47 +34,212 @@ html, body, #root {
 }
 
 @keyframes skeletonPulse {
-  0% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-  100% { opacity: 0.4; }
+  0% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0.4;
+  }
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Utility classes */
-.row { display: flex; align-items: center; }
-.col { display: flex; flex-direction: column; }
-.rowWrap { display: flex; flex-flow: row wrap; align-items: center; }
-.flex1 { flex: 1; }
-.grow { flex-grow: 1; }
-.shrink0 { flex-shrink: 0; }
+.row {
+  display: flex;
+  align-items: center;
+}
 
-.justifyCenter { justify-content: center; }
-.justifyBetween { justify-content: space-between; }
-.justifyEnd { justify-content: flex-end; }
-.alignStart { align-items: flex-start; }
-.alignEnd { align-items: flex-end; }
-.alignStretch { align-items: stretch; }
+.col {
+  display: flex;
+  flex-direction: column;
+}
 
-.gapXs { gap: var(--space-xs); }
-.gapSm { gap: var(--space-sm); }
-.gapMd { gap: var(--space-md); }
-.gapLg { gap: var(--space-lg); }
-.gapXl { gap: var(--space-xl); }
-.gap2xl { gap: var(--space-2xl); }
-.gap3xl { gap: var(--space-3xl); }
+.rowWrap {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+}
+
+.flex1 {
+  flex: 1;
+}
+
+.grow {
+  flex-grow: 1;
+}
+
+.shrink0 {
+  flex-shrink: 0;
+}
+
+.justifyCenter {
+  justify-content: center;
+}
+
+.justifyBetween {
+  justify-content: space-between;
+}
+
+.justifyEnd {
+  justify-content: flex-end;
+}
+
+.alignStart {
+  align-items: flex-start;
+}
+
+.alignEnd {
+  align-items: flex-end;
+}
+
+.alignStretch {
+  align-items: stretch;
+}
+
+.gapXs {
+  gap: var(--space-xs);
+}
+
+.gapSm {
+  gap: var(--space-sm);
+}
+
+.gapMd {
+  gap: var(--space-md);
+}
+
+.gapLg {
+  gap: var(--space-lg);
+}
+
+.gapXl {
+  gap: var(--space-xl);
+}
+
+.gap2xl {
+  gap: var(--space-2xl);
+}
+
+.gap3xl {
+  gap: var(--space-3xl);
+}
 
 .truncate {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.clickable { cursor: pointer; }
-.noWrap { white-space: nowrap; }
-.textMuted { color: var(--color-text-muted); }
-.textSecondary { color: var(--color-text-secondary); }
+
+.clickable {
+  cursor: pointer;
+}
+
+.noWrap {
+  white-space: nowrap;
+}
+
+.textMuted {
+  color: var(--color-text-muted);
+}
+
+.textSecondary {
+  color: var(--color-text-secondary);
+}
+
+.appSurface {
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--app-surface-bg);
+  border: 1px solid var(--app-surface-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--app-surface-shadow);
+  overflow: hidden;
+}
+
+.appSurfaceHeader {
+  background: var(--app-surface-header-bg);
+  border-bottom: 1px solid var(--app-surface-divider);
+}
+
+.appSurfaceBody {
+  background: var(--app-surface-body-bg);
+}
+
+.appSurfaceControl {
+  background: transparent;
+}
+
+.appSurfaceControl:hover {
+  background: var(--app-surface-control-hover-bg);
+}
+
+.appSurfaceControl.isSelected,
+.appSurfaceControl[aria-current='page'] {
+  background: var(--app-surface-control-selected-bg);
+}
+
+.glassPanel {
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--app-surface-bg);
+  border: 1px solid var(--app-surface-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.glassControl {
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.glassMenu {
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-menu);
+}
+
+.glassHover {
+  background: var(--app-surface-control-hover-bg);
+}
+
+.glassSelected {
+  background: var(--app-surface-control-selected-bg);
+}
+
+.glassPanel.mobileAppPanel {
+  background:
+    linear-gradient(
+      180deg,
+      var(--app-surface-header-bg) 0,
+      var(--app-surface-header-bg) 44px,
+      var(--app-surface-body-bg) 44px,
+      var(--app-surface-body-bg) 100%
+    ),
+    var(--app-surface-bg);
+}
+
+@media (max-width: 760px) {
+  .mobileAppPanel {
+    border-color: color-mix(in srgb, var(--app-surface-border) 82%, white 18%);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, white 24%, transparent);
+    outline: 1px solid color-mix(in srgb, white 10%, transparent);
+    outline-offset: -2px;
+  }
+}
 
 /* Buttons use an external keyboard ring; form controls use their own border. */
 button:focus-visible {
@@ -82,7 +249,9 @@ button:focus-visible {
 
 /* Shared text-control base. Binary and file controls own their dimensions. */
 :where(
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([data-control="embedded"]),
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not(
+      [type='file']
+    ):not([data-control='embedded']),
   select,
   textarea
 ) {
@@ -96,7 +265,9 @@ button:focus-visible {
 }
 
 :where(
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([data-control="embedded"]),
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not(
+      [type='file']
+    ):not([data-control='embedded']),
   select,
   textarea
 ):focus {
@@ -106,9 +277,9 @@ button:focus-visible {
 }
 
 /* Inputs inside a bordered control wrapper delegate all chrome to the wrapper. */
-input[data-control="embedded"],
-input[data-control="embedded"]:focus,
-input[data-control="embedded"]:focus-visible {
+input[data-control='embedded'],
+input[data-control='embedded']:focus,
+input[data-control='embedded']:focus-visible {
   background: transparent;
   border: 0;
   border-radius: 0;

@@ -3,7 +3,11 @@ import { useIsMobile } from '../../hooks/useIsMobile';
 import { WindowIdContext } from '../../contexts/WindowCommands';
 import { WindowFrame } from './WindowFrame';
 
-export function WindowHost({ renderWindow }: { renderWindow: (win: WindowState) => React.ReactNode }) {
+export function WindowHost({
+  renderWindow,
+}: {
+  renderWindow: (win: WindowState) => React.ReactNode;
+}) {
   const { windows } = useWindowManager();
   const isMobile = useIsMobile();
 
@@ -13,9 +17,7 @@ export function WindowHost({ renderWindow }: { renderWindow: (win: WindowState) 
     <>
       {windows.map((win) => (
         <WindowFrame key={win.id} win={win}>
-          <WindowIdContext.Provider value={win.id}>
-            {renderWindow(win)}
-          </WindowIdContext.Provider>
+          <WindowIdContext.Provider value={win.id}>{renderWindow(win)}</WindowIdContext.Provider>
         </WindowFrame>
       ))}
     </>

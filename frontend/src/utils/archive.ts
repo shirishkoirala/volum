@@ -14,11 +14,13 @@ export function isArchiveFile(name: string): boolean {
  * "foo.tar.gz" → "foo" / "archive.zip" → "archive"
  */
 export function archiveBaseName(name: string): string {
-  return name
-    .replace(/\.tar\.gz$/i, '')
-    .replace(/\.tgz$/i, '')
-    .replace(/\.tar$/i, '')
-    .replace(/\.zip$/i, '') || 'archive';
+  return (
+    name
+      .replace(/\.tar\.gz$/i, '')
+      .replace(/\.tgz$/i, '')
+      .replace(/\.tar$/i, '')
+      .replace(/\.zip$/i, '') || 'archive'
+  );
 }
 
 /**

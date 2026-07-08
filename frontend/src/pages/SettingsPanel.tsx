@@ -26,6 +26,7 @@ import {
 import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
 import { Skeleton } from '../components/ui/Skeleton';
+import { AppPanel } from '../components/layout/AppPanel';
 import styles from './SettingsPanel.module.css';
 
 type SettingsPanelProps = {
@@ -70,7 +71,12 @@ export function SettingsPanel({
   onRemoveService,
   onReorderServices,
 }: SettingsPanelProps) {
-  const { data: status, loading, error: statusError, refresh: loadStatus } = useAsyncData(() => getStatus());
+  const {
+    data: status,
+    loading,
+    error: statusError,
+    refresh: loadStatus,
+  } = useAsyncData(() => getStatus());
   const [maintenanceMsg, setMaintenanceMsg] = useState<string | null>(null);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
   const [maintenanceBusy, setMaintenanceBusy] = useState<string | null>(null);
@@ -264,18 +270,26 @@ export function SettingsPanel({
           <Skeleton variant="block" count={3} />
         </div>
       ) : !status ? (
-            <ErrorBanner message={statusError || 'Failed to load status.'} onRetry={loadStatus} />
+        <ErrorBanner message={statusError || 'Failed to load status.'} onRetry={loadStatus} />
       ) : (
         <>
-          {(!filterQuery.trim() ? activeCategory === 'general' : filteredCategories.some((c) => c.id === 'general')) && (
+          {(!filterQuery.trim()
+            ? activeCategory === 'general'
+            : filteredCategories.some((c) => c.id === 'general')) && (
             <section className={styles.settingsSection}>
               <h4>General</h4>
               {session?.authEnabled && (
                 <div className={styles.profileImageRow}>
                   {session.hasAvatar ? (
-                    <img className={styles.profileImage} src={profileAvatarUrl(session.avatarVersion)} alt="Current profile" />
+                    <img
+                      className={styles.profileImage}
+                      src={profileAvatarUrl(session.avatarVersion)}
+                      alt="Current profile"
+                    />
                   ) : (
-                    <span className={styles.profileImageFallback}><Icon name="avatar-default" size={24} /></span>
+                    <span className={styles.profileImageFallback}>
+                      <Icon name="avatar-default" size={24} />
+                    </span>
                   )}
                   <div className={styles.profileImageDetails}>
                     <strong>Profile image</strong>
@@ -289,11 +303,21 @@ export function SettingsPanel({
                     onChange={(event) => void handleAvatarUpload(event.target.files?.[0])}
                   />
                   <div className={styles.profileImageActions}>
-                    <Button size="compact" disabled={avatarBusy} onClick={() => avatarInputRef.current?.click()}>
+                    <Button
+                      size="compact"
+                      disabled={avatarBusy}
+                      onClick={() => avatarInputRef.current?.click()}
+                    >
                       {avatarBusy ? 'Saving...' : session.hasAvatar ? 'Replace' : 'Upload'}
                     </Button>
                     {session.hasAvatar && (
-                      <Button size="compact" disabled={avatarBusy} onClick={() => void handleAvatarDelete()}>Remove</Button>
+                      <Button
+                        size="compact"
+                        disabled={avatarBusy}
+                        onClick={() => void handleAvatarDelete()}
+                      >
+                        Remove
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -312,7 +336,11 @@ export function SettingsPanel({
                     checked={notifPrefs.enabled}
                     onChange={(e) => {
                       notifPrefs.setEnabled(e.target.checked);
-                      if (e.target.checked && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+                      if (
+                        e.target.checked &&
+                        typeof Notification !== 'undefined' &&
+                        Notification.permission === 'default'
+                      ) {
                         void Notification.requestPermission();
                       }
                     }}
@@ -328,13 +356,17 @@ export function SettingsPanel({
             </section>
           )}
 
-          {(!filterQuery.trim() ? activeCategory === 'server' : filteredCategories.some((c) => c.id === 'server')) && (
+          {(!filterQuery.trim()
+            ? activeCategory === 'server'
+            : filteredCategories.some((c) => c.id === 'server')) && (
             <div className={styles.settingsSection}>
               <ServerInfo status={status} />
             </div>
           )}
 
-          {(!filterQuery.trim() ? activeCategory === 'storage' : filteredCategories.some((c) => c.id === 'storage')) && (
+          {(!filterQuery.trim()
+            ? activeCategory === 'storage'
+            : filteredCategories.some((c) => c.id === 'storage')) && (
             <section className={styles.settingsSection}>
               <h4>
                 Roots
@@ -347,22 +379,34 @@ export function SettingsPanel({
               </h4>
               <div className={styles.settingsRootList}>
                 {status.roots.map((root) => (
-                  <div key={root.path} className={`${styles.settingsRootItem}${!root.available ? ` ${styles.rootUnavailable}` : ''}`}>
+                  <div
+                    key={root.path}
+                    className={`${styles.settingsRootItem}${!root.available ? ` ${styles.rootUnavailable}` : ''}`}
+                  >
                     <div className={styles.settingsRootName}>
                       <span>{rootLabel(root)}</span>
                       <small>{root.path}</small>
                     </div>
-{root.available && root.totalBytes > 0 && (
-  <ProgressBar value={Math.min((root.usedBytes / root.totalBytes) * 100, 100)} className={styles.rootMeter} />
-)}
-                    <small>{root.available ? formatRootUsage(root) : 'Unavailable — check mount or configuration'}</small>
+                    {root.available && root.totalBytes > 0 && (
+                      <ProgressBar
+                        value={Math.min((root.usedBytes / root.totalBytes) * 100, 100)}
+                        className={styles.rootMeter}
+                      />
+                    )}
+                    <small>
+                      {root.available
+                        ? formatRootUsage(root)
+                        : 'Unavailable — check mount or configuration'}
+                    </small>
                   </div>
                 ))}
               </div>
             </section>
           )}
 
-          {(!filterQuery.trim() ? activeCategory === 'desktop' : filteredCategories.some((c) => c.id === 'desktop')) && (
+          {(!filterQuery.trim()
+            ? activeCategory === 'desktop'
+            : filteredCategories.some((c) => c.id === 'desktop')) && (
             <>
               {onAddService && (
                 <section className={styles.settingsSection}>
@@ -374,12 +418,15 @@ export function SettingsPanel({
                           key={svc.id}
                           className={`${styles.serviceRow}${dragIndex === idx ? ` ${styles.dragging}` : ''}${dropIndex === idx ? ` ${styles.dragOver}` : ''}`}
                           draggable
-                          onDragStart={() => { setDragIndex(idx); dragOverIndex.current = null; }}
+                          onDragStart={() => {
+                            setDragIndex(idx);
+                            dragOverIndex.current = null;
+                          }}
                           onDragEnd={() => {
                             const toIdx = dragOverIndex.current;
                             const fromIdx = dragIndex;
                             if (toIdx !== null && fromIdx !== null && toIdx !== fromIdx) {
-                              const ids = [...services.map(s => s.id)];
+                              const ids = [...services.map((s) => s.id)];
                               const moved = ids[fromIdx];
                               if (!moved) return;
                               ids.splice(fromIdx, 1);
@@ -395,7 +442,9 @@ export function SettingsPanel({
                             if (dropIndex !== idx) setDropIndex(idx);
                             dragOverIndex.current = idx;
                           }}
-                          onDragLeave={() => { setDropIndex(null); }}
+                          onDragLeave={() => {
+                            setDropIndex(null);
+                          }}
                         >
                           <div className={styles.serviceDragHandle}>
                             <Icon name="drag-handle" size={14} />
@@ -415,38 +464,62 @@ export function SettingsPanel({
                             </span>
                           </div>
                           <div className={styles.serviceActions}>
-                            <Button size="compact" onClick={() => onEditService?.(svc.id)}>Edit</Button>
-                            <Button size="compact" onClick={() => onRemoveService?.(svc.id)}>Remove</Button>
+                            <Button size="compact" onClick={() => onEditService?.(svc.id)}>
+                              Edit
+                            </Button>
+                            <Button size="compact" onClick={() => onRemoveService?.(svc.id)}>
+                              Remove
+                            </Button>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <MutedText compact>No services configured. Add shortcuts to your favorite web apps.</MutedText>
+                    <MutedText compact>
+                      No services configured. Add shortcuts to your favorite web apps.
+                    </MutedText>
                   )}
                   <div className={styles.settingsActions}>
-                    <Button size="compact" onClick={onAddService}>Add Service</Button>
+                    <Button size="compact" onClick={onAddService}>
+                      Add Service
+                    </Button>
                   </div>
                 </section>
               )}
             </>
           )}
 
-          {(!filterQuery.trim() ? activeCategory === 'admin' : filteredCategories.some((c) => c.id === 'admin')) && (
+          {(!filterQuery.trim()
+            ? activeCategory === 'admin'
+            : filteredCategories.some((c) => c.id === 'admin')) && (
             <>
               <section className={styles.settingsSection}>
                 <h4>Maintenance</h4>
                 <div className={styles.maintenanceActions}>
                   <Button size="compact" onClick={handleVacuum} disabled={maintenanceBusy !== null}>
-                    {maintenanceBusy === 'vacuum' && <Icon name="view-refresh" size={12} className={styles.spin} />}
+                    {maintenanceBusy === 'vacuum' && (
+                      <Icon name="view-refresh" size={12} className={styles.spin} />
+                    )}
                     Vacuum DB
                   </Button>
-                  <Button size="compact" onClick={handlePruneJobs} disabled={maintenanceBusy !== null}>
-                    {maintenanceBusy === 'pruneJobs' && <Icon name="view-refresh" size={12} className={styles.spin} />}
+                  <Button
+                    size="compact"
+                    onClick={handlePruneJobs}
+                    disabled={maintenanceBusy !== null}
+                  >
+                    {maintenanceBusy === 'pruneJobs' && (
+                      <Icon name="view-refresh" size={12} className={styles.spin} />
+                    )}
                     Prune Old Transfers
                   </Button>
-                  <Button size="compact" onClick={handlePruneAuditLogs} disabled={maintenanceBusy !== null}>
-                    {maintenanceBusy === 'pruneAudit' && <Icon name="view-refresh" size={12} className={styles.spin} />}
+                  <Button
+                    size="compact"
+                    onClick={handlePruneAuditLogs}
+                    disabled={maintenanceBusy !== null}
+                  >
+                    {maintenanceBusy === 'pruneAudit' && (
+                      <Icon name="view-refresh" size={12} className={styles.spin} />
+                    )}
                     Prune Audit Logs
                   </Button>
                 </div>
@@ -469,15 +542,13 @@ export function SettingsPanel({
               {session?.role === 'admin' && (
                 <section className={styles.settingsSection}>
                   <h4>Users</h4>
-                  {(users === null && !usersLoading) && (
+                  {users === null && !usersLoading && (
                     <Button size="compact" onClick={loadUsers}>
                       Load Users
                     </Button>
                   )}
                   {usersLoading && <MutedText>Loading...</MutedText>}
-                  {usersError && (
-                    <ErrorBanner message={usersError} onRetry={loadUsers} />
-                  )}
+                  {usersError && <ErrorBanner message={usersError} onRetry={loadUsers} />}
                   {users && (
                     <div className={styles.userList}>
                       {users.length === 0 ? (
@@ -498,19 +569,60 @@ export function SettingsPanel({
                                       placeholder="New password"
                                       value={pwdChangeValue}
                                       onChange={(e) => setPwdChangeValue(e.target.value)}
-                                      onKeyDown={(e) => { if (e.key === 'Enter') handleChangePassword(u.id); if (e.key === 'Escape') { setPwdChangeUserId(null); setPwdChangeValue(''); } }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleChangePassword(u.id);
+                                        if (e.key === 'Escape') {
+                                          setPwdChangeUserId(null);
+                                          setPwdChangeValue('');
+                                        }
+                                      }}
                                       autoFocus
                                     />
-                                    <Button size="compact" disabled={!pwdChangeValue} onClick={() => handleChangePassword(u.id)}>Set</Button>
-                                    <Button size="compact" onClick={() => { setPwdChangeUserId(null); setPwdChangeValue(''); }}>Cancel</Button>
+                                    <Button
+                                      size="compact"
+                                      disabled={!pwdChangeValue}
+                                      onClick={() => handleChangePassword(u.id)}
+                                    >
+                                      Set
+                                    </Button>
+                                    <Button
+                                      size="compact"
+                                      onClick={() => {
+                                        setPwdChangeUserId(null);
+                                        setPwdChangeValue('');
+                                      }}
+                                    >
+                                      Cancel
+                                    </Button>
                                   </span>
                                 ) : (
                                   <>
-                                    <Button size="compact" onClick={() => { setPwdChangeUserId(u.id); setPwdChangeValue(''); }}>Password</Button>
-                                    <Button size="compact" onClick={() => handleChangeRole(u.id, u.role === 'admin' ? 'readonly' : 'admin')}>
+                                    <Button
+                                      size="compact"
+                                      onClick={() => {
+                                        setPwdChangeUserId(u.id);
+                                        setPwdChangeValue('');
+                                      }}
+                                    >
+                                      Password
+                                    </Button>
+                                    <Button
+                                      size="compact"
+                                      onClick={() =>
+                                        handleChangeRole(
+                                          u.id,
+                                          u.role === 'admin' ? 'readonly' : 'admin',
+                                        )
+                                      }
+                                    >
                                       Make {u.role === 'admin' ? 'readonly' : 'admin'}
                                     </Button>
-                                    <Button size="compact" onClick={() => handleDeleteUser(u.id, u.username)}>Delete</Button>
+                                    <Button
+                                      size="compact"
+                                      onClick={() => handleDeleteUser(u.id, u.username)}
+                                    >
+                                      Delete
+                                    </Button>
                                   </>
                                 )}
                               </div>
@@ -534,7 +646,10 @@ export function SettingsPanel({
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                       />
-                      <select value={newRole} onChange={(e) => setNewRole(e.target.value as 'admin' | 'readonly')}>
+                      <select
+                        value={newRole}
+                        onChange={(e) => setNewRole(e.target.value as 'admin' | 'readonly')}
+                      >
                         <option value="readonly">Readonly</option>
                         <option value="admin">Admin</option>
                       </select>
@@ -543,7 +658,14 @@ export function SettingsPanel({
                         disabled={creatingUser || !newUsername || !newPassword}
                         onClick={handleCreateUser}
                       >
-                        {creatingUser ? <><Icon name="view-refresh" size={12} className={styles.spin} /> Creating...</> : 'Create'}
+                        {creatingUser ? (
+                          <>
+                            <Icon name="view-refresh" size={12} className={styles.spin} />{' '}
+                            Creating...
+                          </>
+                        ) : (
+                          'Create'
+                        )}
                       </Button>
                     </div>
                   </details>
@@ -555,7 +677,11 @@ export function SettingsPanel({
               {onOpenShares && (
                 <section className={styles.settingsSection}>
                   <h4>Shares</h4>
-                  <p><MutedText compact>Manage expiring share links for files and folders.</MutedText></p>
+                  <p>
+                    <MutedText compact>
+                      Manage expiring share links for files and folders.
+                    </MutedText>
+                  </p>
                   <div className={styles.sharesActions}>
                     <Button size="compact" onClick={onOpenShares}>
                       Manage Shares
@@ -566,7 +692,9 @@ export function SettingsPanel({
             </>
           )}
 
-          {(!filterQuery.trim() ? activeCategory === 'about' : filteredCategories.some((c) => c.id === 'about')) && (
+          {(!filterQuery.trim()
+            ? activeCategory === 'about'
+            : filteredCategories.some((c) => c.id === 'about')) && (
             <section className={styles.settingsSection}>
               <h4>About</h4>
               <dl className={styles.settingsDetails}>
@@ -582,7 +710,11 @@ export function SettingsPanel({
 
           {filterQuery.trim() && filteredCategories.length === 0 && (
             <div className={styles.settingsSection}>
-              <EmptyState compact title="No matching settings" subtitle={`Nothing found for "${filterQuery}"`} />
+              <EmptyState
+                compact
+                title="No matching settings"
+                subtitle={`Nothing found for "${filterQuery}"`}
+              />
             </div>
           )}
         </>
@@ -604,7 +736,10 @@ export function SettingsPanel({
           <li key={cat.id}>
             <button
               className={`${styles.settingsNavItem}${activeCategory === cat.id ? ` ${styles.active}` : ''}`}
-              onClick={() => { setActiveCategory(cat.id); setFilterQuery(''); }}
+              onClick={() => {
+                setActiveCategory(cat.id);
+                setFilterQuery('');
+              }}
               aria-current={activeCategory === cat.id ? 'true' : undefined}
             >
               <Icon name={cat.icon} size={16} />
@@ -617,16 +752,11 @@ export function SettingsPanel({
   );
 
   return (
-    <div className={styles.settingsBodyPage}>
-      {sidebarNav}
-      <div className={styles.settingsContent}>
-        {content}
-      </div>
-    </div>
+    <AppPanel layout="split" sidebar={sidebarNav}>
+      {content}
+    </AppPanel>
   );
 }
-
-
 
 function formatRootUsage(root: RootEntry) {
   if (!root.available) return 'Unavailable';

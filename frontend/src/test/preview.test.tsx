@@ -41,18 +41,28 @@ describe('preview policy', () => {
   });
 
   it('blocks expensive inline previews', () => {
-    expect(previewBlockedReason(entry({ name: 'large.txt', size: MAX_TEXT_PREVIEW_BYTES + 1 }))).toContain('Text preview');
-    expect(previewBlockedReason(entry({ name: 'large.jpg', size: MAX_IMAGE_PREVIEW_BYTES + 1 }))).toContain('Image preview');
-    expect(previewBlockedReason(entry({ name: 'small.jpg', size: MAX_IMAGE_PREVIEW_BYTES }))).toBeNull();
+    expect(
+      previewBlockedReason(entry({ name: 'large.txt', size: MAX_TEXT_PREVIEW_BYTES + 1 })),
+    ).toContain('Text preview');
+    expect(
+      previewBlockedReason(entry({ name: 'large.jpg', size: MAX_IMAGE_PREVIEW_BYTES + 1 })),
+    ).toContain('Image preview');
+    expect(
+      previewBlockedReason(entry({ name: 'small.jpg', size: MAX_IMAGE_PREVIEW_BYTES })),
+    ).toBeNull();
   });
 
   it('does not fetch blocked text previews', () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
 
-    render(<PreviewContent entry={entry({ name: 'large.log', size: MAX_TEXT_PREVIEW_BYTES + 1 })} />);
+    render(
+      <PreviewContent entry={entry({ name: 'large.log', size: MAX_TEXT_PREVIEW_BYTES + 1 })} />,
+    );
 
-    expect(screen.getByText('Text preview is limited to 1 MB to keep the browser responsive.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Text preview is limited to 1 MB to keep the browser responsive.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Download instead')).toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -82,11 +92,16 @@ describe('preview policy', () => {
       </StrictMode>,
     );
 
-    expect(screen.getByAltText('photo.jpg')).toHaveAttribute('src', '/api/files/raw?path=%2Fstorage%2Fphoto.jpg');
+    expect(screen.getByAltText('photo.jpg')).toHaveAttribute(
+      'src',
+      '/api/files/raw?path=%2Fstorage%2Fphoto.jpg',
+    );
   });
 
   it('unloads media previews when the preview closes', () => {
-    const { unmount } = render(<PreviewContent entry={entry({ name: 'clip.mp4', path: '/storage/clip.mp4' })} />);
+    const { unmount } = render(
+      <PreviewContent entry={entry({ name: 'clip.mp4', path: '/storage/clip.mp4' })} />,
+    );
 
     unmount();
 
@@ -125,7 +140,9 @@ describe('preview policy', () => {
       value: { writeText },
     });
 
-    render(<PreviewContent entry={entry({ name: 'photo.jpg', path: '/storage/photos/photo.jpg' })} />);
+    render(
+      <PreviewContent entry={entry({ name: 'photo.jpg', path: '/storage/photos/photo.jpg' })} />,
+    );
 
     await user.click(screen.getByTitle('Copy path'));
 
@@ -157,6 +174,10 @@ describe('preview policy', () => {
 
     await user.click(screen.getByTitle('Open raw'));
 
-    expect(open).toHaveBeenCalledWith('/api/files/raw?path=%2Fstorage%2Ffile.txt', '_blank', 'noopener,noreferrer');
+    expect(open).toHaveBeenCalledWith(
+      '/api/files/raw?path=%2Fstorage%2Ffile.txt',
+      '_blank',
+      'noopener,noreferrer',
+    );
   });
 });

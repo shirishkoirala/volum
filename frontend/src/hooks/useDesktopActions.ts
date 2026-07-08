@@ -13,10 +13,15 @@ interface DesktopActionsOptions {
     roots: import('../api/client').RootEntry[];
   };
   dialogs: {
-    setConfirmDialog: React.Dispatch<React.SetStateAction<import('../components/overlay/Dialogs').ConfirmDialogState>>;
+    setConfirmDialog: React.Dispatch<
+      React.SetStateAction<import('../components/overlay/Dialogs').ConfirmDialogState>
+    >;
   };
   toast: {
-    showToastObj: (toast: Omit<import('../components/overlay/Toast').Toast, 'id'>, timeout?: number) => void;
+    showToastObj: (
+      toast: Omit<import('../components/overlay/Toast').Toast, 'id'>,
+      timeout?: number,
+    ) => void;
   };
   nav: {
     setShowingTrash: (v: boolean) => void;
@@ -34,11 +39,23 @@ interface DesktopActionsOptions {
   };
   removeFavorite: (path: string) => void;
   addService: (svc: ServiceShortcut) => Promise<unknown>;
-  updateService: (id: string, data: { name: string; url: string; iconUrl?: string; healthUrl?: string; description?: string; openMode?: 'embed' | 'tab' }) => Promise<unknown>;
+  updateService: (
+    id: string,
+    data: {
+      name: string;
+      url: string;
+      iconUrl?: string;
+      healthUrl?: string;
+      description?: string;
+      openMode?: 'embed' | 'tab';
+    },
+  ) => Promise<unknown>;
   removeService: (id: string) => Promise<void>;
   refreshServiceHealth: () => Promise<unknown>;
   serviceFormData: { initial?: ServiceShortcut } | null;
-  setDesktopContextMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number; item: DesktopIconItem } | null>>;
+  setDesktopContextMenu: React.Dispatch<
+    React.SetStateAction<{ x: number; y: number; item: DesktopIconItem } | null>
+  >;
   setServiceFormData: React.Dispatch<React.SetStateAction<{ initial?: ServiceShortcut } | null>>;
   refresh: () => void;
   navigateTo: (path: string) => void;
@@ -47,11 +64,23 @@ interface DesktopActionsOptions {
 
 export function useDesktopActions(opts: DesktopActionsOptions) {
   const {
-    browser, dialogs, toast, nav, viewPref, selection,
-    removeFavorite, addService, updateService, removeService,
+    browser,
+    dialogs,
+    toast,
+    nav,
+    viewPref,
+    selection,
+    removeFavorite,
+    addService,
+    updateService,
+    removeService,
     refreshServiceHealth,
-    serviceFormData, setDesktopContextMenu, setServiceFormData,
-    refresh, navigateTo, resetToDesktopView,
+    serviceFormData,
+    setDesktopContextMenu,
+    setServiceFormData,
+    refresh,
+    navigateTo,
+    resetToDesktopView,
   } = opts;
 
   const handleEmptyTrash = useCallback(() => {
@@ -76,35 +105,62 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
             toast.showToastObj({ title: 'Action failed', message, variant: 'error' });
           }
         })();
-      }
+      },
     });
   }, [browser, dialogs, toast, refresh, setDesktopContextMenu]);
 
-  const handleRemoveDesktopFavorite = useCallback((path: string) => {
-    removeFavorite(path);
-    toast.showToastObj({ title: 'Removed from desktop', variant: 'success' });
-  }, [removeFavorite, toast]);
+  const handleRemoveDesktopFavorite = useCallback(
+    (path: string) => {
+      removeFavorite(path);
+      toast.showToastObj({ title: 'Removed from desktop', variant: 'success' });
+    },
+    [removeFavorite, toast],
+  );
 
-  const handleOpenServiceForm = useCallback((svc?: ServiceShortcut) => {
-    setDesktopContextMenu(null);
-    setServiceFormData(svc ? { initial: svc } : {});
-  }, [setDesktopContextMenu, setServiceFormData]);
+  const handleOpenServiceForm = useCallback(
+    (svc?: ServiceShortcut) => {
+      setDesktopContextMenu(null);
+      setServiceFormData(svc ? { initial: svc } : {});
+    },
+    [setDesktopContextMenu, setServiceFormData],
+  );
 
-  const handleSaveService = useCallback(async (data: { name: string; url: string; iconUrl?: string; healthUrl?: string; description?: string; openMode: 'embed' | 'tab' }) => {
-    if (serviceFormData?.initial) {
-      await updateService(serviceFormData.initial.id, data);
-      toast.showToastObj({ title: 'Service updated', variant: 'success' });
-    } else {
-      await addService({ id: '', name: data.name, url: data.url, iconUrl: data.iconUrl, healthUrl: data.healthUrl, description: data.description, openMode: data.openMode });
-      toast.showToastObj({ title: 'Service added', variant: 'success' });
-    }
-    if (data.healthUrl) await refreshServiceHealth();
-  }, [serviceFormData, addService, updateService, refreshServiceHealth, toast]);
+  const handleSaveService = useCallback(
+    async (data: {
+      name: string;
+      url: string;
+      iconUrl?: string;
+      healthUrl?: string;
+      description?: string;
+      openMode: 'embed' | 'tab';
+    }) => {
+      if (serviceFormData?.initial) {
+        await updateService(serviceFormData.initial.id, data);
+        toast.showToastObj({ title: 'Service updated', variant: 'success' });
+      } else {
+        await addService({
+          id: '',
+          name: data.name,
+          url: data.url,
+          iconUrl: data.iconUrl,
+          healthUrl: data.healthUrl,
+          description: data.description,
+          openMode: data.openMode,
+        });
+        toast.showToastObj({ title: 'Service added', variant: 'success' });
+      }
+      if (data.healthUrl) await refreshServiceHealth();
+    },
+    [serviceFormData, addService, updateService, refreshServiceHealth, toast],
+  );
 
-  const handleRemoveService = useCallback((id: string) => {
-    removeService(id);
-    toast.showToastObj({ title: 'Service removed from desktop', variant: 'success' });
-  }, [removeService, toast]);
+  const handleRemoveService = useCallback(
+    (id: string) => {
+      removeService(id);
+      toast.showToastObj({ title: 'Service removed from desktop', variant: 'success' });
+    },
+    [removeService, toast],
+  );
 
   const handleBackToDesktop = useCallback(() => {
     nav.setShowingMyPC(false);
@@ -121,30 +177,46 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
     nav.setSelectedDriveName(null);
   }, [viewPref, nav, selection]);
 
-  const handleDockActivate = useCallback((id: string) => {
-    switch (id) {
-      case 'desktop': resetToDesktopView(); break;
-      case 'files':
-        nav.setShowingTrash(false); nav.setShowingSettings(false); nav.setShowingJobs(false);
-        nav.setShowingMyPC(false); nav.setSelectedDriveName(null);
-        if (viewPref.currentPath === '') {
-          navigateTo(defaultRootPath(browser.roots));
-        }
-        break;
-      case 'trash':
-        viewPref.setCurrentPath('');
-        nav.setShowingTrash(true); nav.setShowingSettings(false); nav.setShowingJobs(false);
-        break;
-      case 'jobs':
-        nav.setShowingJobs(true); nav.setShowingSettings(false);
-        nav.setShowingTrash(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null);
-        break;
-      case 'settings':
-        nav.setShowingSettings(true); nav.setShowingTrash(false);
-        nav.setShowingJobs(false); nav.setShowingMyPC(false); nav.setSelectedDriveName(null);
-        break;
-    }
-  }, [viewPref, nav, browser.roots, navigateTo, resetToDesktopView]);
+  const handleDockActivate = useCallback(
+    (id: string) => {
+      switch (id) {
+        case 'desktop':
+          resetToDesktopView();
+          break;
+        case 'files':
+          nav.setShowingTrash(false);
+          nav.setShowingSettings(false);
+          nav.setShowingJobs(false);
+          nav.setShowingMyPC(false);
+          nav.setSelectedDriveName(null);
+          if (viewPref.currentPath === '') {
+            navigateTo(defaultRootPath(browser.roots));
+          }
+          break;
+        case 'trash':
+          viewPref.setCurrentPath('');
+          nav.setShowingTrash(true);
+          nav.setShowingSettings(false);
+          nav.setShowingJobs(false);
+          break;
+        case 'jobs':
+          nav.setShowingJobs(true);
+          nav.setShowingSettings(false);
+          nav.setShowingTrash(false);
+          nav.setShowingMyPC(false);
+          nav.setSelectedDriveName(null);
+          break;
+        case 'settings':
+          nav.setShowingSettings(true);
+          nav.setShowingTrash(false);
+          nav.setShowingJobs(false);
+          nav.setShowingMyPC(false);
+          nav.setSelectedDriveName(null);
+          break;
+      }
+    },
+    [viewPref, nav, browser.roots, navigateTo, resetToDesktopView],
+  );
 
   const handleRefreshDesktop = useCallback(() => {
     browser.loadDevices();

@@ -70,12 +70,15 @@
   font-weight: 700;
   height: 32px;
   text-align: center;
-  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
   width: 36px;
 }
 
 .permToggle.on {
-  background: var(--color-brand-bg);
+  background: var(--glass-selected-bg);
   border-color: var(--color-brand);
   color: var(--color-brand);
 }

@@ -21,5 +21,3 @@ func (s *Store) CreateAuditLog(ctx context.Context, action, path, details string
 	`, log.ID, log.Action, log.Path, log.Details, log.CreatedAt)
 	return err
 }
-
-

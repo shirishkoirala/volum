@@ -26,6 +26,9 @@ func walkWithJobControl(
 		if paused {
 			return errJobPaused
 		}
+		if entry.Type()&os.ModeSymlink != 0 {
+			return nil
+		}
 
 		rel, err := filepath.Rel(source, path)
 		if err != nil {

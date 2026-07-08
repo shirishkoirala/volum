@@ -11,9 +11,9 @@ type dirSizeEntry struct {
 }
 
 type DirSizeCache struct {
-	mu    sync.RWMutex
-	data  map[string]dirSizeEntry
-	ttl   time.Duration
+	mu   sync.RWMutex
+	data map[string]dirSizeEntry
+	ttl  time.Duration
 }
 
 func NewDirSizeCache(ttl time.Duration) *DirSizeCache {

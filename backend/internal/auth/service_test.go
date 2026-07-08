@@ -158,6 +158,33 @@ func TestUserFromRequestWithValidCookie(t *testing.T) {
 	}
 }
 
+func TestLoginInvalidatesPreviousSession(t *testing.T) {
+	store, ctx := setupStore(t)
+	s, _ := New(store, "secret")
+	_, _ = store.CreateUser(ctx, "admin", "adminpass", RoleAdmin)
+
+	firstToken, _, ok := s.Login(ctx, "admin", "adminpass", true)
+	if !ok {
+		t.Fatal("expected first login ok")
+	}
+	secondToken, _, ok := s.Login(ctx, "admin", "adminpass", true)
+	if !ok {
+		t.Fatal("expected second login ok")
+	}
+
+	firstReq := httptest.NewRequest(http.MethodGet, "/", nil)
+	firstReq.AddCookie(&http.Cookie{Name: "volum_session", Value: firstToken})
+	if _, ok := s.UserFromRequest(firstReq); ok {
+		t.Fatal("expected first token to be invalidated")
+	}
+
+	secondReq := httptest.NewRequest(http.MethodGet, "/", nil)
+	secondReq.AddCookie(&http.Cookie{Name: "volum_session", Value: secondToken})
+	if _, ok := s.UserFromRequest(secondReq); !ok {
+		t.Fatal("expected second token to remain valid")
+	}
+}
+
 func TestUserFromRequestWithNoCookie(t *testing.T) {
 	store, _ := setupStore(t)
 	s, _ := New(store, "secret")
@@ -227,7 +254,6 @@ func TestVerifyInvalidFormat(t *testing.T) {
 	if ok {
 		t.Fatal("expected verify to reject invalid format")
 	}
-	ok = false
 	_, ok = s.verify("base64.payload.invalid.signature")
 	if ok {
 		t.Fatal("expected verify to reject triple-dot format")
@@ -335,6 +361,23 @@ func TestUserFromRequestDeletedUser(t *testing.T) {
 	_, ok := s.UserFromRequest(r)
 	if ok {
 		t.Fatal("expected no user after deletion")
+	}
+}
+
+func TestUpdateRoleInvalidatesSession(t *testing.T) {
+	store, ctx := setupStore(t)
+	s, _ := New(store, "secret")
+	record, _ := store.CreateUser(ctx, "admin", "adminpass", RoleAdmin)
+	token, _, _ := s.Login(ctx, "admin", "adminpass", false)
+
+	if err := store.UpdateRole(ctx, record.ID, RoleReadonly); err != nil {
+		t.Fatal(err)
+	}
+
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r.AddCookie(&http.Cookie{Name: "volum_session", Value: token})
+	if _, ok := s.UserFromRequest(r); ok {
+		t.Fatal("expected role change to invalidate existing token")
 	}
 }
 

@@ -17,7 +17,11 @@ import styles from './TrashView.module.css';
 export function TrashView() {
   const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([]);
   const [selectedTrashIds, setSelectedTrashIds] = useState<Set<string>>(new Set());
-  const [trashContextMenu, setTrashContextMenu] = useState<{ entry: TrashEntry; x: number; y: number } | null>(null);
+  const [trashContextMenu, setTrashContextMenu] = useState<{
+    entry: TrashEntry;
+    x: number;
+    y: number;
+  } | null>(null);
   const [trashEmptyMenu, setTrashEmptyMenu] = useState<{ x: number; y: number } | null>(null);
   const toast = useToasts();
 
@@ -27,34 +31,40 @@ export function TrashView() {
     if (trashData) setTrashEntries(trashData.entries ?? []);
   }, [trashData]);
 
-  const handleSelectTrashItem = useCallback((entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => {
-    setSelectedTrashIds((prev) => {
-      const next = new Set(prev);
-      if (event.ctrlKey || event.metaKey) {
-        if (next.has(entry.id)) next.delete(entry.id);
-        else next.add(entry.id);
-      } else if (event.shiftKey && prev.size > 0) {
-        const ids = trashEntries.map((e) => e.id);
-        const lastIdx = ids.indexOf(Array.from(prev).pop()!);
-        const curIdx = ids.indexOf(entry.id);
-        if (lastIdx !== -1 && curIdx !== -1) {
-          const [start, end] = lastIdx < curIdx ? [lastIdx, curIdx] : [curIdx, lastIdx];
-          for (let i = start; i <= end; i++) next.add(ids[i]!);
+  const handleSelectTrashItem = useCallback(
+    (entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => {
+      setSelectedTrashIds((prev) => {
+        const next = new Set(prev);
+        if (event.ctrlKey || event.metaKey) {
+          if (next.has(entry.id)) next.delete(entry.id);
+          else next.add(entry.id);
+        } else if (event.shiftKey && prev.size > 0) {
+          const ids = trashEntries.map((e) => e.id);
+          const lastIdx = ids.indexOf(Array.from(prev).pop()!);
+          const curIdx = ids.indexOf(entry.id);
+          if (lastIdx !== -1 && curIdx !== -1) {
+            const [start, end] = lastIdx < curIdx ? [lastIdx, curIdx] : [curIdx, lastIdx];
+            for (let i = start; i <= end; i++) next.add(ids[i]!);
+          }
+        } else {
+          next.clear();
+          next.add(entry.id);
         }
-      } else {
-        next.clear();
-        next.add(entry.id);
-      }
-      return next;
-    });
-  }, [trashEntries]);
+        return next;
+      });
+    },
+    [trashEntries],
+  );
 
-  const handleTrashContextMenu = useCallback((entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setTrashEmptyMenu(null);
-    setTrashContextMenu({ entry, x: event.clientX, y: event.clientY });
-  }, []);
+  const handleTrashContextMenu = useCallback(
+    (entry: TrashEntry, event: React.MouseEvent<HTMLElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setTrashEmptyMenu(null);
+      setTrashContextMenu({ entry, x: event.clientX, y: event.clientY });
+    },
+    [],
+  );
 
   const handleTrashEmptyContextMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
@@ -63,17 +73,37 @@ export function TrashView() {
     setTrashEmptyMenu({ x: event.clientX, y: event.clientY });
   }, []);
 
-  const handleRestore = useCallback((entry: TrashEntry) => {
-    restoreTrash(entry.id)
-      .then(() => { toast.showToastObj({ title: 'Restored', variant: 'success' }); loadTrash(); })
-      .catch((err) => toast.showToastObj({ title: 'Failed to restore', variant: 'error', message: err.message }));
-  }, [toast, loadTrash]);
+  const handleRestore = useCallback(
+    (entry: TrashEntry) => {
+      restoreTrash(entry.id)
+        .then(() => {
+          toast.showToastObj({ title: 'Restored', variant: 'success' });
+          loadTrash();
+        })
+        .catch((err) =>
+          toast.showToastObj({
+            title: 'Failed to restore',
+            variant: 'error',
+            message: err.message,
+          }),
+        );
+    },
+    [toast, loadTrash],
+  );
 
-  const handleDeletePermanently = useCallback((entry: TrashEntry) => {
-    deleteTrash(entry.id)
-      .then(() => { toast.showToastObj({ title: 'Deleted permanently', variant: 'success' }); loadTrash(); })
-      .catch((err) => toast.showToastObj({ title: 'Failed to delete', variant: 'error', message: err.message }));
-  }, [toast, loadTrash]);
+  const handleDeletePermanently = useCallback(
+    (entry: TrashEntry) => {
+      deleteTrash(entry.id)
+        .then(() => {
+          toast.showToastObj({ title: 'Deleted permanently', variant: 'success' });
+          loadTrash();
+        })
+        .catch((err) =>
+          toast.showToastObj({ title: 'Failed to delete', variant: 'error', message: err.message }),
+        );
+    },
+    [toast, loadTrash],
+  );
 
   const handleRefresh = useCallback(() => {
     loadTrash();
@@ -104,7 +134,9 @@ export function TrashView() {
         setSelectedTrashIds(new Set());
         loadTrash();
       })
-      .catch((err) => toast.showToastObj({ title: 'Failed to restore', variant: 'error', message: err.message }));
+      .catch((err) =>
+        toast.showToastObj({ title: 'Failed to restore', variant: 'error', message: err.message }),
+      );
   }, [selectedTrashIds, toast, loadTrash]);
 
   const handleDeleteSelected = useCallback(() => {
@@ -116,7 +148,9 @@ export function TrashView() {
         setSelectedTrashIds(new Set());
         loadTrash();
       })
-      .catch((err) => toast.showToastObj({ title: 'Failed to delete', variant: 'error', message: err.message }));
+      .catch((err) =>
+        toast.showToastObj({ title: 'Failed to delete', variant: 'error', message: err.message }),
+      );
   }, [selectedTrashIds, toast, loadTrash]);
 
   const handleEmptyTrash = useCallback(() => {
@@ -127,7 +161,13 @@ export function TrashView() {
         setSelectedTrashIds(new Set());
         loadTrash();
       })
-      .catch((err) => toast.showToastObj({ title: 'Failed to empty trash', variant: 'error', message: err.message }));
+      .catch((err) =>
+        toast.showToastObj({
+          title: 'Failed to empty trash',
+          variant: 'error',
+          message: err.message,
+        }),
+      );
   }, [trashEntries, toast, loadTrash]);
 
   // Register window commands when inside a window
@@ -144,7 +184,17 @@ export function TrashView() {
       selectedCount: selectedTrashIds.size,
     });
     return () => unregisterCommands(windowId);
-  }, [windowId, handleSelectAllTrash, handleInvertSelectionTrash, handleRestoreSelected, handleDeleteSelected, handleEmptyTrash, selectedTrashIds.size, registerCommands, unregisterCommands]);
+  }, [
+    windowId,
+    handleSelectAllTrash,
+    handleInvertSelectionTrash,
+    handleRestoreSelected,
+    handleDeleteSelected,
+    handleEmptyTrash,
+    selectedTrashIds.size,
+    registerCommands,
+    unregisterCommands,
+  ]);
 
   const sortedTrashEntries = useMemo(() => {
     return [...trashEntries].sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
@@ -154,12 +204,12 @@ export function TrashView() {
     <>
       {trashError && <ErrorBanner message={trashError} onRetry={loadTrash} />}
       {trashEntries.length === 0 ? (
-        <div className={styles.emptyWrapper}>
+        <div className={`${styles.emptyWrapper} glassPanel mobileAppPanel`}>
           <EmptyState icon={trashIconUrl(false)} title="Trash is empty" />
         </div>
       ) : (
         <section
-          className={styles.trashGrid}
+          className={`${styles.trashGrid} glassPanel mobileAppPanel`}
           onContextMenu={handleTrashEmptyContextMenu}
           tabIndex={-1}
           role="list"
@@ -177,9 +227,10 @@ export function TrashView() {
                 e.preventDefault();
                 const items = document.querySelectorAll<HTMLElement>(`[data-trash-id]`);
                 const currentIdx = Array.from(items).indexOf(e.currentTarget as HTMLElement);
-                const next = e.key === 'ArrowDown'
-                  ? Math.min(currentIdx + 1, items.length - 1)
-                  : Math.max(currentIdx - 1, 0);
+                const next =
+                  e.key === 'ArrowDown'
+                    ? Math.min(currentIdx + 1, items.length - 1)
+                    : Math.max(currentIdx - 1, 0);
                 items[next]?.focus();
               }
             }
@@ -188,22 +239,33 @@ export function TrashView() {
               <GridTile
                 key={entry.id}
                 className={styles.trashItem}
-                icon={entry.type === 'directory' ? <FolderIcon size={GRID_ICON_SIZE} /> : <FileIcon entry={{
-                  name: entry.name,
-                  type: entry.type,
-                  path: entry.originalPath,
-                  size: entry.size,
-                  modifiedAt: entry.deletedAt,
-                  permissions: '',
-                  owner: '',
-                  group: '',
-                  hidden: false,
-                }} size={GRID_ICON_SIZE} />}
+                icon={
+                  entry.type === 'directory' ? (
+                    <FolderIcon size={GRID_ICON_SIZE} />
+                  ) : (
+                    <FileIcon
+                      entry={{
+                        name: entry.name,
+                        type: entry.type,
+                        path: entry.originalPath,
+                        size: entry.size,
+                        modifiedAt: entry.deletedAt,
+                        permissions: '',
+                        owner: '',
+                        group: '',
+                        hidden: false,
+                      }}
+                      size={GRID_ICON_SIZE}
+                    />
+                  )
+                }
                 name={entry.name}
-                metadata={<>
-                  <span>{formatBytes(entry.size)}</span>
-                  <span>{formatGridDate(entry.deletedAt)}</span>
-                </>}
+                metadata={
+                  <>
+                    <span>{formatBytes(entry.size)}</span>
+                    <span>{formatGridDate(entry.deletedAt)}</span>
+                  </>
+                }
                 isSelected={isSelected}
                 isDragOver={false}
                 role="listitem"
@@ -219,7 +281,8 @@ export function TrashView() {
       )}
       {trashContextMenu && (
         <TrashContextMenu
-          x={trashContextMenu.x} y={trashContextMenu.y}
+          x={trashContextMenu.x}
+          y={trashContextMenu.y}
           onRestore={() => handleRestore(trashContextMenu.entry)}
           onDeletePermanently={() => handleDeletePermanently(trashContextMenu.entry)}
           onClose={() => setTrashContextMenu(null)}
@@ -227,7 +290,8 @@ export function TrashView() {
       )}
       {trashEmptyMenu && (
         <TrashEmptyMenu
-          x={trashEmptyMenu.x} y={trashEmptyMenu.y}
+          x={trashEmptyMenu.x}
+          y={trashEmptyMenu.y}
           canPaste={false}
           onRefresh={handleRefresh}
           onPaste={() => {}}

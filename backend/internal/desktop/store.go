@@ -10,19 +10,19 @@ import (
 )
 
 type ServiceRecord struct {
-	ID                 string `json:"id"`
-	Name               string `json:"name"`
-	URL                string `json:"url"`
-	IconURL            string `json:"iconUrl,omitempty"`
-	HealthURL          string `json:"healthUrl,omitempty"`
-	Description        string `json:"description,omitempty"`
-	OpenMode           string `json:"openMode,omitempty"`
-	Position           int    `json:"position"`
-	CreatedAt          string `json:"createdAt,omitempty"`
-	LastHealthStatus   string `json:"lastHealthStatus,omitempty"`
-	LastHealthCheckedAt string `json:"lastHealthCheckedAt,omitempty"`
+	ID                   string `json:"id"`
+	Name                 string `json:"name"`
+	URL                  string `json:"url"`
+	IconURL              string `json:"iconUrl,omitempty"`
+	HealthURL            string `json:"healthUrl,omitempty"`
+	Description          string `json:"description,omitempty"`
+	OpenMode             string `json:"openMode,omitempty"`
+	Position             int    `json:"position"`
+	CreatedAt            string `json:"createdAt,omitempty"`
+	LastHealthStatus     string `json:"lastHealthStatus,omitempty"`
+	LastHealthCheckedAt  string `json:"lastHealthCheckedAt,omitempty"`
 	LastHealthStatusCode int    `json:"lastHealthStatusCode,omitempty"`
-	LastHealthError    string `json:"lastHealthError,omitempty"`
+	LastHealthError      string `json:"lastHealthError,omitempty"`
 }
 
 type Store struct {
@@ -35,7 +35,8 @@ func NewStore(db *sql.DB) *Store {
 
 const serviceColumns = `id, name, url, COALESCE(icon_url, ''), COALESCE(health_url, ''), COALESCE(description, ''), COALESCE(open_mode, 'embed'), position, created_at, COALESCE(last_health_status, ''), COALESCE(last_health_checked_at, ''), COALESCE(last_health_status_code, 0), COALESCE(last_health_error, '')`
 
-func scanService(row sqlutil.Scanner) (ServiceRecord, error) {	var svc ServiceRecord
+func scanService(row sqlutil.Scanner) (ServiceRecord, error) {
+	var svc ServiceRecord
 	var created time.Time
 	var checkedAt sql.NullString
 	if err := row.Scan(&svc.ID, &svc.Name, &svc.URL, &svc.IconURL, &svc.HealthURL, &svc.Description, &svc.OpenMode, &svc.Position, &created, &svc.LastHealthStatus, &checkedAt, &svc.LastHealthStatusCode, &svc.LastHealthError); err != nil {
@@ -122,18 +123,18 @@ func (s *Store) CreateService(ctx context.Context, name, url, iconURL, healthURL
 		return nil, err
 	}
 	return &ServiceRecord{
-		ID:                 id,
-		Name:               name,
-		URL:                url,
-		IconURL:            iconURL,
-		HealthURL:          healthURL,
-		Description:        description,
-		OpenMode:           om,
-		Position:           0,
-		CreatedAt:          now.Format(time.RFC3339),
-		LastHealthStatus:   "",
+		ID:                  id,
+		Name:                name,
+		URL:                 url,
+		IconURL:             iconURL,
+		HealthURL:           healthURL,
+		Description:         description,
+		OpenMode:            om,
+		Position:            0,
+		CreatedAt:           now.Format(time.RFC3339),
+		LastHealthStatus:    "",
 		LastHealthCheckedAt: "",
-		LastHealthError:    "",
+		LastHealthError:     "",
 	}, nil
 }
 

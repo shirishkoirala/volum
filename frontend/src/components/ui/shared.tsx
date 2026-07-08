@@ -59,7 +59,13 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: 'default' | 'compact';
 };
 
-export function Button({ variant = 'secondary', size = 'default', className, type = 'button', ...props }: ButtonProps) {
+export function Button({
+  variant = 'secondary',
+  size = 'default',
+  className,
+  type = 'button',
+  ...props
+}: ButtonProps) {
   return (
     <button
       className={cx(
@@ -81,10 +87,21 @@ type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   danger?: boolean;
 };
 
-export function IconButton({ active = false, danger = false, className, type = 'button', ...props }: IconButtonProps) {
+export function IconButton({
+  active = false,
+  danger = false,
+  className,
+  type = 'button',
+  ...props
+}: IconButtonProps) {
   return (
     <button
-      className={cx(styles.iconButton, active && styles.iconButtonActive, danger && styles.iconButtonDanger, className)}
+      className={cx(
+        styles.iconButton,
+        active && styles.iconButtonActive,
+        danger && styles.iconButtonDanger,
+        className,
+      )}
       type={type}
       {...props}
     />
@@ -99,14 +116,25 @@ type NoticeProps = {
   dismissLabel?: string;
 };
 
-export function Notice({ variant, className, children, onDismiss, dismissLabel = 'Dismiss' }: NoticeProps) {
+export function Notice({
+  variant,
+  className,
+  children,
+  onDismiss,
+  dismissLabel = 'Dismiss',
+}: NoticeProps) {
   return (
-    <div className={cx(styles.notice, variant === 'error' ? styles.error : styles.warning, className)}>
-      <div className={styles.noticeContent}>
-        {children}
-      </div>
+    <div
+      className={cx(styles.notice, variant === 'error' ? styles.error : styles.warning, className)}
+    >
+      <div className={styles.noticeContent}>{children}</div>
       {onDismiss && (
-        <button type="button" className={styles.noticeDismiss} onClick={onDismiss} aria-label={dismissLabel}>
+        <button
+          type="button"
+          className={styles.noticeDismiss}
+          onClick={onDismiss}
+          aria-label={dismissLabel}
+        >
           <Icon name="window-close" size={14} />
         </button>
       )}
@@ -114,32 +142,72 @@ export function Notice({ variant, className, children, onDismiss, dismissLabel =
   );
 }
 
-export function StatusBadge({ variant, children }: { variant: 'active' | 'disabled' | 'success' | 'warning' | 'danger'; children: ReactNode }) {
+export function StatusBadge({
+  variant,
+  children,
+}: {
+  variant: 'active' | 'disabled' | 'success' | 'warning' | 'danger';
+  children: ReactNode;
+}) {
+  return <span className={cx(styles.statusBadge, styles[variant])}>{children}</span>;
+}
+
+export function RotatedIcon({
+  quarterTurns = 2,
+  children,
+}: {
+  quarterTurns?: 1 | 2 | 3;
+  children: ReactNode;
+}) {
   return (
-    <span className={cx(styles.statusBadge, styles[variant])}>
+    <span
+      className={
+        quarterTurns === 1
+          ? styles.iconRotate90
+          : quarterTurns === 3
+            ? styles.iconRotate270
+            : styles.iconRotate180
+      }
+    >
       {children}
     </span>
   );
 }
 
-export function RotatedIcon({ quarterTurns = 2, children }: { quarterTurns?: 1 | 2 | 3; children: ReactNode }) {
+export function MutedText({
+  compact = false,
+  className,
+  children,
+}: {
+  compact?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <span className={quarterTurns === 1 ? styles.iconRotate90 : quarterTurns === 3 ? styles.iconRotate270 : styles.iconRotate180}>
-      {children}
-    </span>
+    <span className={cx(styles.muted, compact && styles.mutedCompact, className)}>{children}</span>
   );
 }
 
-export function MutedText({ compact = false, className, children }: { compact?: boolean; className?: string; children: ReactNode }) {
+export function IconImg({
+  src,
+  alt = '',
+  width,
+  height,
+  className = '',
+}: {
+  src: string;
+  alt?: string;
+  width: number;
+  height: number;
+  className?: string;
+}) {
   return (
-    <span className={cx(styles.muted, compact && styles.mutedCompact, className)}>
-      {children}
-    </span>
-  );
-}
-
-export function IconImg({ src, alt = '', width, height, className = '' }: { src: string; alt?: string; width: number; height: number; className?: string }) {
-  return (
-    <img src={src} alt={alt} width={width} height={height} className={`${styles.iconImg} ${className}`} />
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      className={`${styles.iconImg} ${className}`}
+    />
   );
 }

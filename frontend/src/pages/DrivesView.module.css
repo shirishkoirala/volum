@@ -7,8 +7,6 @@
 }
 
 .drivesContainer {
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-md);
   flex: 1;
   overflow-y: auto;
   padding: var(--space-lg);
@@ -29,7 +27,7 @@
 
 .drivePartitionItem {
   align-items: center;
-  background: var(--color-bg);
+  background: var(--glass-control-bg);
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
@@ -38,12 +36,16 @@
   gap: var(--space-lg);
   padding: var(--space-lg);
   text-align: left;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .drivePartitionItem:hover {
-  background: var(--color-hover);
-  border-color: var(--color-border-light);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-hover-bg);
+  border-color: var(--glass-border);
 }
 
 .drivePartitionInfo {
@@ -89,6 +91,11 @@
 }
 
 @media (max-width: 760px) {
+  .drivesWrapper {
+    margin: var(--space-sm);
+    margin-bottom: 0;
+  }
+
   .partitionGrid {
     gap: var(--space-md);
     grid-template-columns: minmax(0, 1fr);

@@ -34,16 +34,19 @@ export type WindowManagerType = {
   toggleMaximize: (id: string) => void;
   updatePosition: (id: string, x: number, y: number) => void;
   updateSize: (id: string, width: number, height: number) => void;
-  toggleWindow: (windowType: string, opts: {
-    title: string;
-    icon: string;
-    winType: string;
-    params: Record<string, unknown>;
-    x?: number;
-    y?: number;
-    width?: number;
-    height?: number;
-  }) => string;
+  toggleWindow: (
+    windowType: string,
+    opts: {
+      title: string;
+      icon: string;
+      winType: string;
+      params: Record<string, unknown>;
+      x?: number;
+      y?: number;
+      width?: number;
+      height?: number;
+    },
+  ) => string;
 };
 
 export const WindowManagerContext = createContext<WindowManagerType>({

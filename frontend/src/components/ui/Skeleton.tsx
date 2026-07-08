@@ -12,7 +12,11 @@ export function Skeleton({ variant, width, height, count = 1 }: SkeletonProps) {
   return (
     <>
       {items.map((_, i) => (
-        <div key={i} className={`${styles.skeleton} ${styles[variant]}`} style={{ width, height }} />
+        <div
+          key={i}
+          className={`${styles.skeleton} ${styles[variant]}`}
+          style={{ width, height }}
+        />
       ))}
     </>
   );

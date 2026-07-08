@@ -10,7 +10,15 @@ type SelectProps = {
   title?: string;
 } & Omit<SelectHTMLAttributes<HTMLSelectElement>, 'value' | 'onChange' | 'children'>;
 
-export function Select({ value, onChange, children, className, ariaLabel, title, ...rest }: SelectProps) {
+export function Select({
+  value,
+  onChange,
+  children,
+  className,
+  ariaLabel,
+  title,
+  ...rest
+}: SelectProps) {
   return (
     <select
       value={value}

@@ -17,10 +17,21 @@ type BreadcrumbBarProps = {
   onLocationNavigate?: (path: string) => void;
   locationMode?: boolean;
   onToggleLocationMode?: () => void;
+  flush?: boolean;
   children?: ReactNode;
 };
 
-export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNavigate, locationMode, onToggleLocationMode, children }: BreadcrumbBarProps) {
+export function BreadcrumbBar({
+  crumbs,
+  onBack,
+  onGoUp,
+  onNavigate,
+  onLocationNavigate,
+  locationMode,
+  onToggleLocationMode,
+  flush = false,
+  children,
+}: BreadcrumbBarProps) {
   const navRef = useRef<HTMLDivElement>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
@@ -35,11 +46,16 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
 
   const childrenArray = useMemo(() => Children.toArray(children), [children]);
   const hasToolbar = childrenArray.length > 0 && !locationMode;
-  const headerClassName = `${styles.header}${hasToolbar ? ` ${styles.withToolbar}` : ''}`;
+  const headerClassName = `${styles.header}${hasToolbar ? ` ${styles.withToolbar}` : ''}${flush ? ` ${styles.flush}` : ''}`;
 
   useEffect(() => {
     if (locationMode && locationInputRef.current) {
-      setLocationValue(crumbs.map((c) => c.path || c.label).filter(Boolean).join('/') || '/');
+      setLocationValue(
+        crumbs
+          .map((c) => c.path || c.label)
+          .filter(Boolean)
+          .join('/') || '/',
+      );
       locationInputRef.current.focus();
       locationInputRef.current.select();
     }
@@ -140,21 +156,15 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
     return () => ro.disconnect();
   }, [childrenArray]);
 
-  const visibleToolbarItems = toolbarOverflowIdx > 0
-    ? childrenArray.slice(0, toolbarOverflowIdx)
-    : childrenArray;
+  const visibleToolbarItems =
+    toolbarOverflowIdx > 0 ? childrenArray.slice(0, toolbarOverflowIdx) : childrenArray;
 
-  const hiddenToolbarItems = toolbarOverflowIdx > 0
-    ? childrenArray.slice(toolbarOverflowIdx)
-    : [];
+  const hiddenToolbarItems = toolbarOverflowIdx > 0 ? childrenArray.slice(toolbarOverflowIdx) : [];
 
-  const overflowCrumbs = overflowCount > 0
-    ? crumbs.slice(1, -overflowCount - 1 > 0 ? -overflowCount : undefined)
-    : [];
+  const overflowCrumbs =
+    overflowCount > 0 ? crumbs.slice(1, -overflowCount - 1 > 0 ? -overflowCount : undefined) : [];
 
-  const visibleCrumbs = overflowCount > 0
-    ? [crumbs[0]!, crumbs[crumbs.length - 1]!]
-    : crumbs;
+  const visibleCrumbs = overflowCount > 0 ? [crumbs[0]!, crumbs[crumbs.length - 1]!] : crumbs;
 
   const handleLocationKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -196,11 +206,10 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
   return (
     <header className={headerClassName}>
       <div className={styles.left}>
-        <IconButton
-          onClick={onBack}
-          title="Go back"
-        >
-          <RotatedIcon><Icon name="go-next" size={18} /></RotatedIcon>
+        <IconButton onClick={onBack} title="Go back">
+          <RotatedIcon>
+            <Icon name="go-next" size={18} />
+          </RotatedIcon>
         </IconButton>
         {onGoUp && (
           <IconButton onClick={onGoUp} title="Go up">
@@ -218,7 +227,11 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
                   {isLast ? (
                     <span className={styles.current}>{crumb.label}</span>
                   ) : crumb.path ? (
-                    <button type="button" onClick={() => onNavigate(crumb.path!)} className={styles.crumbBtn}>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(crumb.path!)}
+                      className={styles.crumbBtn}
+                    >
                       {crumb.label}
                     </button>
                   ) : (
@@ -230,7 +243,10 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
             {overflowCount > 1 && (
               <span className={styles.crumbRow}>
                 <Icon name="go-next" size={16} />
-                <span className={styles.overflowDots} onClick={() => setShowOverflow(!showOverflow)}>
+                <span
+                  className={styles.overflowDots}
+                  onClick={() => setShowOverflow(!showOverflow)}
+                >
                   <span className={styles.overflowBtn}>···</span>
                 </span>
                 {showOverflow && (
@@ -240,7 +256,10 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
                         key={crumb.path}
                         type="button"
                         className={styles.overflowItem}
-                        onClick={() => { setShowOverflow(false); if (crumb.path) onNavigate(crumb.path); }}
+                        onClick={() => {
+                          setShowOverflow(false);
+                          if (crumb.path) onNavigate(crumb.path);
+                        }}
                       >
                         {crumb.label}
                       </button>
@@ -256,14 +275,20 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
                   const overflowCrumb = crumbs[crumbs.length - 2];
                   if (!overflowCrumb) return null;
                   return (
-                    <span className={styles.overflowDots} onClick={() => setShowOverflow(!showOverflow)}>
+                    <span
+                      className={styles.overflowDots}
+                      onClick={() => setShowOverflow(!showOverflow)}
+                    >
                       <span className={styles.overflowBtn}>···</span>
                       {showOverflow && (
                         <div ref={overflowRef} className={styles.overflowMenu}>
                           <button
                             type="button"
                             className={styles.overflowItem}
-                            onClick={() => { setShowOverflow(false); if (overflowCrumb.path) onNavigate(overflowCrumb.path); }}
+                            onClick={() => {
+                              setShowOverflow(false);
+                              if (overflowCrumb.path) onNavigate(overflowCrumb.path);
+                            }}
                           >
                             {overflowCrumb.label}
                           </button>
@@ -304,7 +329,12 @@ export function BreadcrumbBar({ crumbs, onBack, onGoUp, onNavigate, onLocationNa
         {childrenArray}
       </div>
       {onToggleLocationMode && (
-        <button className={styles.locationToggle} onClick={onToggleLocationMode} title="Enter path (Ctrl+L)" type="button">
+        <button
+          className={styles.locationToggle}
+          onClick={onToggleLocationMode}
+          title="Enter path (Ctrl+L)"
+          type="button"
+        >
           <Icon name="go-jump" size={16} />
         </button>
       )}

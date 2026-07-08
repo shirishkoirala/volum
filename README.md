@@ -1,203 +1,118 @@
-# Volum Desktop
+<p align="center">
+  <img src="frontend/public/volum_logo_full.png" alt="Volum" width="360">
+</p>
 
-[![MIT License](https://img.shields.io/github/license/shirishkoirala/volum)](LICENSE)
-[![Go](https://img.shields.io/github/go-mod/go-version/shirishkoirala/volum)](backend/go.mod)
+# Volum - Your Server Files, Organized
 
-Volum Desktop is a self-hosted web file manager for Ubuntu and Docker home servers. It is designed around a reliable backend job engine so long-running filesystem operations (copy, move, delete, archive, upload) can continue on the server even if the browser window is closed.
+<p align="center">
+  A self-hosted desktop-style file manager for home servers and Docker hosts.
+</p>
+
+<p align="center">
+  <a href="LICENSE">License</a> |
+  <a href="docs/roadmap.md">Roadmap</a> |
+  <a href="docs/reverse-proxy.md">Reverse Proxy</a> |
+  <a href="docs/release.md">Release</a> |
+  <a href="CONTRIBUTION.md">Contributing</a>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/desktop.png" alt="Volum desktop">
+</p>
+
+## Why Volum?
+
+Volum is built for people who keep important files on their own server and want
+a clean browser UI that still behaves like a real file manager.
+
+Long-running work such as copy, move, upload, archive, extract, checksum, trash,
+and restore runs on the server through persistent jobs. The browser can close
+without losing the operation.
 
 ## Features
 
-- **Desktop view** — GNOME Nautilus-style desktop with Drives, Trash, Settings, Transfers, Files, favorite folder shortcuts, customizable wallpaper/background, and draggable icon reordering
-- **File browsing** — Grid and list views with sorting, hidden file toggle, per-folder view preferences
-- **File actions** — Create folder, rename, batch rename, copy, move, trash with restore, permanent delete
-- **Background jobs** — Persistent SQLite-backed jobs with real-time SSE progress, cancel, retry (including per-item retry), pause/resume
-- **Upload & download** — Upload with size verification, single-file download, streamed directory zip download
-- **Archives** — Create and extract zip, tar, tar.gz
-- **Metadata** — Info panel, permissions editor (chmod rwx toggles), checksums (md5/sha256), folder size and disk usage analyzer
-- **Search** — Global search across all roots with content grep
-- **Sharing** — Create expiring share links with optional password and download limits; full share management UI with list and revoke
-- **UX** — Top bar with clock and app menu (File/Edit/View/Go), status bar (item counts, storage info, path), context menus, keyboard shortcuts overlay, rubber-band drag select, touch long-press on mobile, dark mode, loading skeletons, action toasts with undo, browser notifications
-- **Auth** — Admin and readonly session-cookie auth with HMAC-signed cookies
-- **Safety** — Copy via `.partial` temp files with size verification, safe move (copy+verify+delete), per-root `.volum-trash/` recycle bin, configurable conflict policies (ask, skip, overwrite, rename, cancel)
+- **Desktop workspace** - Files, Drives, Trash, Transfers, Settings, and pinned
+  folder shortcuts in a familiar desktop surface.
+- **Reliable file operations** - background jobs with progress, cancel, retry,
+  pause, resume, and conflict handling.
+- **Safe storage behavior** - root-guarded paths, verified uploads, trash
+  restore, and copy-verify-delete moves.
+- **Preview and search** - image, media, PDF, and text previews with safe size
+  limits; search across roots and act on results.
+- **Sharing** - expiring share links with optional password and download limits.
+- **Homelab friendly** - Docker deployment, auth, reverse proxy support, dark
+  mode, mobile touch support, keyboard shortcuts, and service shortcuts.
 
-## Screenshots
+## Getting Started
 
-| Desktop view | File grid | Drives view |
-|---|---|---|
-| ![Desktop](docs/screenshots/desktop.png) | ![File grid](docs/screenshots/file-grid.png) | ![Drives view](docs/screenshots/drives.png) |
+Clone the repo and create a server environment file:
 
-| Preview modal | Settings | Transfers |
-|---|---|---|
-| ![Preview](docs/screenshots/preview.png) | ![Settings](docs/screenshots/settings.png) | ![Jobs](docs/screenshots/jobs.png) |
+```sh
+git clone https://github.com/shirishkoirala/volum
+cd volum
+cp .env.server.example .env
+sed -i.bak "s|^VOLUM_SESSION_SECRET=.*|VOLUM_SESSION_SECRET=$(openssl rand -base64 32)|" .env
+```
 
-*Refresh screenshots from the running app when UI changes.*
+Edit `.env` for your storage roots, database path, public URL, authentication,
+and runtime user. For released images, set the compose service image to:
 
-## Quick Start — Home Server
+```yaml
+image: ghcr.io/shirishkoirala/volum:latest
+```
 
-1. Create a directory for Volum data and clone the repo:
-   ```sh
-   mkdir -p /opt/docker/volum/data /opt/docker/volum/storage
-   git clone https://github.com/shirishkoirala/volum /opt/docker/volum
-   cd /opt/docker/volum
-   ```
+Then start the server compose stack:
 
-2. Create `.env`:
-   ```env
-   VOLUM_SESSION_SECRET=$(openssl rand -base64 32)
-   VOLUM_AUTH_REQUIRED=true
-   VOLUM_ROOTS=/mnt/storage,/mnt/data,/opt/docker
-   VOLUM_DB=/opt/docker/volum/data/volum.db
-   VOLUM_PUBLIC_URL=https://volum.yourdomain.com
-   VOLUM_HOST_PATH=./storage
-   VOLUM_BIND_ADDRESS=127.0.0.1
-   ```
+```sh
+docker compose -f docker-compose.server.yml up --build -d
+```
 
-3. Start Volum:
-   ```sh
-   docker compose up --build -d
-   ```
+Common production values:
 
-4. Open Volum through the reverse proxy configured for `VOLUM_PUBLIC_URL` and
-   use the bootstrap token from the server log to create the first administrator.
+```env
+VOLUM_AUTH_REQUIRED=true
+VOLUM_SESSION_SECRET=replace-with-a-long-random-secret
+VOLUM_ROOTS=/mnt/storage,/mnt/media,/opt/docker
+VOLUM_DB=/data/volum.db
+VOLUM_PUBLIC_URL=https://volum.example.com
+VOLUM_HOST_PATH=./storage
+VOLUM_BIND_ADDRESS=127.0.0.1
+```
 
-`docker-compose.server.yml` exposes only `./storage` by default. Full host `/`
-access must be selected explicitly and normally requires a privileged runtime
-user; use it only on a trusted, access-controlled server:
+When auth is enabled, create the first admin account from the setup screen using
+`VOLUM_BOOTSTRAP_TOKEN`, or the generated token written to
+`volum-initial-setup-token` beside the configured database. The server log
+prints the token file path, not the token value.
+Authentication is required by default when `VOLUM_AUTH_REQUIRED` is unset.
+Disabling it requires `VOLUM_AUTH_REQUIRED=false` and the explicit local-only
+opt-in `VOLUM_ALLOW_INSECURE_AUTH_DISABLED=true`.
+
+## Deployment
+
+Volum is meant for trusted private infrastructure: a home server, NAS-style
+Docker host, or private lab network. Prefer Tailscale, WireGuard, or a reverse
+proxy with auth enabled.
+
+Full host filesystem access is explicit. Use it only on a trusted,
+access-controlled machine:
+
 ```sh
 VOLUM_HOST_PATH=/ VOLUM_UID=0 VOLUM_GID=0 docker compose -f docker-compose.server.yml up --build -d
 ```
 
+Reverse proxy examples are in [docs/reverse-proxy.md](docs/reverse-proxy.md).
+Release and Docker image publishing notes are in [docs/release.md](docs/release.md).
+
 ## Development
 
-Docker development (Vite hot reload — preferred):
+Development and contribution notes live in [CONTRIBUTION.md](CONTRIBUTION.md).
+
+Preferred dev server:
+
 ```sh
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-Backend (direct):
-```sh
-cd backend
-go run ./cmd/volum
-```
+## License
 
-Frontend (direct):
-```sh
-cd frontend
-npm install
-npm run dev
-```
-
-Before committing, run:
-```sh
-cd frontend
-npm run typecheck    # tsc --noEmit
-npm run lint         # eslint .
-npm run build        # tsc && vite build
-```
-
-For upcoming product priorities, see [docs/roadmap.md](docs/roadmap.md).
-
-## Architecture
-
-### Backend (`backend/`)
-
-Go 1.23 + chi router v5 + SQLite (via mattn/go-sqlite3). Monolithic files have been split into focused packages:
-
-| Package | Files | Purpose |
-|---------|-------|---------|
-| `cmd/volum/` | `main.go` | Entry point |
-| `internal/api/` | 9 files (`server.go`, `handlers_*.go`, `middleware.go`) | HTTP routes, handlers, auth middleware |
-| `internal/files/` | 5 files (`service.go`, `service_trash.go`, `service_disk.go`, `cache.go`) | File listing, trash, disk usage |
-| `internal/jobs/` | 7 files (`store.go`, `store_claiming.go`, `store_items.go`, `store_audit.go`, `store_maintenance.go`, `model.go`) | SQLite-backed job engine |
-| `internal/auth/` | HMAC-signed session cookies, admin/readonly roles |
-| `internal/shares/` | Expiring share link CRUD |
-| `internal/storage/` | DB open + schema migration |
-| `internal/worker/` | Background job orchestrator, polling loop |
-| `internal/security/` | `RootGuard` path validation |
-| `internal/config/` | Config parsing, mount discovery |
-
-Testing: 10+ test files across all packages. `go vet ./...` + `go test ./...` run on every Docker build.
-
-### Frontend (`frontend/`)
-
-React 19 + Vite 6 + TypeScript with strict options (`noUncheckedIndexedAccess`, `noUnusedLocals`). CSS Modules with Vite auto-hashing.
-
-```
-frontend/src/
-├── App.tsx                       # Thin routing shell (~50 lines): theme, auth, ErrorBoundary
-├── screens/
-│   ├── Home.tsx                  # Workspace shell: state, effects, handlers, windows, view routing
-│   └── LoginScreen.tsx
-├── hooks/                        # Custom hooks (never define logic inline)
-│   ├── useJobs.ts                # SSE job subscription + control handlers
-│   ├── useDragDrop.ts            # Drag/drop state for transfers
-│   ├── useRubberBand.ts          # Rubber-band selection
-│   ├── useViewPreferences.ts     # View mode, sort, folder prefs + localStorage
-│   ├── useNavigation.ts          # showingTrash, showingSettings, etc.
-│   ├── useFavorites.ts           # Desktop folder shortcuts + localStorage
-│   ├── useFileActions.ts         # Preview, info, rename, search, context menu state
-│   ├── useDialogStack.ts         # Confirm, text input, transfer dialogs
-│   └── useLocalStorage.ts        # Generic localStorage hook
-├── pages/                        # Full-page views
-│   ├── DesktopView.tsx           # Desktop with drive icons, wallpaper, drag ordering
-│   ├── FilesView.tsx             # File grid/list browsing
-│   ├── TrashView.tsx             # Trash list (no selection toolbar)
-│   ├── JobsPage.tsx              # Transfer history (no filter tabs)
-│   └── SettingsPanel.tsx         # Settings with sidebar nav (6 categories)
-├── components/
-│   ├── input/                    # FolderPicker, Select, BatchRenameModal
-│   ├── layout/                   # TopBar (brand + clock), AppMenuBar, BreadcrumbBar, Dock, StatusBar
-│   ├── overlay/                  # Dialogs, Toast, InfoPanel, PreviewModal, ShareDialog, ShareManager,
-│   │                             # DiskUsageAnalyzer, KeyboardShortcuts, ContextMenus (File/Trash/Desktop)
-│   └── ui/                       # EmptyState, ProgressBar, Icon, ServerInfo, GridTile,
-│                                 # FileGridView/ListView, FileSearchBar, DriveSection
-├── utils/                        # format.ts, path.ts, archive.ts, jobs.ts, view.ts, preview.ts, wallpaper.ts
-├── types/                        # Shared TypeScript types
-├── styles/                       # global.css (utility classes), tokens.css (theme vars)
-└── api/                          # client.ts (typed fetch wrappers), icons.ts (SVG URL functions)
-```
-
-## Environment
-
-```txt
-VOLUM_HOME=/home/username            # Home directory used for default root shortcuts
-VOLUM_ROOTS=/mnt/storage,/mnt/data1  # Comma-separated paths to expose
-VOLUM_INCLUDE_ROOT=false             # Expose host / in server mode
-VOLUM_DISCOVER_ROOTS=false           # Auto-discover mounted drives
-VOLUM_HOST_ROOT=                     # Docker server mode: host mount target
-VOLUM_DB=/data/volum.db              # SQLite database path
-VOLUM_PORT=8090                      # HTTP listen port
-VOLUM_AUTH_REQUIRED=false            # Enable authentication
-VOLUM_SESSION_SECRET=replace-with... # HMAC session signing key
-VOLUM_BOOTSTRAP_TOKEN=               # Optional fixed first-run setup token
-VOLUM_PUBLIC_URL=                    # Public URL for share links
-VOLUM_ALLOWED_HOSTS=localhost,127.0.0.1 # Accepted request Host names
-VOLUM_HOST_PATH=./storage            # Host directory exposed to Volum; use / only deliberately
-VOLUM_BIND_ADDRESS=127.0.0.1         # Host interface used by Docker port publishing
-VOLUM_UID=1000                       # Unprivileged runtime user
-VOLUM_GID=1000                       # Unprivileged runtime group
-```
-
-Authentication is controlled by `VOLUM_AUTH_REQUIRED`. When it is true, set a long random `VOLUM_SESSION_SECRET`; the first admin user is created from the setup screen using `VOLUM_BOOTSTRAP_TOKEN`, or the generated token printed in the server log.
-
-## Docker Compose
-
-Three compose files are provided:
-
-| File | Use case |
-|------|----------|
-| `docker-compose.yml` | Base compose config (shared between dev and server) |
-| `docker-compose.dev.yml` | Development with Vite hot reload, separate API + frontend containers |
-| `docker-compose.server.yml` | Production server: mounts host `/` → `/host`, auto-discovers drives |
-
-All env vars are configured through `.env` (see `.env.development.example` or `.env.server.example`).
-
-## Deployment
-
-```sh
-docker compose up --build -d
-```
-
-For homelab use, expose Volum only over a private network such as Tailscale or WireGuard. Avoid publishing it directly to the public internet.
-
-For reverse proxy configuration with Nginx or Traefik, see [docs/reverse-proxy.md](docs/reverse-proxy.md).
+Volum is released under the [MIT License](LICENSE).

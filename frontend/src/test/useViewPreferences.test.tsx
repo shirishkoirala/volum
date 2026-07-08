@@ -30,20 +30,28 @@ describe('useViewPreferences', () => {
 
   it('showHidden toggles', () => {
     const { result } = renderHook(() => useViewPreferences());
-    act(() => { result.current.setShowHidden(true); });
+    act(() => {
+      result.current.setShowHidden(true);
+    });
     expect(result.current.showHidden).toBe(true);
   });
 
   it('setViewMode updates the state', () => {
     const { result } = renderHook(() => useViewPreferences());
-    act(() => { result.current.setViewMode('list'); });
+    act(() => {
+      result.current.setViewMode('list');
+    });
     expect(result.current.viewMode).toBe('list');
   });
 
   it('setSortField and setSortDirection update state', () => {
     const { result } = renderHook(() => useViewPreferences());
-    act(() => { result.current.setSortField('size'); });
-    act(() => { result.current.setSortDirection('desc'); });
+    act(() => {
+      result.current.setSortField('size');
+    });
+    act(() => {
+      result.current.setSortDirection('desc');
+    });
     expect(result.current.sortField).toBe('size');
     expect(result.current.sortDirection).toBe('desc');
   });
@@ -51,12 +59,18 @@ describe('useViewPreferences', () => {
   it('navigateToPath sets currentPath and persists via auto-save effect', () => {
     const { result } = renderHook(() => useViewPreferences());
 
-    act(() => { result.current.setViewMode('list'); });
-    act(() => { result.current.navigateToPath('/home'); });
+    act(() => {
+      result.current.setViewMode('list');
+    });
+    act(() => {
+      result.current.navigateToPath('/home');
+    });
 
     expect(result.current.currentPath).toBe('/home');
 
-    act(() => { result.current.navigateToPath('/other'); });
+    act(() => {
+      result.current.navigateToPath('/other');
+    });
     expect(result.current.currentPath).toBe('/other');
   });
 });

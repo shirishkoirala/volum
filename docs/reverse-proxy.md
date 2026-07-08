@@ -85,3 +85,13 @@ Chunked uploads send 1 MB chunks sequentially. For large files (100+ MB), tune y
 - **Increase proxy timeouts** (`proxy_read_timeout`, `proxy_send_timeout` above 300s)
 - **Set `client_max_body_size 0`** (nginx) to disable body size checking (chunks are small, but the proxy should not impose its own limit)
 - **WebSocket** is not used by uploads — only SSE (Server-Sent Events) for job progress, which uses standard HTTP
+
+## Upload Smoke Test
+
+To verify chunked uploads through a subpath reverse proxy, run:
+
+```bash
+./scripts/smoke-reverse-proxy-upload.sh
+```
+
+The smoke test starts Volum behind nginx at `/volum/`, uploads a file with spaces and `%` in the filename through the prefixed API route, and verifies the stored file content.

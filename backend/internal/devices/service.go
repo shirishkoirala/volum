@@ -3,8 +3,8 @@ package devices
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/volum-app/volum/backend/internal/security"
@@ -12,35 +12,35 @@ import (
 )
 
 type BlockDevice struct {
-	Name         string         `json:"name"`
-	Size         string         `json:"size"`
-	Type         string         `json:"type"`
-	MountPoint   string         `json:"mountPoint,omitempty"`
-	FSType       string         `json:"fsType,omitempty"`
-	Label        string         `json:"label,omitempty"`
-	UUID         string         `json:"uuid,omitempty"`
-	Model        string         `json:"model,omitempty"`
-	Rotational   bool           `json:"rotational"`
-	Transport    string         `json:"transport,omitempty"`
-	VolumPath    string         `json:"volumPath,omitempty"`
-	TotalBytes   int64          `json:"totalBytes,omitempty"`
-	UsedBytes    int64          `json:"usedBytes,omitempty"`
-	FreeBytes    int64          `json:"freeBytes,omitempty"`
-	Partitions   []BlockDevice  `json:"partitions,omitempty"`
+	Name       string        `json:"name"`
+	Size       string        `json:"size"`
+	Type       string        `json:"type"`
+	MountPoint string        `json:"mountPoint,omitempty"`
+	FSType     string        `json:"fsType,omitempty"`
+	Label      string        `json:"label,omitempty"`
+	UUID       string        `json:"uuid,omitempty"`
+	Model      string        `json:"model,omitempty"`
+	Rotational bool          `json:"rotational"`
+	Transport  string        `json:"transport,omitempty"`
+	VolumPath  string        `json:"volumPath,omitempty"`
+	TotalBytes int64         `json:"totalBytes,omitempty"`
+	UsedBytes  int64         `json:"usedBytes,omitempty"`
+	FreeBytes  int64         `json:"freeBytes,omitempty"`
+	Partitions []BlockDevice `json:"partitions,omitempty"`
 }
 
 type lsblkDevice struct {
-	Name       string         `json:"name"`
-	Size       string         `json:"size"`
-	Type       string         `json:"type"`
-	MountPoint *string        `json:"mountpoint"`
-	FSType     *string        `json:"fstype"`
-	Label      *string        `json:"label"`
-	UUID       *string        `json:"uuid"`
-	Model      *string        `json:"model"`
-	Rota       bool           `json:"rota"`
-	Tran       *string        `json:"tran"`
-	Children   []lsblkDevice  `json:"children,omitempty"`
+	Name       string        `json:"name"`
+	Size       string        `json:"size"`
+	Type       string        `json:"type"`
+	MountPoint *string       `json:"mountpoint"`
+	FSType     *string       `json:"fstype"`
+	Label      *string       `json:"label"`
+	UUID       *string       `json:"uuid"`
+	Model      *string       `json:"model"`
+	Rota       bool          `json:"rota"`
+	Tran       *string       `json:"tran"`
+	Children   []lsblkDevice `json:"children,omitempty"`
 }
 
 type lsblkOutput struct {
@@ -163,5 +163,3 @@ func publicPathForMountPoint(mountPoint string, roots []security.Root) (string, 
 	}
 	return filepath.Join(best.Path, rel), *best, true
 }
-
-

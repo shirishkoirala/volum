@@ -36,7 +36,13 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
       <form className={styles.loginPanel} onSubmit={handleSubmit}>
         <img className={styles.brandMark} src={BRAND_ICON_URL} alt="" />
         <h1>Setup Admin Account</h1>
-        <p style={{ margin: 0, color: 'var(--color-text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+        <p
+          style={{
+            margin: 0,
+            color: 'var(--color-text-secondary)',
+            fontSize: 'var(--font-size-sm)',
+          }}
+        >
           Enter the setup token from the server log and create the first administrator.
         </p>
         <input
@@ -67,8 +73,23 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
           onChange={(event) => setConfirm(event.target.value)}
         />
         {error && <p className={styles.loginError}>{error}</p>}
-        <button disabled={submitting || bootstrapToken.length === 0 || username.length === 0 || password.length === 0 || confirm.length === 0} type="submit">
-          {submitting ? <><Icon name="view-refresh" size={16} /> Creating...</> : 'Create Admin'}
+        <button
+          disabled={
+            submitting ||
+            bootstrapToken.length === 0 ||
+            username.length === 0 ||
+            password.length === 0 ||
+            confirm.length === 0
+          }
+          type="submit"
+        >
+          {submitting ? (
+            <>
+              <Icon name="view-refresh" size={16} /> Creating...
+            </>
+          ) : (
+            'Create Admin'
+          )}
         </button>
       </form>
     </main>

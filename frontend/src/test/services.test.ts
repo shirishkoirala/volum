@@ -35,37 +35,43 @@ describe('detectFavicon', () => {
 
   it('returns the first candidate that loads successfully', async () => {
     let callCount = 0;
-    vi.stubGlobal('Image', vi.fn().mockImplementation(() => {
-      const img = {
-        onload: null as unknown as () => void,
-        onerror: null as unknown as () => void,
-        set src(_url: string) {
-          callCount++;
-          if (callCount === 1) {
-            setTimeout(() => img.onerror?.(), 0);
-          } else {
-            setTimeout(() => img.onload?.(), 0);
-          }
-        },
-      };
-      return img;
-    }));
+    vi.stubGlobal(
+      'Image',
+      vi.fn().mockImplementation(() => {
+        const img = {
+          onload: null as unknown as () => void,
+          onerror: null as unknown as () => void,
+          set src(_url: string) {
+            callCount++;
+            if (callCount === 1) {
+              setTimeout(() => img.onerror?.(), 0);
+            } else {
+              setTimeout(() => img.onload?.(), 0);
+            }
+          },
+        };
+        return img;
+      }),
+    );
 
     const result = await detectFavicon('https://example.com');
     expect(result).toBe('https://example.com/favicon.png');
   });
 
   it('returns null when all candidates fail', async () => {
-    vi.stubGlobal('Image', vi.fn().mockImplementation(() => {
-      const img = {
-        onload: null as unknown as () => void,
-        onerror: null as unknown as () => void,
-        set src(_url: string) {
-          setTimeout(() => img.onerror?.(), 0);
-        },
-      };
-      return img;
-    }));
+    vi.stubGlobal(
+      'Image',
+      vi.fn().mockImplementation(() => {
+        const img = {
+          onload: null as unknown as () => void,
+          onerror: null as unknown as () => void,
+          set src(_url: string) {
+            setTimeout(() => img.onerror?.(), 0);
+          },
+        };
+        return img;
+      }),
+    );
 
     const result = await detectFavicon('https://example.com');
     expect(result).toBeNull();
@@ -73,17 +79,20 @@ describe('detectFavicon', () => {
 
   it('constructs correct candidate URLs from the page URL origin', async () => {
     const candidates: string[] = [];
-    vi.stubGlobal('Image', vi.fn().mockImplementation(() => {
-      const img = {
-        onload: null as unknown as () => void,
-        onerror: null as unknown as () => void,
-        set src(url: string) {
-          candidates.push(url);
-          setTimeout(() => img.onerror?.(), 0);
-        },
-      };
-      return img;
-    }));
+    vi.stubGlobal(
+      'Image',
+      vi.fn().mockImplementation(() => {
+        const img = {
+          onload: null as unknown as () => void,
+          onerror: null as unknown as () => void,
+          set src(url: string) {
+            candidates.push(url);
+            setTimeout(() => img.onerror?.(), 0);
+          },
+        };
+        return img;
+      }),
+    );
 
     await detectFavicon('https://example.com/some/page');
     expect(candidates).toEqual([

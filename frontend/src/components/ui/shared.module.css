@@ -6,7 +6,7 @@
   justify-content: center;
   padding: var(--space-3xl);
   position: fixed;
-  z-index: 500;
+  z-index: var(--z-overlay);
 }
 
 .iconImg {
@@ -34,19 +34,28 @@
   justify-content: center;
   min-height: 38px;
   padding: 0 var(--space-lg);
-  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    opacity var(--transition-fast);
 }
 
 .iconButton {
   align-items: center;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   display: inline-flex;
   height: 38px;
   justify-content: center;
-  transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
   width: 38px;
 }
 
@@ -61,7 +70,7 @@
 }
 
 .iconButtonActive {
-  background: var(--color-brand-bg);
+  background: var(--glass-selected-bg);
   border-color: var(--color-brand);
 }
 
@@ -70,7 +79,7 @@
 }
 
 .button:hover:not(:disabled) {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
   border-color: var(--color-text-muted);
   color: var(--color-text);
 }
@@ -175,7 +184,7 @@
 }
 
 .active {
-  background: var(--color-brand-bg);
+  background: var(--glass-selected-bg);
   color: var(--color-brand);
 }
 

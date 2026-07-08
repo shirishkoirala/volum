@@ -122,8 +122,7 @@ func (s *Server) handleChangeRole(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Role auth.Role `json:"role"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 	if req.Role != auth.RoleAdmin && req.Role != auth.RoleReadonly {
@@ -144,6 +143,19 @@ func (s *Server) handleChangeRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "updated"})
+}
+
+func (s *Server) handleRevokeUserSessions(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := s.authStore.BumpSessionVersion(r.Context(), id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "user not found"})
+			return
+		}
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "revoked"})
 }
 
 func isUniqueConstraint(err error) bool {

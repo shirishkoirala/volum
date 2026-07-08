@@ -29,7 +29,9 @@ describe('ThemeToggle', () => {
   });
 
   it('applies custom className', () => {
-    const { container } = render(<ThemeToggle theme="dark" onClick={vi.fn()} className="custom-class" />);
+    const { container } = render(
+      <ThemeToggle theme="dark" onClick={vi.fn()} className="custom-class" />,
+    );
     expect(container.querySelector('.custom-class')).toBeInTheDocument();
   });
 

@@ -15,10 +15,22 @@ import { joinPath } from '../utils/path';
 import { formatBytes, formatGridDate } from '../utils/format';
 import { isArchiveFile } from '../utils/archive';
 import {
-  searchFiles, createShare, createJob, deletePath, renamePath, shareUrl,
-  type SearchResult, type FileEntry, type Session, type ConflictPolicy,
+  searchFiles,
+  createShare,
+  createJob,
+  deletePath,
+  renamePath,
+  shareUrl,
+  type SearchResult,
+  type FileEntry,
+  type Session,
+  type ConflictPolicy,
 } from '../api/client';
-import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } from '../components/overlay/Dialogs';
+import type {
+  ConfirmDialogState,
+  TextInputDialogState,
+  TransferDialogState,
+} from '../components/overlay/Dialogs';
 import styles from './SearchResultsView.module.css';
 
 function searchResultToFileEntry(result: SearchResult): FileEntry {
@@ -43,20 +55,32 @@ type SearchResultsViewProps = {
   onPreview?: (entry: FileEntry, entries?: FileEntry[]) => void;
 };
 
-export function SearchResultsView({ initialQuery = '', session, onNavigate, onClose, onPreview }: SearchResultsViewProps) {
+export function SearchResultsView({
+  initialQuery = '',
+  session,
+  onNavigate,
+  onClose,
+  onPreview,
+}: SearchResultsViewProps) {
   const shell = useShellContext();
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPaths, setSelectedPaths] = useState<string[]>([]);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; result: SearchResult } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    result: SearchResult;
+  } | null>(null);
   const [previewEntry, setPreviewEntry] = useState<FileEntry | null>(null);
   const [infoEntry, setInfoEntry] = useState<FileEntry | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
   const [textInputDialog, setTextInputDialog] = useState<TextInputDialogState>(null);
   const [transferDialog, setTransferDialog] = useState<TransferDialogState>(null);
-  const [shareDialogPath, setShareDialogPath] = useState<{ path: string; name: string } | null>(null);
+  const [shareDialogPath, setShareDialogPath] = useState<{ path: string; name: string } | null>(
+    null,
+  );
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const canWrite = session.role === 'admin';
@@ -72,7 +96,10 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
   }, [initialQuery]);
 
   useEffect(() => {
-    if (query.trim().length < 2) { setResults(null); return; }
+    if (query.trim().length < 2) {
+      setResults(null);
+      return;
+    }
     const timer = setTimeout(() => {
       setLoading(true);
       setError(null);
@@ -99,43 +126,54 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
   );
 
   const previewableEntries = useMemo(
-    () => (results ?? []).filter((r) => r.type === 'file' && isPreviewableFile(r.name)).map(searchResultToFileEntry),
+    () =>
+      (results ?? [])
+        .filter((r) => r.type === 'file' && isPreviewableFile(r.name))
+        .map(searchResultToFileEntry),
     [results],
   );
-  const {
-    previewPositionLabel,
-    previousPreviewEntry,
-    nextPreviewEntry,
-  } = usePreviewNavigation(previewEntry, previewableEntries);
+  const { previewPositionLabel, previousPreviewEntry, nextPreviewEntry } = usePreviewNavigation(
+    previewEntry,
+    previewableEntries,
+  );
 
-  const caps = useMemo(() => ({
-    canWrite,
-    canPreview: selectedEntries.length === 1 && selectedEntries[0]?.type === 'file',
-    canInfo: selectedEntries.length === 1,
-    canDownload: selectedEntries.length === 1,
-    canRename: selectedEntries.length === 1,
-    canArchive: selectedEntries.length === 1,
-    canExtract: selectedEntries.length === 1 && selectedEntries[0]?.type === 'file' && isArchiveFile(selectedEntries[0]?.name ?? ''),
-    canChecksum: canWrite && selectedEntries.length === 1,
-    canCopy: selectedEntries.length > 0,
-    canMove: selectedEntries.length > 0,
-    canPaste: canWrite,
-    canDelete: selectedEntries.length > 0,
-    canAnalyze: selectedEntries.length === 1 && selectedEntries[0]?.type === 'directory',
-  }), [canWrite, selectedEntries]);
+  const caps = useMemo(
+    () => ({
+      canWrite,
+      canPreview: selectedEntries.length === 1 && selectedEntries[0]?.type === 'file',
+      canInfo: selectedEntries.length === 1,
+      canDownload: selectedEntries.length === 1,
+      canRename: selectedEntries.length === 1,
+      canArchive: selectedEntries.length === 1,
+      canExtract:
+        selectedEntries.length === 1 &&
+        selectedEntries[0]?.type === 'file' &&
+        isArchiveFile(selectedEntries[0]?.name ?? ''),
+      canChecksum: canWrite && selectedEntries.length === 1,
+      canCopy: selectedEntries.length > 0,
+      canMove: selectedEntries.length > 0,
+      canPaste: canWrite,
+      canDelete: selectedEntries.length > 0,
+      canAnalyze: selectedEntries.length === 1 && selectedEntries[0]?.type === 'directory',
+    }),
+    [canWrite, selectedEntries],
+  );
 
   const isFavorited = false;
 
-  const runAction = useCallback(async (action: () => Promise<unknown>, successTitle?: string) => {
-    try {
-      await action();
-      shell.showToastObj({ title: successTitle ?? 'Done', variant: 'success' });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Action failed';
-      setError(message);
-      shell.showToastObj({ title: 'Action failed', message, variant: 'error' });
-    }
-  }, [shell]);
+  const runAction = useCallback(
+    async (action: () => Promise<unknown>, successTitle?: string) => {
+      try {
+        await action();
+        shell.showToastObj({ title: successTitle ?? 'Done', variant: 'success' });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Action failed';
+        setError(message);
+        shell.showToastObj({ title: 'Action failed', message, variant: 'error' });
+      }
+    },
+    [shell],
+  );
 
   const reSearch = useCallback(() => {
     if (query.trim().length >= 2) {
@@ -145,30 +183,36 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
     }
   }, [query]);
 
-  const handleClick = useCallback((result: SearchResult) => {
-    if (result.type === 'directory') {
-      onClose();
-      onNavigate(result.path);
-    } else if (isPreviewableFile(result.name)) {
-      const entry = searchResultToFileEntry(result);
-      if (onPreview) {
-        onPreview(entry, previewableEntries);
+  const handleClick = useCallback(
+    (result: SearchResult) => {
+      if (result.type === 'directory') {
+        onClose();
+        onNavigate(result.path);
+      } else if (isPreviewableFile(result.name)) {
+        const entry = searchResultToFileEntry(result);
+        if (onPreview) {
+          onPreview(entry, previewableEntries);
+        } else {
+          setPreviewEntry(entry);
+        }
       } else {
-        setPreviewEntry(entry);
+        openFileExternally(result.path);
       }
-    } else {
-      openFileExternally(result.path);
-    }
-  }, [onNavigate, onClose, onPreview, previewableEntries]);
+    },
+    [onNavigate, onClose, onPreview, previewableEntries],
+  );
 
-  const handleContextMenu = useCallback((result: SearchResult, event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (!selectedPaths.includes(result.path)) {
-      setSelectedPaths([result.path]);
-    }
-    setContextMenu({ x: event.clientX, y: event.clientY, result });
-  }, [selectedPaths]);
+  const handleContextMenu = useCallback(
+    (result: SearchResult, event: React.MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!selectedPaths.includes(result.path)) {
+        setSelectedPaths([result.path]);
+      }
+      setContextMenu({ x: event.clientX, y: event.clientY, result });
+    },
+    [selectedPaths],
+  );
 
   const handlePreview = useCallback(() => {
     const entry = selectedEntries[0];
@@ -222,7 +266,10 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
   const handleDelete = useCallback(() => {
     if (selectedResults.length === 0) return;
     const entriesToDelete = [...selectedResults];
-    const label = entriesToDelete.length === 1 ? `"${entriesToDelete[0]!.name}"` : `${entriesToDelete.length} selected items`;
+    const label =
+      entriesToDelete.length === 1
+        ? `"${entriesToDelete[0]!.name}"`
+        : `${entriesToDelete.length} selected items`;
     setConfirmDialog({
       title: 'Move to Trash',
       message: `Move ${label} to trash?`,
@@ -267,7 +314,11 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
       await navigator.clipboard.writeText(shareUrl(share.token));
       shell.showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
     } catch (err) {
-      shell.showToastObj({ title: 'Quick share failed', message: err instanceof Error ? err.message : undefined, variant: 'error' });
+      shell.showToastObj({
+        title: 'Quick share failed',
+        message: err instanceof Error ? err.message : undefined,
+        variant: 'error',
+      });
     }
   }, [contextMenu, shell]);
 
@@ -288,7 +339,11 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
       confirmLabel: 'Create',
       onSubmit: (value: string) => {
         void runAction(async () => {
-          await createJob({ type: 'archive', sourcePath: entry.path, destinationPath: value.trim() });
+          await createJob({
+            type: 'archive',
+            sourcePath: entry.path,
+            destinationPath: value.trim(),
+          });
         }, 'Archive job created');
       },
     });
@@ -305,7 +360,11 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
       confirmLabel: 'Extract',
       onSubmit: (value: string) => {
         void runAction(async () => {
-          await createJob({ type: 'extract', sourcePath: entry.path, destinationPath: value.trim() });
+          await createJob({
+            type: 'extract',
+            sourcePath: entry.path,
+            destinationPath: value.trim(),
+          });
         }, 'Extract job created');
       },
     });
@@ -334,26 +393,35 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
     setError('Disk analysis is not available from search results. Navigate to the folder first.');
   }, [selectedResults]);
 
-  const handleTransferSubmit = useCallback((dialog: TransferDialogState, destinationValue: string, conflictPolicy: ConflictPolicy) => {
-    if (!dialog) return;
-    const destinations = destinationValue.split('|').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean);
-    if (destinations.length === 0) return;
-    setTransferDialog(null);
-    void runAction(async () => {
-      for (const entry of dialog.entries) {
-        for (const dest of destinations) {
-          await createJob({
-            type: dialog.mode === 'copy' ? 'copy' : 'move',
-            sourcePath: entry.path,
-            destinationPath: joinPath(dest, entry.name),
-            conflictPolicy,
-            verifyMode: 'size',
-          });
-        }
-      }
-      reSearch();
-    }, dialog.mode === 'copy' ? 'Copy transfer started' : 'Move transfer started');
-  }, [runAction, reSearch]);
+  const handleTransferSubmit = useCallback(
+    (dialog: TransferDialogState, destinationValue: string, conflictPolicy: ConflictPolicy) => {
+      if (!dialog) return;
+      const destinations = destinationValue
+        .split('|')
+        .map((s) => s.trim().replace(/\/+$/, ''))
+        .filter(Boolean);
+      if (destinations.length === 0) return;
+      setTransferDialog(null);
+      void runAction(
+        async () => {
+          for (const entry of dialog.entries) {
+            for (const dest of destinations) {
+              await createJob({
+                type: dialog.mode === 'copy' ? 'copy' : 'move',
+                sourcePath: entry.path,
+                destinationPath: joinPath(dest, entry.name),
+                conflictPolicy,
+                verifyMode: 'size',
+              });
+            }
+          }
+          reSearch();
+        },
+        dialog.mode === 'copy' ? 'Copy transfer started' : 'Move transfer started',
+      );
+    },
+    [runAction, reSearch],
+  );
 
   const handleClearSearch = useCallback(() => {
     setQuery('');
@@ -366,7 +434,7 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
   const entryCount = results?.length ?? 0;
 
   return (
-    <div className={styles.searchView}>
+    <div className={`${styles.searchView} glassPanel mobileAppPanel`}>
       <div className={styles.searchHeader}>
         <button type="button" className={styles.backBtn} onClick={onClose} aria-label="Back">
           <Icon name="go-previous" size={18} />
@@ -378,8 +446,13 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
             className={styles.searchInput}
             placeholder="Search files across all roots..."
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setSelectedPaths([]); }}
-            onKeyDown={(e) => { if (e.key === 'Escape') handleClearSearch(); }}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSelectedPaths([]);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') handleClearSearch();
+            }}
           />
           {query.length > 0 && (
             <button type="button" className={styles.clearBtn} onClick={handleClearSearch}>
@@ -395,17 +468,21 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
         </div>
       )}
 
-      {error && (
-        <ErrorBanner message={error} onDismiss={() => setError(null)} />
-      )}
+      {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
       <div className={styles.resultsArea}>
         {loading ? (
           <Skeleton variant="row" count={8} />
         ) : query.trim().length < 2 ? (
-          <EmptyState title="Search files" subtitle="Type at least 2 characters to search across all roots" />
+          <EmptyState
+            title="Search files"
+            subtitle="Type at least 2 characters to search across all roots"
+          />
         ) : results && results.length === 0 ? (
-          <EmptyState title="No results found" subtitle={`No files or folders match "${query.trim()}"`} />
+          <EmptyState
+            title="No results found"
+            subtitle={`No files or folders match "${query.trim()}"`}
+          />
         ) : results ? (
           <div className={styles.resultsList}>
             {results.map((result) => {
@@ -463,16 +540,24 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
           onClose={() => setPreviewEntry(null)}
           onDownload={() => openFileExternally(previewEntry.path)}
           onShare={() => setShareDialogPath({ path: previewEntry.path, name: previewEntry.name })}
-          onPrevious={previousPreviewEntry ? () => setPreviewEntry(previousPreviewEntry) : undefined}
+          onPrevious={
+            previousPreviewEntry ? () => setPreviewEntry(previousPreviewEntry) : undefined
+          }
           onNext={nextPreviewEntry ? () => setPreviewEntry(nextPreviewEntry) : undefined}
           previousDisabled={!previousPreviewEntry}
           nextDisabled={!nextPreviewEntry}
           positionLabel={previewPositionLabel}
         />
       )}
-      {infoEntry && <InfoPanel entry={infoEntry} onClose={() => setInfoEntry(null)} onRefresh={() => {}} />}
-      {confirmDialog && <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} />}
-      {textInputDialog && <TextInputDialog dialog={textInputDialog} onClose={() => setTextInputDialog(null)} />}
+      {infoEntry && (
+        <InfoPanel entry={infoEntry} onClose={() => setInfoEntry(null)} onRefresh={() => {}} />
+      )}
+      {confirmDialog && (
+        <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} />
+      )}
+      {textInputDialog && (
+        <TextInputDialog dialog={textInputDialog} onClose={() => setTextInputDialog(null)} />
+      )}
       {transferDialog && (
         <TransferDialog
           dialog={transferDialog}
@@ -482,7 +567,11 @@ export function SearchResultsView({ initialQuery = '', session, onNavigate, onCl
         />
       )}
       {shareDialogPath && (
-        <ShareDialog path={shareDialogPath.path} name={shareDialogPath.name} onClose={() => setShareDialogPath(null)} />
+        <ShareDialog
+          path={shareDialogPath.path}
+          name={shareDialogPath.name}
+          onClose={() => setShareDialogPath(null)}
+        />
       )}
     </div>
   );

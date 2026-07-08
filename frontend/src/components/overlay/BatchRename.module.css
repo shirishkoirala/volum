@@ -15,8 +15,9 @@
 
 .renameFields input,
 .renameFields select {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   height: 34px;
   padding: 0 10px;

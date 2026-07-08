@@ -1,10 +1,60 @@
 import type { FileEntry } from '../../api/client';
 import {
-  Activity as ActivityIcon, AlertTriangle, Archive, ArrowRight, ArrowUpDown, Bookmark, ChevronDown, ChevronRight, ChevronUp, CheckSquare,
-  CircleStop, CircleUser, Clipboard, Columns3, Copy, Download, Eye, EyeOff, FileInput, Folder,
-  FolderPlus, Globe, Grid3X3, HelpCircle, Home, Info, ListChecks, ListTree, LogOut,
-  List, ListX, LockKeyhole, Monitor, Moon, MoreHorizontal, Pause, Pencil, Play, RefreshCw, RotateCcw,
-  Scissors, Search, Send, Settings, Square, Sun, Trash2, Upload, Usb, X, HardDrive, ArrowDown,
+  Activity as ActivityIcon,
+  AlertTriangle,
+  Archive,
+  ArrowRight,
+  ArrowUpDown,
+  Bookmark,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
+  CheckSquare,
+  CircleStop,
+  CircleUser,
+  Clipboard,
+  Columns3,
+  Copy,
+  Download,
+  Eye,
+  EyeOff,
+  FileInput,
+  Folder,
+  FolderPlus,
+  Globe,
+  Grid3X3,
+  HelpCircle,
+  Home,
+  Info,
+  ListChecks,
+  ListTree,
+  LogOut,
+  List,
+  ListX,
+  LockKeyhole,
+  Maximize2,
+  Minimize2,
+  Minus,
+  Monitor,
+  Moon,
+  MoreHorizontal,
+  Pause,
+  Pencil,
+  Play,
+  RefreshCw,
+  RotateCcw,
+  Scissors,
+  Search,
+  Send,
+  Settings,
+  Square,
+  Sun,
+  Trash2,
+  Upload,
+  Usb,
+  X,
+  HardDrive,
+  ArrowDown,
   type LucideIcon,
 } from 'lucide-react';
 import { IconImg } from './shared';
@@ -58,12 +108,15 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'weather-clear': Sun,
   'weather-clear-night': Moon,
   'window-close': X,
+  'window-maximize': Maximize2,
+  'window-minimize': Minus,
+  'window-restore': Minimize2,
   'sort-desc': ArrowUpDown,
   'go-home': Home,
   'internet-web-browser': Globe,
   'pan-down': ChevronDown,
   'avatar-default': CircleUser,
-  'folder': Folder,
+  folder: Folder,
   'document-properties': ListChecks,
   'go-jump': ArrowRight,
   'job-copy': Copy,
@@ -76,10 +129,24 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
 
 export function Icon({ name, size = 22, className }: IconProps) {
   const Lucide = ACTION_ICONS[name] ?? Square;
-  return <Lucide aria-hidden="true" size={size} className={`icon-img ${className ?? ''}`} strokeWidth={1.8} />;
+  return (
+    <Lucide
+      aria-hidden="true"
+      size={size}
+      className={`icon-img ${className ?? ''}`}
+      strokeWidth={1.8}
+    />
+  );
 }
 
-export function DeviceIcon({ size = 64, className }: { name?: string; size?: number; className?: string }) {
+export function DeviceIcon({
+  size = 64,
+  className,
+}: {
+  name?: string;
+  size?: number;
+  className?: string;
+}) {
   return <IconImg src={driveIconUrl()} alt="" width={size} height={size} className={className} />;
 }
 

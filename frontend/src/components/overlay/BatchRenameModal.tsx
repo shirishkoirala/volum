@@ -57,7 +57,9 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
     setSubmitting(true);
     setError(null);
     try {
-      const items = previews.filter((p) => p.changed).map((p) => ({ path: p.entry.path, newName: p.newName }));
+      const items = previews
+        .filter((p) => p.changed)
+        .map((p) => ({ path: p.entry.path, newName: p.newName }));
       if (items.length === 0) {
         setError('No items will be changed with the current pattern.');
         setSubmitting(false);
@@ -74,14 +76,32 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
   };
 
   return (
-    <Dialog title={`Batch Rename (${entries.length} items)`} onClose={onClose} width="lg" footer={
-      <>
-        <Button size="compact" onClick={onClose}>Cancel</Button>
-        <Button size="compact" variant="primary" disabled={submitting || previews.every((p) => !p.changed)} onClick={handleSubmit}>
-          {submitting ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Renaming...</> : `Rename ${previews.filter((p) => p.changed).length} items`}
-        </Button>
-      </>
-    }>
+    <Dialog
+      title={`Batch Rename (${entries.length} items)`}
+      onClose={onClose}
+      width="lg"
+      footer={
+        <>
+          <Button size="compact" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            size="compact"
+            variant="primary"
+            disabled={submitting || previews.every((p) => !p.changed)}
+            onClick={handleSubmit}
+          >
+            {submitting ? (
+              <>
+                <Icon name="view-refresh" size={15} className={uiStyles.spin} /> Renaming...
+              </>
+            ) : (
+              `Rename ${previews.filter((p) => p.changed).length} items`
+            )}
+          </Button>
+        </>
+      }
+    >
       <div className={styles.renamePattern}>
         <Select value={patternType} onChange={(value) => setPatternType(value as PatternType)}>
           <option value="replace">Find & Replace</option>
@@ -94,22 +114,37 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
           <div className={styles.renameFields}>
             <input placeholder="Find" value={find} onChange={(e) => setFind(e.target.value)} />
             <Icon name="go-next" size={16} />
-            <input placeholder="Replace with" value={replace} onChange={(e) => setReplace(e.target.value)} />
+            <input
+              placeholder="Replace with"
+              value={replace}
+              onChange={(e) => setReplace(e.target.value)}
+            />
           </div>
         )}
         {patternType === 'prefix' && (
           <div className={styles.renameFields}>
-            <input placeholder="Prefix text" value={prefix} onChange={(e) => setPrefix(e.target.value)} />
+            <input
+              placeholder="Prefix text"
+              value={prefix}
+              onChange={(e) => setPrefix(e.target.value)}
+            />
           </div>
         )}
         {patternType === 'suffix' && (
           <div className={styles.renameFields}>
-            <input placeholder="Suffix text" value={suffix} onChange={(e) => setSuffix(e.target.value)} />
+            <input
+              placeholder="Suffix text"
+              value={suffix}
+              onChange={(e) => setSuffix(e.target.value)}
+            />
           </div>
         )}
         {patternType === 'case' && (
           <div className={styles.renameFields}>
-            <Select value={caseType} onChange={(value) => setCaseType(value as 'lower' | 'upper' | 'title')}>
+            <Select
+              value={caseType}
+              onChange={(value) => setCaseType(value as 'lower' | 'upper' | 'title')}
+            >
               <option value="lower">Lowercase</option>
               <option value="upper">Uppercase</option>
               <option value="title">Title Case</option>
@@ -120,14 +155,21 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
 
       <div className={styles.renamePreviewList}>
         {previews.slice(0, 100).map(({ entry, newName, changed }) => (
-          <div key={entry.path} className={`${styles.renamePreviewItem}${changed ? ` ${styles.changed}` : ''}`}>
+          <div
+            key={entry.path}
+            className={`${styles.renamePreviewItem}${changed ? ` ${styles.changed}` : ''}`}
+          >
             <FileIcon entry={entry} size={22} />
             <span className={styles.renameOld}>{entry.name}</span>
             <Icon name="go-next" size={14} />
             <span className={styles.renameNew}>{newName}</span>
           </div>
         ))}
-        {previews.length > 100 && <p><MutedText compact>+{previews.length - 100} more items</MutedText></p>}
+        {previews.length > 100 && (
+          <p>
+            <MutedText compact>+{previews.length - 100} more items</MutedText>
+          </p>
+        )}
       </div>
 
       {error && <p className={styles.renameError}>{error}</p>}

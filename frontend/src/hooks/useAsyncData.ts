@@ -17,13 +17,16 @@ export function useAsyncData<T>(fetcher: () => Promise<T>): UseAsyncDataResult<T
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetcherRef.current()
+    fetcherRef
+      .current()
       .then(setData)
       .catch((err: unknown) => setError(err instanceof Error ? err.message : 'An error occurred'))
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   return { data, loading, error, refresh: load };
 }

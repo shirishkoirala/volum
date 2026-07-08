@@ -11,12 +11,12 @@ export default defineConfig({
   server: {
     port: 5173,
     watch: {
-      ignored: ['**/src/assets/**']
+      ignored: ['**/src/assets/**'],
     },
     proxy: {
       '/api': apiProxyTarget,
-      '/healthz': apiProxyTarget
-    }
+      '/healthz': apiProxyTarget,
+    },
   },
   test: {
     environment: 'jsdom',
@@ -39,5 +39,5 @@ export default defineConfig({
         'src/**/*.d.ts',
       ],
     },
-  }
+  },
 });

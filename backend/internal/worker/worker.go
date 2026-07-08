@@ -69,11 +69,9 @@ func (w *Worker) runOnce(ctx context.Context) {
 		var processErr error
 		switch job.Type {
 		case jobs.TypeArchive:
-			if _, processErr = w.processArchive(ctx, job); processErr != nil {
-			} // processArchive handles job state internally
+			_, processErr = w.processArchive(ctx, job)
 		case jobs.TypeExtract:
-			if _, processErr = w.processExtract(ctx, job); processErr != nil {
-			}
+			_, processErr = w.processExtract(ctx, job)
 		}
 		if processErr != nil {
 			w.log.Error("archive/extract job failed", "job_id", job.ID, "error", processErr)
@@ -588,7 +586,7 @@ func (w *Worker) resolveConflictDestination(ctx context.Context, source, destina
 			}
 			return destination, w.guard.RemoveAll(destination)
 		case "rename":
-			return security.NextAvailablePath(destination)
+			return w.guard.NextAvailablePath(destination)
 		}
 		return "", fmt.Errorf("destination already exists: %s", destination)
 	} else if !errors.Is(err, os.ErrNotExist) {
@@ -666,7 +664,7 @@ func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, erro
 	}
 	archivePath := dest
 	if _, err := os.Stat(dest); err == nil {
-		archivePath, err = security.NextAvailablePath(dest)
+		archivePath, err = w.guard.NextAvailablePath(dest)
 		if err != nil {
 			return "", err
 		}
@@ -730,7 +728,7 @@ func (w *Worker) processExtract(ctx context.Context, job jobs.Job) (result strin
 		return "", err
 	}
 	if _, statErr := os.Stat(dest); statErr == nil {
-		dest, err = security.NextAvailablePath(dest)
+		dest, err = w.guard.NextAvailablePath(dest)
 		if err != nil {
 			return "", err
 		}

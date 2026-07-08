@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -42,8 +41,7 @@ func (s *Server) handleCreateService(w http.ResponseWriter, r *http.Request) {
 		Description string `json:"description,omitempty"`
 		OpenMode    string `json:"openMode,omitempty"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 	if req.Name == "" || req.URL == "" {
@@ -72,8 +70,7 @@ func (s *Server) handleUpdateService(w http.ResponseWriter, r *http.Request) {
 		Description string `json:"description,omitempty"`
 		OpenMode    string `json:"openMode,omitempty"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
 		return
 	}
 	if req.Name == "" || req.URL == "" {
@@ -143,8 +140,11 @@ func (s *Server) handleReorderServices(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		IDs []string `json:"ids"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	if !decodeJSONBody(w, r, &req) {
+		return
+	}
+	if len(req.IDs) > maxJSONItems {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "too many services"})
 		return
 	}
 	if err := s.desktop.ReorderServices(r.Context(), req.IDs); err != nil {

@@ -1,6 +1,9 @@
 import { useEffect, useCallback } from 'react';
 
-export function useClickOutsideMenus(menuStates: Record<string, boolean>, setMenuStates: (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => void) {
+export function useClickOutsideMenus(
+  menuStates: Record<string, boolean>,
+  setMenuStates: (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => void,
+) {
   const handleClick = useCallback(() => {
     setMenuStates((prev) => {
       const anyOpen = Object.values(prev).some(Boolean);

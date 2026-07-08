@@ -56,12 +56,15 @@ export function DrivesView({ onBackToDesktop }: DrivesViewProps) {
     shell.navigateTo('desktop');
   }, [onBackToDesktop, shell]);
 
-  const handleNavigateTo = useCallback((path: string) => {
-    shell.navigateTo(path);
-  }, [shell]);
+  const handleNavigateTo = useCallback(
+    (path: string) => {
+      shell.navigateTo(path);
+    },
+    [shell],
+  );
 
   if (selectedDriveName) {
-    const d = devices.find(dd => dd.name === selectedDriveName);
+    const d = devices.find((dd) => dd.name === selectedDriveName);
     const driveLabel = d?.model || d?.name || selectedDriveName;
     return (
       <div className={styles.drivesWrapper}>
@@ -70,22 +73,35 @@ export function DrivesView({ onBackToDesktop }: DrivesViewProps) {
           onBack={() => setSelectedDriveName(null)}
           onNavigate={() => {}}
         />
-        <div className={`${styles.drivesContainer} ${styles.partitionGrid}`}>
+        <div
+          className={`${styles.drivesContainer} ${styles.partitionGrid} glassPanel mobileAppPanel`}
+        >
           {d?.partitions?.map((part) =>
             part.volumPath ? (
-              <button key={part.name} className={styles.drivePartitionItem} onClick={() => handleNavigateTo(part.volumPath!)} type="button">
+              <button
+                key={part.name}
+                className={styles.drivePartitionItem}
+                onClick={() => handleNavigateTo(part.volumPath!)}
+                type="button"
+              >
                 <DeviceIcon name="drive-harddisk" size={32} />
                 <span className={styles.drivePartitionInfo}>
                   <span>{part.label || part.name}</span>
                   <small>{part.volumPath}</small>
                   <small>{formatDeviceUsage(part)}</small>
                   {part.totalBytes != null && part.totalBytes > 0 && (
-                    <ProgressBar value={(part.usedBytes! / part.totalBytes!) * 100} className={styles.drivePartitionMeter} />
+                    <ProgressBar
+                      value={(part.usedBytes! / part.totalBytes!) * 100}
+                      className={styles.drivePartitionMeter}
+                    />
                   )}
                 </span>
               </button>
             ) : (
-              <div key={part.name} className={`${styles.drivePartitionItem} ${styles.partitionUnmounted}`}>
+              <div
+                key={part.name}
+                className={`${styles.drivePartitionItem} ${styles.partitionUnmounted}`}
+              >
                 <IconImg src={driveIconUrl()} alt="" width={32} height={32} />
                 <span className={styles.drivePartitionInfo}>
                   <span>{part.name}</span>
@@ -93,9 +109,9 @@ export function DrivesView({ onBackToDesktop }: DrivesViewProps) {
                   <small>Not mounted</small>
                 </span>
               </div>
-            )
+            ),
           )}
-          {(!d?.partitions?.length) && (
+          {!d?.partitions?.length && (
             <EmptyState icon={driveIconUrl()} title="No partitions found" />
           )}
         </div>
@@ -110,16 +126,26 @@ export function DrivesView({ onBackToDesktop }: DrivesViewProps) {
         onBack={handleBackToDesktop}
         onNavigate={() => {}}
       />
-      <div className={`${styles.drivesContainer} ${styles.drivesList}`}>
+      <div className={`${styles.drivesContainer} ${styles.drivesList} glassPanel mobileAppPanel`}>
         {deviceError && (
           <Notice variant="error">
             <IconImg src={warningIconUrl()} alt="" width={18} height={18} />
             <span>{deviceError}</span>
-            <Button variant="danger" size="compact" onClick={loadDevices}>Retry</Button>
+            <Button variant="danger" size="compact" onClick={loadDevices}>
+              Retry
+            </Button>
           </Notice>
         )}
-        <DriveSection title="Internal" drives={internalDrives} onSelectDrive={setSelectedDriveName} />
-        <DriveSection title="External" drives={externalDrives} onSelectDrive={setSelectedDriveName} />
+        <DriveSection
+          title="Internal"
+          drives={internalDrives}
+          onSelectDrive={setSelectedDriveName}
+        />
+        <DriveSection
+          title="External"
+          drives={externalDrives}
+          onSelectDrive={setSelectedDriveName}
+        />
         {internalDrives.length === 0 && externalDrives.length === 0 && (
           <EmptyState icon={driveIconUrl()} title="No drives found" />
         )}

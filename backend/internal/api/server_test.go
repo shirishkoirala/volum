@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -17,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -34,7 +34,6 @@ import (
 type testServer struct {
 	*Server
 	root   string
-	db     *sql.DB
 	cookie string
 }
 
@@ -117,6 +116,9 @@ func (ts *testServer) request(method, path string, body any) *http.Response {
 	}
 	req := httptest.NewRequest(method, path, &buf)
 	req.Header.Set("Content-Type", "application/json")
+	if !safeMethod(method) {
+		req.Header.Set("X-Volum-Request", "fetch")
+	}
 	if ts.cookie != "" {
 		req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
 	}
@@ -142,6 +144,7 @@ func (ts *testServer) upload(path string, files map[string]string) *http.Respons
 
 	req := httptest.NewRequest(http.MethodPost, "/api/files/upload?path="+path, &buf)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("X-Volum-Request", "fetch")
 	if ts.cookie != "" {
 		req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
 	}
@@ -167,6 +170,7 @@ func (ts *testServer) uploadAvatar(t *testing.T, content []byte, filename string
 
 	req := httptest.NewRequest(http.MethodPut, "/api/profile/avatar", &buf)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("X-Volum-Request", "fetch")
 	req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
 	w := httptest.NewRecorder()
 	ts.Server.Handler().ServeHTTP(w, req)
@@ -227,6 +231,72 @@ func TestSecurityHeadersAndSensitiveCaching(t *testing.T) {
 		t.Fatalf("expected sensitive response to disable caching, got %q", resp.Header.Get("Cache-Control"))
 	}
 	resp.Body.Close()
+}
+
+func TestUnsafeAPIRequiresCSRFHeader(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	body := bytes.NewBufferString(`{"name":"Service","url":"https://example.com"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/services", body)
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
+	w := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected missing CSRF header to return 403, got %d", w.Code)
+	}
+}
+
+func TestUnsafeAPIRejectsMismatchedOrigin(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	body := bytes.NewBufferString(`{"name":"Service","url":"https://example.com"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/services", body)
+	req.Host = "volum.example.com"
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Volum-Request", "fetch")
+	req.Header.Set("Origin", "https://attacker.example.com")
+	req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
+	w := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("expected mismatched Origin to return 403, got %d", w.Code)
+	}
+}
+
+func TestAdminJSONBodyLimit(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	body := bytes.NewBufferString(`{"path":"` + strings.Repeat("a", maxBodyBytes+1) + `"}`)
+	req := httptest.NewRequest(http.MethodPost, "/api/files/folder", body)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Volum-Request", "fetch")
+	req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
+	w := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusRequestEntityTooLarge {
+		t.Fatalf("expected oversized JSON to return 413, got %d", w.Code)
+	}
+}
+
+func TestBatchRenameItemLimit(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	items := make([]map[string]string, maxJSONItems+1)
+	for i := range items {
+		items[i] = map[string]string{"path": filepath.Join(ts.root, "a.txt"), "newName": "b.txt"}
+	}
+	resp := ts.post("/api/files/batch-rename", map[string]any{"items": items})
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("expected too many items to return 400, got %d", resp.StatusCode)
+	}
 }
 
 func TestConfiguredPublicHostIsEnforced(t *testing.T) {
@@ -325,6 +395,7 @@ func TestReadonlyUserCannotMutateServices(t *testing.T) {
 	body := bytes.NewBufferString(`{"name":"Service","url":"https://example.com"}`)
 	req := httptest.NewRequest(http.MethodPost, "/api/services", body)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Volum-Request", "fetch")
 	req.AddCookie(&http.Cookie{Name: "volum_session", Value: token})
 	w := httptest.NewRecorder()
 	ts.Handler().ServeHTTP(w, req)
@@ -522,6 +593,140 @@ func TestUploadInvalidNameRejection(t *testing.T) {
 				t.Fatalf("expected 400, got %d; body: %s", resp.StatusCode, readBody(resp))
 			}
 		})
+	}
+}
+
+func TestUploadChunkRejectsOversizedTotal(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	params := url.Values{}
+	params.Set("path", ts.root)
+	params.Set("filename", "big.bin")
+	params.Set("offset", "0")
+	params.Set("totalSize", strconv.FormatInt(maxAggregateUploadBytes+1, 10))
+	req := httptest.NewRequest(http.MethodPost, "/api/files/upload-chunk?"+params.Encode(), strings.NewReader("data"))
+	req.Header.Set("X-Volum-Request", "fetch")
+	req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
+	w := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected oversized total to return 400, got %d", w.Code)
+	}
+}
+
+func TestUploadChunkRejectsChunkPastTotal(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	params := url.Values{}
+	params.Set("path", ts.root)
+	params.Set("filename", "chunk.bin")
+	params.Set("offset", "3")
+	params.Set("totalSize", "4")
+	req := httptest.NewRequest(http.MethodPost, "/api/files/upload-chunk?"+params.Encode(), strings.NewReader("too-large"))
+	req.Header.Set("X-Volum-Request", "fetch")
+	req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
+	w := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("expected chunk past total to return 400, got %d", w.Code)
+	}
+}
+
+func TestUploadChunkResumesAndFinalizesSpecialCharacterFilename(t *testing.T) {
+	ts, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	filename := "résumé + notes.txt"
+	content := "hello resumed upload"
+	firstChunk := content[:6]
+	secondChunk := content[6:]
+
+	params := url.Values{}
+	params.Set("path", ts.root)
+	params.Set("filename", filename)
+	params.Set("offset", "0")
+	params.Set("totalSize", strconv.Itoa(len(content)))
+	req := httptest.NewRequest(http.MethodPost, "/api/files/upload-chunk?"+params.Encode(), strings.NewReader(firstChunk))
+	req.Header.Set("X-Volum-Request", "fetch")
+	req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
+	w := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected first chunk 200, got %d; body: %s", w.Code, w.Body.String())
+	}
+	var firstResp struct {
+		Received int64  `json:"received"`
+		Complete bool   `json:"complete"`
+		JobID    string `json:"jobId"`
+	}
+	if err := json.NewDecoder(w.Result().Body).Decode(&firstResp); err != nil {
+		t.Fatal(err)
+	}
+	if firstResp.Received != int64(len(firstChunk)) || firstResp.Complete || firstResp.JobID == "" {
+		t.Fatalf("unexpected first chunk response: %+v", firstResp)
+	}
+
+	statusParams := url.Values{}
+	statusParams.Set("path", ts.root)
+	statusParams.Set("filename", filename)
+	statusReq := httptest.NewRequest(http.MethodGet, "/api/files/upload-status?"+statusParams.Encode(), nil)
+	statusReq.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
+	statusW := httptest.NewRecorder()
+	ts.Handler().ServeHTTP(statusW, statusReq)
+	if statusW.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d; body: %s", statusW.Code, statusW.Body.String())
+	}
+	var statusResp struct {
+		Filename string `json:"filename"`
+		Received int64  `json:"received"`
+		Complete bool   `json:"complete"`
+		JobID    string `json:"jobId"`
+	}
+	if err := json.NewDecoder(statusW.Result().Body).Decode(&statusResp); err != nil {
+		t.Fatal(err)
+	}
+	if statusResp.Filename != filename || statusResp.Received != int64(len(firstChunk)) || statusResp.Complete || statusResp.JobID != firstResp.JobID {
+		t.Fatalf("unexpected upload status response: %+v", statusResp)
+	}
+
+	params.Set("offset", strconv.Itoa(len(firstChunk)))
+	params.Set("jobId", firstResp.JobID)
+	req = httptest.NewRequest(http.MethodPost, "/api/files/upload-chunk?"+params.Encode(), strings.NewReader(secondChunk))
+	req.Header.Set("X-Volum-Request", "fetch")
+	req.AddCookie(&http.Cookie{Name: "volum_session", Value: ts.cookie})
+	w = httptest.NewRecorder()
+	ts.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected final chunk 200, got %d; body: %s", w.Code, w.Body.String())
+	}
+	var finalResp struct {
+		Received int64  `json:"received"`
+		Complete bool   `json:"complete"`
+		JobID    string `json:"jobId"`
+	}
+	if err := json.NewDecoder(w.Result().Body).Decode(&finalResp); err != nil {
+		t.Fatal(err)
+	}
+	if finalResp.Received != int64(len(content)) || !finalResp.Complete || finalResp.JobID != firstResp.JobID {
+		t.Fatalf("unexpected final chunk response: %+v", finalResp)
+	}
+
+	got, err := os.ReadFile(filepath.Join(ts.root, filename))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != content {
+		t.Fatalf("unexpected uploaded content: %q", got)
+	}
+	if _, err := os.Stat(filepath.Join(ts.root, ".volum-tmp", filename+".partial")); !os.IsNotExist(err) {
+		t.Fatal("partial upload file should be cleaned up after finalization")
+	}
+	if _, err := os.Stat(filepath.Join(ts.root, ".volum-tmp", filename+".jobid")); !os.IsNotExist(err) {
+		t.Fatal("upload job state should be cleaned up after finalization")
 	}
 }
 
@@ -878,7 +1083,7 @@ func TestLoginRateLimitIgnoresForwardedFor(t *testing.T) {
 	}
 }
 
-func TestLoginRateLimitDoesNotLockAccountAcrossIPs(t *testing.T) {
+func TestLoginRateLimitLocksAccountAcrossIPs(t *testing.T) {
 	ts, cleanup := setupTestServer(t)
 	defer cleanup()
 	ts.loginLimiter = newRateLimiter(2, time.Minute)
@@ -902,8 +1107,8 @@ func TestLoginRateLimitDoesNotLockAccountAcrossIPs(t *testing.T) {
 	if status := requestLogin("192.0.2.20:1234", "wrong-password"); status != http.StatusTooManyRequests {
 		t.Fatalf("expected source IP to be rate limited, got %d", status)
 	}
-	if status := requestLogin("198.51.100.30:1234", "adminpass"); status != http.StatusOK {
-		t.Fatalf("expected the account to remain available from another IP, got %d", status)
+	if status := requestLogin("198.51.100.30:1234", "adminpass"); status != http.StatusTooManyRequests {
+		t.Fatalf("expected account bucket to be rate limited across IPs, got %d", status)
 	}
 }
 

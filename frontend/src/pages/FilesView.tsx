@@ -1,5 +1,17 @@
-import { KeyboardEvent, MouseEvent, RefObject, forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import {
+  KeyboardEvent,
+  MouseEvent,
+  RefObject,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
+import { AppPanel } from '../components/layout/AppPanel';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Notice } from '../components/ui/shared';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
@@ -70,13 +82,30 @@ export type FilesViewHandle = {
   handleGoBack: () => void;
 };
 
-export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function FilesView({ currentPath, session, favorites, onNavigate, onBack, onAddFavorite, onRemoveFavorite, onPreview, onShowAllSearchResults }, ref) {
+export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function FilesView(
+  {
+    currentPath,
+    session,
+    favorites,
+    onNavigate,
+    onBack,
+    onAddFavorite,
+    onRemoveFavorite,
+    onPreview,
+    onShowAllSearchResults,
+  },
+  ref,
+) {
   const shell = useShellContext();
   const viewPref = useViewPreferences();
   const windowId = useWindowId();
   const [windowPath, setWindowPath] = useState(currentPath || '/');
   const effectivePath = windowId ? windowPath : viewPref.currentPath;
-  const browser = useFileBrowser({ currentPath: effectivePath, showHidden: viewPref.showHidden, session });
+  const browser = useFileBrowser({
+    currentPath: effectivePath,
+    showHidden: viewPref.showHidden,
+    session,
+  });
   const fileActions = useFileActions();
   const { setPreviewEntry } = fileActions;
   const dialogs = useDialogStack();
@@ -104,16 +133,22 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     setPreviewEntry(null);
   }, [effectivePath, setPreviewEntry]);
 
-  const openPreview = useCallback((entry: FileEntry, entries?: FileEntry[]) => {
-    if (onPreview) onPreview(entry, entries);
-    else setPreviewEntry(entry);
-  }, [onPreview, setPreviewEntry]);
+  const openPreview = useCallback(
+    (entry: FileEntry, entries?: FileEntry[]) => {
+      if (onPreview) onPreview(entry, entries);
+      else setPreviewEntry(entry);
+    },
+    [onPreview, setPreviewEntry],
+  );
 
-  const setPreviewTarget = useCallback((value: React.SetStateAction<FileEntry | null>) => {
-    const next = typeof value === 'function' ? value(fileActions.previewEntry) : value;
-    if (next) openPreview(next);
-    else setPreviewEntry(null);
-  }, [fileActions.previewEntry, openPreview, setPreviewEntry]);
+  const setPreviewTarget = useCallback(
+    (value: React.SetStateAction<FileEntry | null>) => {
+      const next = typeof value === 'function' ? value(fileActions.previewEntry) : value;
+      if (next) openPreview(next);
+      else setPreviewEntry(null);
+    },
+    [fileActions.previewEntry, openPreview, setPreviewEntry],
+  );
 
   const selection = useSelection({
     filteredEntries: browser.filteredEntries,
@@ -138,10 +173,13 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     },
   });
 
-  const handleNavigate = useCallback((path: string) => {
-    navActions.navigateTo(path);
-    if (!windowId) onNavigate(path);
-  }, [navActions, onNavigate, windowId]);
+  const handleNavigate = useCallback(
+    (path: string) => {
+      navActions.navigateTo(path);
+      if (!windowId) onNavigate(path);
+    },
+    [navActions, onNavigate, windowId],
+  );
 
   const refresh = useCallback(() => {
     navActions.refresh();
@@ -196,23 +234,42 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   );
 
   const { rubberBandStyle, handleFileAreaMouseDown } = useRubberBand(
-    browser.filteredEntries, selection.setSelectedPaths, selection.setLastSelectedPath, fileGridRef,
+    browser.filteredEntries,
+    selection.setSelectedPaths,
+    selection.setLastSelectedPath,
+    fileGridRef,
   );
 
-  useEffect(() => { fileCommands.renameInputRef.current?.focus(); fileCommands.renameInputRef.current?.select(); }, [fileActions.renaming, fileCommands.renameInputRef]);
+  useEffect(() => {
+    fileCommands.renameInputRef.current?.focus();
+    fileCommands.renameInputRef.current?.select();
+  }, [fileActions.renaming, fileCommands.renameInputRef]);
 
   useKeyboardShortcuts({
     '?': () => fileActions.setShortcutsOpen((p) => !p),
-    'Escape': () => {
-      if (browser.searchOpen) { browser.setSearchOpen(false); browser.setSearchResults(null); browser.setQuery(''); }
-      if (fileActions.shortcutsOpen) { fileActions.setShortcutsOpen(false); }
+    Escape: () => {
+      if (browser.searchOpen) {
+        browser.setSearchOpen(false);
+        browser.setSearchResults(null);
+        browser.setQuery('');
+      }
+      if (fileActions.shortcutsOpen) {
+        fileActions.setShortcutsOpen(false);
+      }
     },
   });
 
   useEffect(() => {
     const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); searchRef.current?.focus(); browser.setSearchOpen(true); }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') { e.preventDefault(); fileActions.setLocationMode((v) => !v); }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+        browser.setSearchOpen(true);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        fileActions.setLocationMode((v) => !v);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -234,26 +291,37 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     closeAllFilesMenus();
   });
 
-  const handleContextMenuEvent = useCallback((entry: FileEntry, event: MouseEvent<HTMLElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    menus.emptyMenuBlockedRef.current = true;
-    queueMicrotask(() => { menus.emptyMenuBlockedRef.current = false; });
-    if (fileActions.renaming) return;
-    if (!selection.selectedPaths.includes(entry.path)) {
-      selection.setSelectedPaths([entry.path]);
-      selection.setLastSelectedPath(entry.path);
-    }
-    fileActions.setContextMenu({ x: event.clientX, y: event.clientY, entry });
-  }, [fileActions, selection, menus]);
+  const handleContextMenuEvent = useCallback(
+    (entry: FileEntry, event: MouseEvent<HTMLElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      menus.emptyMenuBlockedRef.current = true;
+      queueMicrotask(() => {
+        menus.emptyMenuBlockedRef.current = false;
+      });
+      if (fileActions.renaming) return;
+      if (!selection.selectedPaths.includes(entry.path)) {
+        selection.setSelectedPaths([entry.path]);
+        selection.setLastSelectedPath(entry.path);
+      }
+      fileActions.setContextMenu({ x: event.clientX, y: event.clientY, entry });
+    },
+    [fileActions, selection, menus],
+  );
 
-  const handleFilesEmptyContextMenu = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    if (menus.emptyMenuBlockedRef.current) { menus.emptyMenuBlockedRef.current = false; return; }
-    event.preventDefault();
-    event.stopPropagation();
-    fileActions.setContextMenu(null);
-    menus.setFilesEmptyMenu({ x: event.clientX, y: event.clientY });
-  }, [fileActions, menus]);
+  const handleFilesEmptyContextMenu = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      if (menus.emptyMenuBlockedRef.current) {
+        menus.emptyMenuBlockedRef.current = false;
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      fileActions.setContextMenu(null);
+      menus.setFilesEmptyMenu({ x: event.clientX, y: event.clientY });
+    },
+    [fileActions, menus],
+  );
 
   const { onTouchStart: hookTouchStart, onTouchEnd: hookTouchEnd } = useLongPress({
     onLongPress: () => {
@@ -266,11 +334,14 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     delay: 500,
   });
 
-  const handleEntryTouchStart = useCallback((entry: FileEntry, event: React.TouchEvent<HTMLElement>) => {
-    const touch = event.touches[0]!;
-    longPressEntry.current = { entry, x: touch.clientX, y: touch.clientY };
-    hookTouchStart();
-  }, [hookTouchStart]);
+  const handleEntryTouchStart = useCallback(
+    (entry: FileEntry, event: React.TouchEvent<HTMLElement>) => {
+      const touch = event.touches[0]!;
+      longPressEntry.current = { entry, x: touch.clientX, y: touch.clientY };
+      hookTouchStart();
+    },
+    [hookTouchStart],
+  );
 
   const handleEntryTouchMove = useCallback(() => {
     longPressEntry.current = null;
@@ -281,24 +352,27 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   }, [hookTouchEnd]);
 
   const handleVisibleCountChange = useCallback((rendered: number, total: number) => {
-    setVisibleCounts((current) => (
-      current.rendered === rendered && current.total === total ? current : { rendered, total }
-    ));
+    setVisibleCounts((current) =>
+      current.rendered === rendered && current.total === total ? current : { rendered, total },
+    );
   }, []);
 
-  const handleFileAreaKeyDown = useCallback((event: KeyboardEvent<HTMLElement>) => {
-    fileCommands.handleFileAreaKeyDown(event);
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
-      event.preventDefault();
-      selection.handleSelectAll();
-      return;
-    }
-    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'i') {
-      event.preventDefault();
-      selection.handleInvertSelection();
-      return;
-    }
-  }, [fileCommands, selection]);
+  const handleFileAreaKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLElement>) => {
+      fileCommands.handleFileAreaKeyDown(event);
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
+        event.preventDefault();
+        selection.handleSelectAll();
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'i') {
+        event.preventDefault();
+        selection.handleInvertSelection();
+        return;
+      }
+    },
+    [fileCommands, selection],
+  );
 
   const openUploadPicker = useCallback(() => {
     const input = uploadFileInputRef.current;
@@ -344,9 +418,20 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
       selectedCount: selection.selectedPaths.length,
     });
     return () => unregisterCommands(windowId);
-  }, [windowId, fileCommands, openUploadPicker, selection, browser.canWrite, canUpload, registerCommands, unregisterCommands]);
+  }, [
+    windowId,
+    fileCommands,
+    openUploadPicker,
+    selection,
+    browser.canWrite,
+    canUpload,
+    registerCommands,
+    unregisterCommands,
+  ]);
 
-  const selectedEntryIsFavorited = fileActions.contextMenu?.entry ? favorites.includes(fileActions.contextMenu.entry.path) : selection.isFavorited;
+  const selectedEntryIsFavorited = fileActions.contextMenu?.entry
+    ? favorites.includes(fileActions.contextMenu.entry.path)
+    : selection.isFavorited;
 
   const curPath = effectivePath;
   const breadcrumbs = browser.breadcrumbs;
@@ -354,17 +439,22 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const localFilterActive = browser.query.trim().length > 0;
   const totalEntries = localFilterActive ? browser.filteredEntries.length : browser.filePage.total;
   const previewableEntries = useMemo(
-    () => browser.filteredEntries.filter((entry) => entry.type === 'file' && isPreviewableFile(entry.name)),
+    () =>
+      browser.filteredEntries.filter(
+        (entry) => entry.type === 'file' && isPreviewableFile(entry.name),
+      ),
     [browser.filteredEntries],
   );
-  const {
-    previewPositionLabel,
-    previousPreviewEntry,
-    nextPreviewEntry,
-  } = usePreviewNavigation(fileActions.previewEntry, previewableEntries);
-  const showPreviewEntry = useCallback((entry: FileEntry) => {
-    openPreview(entry, previewableEntries);
-  }, [openPreview, previewableEntries]);
+  const { previewPositionLabel, previousPreviewEntry, nextPreviewEntry } = usePreviewNavigation(
+    fileActions.previewEntry,
+    previewableEntries,
+  );
+  const showPreviewEntry = useCallback(
+    (entry: FileEntry) => {
+      openPreview(entry, previewableEntries);
+    },
+    [openPreview, previewableEntries],
+  );
 
   useEffect(() => {
     if (browser.loading || browser.filteredEntries.length === 0) {
@@ -409,7 +499,9 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           renameInputRef={fileCommands.renameInputRef as RefObject<HTMLInputElement | null>}
           onSubmitRename={commitRename}
           onCancelRename={fileCommands.cancelRename}
-          onRenameChange={(value) => fileActions.setRenaming({ path: fileActions.renaming?.path ?? '', value })}
+          onRenameChange={(value) =>
+            fileActions.setRenaming({ path: fileActions.renaming?.path ?? '', value })
+          }
           fileGridRef={fileGridRef as RefObject<HTMLDivElement | null>}
           rubberBandStyle={rubberBandStyle}
           fileClick={selection.handleFileClick}
@@ -452,7 +544,9 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         renameInputRef={fileCommands.renameInputRef as RefObject<HTMLInputElement | null>}
         onSubmitRename={commitRename}
         onCancelRename={fileCommands.cancelRename}
-        onRenameChange={(value) => fileActions.setRenaming({ path: fileActions.renaming?.path ?? '', value })}
+        onRenameChange={(value) =>
+          fileActions.setRenaming({ path: fileActions.renaming?.path ?? '', value })
+        }
         fileGridRef={fileGridRef as RefObject<HTMLDivElement | null>}
         rubberBandStyle={rubberBandStyle}
         fileClick={selection.handleFileClick}
@@ -498,25 +592,69 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
             }
           }}
         />
-        <div className={styles.fileContent} onContextMenu={handleFilesEmptyContextMenu}>
-          <BreadcrumbBar crumbs={breadcrumbs} onBack={handleGoBack} onGoUp={handleGoUp} onNavigate={handleNavigate} locationMode={locationMode} onLocationNavigate={(path: string) => handleNavigate(path.startsWith('/') ? path : `/${path}`)} onToggleLocationMode={() => fileActions.setLocationMode((v) => !v)}>
-            <FileSearchBar
-              query={browser.query} searchOpen={browser.searchOpen} searchResults={browser.searchResults}
-              onSearch={(q) => { browser.setQuery(q); if (searchTimerRef.current) clearTimeout(searchTimerRef.current); searchTimerRef.current = setTimeout(() => browser.handleGlobalSearch(q), 200); browser.setSearchOpen(true); }}
-              onClearSearch={() => { browser.setQuery(''); browser.setSearchResults(null); browser.setSearchOpen(false); }}
-              onSearchResultClick={(result) => {
-                if (result.type === 'directory') handleNavigate(result.path);
-                else { const idx = result.path.lastIndexOf('/'); handleNavigate(idx < 0 ? '/' : result.path.substring(0, idx) || '/'); }
-              }}
-              onUploadClick={openUploadPicker}
-              canUpload={canUpload}
-              searchRef={searchRef as React.RefObject<HTMLInputElement | null>}
-              onShowAllResults={onShowAllSearchResults ? (q) => onShowAllSearchResults(q) : undefined}
-            />
-          </BreadcrumbBar>
-
+        <AppPanel
+          bodyClassName={styles.fileBody}
+          className={styles.fileContent}
+          footer={
+            <div className={styles.fileStatusBar} role="status" aria-live="polite">
+              Showing {visibleCounts.rendered.toLocaleString()} of{' '}
+              {visibleCounts.total.toLocaleString()} files
+            </div>
+          }
+          header={
+            <BreadcrumbBar
+              crumbs={breadcrumbs}
+              onBack={handleGoBack}
+              onGoUp={handleGoUp}
+              onNavigate={handleNavigate}
+              locationMode={locationMode}
+              onLocationNavigate={(path: string) =>
+                handleNavigate(path.startsWith('/') ? path : `/${path}`)
+              }
+              onToggleLocationMode={() => fileActions.setLocationMode((v) => !v)}
+              flush
+            >
+              <FileSearchBar
+                query={browser.query}
+                searchOpen={browser.searchOpen}
+                searchResults={browser.searchResults}
+                onSearch={(q) => {
+                  browser.setQuery(q);
+                  if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+                  searchTimerRef.current = setTimeout(() => browser.handleGlobalSearch(q), 200);
+                  browser.setSearchOpen(true);
+                }}
+                onClearSearch={() => {
+                  browser.setQuery('');
+                  browser.setSearchResults(null);
+                  browser.setSearchOpen(false);
+                }}
+                onSearchResultClick={(result) => {
+                  if (result.type === 'directory') handleNavigate(result.path);
+                  else {
+                    const idx = result.path.lastIndexOf('/');
+                    handleNavigate(idx < 0 ? '/' : result.path.substring(0, idx) || '/');
+                  }
+                }}
+                onUploadClick={openUploadPicker}
+                canUpload={canUpload}
+                searchRef={searchRef as React.RefObject<HTMLInputElement | null>}
+                onShowAllResults={
+                  onShowAllSearchResults ? (q) => onShowAllSearchResults(q) : undefined
+                }
+              />
+            </BreadcrumbBar>
+          }
+          onContextMenu={handleFilesEmptyContextMenu}
+          padding="none"
+          scroll={false}
+        >
           {browser.error && (
-            <Notice variant="error" className={styles.errorBanner} onDismiss={() => browser.setError(null)}>
+            <Notice
+              variant="error"
+              className={styles.errorBanner}
+              onDismiss={() => browser.setError(null)}
+            >
               {browser.error}
             </Notice>
           )}
@@ -530,28 +668,36 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
                 onDragLeave={dragDrop.handleFileAreaDragLeave}
                 onDrop={dragDrop.handleFileAreaDrop}
               >
-                <EmptyState icon={folderIconUrl('64')} title="This folder is empty" subtitle={curPath} />
+                <EmptyState
+                  icon={folderIconUrl('64')}
+                  title="This folder is empty"
+                  subtitle={curPath}
+                />
               </div>
             ) : (
               renderEntries()
             )}
-            <div className={styles.fileStatusBar} role="status" aria-live="polite">
-              Showing {visibleCounts.rendered.toLocaleString()} of {visibleCounts.total.toLocaleString()} files
-            </div>
           </div>
-        </div>
+        </AppPanel>
       </div>
 
       {fileActions.contextMenu && (
         <FileContextMenu
-          x={fileActions.contextMenu.x} y={fileActions.contextMenu.y}
+          x={fileActions.contextMenu.x}
+          y={fileActions.contextMenu.y}
           caps={{
-            canWrite: browser.canWrite, canPreview: selection.canPreview,
-            canInfo: selection.canInfo, canDownload: selection.canDownload,
-            canRename: selection.canRename, canArchive: selection.canArchive,
-            canExtract: selection.canExtract, canChecksum: selection.canChecksum,
-            canCopy: selection.canCopy, canMove: selection.canMove,
-            canPaste: selection.canPaste, canDelete: selection.canDelete,
+            canWrite: browser.canWrite,
+            canPreview: selection.canPreview,
+            canInfo: selection.canInfo,
+            canDownload: selection.canDownload,
+            canRename: selection.canRename,
+            canArchive: selection.canArchive,
+            canExtract: selection.canExtract,
+            canChecksum: selection.canChecksum,
+            canCopy: selection.canCopy,
+            canMove: selection.canMove,
+            canPaste: selection.canPaste,
+            canDelete: selection.canDelete,
             canAnalyze: selection.canAnalyze,
           }}
           isFavorited={selectedEntryIsFavorited}
@@ -561,7 +707,8 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           onDownload={fileCommands.handleDownload}
           onRename={fileCommands.handleRename}
           onBatchRename={fileCommands.handleBatchRename}
-          onCopy={fileCommands.handleCopy} onMove={fileCommands.handleMove}
+          onCopy={fileCommands.handleCopy}
+          onMove={fileCommands.handleMove}
           onArchive={fileCommands.handleCreateArchive}
           onExtract={fileCommands.handleExtractArchive}
           onChecksum={fileCommands.handleCreateChecksum}
@@ -585,7 +732,8 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
       )}
       {menus.trashContextMenu && browser.canWrite && (
         <TrashContextMenu
-          x={menus.trashContextMenu.x} y={menus.trashContextMenu.y}
+          x={menus.trashContextMenu.x}
+          y={menus.trashContextMenu.y}
           onRestore={() => fileCommands.handleRestoreTrash(menus.trashContextMenu!.entry)}
           onDeletePermanently={() => fileCommands.handleDeleteTrash(menus.trashContextMenu!.entry)}
           onClose={() => menus.setTrashContextMenu(null)}
@@ -593,7 +741,8 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
       )}
       {menus.filesEmptyMenu && (
         <FilesEmptyMenu
-          x={menus.filesEmptyMenu.x} y={menus.filesEmptyMenu.y}
+          x={menus.filesEmptyMenu.x}
+          y={menus.filesEmptyMenu.y}
           canWrite={browser.canWrite}
           canUpload={canUpload}
           canPaste={selection.canPaste}
@@ -601,7 +750,10 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           onCreateFile={fileCommands.handleCreateFile}
           onUpload={openUploadPicker}
           onRefresh={refresh}
-          onPaste={() => { menus.setFilesEmptyMenu(null); fileCommands.handlePaste(); }}
+          onPaste={() => {
+            menus.setFilesEmptyMenu(null);
+            fileCommands.handlePaste();
+          }}
           onClose={() => menus.setFilesEmptyMenu(null)}
         />
       )}
@@ -610,11 +762,20 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         <div className={styles.uploadProgress} role="status" aria-live="polite">
           <div className={styles.uploadProgressHeader}>
             <strong>Uploading</strong>
-            <span>{Math.round(uploadProgress.total > 0 ? (uploadProgress.received / uploadProgress.total) * 100 : 0)}%</span>
+            <span>
+              {Math.round(
+                uploadProgress.total > 0
+                  ? (uploadProgress.received / uploadProgress.total) * 100
+                  : 0,
+              )}
+              %
+            </span>
           </div>
           <span className={styles.uploadProgressName}>{uploadProgress.filename}</span>
           <ProgressBar
-            value={uploadProgress.total > 0 ? (uploadProgress.received / uploadProgress.total) * 100 : 0}
+            value={
+              uploadProgress.total > 0 ? (uploadProgress.received / uploadProgress.total) * 100 : 0
+            }
             ariaLabel="Upload progress"
           />
           <span className={styles.uploadProgressMeta}>
@@ -628,8 +789,15 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           entry={fileActions.previewEntry}
           onClose={() => fileActions.setPreviewEntry(null)}
           onDownload={() => fileCommands.handleDownload(fileActions.previewEntry!)}
-          onShare={() => dialogs.setShareDialogPath({ path: fileActions.previewEntry!.path, name: fileActions.previewEntry!.name })}
-          onPrevious={previousPreviewEntry ? () => setPreviewTarget(previousPreviewEntry) : undefined}
+          onShare={() =>
+            dialogs.setShareDialogPath({
+              path: fileActions.previewEntry!.path,
+              name: fileActions.previewEntry!.name,
+            })
+          }
+          onPrevious={
+            previousPreviewEntry ? () => setPreviewTarget(previousPreviewEntry) : undefined
+          }
           onNext={nextPreviewEntry ? () => setPreviewTarget(nextPreviewEntry) : undefined}
           previousDisabled={!previousPreviewEntry}
           nextDisabled={!nextPreviewEntry}
@@ -637,23 +805,58 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         />
       )}
       {fileActions.infoEntry && (
-        <InfoPanel entry={fileActions.infoEntry} onClose={() => fileActions.setInfoEntry(null)} onRefresh={refresh} />
+        <InfoPanel
+          entry={fileActions.infoEntry}
+          onClose={() => fileActions.setInfoEntry(null)}
+          onRefresh={refresh}
+        />
       )}
       {fileActions.batchRenameOpen && (
-        <BatchRenameModal entries={selection.selectedEntries} onClose={() => fileActions.setBatchRenameOpen(false)} onDone={() => { shell.showToastObj({ title: 'Items renamed', variant: 'success' }); refresh(); }} />
+        <BatchRenameModal
+          entries={selection.selectedEntries}
+          onClose={() => fileActions.setBatchRenameOpen(false)}
+          onDone={() => {
+            shell.showToastObj({ title: 'Items renamed', variant: 'success' });
+            refresh();
+          }}
+        />
       )}
-      {dialogs.confirmDialog && <ConfirmDialog dialog={dialogs.confirmDialog} onClose={() => dialogs.setConfirmDialog(null)} />}
-      {dialogs.textInputDialog && <TextInputDialog dialog={dialogs.textInputDialog} onClose={() => dialogs.setTextInputDialog(null)} />}
+      {dialogs.confirmDialog && (
+        <ConfirmDialog
+          dialog={dialogs.confirmDialog}
+          onClose={() => dialogs.setConfirmDialog(null)}
+        />
+      )}
+      {dialogs.textInputDialog && (
+        <TextInputDialog
+          dialog={dialogs.textInputDialog}
+          onClose={() => dialogs.setTextInputDialog(null)}
+        />
+      )}
       {dialogs.transferDialog && (
-        <TransferDialog dialog={dialogs.transferDialog} folderSuggestions={browser.folderSuggestions} onClose={() => dialogs.setTransferDialog(null)} onSubmit={fileCommands.handleTransferSubmit} />
+        <TransferDialog
+          dialog={dialogs.transferDialog}
+          folderSuggestions={browser.folderSuggestions}
+          onClose={() => dialogs.setTransferDialog(null)}
+          onSubmit={fileCommands.handleTransferSubmit}
+        />
       )}
       {dialogs.shareDialogPath && (
-        <ShareDialog path={dialogs.shareDialogPath.path} name={dialogs.shareDialogPath.name} onClose={() => dialogs.setShareDialogPath(null)} />
+        <ShareDialog
+          path={dialogs.shareDialogPath.path}
+          name={dialogs.shareDialogPath.name}
+          onClose={() => dialogs.setShareDialogPath(null)}
+        />
       )}
-      {fileActions.shortcutsOpen && <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />}
+      {fileActions.shortcutsOpen && (
+        <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />
+      )}
       {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
       {fileActions.analyzePath && (
-        <DiskUsageAnalyzer path={fileActions.analyzePath} onClose={() => fileActions.setAnalyzePath(null)} />
+        <DiskUsageAnalyzer
+          path={fileActions.analyzePath}
+          onClose={() => fileActions.setAnalyzePath(null)}
+        />
       )}
     </>
   );

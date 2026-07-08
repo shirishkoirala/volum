@@ -1,5 +1,7 @@
 services:
   volum:
+    # For published releases, replace "build: ." with:
+    # image: ghcr.io/shirishkoirala/volum:latest
     build: .
     container_name: volum
     ports:

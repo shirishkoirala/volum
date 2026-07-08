@@ -1,16 +1,19 @@
 .searchView {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  margin: var(--space-md);
+  min-height: 0;
   overflow: hidden;
 }
 
 .searchHeader {
+  background: var(--app-surface-header-bg);
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-md);
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--app-surface-divider);
   flex-shrink: 0;
 }
 
@@ -29,8 +32,8 @@
 }
 
 .backBtn:hover {
-  background: var(--color-hover);
-  color: var(--color-text-primary);
+  background: var(--app-surface-control-hover-bg);
+  color: var(--color-text);
 }
 
 .searchInputWrap {
@@ -41,7 +44,9 @@
   padding: 0 var(--space-sm);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-sm);
-  background: var(--color-surface);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
   color: var(--color-text-muted);
 }
 
@@ -50,8 +55,8 @@
   border: none;
   background: transparent;
   padding: var(--space-xs) 0;
-  font-size: 0.875rem;
-  color: var(--color-text-primary);
+  color: var(--color-text);
+  font-size: var(--font-size-base);
   outline: none;
 }
 
@@ -70,16 +75,17 @@
 }
 
 .clearBtn:hover {
-  background: var(--color-hover);
-  color: var(--color-text-primary);
+  background: var(--app-surface-control-hover-bg);
+  color: var(--color-text);
 }
 
 .resultMeta {
-  padding: var(--space-xs) var(--space-md);
-  font-size: 0.8rem;
   color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
   flex-shrink: 0;
-  border-bottom: 1px solid var(--color-border-subtle);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--app-surface-header-bg);
+  border-bottom: 1px solid var(--app-surface-divider);
 }
 
 .errorBanner {
@@ -104,55 +110,60 @@
   gap: var(--space-sm);
   padding: var(--space-xs) var(--space-md);
   cursor: pointer;
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--app-surface-divider);
   min-height: 36px;
   user-select: none;
 }
 
 .resultRow:hover {
-  background: var(--color-hover);
+  background: var(--app-surface-control-hover-bg);
 }
 
 .resultRow.selected {
-  background: var(--color-accent-bg, rgba(0, 100, 200, 0.1));
+  background: var(--app-surface-control-selected-bg);
 }
 
 .resultName {
+  color: var(--color-text);
   flex: 0 0 auto;
+  font-size: var(--font-size-base);
   min-width: 180px;
-  font-size: 0.875rem;
-  color: var(--color-text-primary);
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .resultPath {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.8rem;
   color: var(--color-text-muted);
-  white-space: nowrap;
+  font-family: var(--font-mono);
+  flex: 1;
+  font-size: var(--font-size-sm);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: var(--font-mono);
+  white-space: nowrap;
 }
 
 .resultSize {
-  flex: 0 0 80px;
-  text-align: right;
-  font-size: 0.8rem;
   color: var(--color-text-secondary);
+  flex: 0 0 80px;
+  font-size: var(--font-size-sm);
+  text-align: right;
 }
 
 .resultDate {
-  flex: 0 0 120px;
-  text-align: right;
-  font-size: 0.8rem;
   color: var(--color-text-secondary);
+  flex: 0 0 120px;
+  font-size: var(--font-size-sm);
+  text-align: right;
 }
 
 @media (max-width: 760px) {
+  .searchView {
+    margin: var(--space-sm);
+    margin-bottom: 0;
+  }
+
   .searchHeader {
     padding: var(--space-sm) var(--space-sm);
     gap: var(--space-xs);
@@ -166,28 +177,28 @@
   .resultRow {
     flex-wrap: wrap;
     padding: var(--space-xs) var(--space-sm);
-    gap: 2px var(--space-sm);
+    gap: var(--space-xxs) var(--space-sm);
   }
 
   .resultName {
     min-width: 0;
     flex: 1 1 auto;
-    font-size: 0.8rem;
+    font-size: var(--font-size-sm);
   }
 
   .resultPath {
     flex: 0 0 100%;
-    font-size: 0.72rem;
+    font-size: var(--font-size-xs);
     order: 1;
   }
 
   .resultSize {
     flex: 0 0 auto;
-    font-size: 0.72rem;
+    font-size: var(--font-size-xs);
   }
 
   .resultDate {
     flex: 0 0 auto;
-    font-size: 0.72rem;
+    font-size: var(--font-size-xs);
   }
 }

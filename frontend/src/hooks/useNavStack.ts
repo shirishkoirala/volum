@@ -18,7 +18,9 @@ interface NavStackOptions {
   browser: {
     refresh: () => void;
     setSearchOpen: (v: boolean) => void;
-    setSearchResults: React.Dispatch<React.SetStateAction<import('../api/client').SearchResult[] | null>>;
+    setSearchResults: React.Dispatch<
+      React.SetStateAction<import('../api/client').SearchResult[] | null>
+    >;
     setQuery: (v: string) => void;
     setTrashEntries: React.Dispatch<React.SetStateAction<import('../api/client').TrashEntry[]>>;
   };
@@ -32,19 +34,24 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
     void getTrash().then((r) => browser.setTrashEntries(r.entries ?? []));
   }, [browser]);
 
-  const navigateTo = useCallback((path: string) => {
-    if (viewPref.currentPath !== path) {
-      backStackRef.current.push(viewPref.currentPath);
-    }
-    viewPref.navigateToPath(path);
-    nav?.setShowingJobs(false);
-    nav?.setShowingSearch?.(false);
-    browser.setSearchOpen(false);
-    browser.setSearchResults(null);
-    browser.setQuery('');
-    nav?.setSelectedDriveName(null);
-    nav?.setShowingMyPC(false);
-  }, [viewPref, nav, browser]);
+  const navigateTo = useCallback(
+    (path: string) => {
+      if (viewPref.currentPath !== path) {
+        backStackRef.current.push(viewPref.currentPath);
+      }
+      viewPref.navigateToPath(path);
+      nav?.setShowingTrash(false);
+      nav?.setShowingSettings(false);
+      nav?.setShowingJobs(false);
+      nav?.setShowingSearch?.(false);
+      browser.setSearchOpen(false);
+      browser.setSearchResults(null);
+      browser.setQuery('');
+      nav?.setSelectedDriveName(null);
+      nav?.setShowingMyPC(false);
+    },
+    [viewPref, nav, browser],
+  );
 
   const resetToDesktopView = useCallback(() => {
     viewPref.setCurrentPath('');

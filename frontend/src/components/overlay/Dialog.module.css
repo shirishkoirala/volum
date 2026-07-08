@@ -1,6 +1,7 @@
 .dialog {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-menu);
   color: var(--color-text);
@@ -18,10 +19,18 @@
   padding: 0;
 }
 
-.sm { max-width: 400px; }
-.md { max-width: 480px; }
-.lg { max-width: 700px; }
-.xl { max-width: 90vw; }
+.sm {
+  max-width: 400px;
+}
+.md {
+  max-width: 480px;
+}
+.lg {
+  max-width: 700px;
+}
+.xl {
+  max-width: 90vw;
+}
 
 .dialogBody {
   display: flex;

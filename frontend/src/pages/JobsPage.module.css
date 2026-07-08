@@ -1,39 +1,29 @@
-.jobsPage {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  height: 100%;
-  overflow: hidden;
-}
-
 .jobToolbar {
   align-items: center;
-  border-bottom: 1px solid var(--color-border-subtle);
   display: flex;
-  flex-shrink: 0;
   gap: var(--space-sm);
   justify-content: flex-end;
-  padding: var(--space-sm) var(--space-lg);
+  width: 100%;
 }
 
 .jobList {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--space-lg);
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
 }
 
 .jobItem {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
   padding: var(--space-sm) var(--space-md);
 }
 
 .jobItem:hover {
-  border-color: var(--color-border);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border-color: var(--glass-border);
 }
 
 .jobTitleRow {
@@ -50,27 +40,27 @@
 }
 
 .jobTitleRow strong {
-  font-size: 0.9rem;
+  font-size: var(--font-size-md);
   text-transform: capitalize;
 }
 
 .jobStatus {
-  font-size: 0.75rem;
   color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
   text-transform: capitalize;
 }
 
 .jobMeta {
+  color: var(--color-text-secondary);
   display: flex;
+  font-size: var(--font-size-sm);
   gap: var(--space-lg);
   margin-top: var(--space-xs);
-  font-size: 0.78rem;
-  color: var(--color-text-secondary);
 }
 
 .jobPath {
   color: var(--color-text-secondary);
-  font-size: 0.78rem;
+  font-size: var(--font-size-sm);
   margin: var(--space-xs) 0 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -81,7 +71,7 @@
   align-items: center;
   color: var(--color-danger);
   display: flex;
-  font-size: 0.78rem;
+  font-size: var(--font-size-sm);
   gap: var(--space-xs);
   margin: var(--space-xs) 0 0;
 }
@@ -94,7 +84,7 @@
 
 .jobTimestamp {
   color: var(--color-text-muted);
-  font-size: 0.7rem;
+  font-size: var(--font-size-xs);
 }
 
 .jobActions {
@@ -109,17 +99,15 @@
 
 .pagination {
   align-items: center;
-  border-top: 1px solid var(--color-border-subtle);
   display: flex;
-  flex-shrink: 0;
   gap: var(--space-md);
   justify-content: center;
-  padding: var(--space-sm) var(--space-lg);
+  width: 100%;
 }
 
 .paginationInfo {
   color: var(--color-text-secondary);
-  font-size: 0.78rem;
+  font-size: var(--font-size-sm);
 }
 
 .paginationButtons {
@@ -128,14 +116,6 @@
 }
 
 @media (max-width: 760px) {
-  .jobToolbar {
-    padding: var(--space-sm) var(--space-md);
-  }
-
-  .jobList {
-    padding: var(--space-md);
-  }
-
   .jobItem {
     padding: var(--space-sm);
   }

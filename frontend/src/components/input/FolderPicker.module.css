@@ -1,6 +1,7 @@
 .folderPicker {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
@@ -58,7 +59,7 @@
 }
 
 .folderPickerCrumb:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
   color: var(--color-text-secondary);
 }
 
@@ -103,7 +104,7 @@
 }
 
 .folderPickerItem:hover {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
   color: var(--color-text);
 }
 
@@ -147,8 +148,9 @@
 }
 
 .dialogSuggestions button {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-pill);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
@@ -161,6 +163,7 @@
 }
 
 .dialogSuggestions button:hover {
+  background: var(--glass-hover-bg);
   border-color: var(--color-brand);
   color: var(--color-brand-text);
 }

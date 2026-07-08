@@ -1,5 +1,5 @@
-# Quick-start: docker compose up -d
-# Open http://localhost:8090 — no auth required by default.
+# Local quick-start: docker compose up -d
+# Open http://localhost:8090 — no auth required, bound to localhost.
 # Files go in ./storage, database in ./data.
 #
 # For published releases, replace "build: ." with:
@@ -10,7 +10,7 @@ services:
     build: .
     container_name: volum
     ports:
-      - "${VOLUM_PORT:-8090}:${VOLUM_PORT:-8090}"
+      - "${VOLUM_BIND_ADDRESS:-127.0.0.1}:${VOLUM_PORT:-8090}:${VOLUM_PORT:-8090}"
     volumes:
       - ${VOLUM_DATA_DIR:-./data}:/data
       - ${VOLUM_STORAGE:-./storage}:/storage
@@ -19,6 +19,7 @@ services:
       - VOLUM_DB=${VOLUM_DB:-/data/volum.db}
       - VOLUM_PORT=${VOLUM_PORT:-8090}
       - VOLUM_AUTH_REQUIRED=${VOLUM_AUTH_REQUIRED:-false}
+      - VOLUM_ALLOW_INSECURE_AUTH_DISABLED=${VOLUM_ALLOW_INSECURE_AUTH_DISABLED:-true}
       - VOLUM_SESSION_SECRET=${VOLUM_SESSION_SECRET:-}
       - VOLUM_PUBLIC_URL=${VOLUM_PUBLIC_URL:-}
     restart: unless-stopped

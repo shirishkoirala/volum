@@ -46,5 +46,3 @@ func (s *Store) PruneAuditLogs(ctx context.Context, olderThan time.Duration) (in
 	}
 	return result.RowsAffected()
 }
-
-

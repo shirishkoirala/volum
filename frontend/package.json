@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc && vite build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
+    "test:ci": "vitest run --no-file-parallelism --maxWorkers=1 --minWorkers=1 --testTimeout=30000",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
@@ -36,6 +39,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "jsdom": "^27.0.1",
+    "prettier": "^3.9.4",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.59.4",
     "vitest": "^3.2.4"

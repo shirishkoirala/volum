@@ -11,9 +11,39 @@ beforeEach(() => {
 });
 
 const mockSubdirs = [
-  { name: 'Documents', path: '/storage/Documents', type: 'directory', size: 0, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false },
-  { name: 'Photos', path: '/storage/Photos', type: 'directory', size: 0, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false },
-  { name: 'file.txt', path: '/storage/file.txt', type: 'file', size: 100, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false },
+  {
+    name: 'Documents',
+    path: '/storage/Documents',
+    type: 'directory',
+    size: 0,
+    modifiedAt: '',
+    permissions: '',
+    owner: '',
+    group: '',
+    hidden: false,
+  },
+  {
+    name: 'Photos',
+    path: '/storage/Photos',
+    type: 'directory',
+    size: 0,
+    modifiedAt: '',
+    permissions: '',
+    owner: '',
+    group: '',
+    hidden: false,
+  },
+  {
+    name: 'file.txt',
+    path: '/storage/file.txt',
+    type: 'file',
+    size: 100,
+    modifiedAt: '',
+    permissions: '',
+    owner: '',
+    group: '',
+    hidden: false,
+  },
 ];
 
 describe('FolderPicker', () => {
@@ -110,7 +140,9 @@ describe('FolderPicker', () => {
       json: () => Promise.resolve({ entries: [] }),
     });
 
-    render(<FolderPicker initialPath="/storage/Documents/Work" onSelect={vi.fn()} onClose={vi.fn()} />);
+    render(
+      <FolderPicker initialPath="/storage/Documents/Work" onSelect={vi.fn()} onClose={vi.fn()} />,
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Work')).toBeInTheDocument();

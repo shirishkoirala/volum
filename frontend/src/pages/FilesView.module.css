@@ -6,18 +6,12 @@
   gap: var(--space-lg);
 }
 
-.fileContent {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  margin: var(--space-md);
-  overflow: hidden;
+.fileContent:has(.dragOver) {
+  border-color: var(--color-brand);
 }
 
+.fileBody,
 .fileFrame {
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-md);
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -25,24 +19,16 @@
   overflow: hidden;
 }
 
-.fileFrame:has(.dragOver) {
-  border-color: var(--color-brand);
-}
-
 .fileStatusBar {
   align-items: center;
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border-light);
   color: var(--color-text-secondary);
   display: flex;
-  flex-shrink: 0;
   font-size: var(--font-size-2xs);
   gap: var(--space-sm);
-  height: 24px;
   overflow: hidden;
-  padding: 0 var(--space-sm);
   user-select: none;
   white-space: nowrap;
+  width: 100%;
 }
 
 .errorBanner {
@@ -89,7 +75,7 @@
   right: var(--space-xl);
   top: calc(var(--space-xl) + 92px);
   width: 360px;
-  z-index: 139;
+  z-index: var(--z-workspace-chrome);
 }
 
 .uploadProgressHeader {
@@ -120,11 +106,6 @@
 @media (max-width: 760px) {
   .filesViewContainer {
     gap: var(--space-sm);
-  }
-
-  .fileContent {
-    margin: var(--space-sm);
-    margin-bottom: 0;
   }
 
   .errorBanner {

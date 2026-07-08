@@ -11,6 +11,6 @@
   background: var(--color-brand);
   display: block;
   height: 100%;
-  transition: width 300ms ease;
+  transition: width var(--transition-progress);
   width: var(--progress, 0%);
 }

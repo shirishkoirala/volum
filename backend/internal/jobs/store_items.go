@@ -180,5 +180,3 @@ func (s *Store) RetryItem(ctx context.Context, jobID, itemID string) error {
 
 	return tx.Commit()
 }
-
-

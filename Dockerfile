@@ -1,22 +1,32 @@
+FROM golang:1.23-alpine AS backend-base
+WORKDIR /app/backend
+RUN apk add --no-cache binutils gcc musl-dev
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+RUN CGO_ENABLED=0 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.3.1
+COPY backend ./
+ARG RUN_BACKEND_CHECKS=true
+RUN if [ "${RUN_BACKEND_CHECKS}" = "true" ]; then golangci-lint run --timeout=20m ./...; fi
+RUN if [ "${RUN_BACKEND_CHECKS}" = "true" ]; then go vet ./...; fi
+RUN if [ "${RUN_BACKEND_CHECKS}" = "true" ]; then go test ./...; fi
+
 FROM node:22-alpine AS frontend
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend ./
-RUN npm run test
-RUN npm run build
+ARG RUN_FRONTEND_CHECKS=true
+RUN if [ "${RUN_FRONTEND_CHECKS}" = "true" ]; then npm run format:check; fi
+RUN if [ "${RUN_FRONTEND_CHECKS}" = "true" ]; then npm run test:ci; fi
+ARG VITE_PUBLIC_PATH=""
+RUN VITE_PUBLIC_PATH=${VITE_PUBLIC_PATH} npm run build
 
-FROM golang:1.23-alpine AS backend
-WORKDIR /app/backend
-RUN apk add --no-cache gcc musl-dev
-COPY backend/go.mod ./
-RUN go mod download
-COPY backend ./
+FROM backend-base AS backend
 COPY --from=frontend /app/frontend/dist ./web
-RUN go vet ./...
-RUN go test ./...
+ARG VERSION=dev
+ARG BUILD_TIME=""
 RUN go build \
-	-ldflags="-X github.com/volum-app/volum/backend/internal/version.Version=$(git describe --tags --always 2>/dev/null || echo dev) -X github.com/volum-app/volum/backend/internal/version.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+	-ldflags="-X github.com/volum-app/volum/backend/internal/version.Version=${VERSION} -X github.com/volum-app/volum/backend/internal/version.BuildTime=${BUILD_TIME}" \
 	-o /out/volum ./cmd/volum
 
 FROM alpine:3.20

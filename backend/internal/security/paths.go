@@ -10,9 +10,11 @@ import (
 )
 
 var (
-	ErrEmptyPath     = errors.New("path is required")
-	ErrPathTraversal = errors.New("path traversal is not allowed")
-	ErrOutsideRoots  = errors.New("path is outside configured roots")
+	ErrEmptyPath           = errors.New("path is required")
+	ErrInvalidPath         = errors.New("path contains invalid characters")
+	ErrPathTraversal       = errors.New("path traversal is not allowed")
+	ErrOutsideRoots        = errors.New("path is outside configured roots")
+	ErrUnsupportedMutation = errors.New("filesystem mutations require the Linux Docker runtime")
 )
 
 type Root struct {
@@ -259,6 +261,9 @@ func cleanPublicInput(input string) (string, error) {
 	if strings.TrimSpace(input) == "" {
 		return "", ErrEmptyPath
 	}
+	if containsControl(input) {
+		return "", ErrInvalidPath
+	}
 	if containsTraversal(input) {
 		return "", ErrPathTraversal
 	}
@@ -275,7 +280,16 @@ func CleanAbs(path string) (string, error) {
 
 func ValidBaseName(name string) bool {
 	name = strings.TrimSpace(name)
-	return name != "" && name == filepath.Base(name) && name != "." && name != ".."
+	return name != "" && !containsControl(name) && name == filepath.Base(name) && name != "." && name != ".."
+}
+
+func containsControl(input string) bool {
+	for _, ch := range input {
+		if ch < 0x20 || ch == 0x7f {
+			return true
+		}
+	}
+	return false
 }
 
 func containsTraversal(input string) bool {
@@ -315,4 +329,23 @@ func NextAvailablePath(path string) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("could not find available name for %s", path)
+}
+
+func (g *RootGuard) NextAvailablePath(path string) (string, error) {
+	cleaned, err := CleanAbs(path)
+	if err != nil {
+		return "", err
+	}
+	root, _, err := g.internalRelative(cleaned)
+	if err != nil {
+		return "", err
+	}
+	candidate, err := NextAvailablePath(cleaned)
+	if err != nil {
+		return "", err
+	}
+	if !PathInside(root.InternalPath, candidate) {
+		return "", ErrOutsideRoots
+	}
+	return candidate, nil
 }

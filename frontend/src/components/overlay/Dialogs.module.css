@@ -28,6 +28,9 @@
 .dialogField input,
 .dialogField textarea,
 .dialogField select {
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border-color: var(--glass-border);
   min-height: 38px;
 }
 
@@ -70,20 +73,22 @@
 }
 
 .dialogSuggestions button {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-pill);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   min-height: 30px;
   max-width: 100%;
   overflow: hidden;
-  padding: 0 10px;
+  padding: 0 var(--space-md);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .dialogSuggestions button:hover {
+  background: var(--glass-hover-bg);
   border-color: var(--color-brand);
   color: var(--color-brand-text);
 }
@@ -135,7 +140,7 @@
 }
 
 .previewItem:nth-child(even) {
-  background: var(--color-hover);
+  background: var(--glass-hover-bg);
 }
 
 .fateBadge {
@@ -150,12 +155,30 @@
   flex-shrink: 0;
 }
 
-.fateNew { background: var(--color-brand-bg); color: var(--color-brand); }
-.fateSkip { background: var(--color-hover); color: var(--color-text-muted); }
-.fateOverwrite { background: var(--color-warning-bg); color: var(--color-warning-text); }
-.fateRename { background: var(--color-success-bg); color: var(--color-success-text); }
-.fateCancel { background: var(--color-danger-bg); color: var(--color-danger-text); }
-.fateAsk { background: var(--color-hover); color: var(--color-text-muted); }
+.fateNew {
+  background: var(--color-brand-bg);
+  color: var(--color-brand);
+}
+.fateSkip {
+  background: var(--color-hover);
+  color: var(--color-text-muted);
+}
+.fateOverwrite {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+.fateRename {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+.fateCancel {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+.fateAsk {
+  background: var(--color-hover);
+  color: var(--color-text-muted);
+}
 
 .previewItemName {
   font-weight: 600;
@@ -184,7 +207,7 @@
 .faviconPreview {
   width: 20px;
   height: 20px;
-  border-radius: 4px;
+  border-radius: var(--radius-2xs);
   flex-shrink: 0;
   object-fit: contain;
 }
