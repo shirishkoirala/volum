@@ -3,7 +3,7 @@ WORKDIR /app/backend
 RUN apk add --no-cache gcc musl-dev
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
-RUN go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.0
+RUN go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 COPY backend ./
 RUN golangci-lint run ./...
 RUN go vet ./...
