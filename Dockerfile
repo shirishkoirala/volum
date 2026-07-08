@@ -16,7 +16,8 @@ RUN npm ci
 COPY frontend ./
 RUN npm run format:check
 RUN npm run test
-RUN npm run build
+ARG VITE_PUBLIC_PATH=""
+RUN VITE_PUBLIC_PATH=${VITE_PUBLIC_PATH} npm run build
 
 FROM backend-base AS backend
 COPY --from=frontend /app/frontend/dist ./web

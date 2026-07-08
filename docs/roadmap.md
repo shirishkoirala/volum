@@ -137,7 +137,7 @@ Reference:
 
 ## Priority 5: Upload Reliability
 
-Status: started.
+Status: completed.
 
 Upload failures are a common source of trust loss in web file managers, especially with large files, many small files, folder drops, special characters, and reverse proxies.
 
@@ -154,16 +154,13 @@ Completed:
 - Improved toast and notification messages to be job-type-aware: "Upload completed", "Copy paused", "Move cancelled" instead of generic "Transfer completed", "Transfer paused", "Transfer cancelled".
 - SSE browser notifications now show e.g. "Upload completed" with the source path instead of "Transfer completed" with a redundant `[upload]` prefix.
 - Added `makeJobLabel(type, action)` utility in `utils/jobs.ts`.
-
-Planned work (remaining):
-
-- Verify large upload behavior through reverse proxy path prefixes.
-- Add frontend tests for upload flow edge cases.
+- Added frontend tests for upload flow edge cases: resume behavior, many small files, cancellation/paused jobs, URL-prefix handling, encoded upload-status URLs, and encoded chunk-upload URLs.
+- Added a Docker/nginx reverse-proxy smoke test for subpath uploads. It starts Volum behind nginx at `/volum/`, uploads through the prefixed API route, and verifies the stored file content.
 
 Why now:
 
 - Volum's backend already verifies size and uses partial files.
-- The next step is hardening edge cases and making failures understandable.
+- This hardens upload edge cases and makes failures understandable.
 
 References:
 
