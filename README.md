@@ -12,6 +12,7 @@
   <a href="LICENSE">License</a> |
   <a href="docs/roadmap.md">Roadmap</a> |
   <a href="docs/reverse-proxy.md">Reverse Proxy</a> |
+  <a href="docs/release.md">Release</a> |
   <a href="CONTRIBUTION.md">Contributing</a>
 </p>
 
@@ -54,7 +55,13 @@ sed -i.bak "s|^VOLUM_SESSION_SECRET=.*|VOLUM_SESSION_SECRET=$(openssl rand -base
 ```
 
 Edit `.env` for your storage roots, database path, public URL, authentication,
-and runtime user. Then start the server compose stack:
+and runtime user. For released images, set the compose service image to:
+
+```yaml
+image: ghcr.io/shirishkoirala/volum:latest
+```
+
+Then start the server compose stack:
 
 ```sh
 docker compose -f docker-compose.server.yml up --build -d
@@ -94,6 +101,7 @@ VOLUM_HOST_PATH=/ VOLUM_UID=0 VOLUM_GID=0 docker compose -f docker-compose.serve
 ```
 
 Reverse proxy examples are in [docs/reverse-proxy.md](docs/reverse-proxy.md).
+Release and Docker image publishing notes are in [docs/release.md](docs/release.md).
 
 ## Development
 

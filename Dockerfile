@@ -21,8 +21,10 @@ RUN VITE_PUBLIC_PATH=${VITE_PUBLIC_PATH} npm run build
 
 FROM backend-base AS backend
 COPY --from=frontend /app/frontend/dist ./web
+ARG VERSION=dev
+ARG BUILD_TIME=""
 RUN go build \
-	-ldflags="-X github.com/volum-app/volum/backend/internal/version.Version=$(git describe --tags --always 2>/dev/null || echo dev) -X github.com/volum-app/volum/backend/internal/version.BuildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+	-ldflags="-X github.com/volum-app/volum/backend/internal/version.Version=${VERSION} -X github.com/volum-app/volum/backend/internal/version.BuildTime=${BUILD_TIME}" \
 	-o /out/volum ./cmd/volum
 
 FROM alpine:3.20
