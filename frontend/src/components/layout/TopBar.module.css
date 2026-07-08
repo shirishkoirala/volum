@@ -74,20 +74,37 @@
   font-weight: 600;
 }
 
+.calendarArea {
+  position: relative;
+}
+
 .clock {
   align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
   color: var(--color-text-muted);
+  cursor: pointer;
   display: flex;
   font-size: var(--font-size-sm);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+  height: 30px;
   letter-spacing: 0;
   opacity: 1;
+  padding: 0 8px;
+  transition: background var(--transition-fast), color var(--transition-fast);
   padding: 0 var(--space-xs) 0 var(--space-sm);
   user-select: none;
   white-space: nowrap;
 }
 
+.clock:hover {
+  background: color-mix(in srgb, var(--color-hover) 88%, transparent);
+  color: var(--color-text);
+}
+
+:global([data-theme="light"]) .clock {
 :global([data-theme='light']) .clock {
   color: var(--color-text-secondary);
   opacity: 1;
