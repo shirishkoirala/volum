@@ -15,7 +15,7 @@ COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend ./
 RUN npm run format:check
-RUN npm run test
+RUN npm run test:ci
 ARG VITE_PUBLIC_PATH=""
 RUN VITE_PUBLIC_PATH=${VITE_PUBLIC_PATH} npm run build
 

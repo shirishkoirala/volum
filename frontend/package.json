@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
+    "test:ci": "vitest run --no-file-parallelism --maxWorkers=1 --minWorkers=1 --testTimeout=30000",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },

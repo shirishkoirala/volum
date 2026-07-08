@@ -1,5 +1,11 @@
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import { afterEach, vi } from 'vitest';
+
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 if (typeof globalThis.ResizeObserver === 'undefined') {
   vi.stubGlobal(
