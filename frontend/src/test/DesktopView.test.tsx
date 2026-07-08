@@ -21,13 +21,15 @@ describe('DesktopView', () => {
     render(
       <DesktopView
         {...defaultProps}
-        services={[{
-          id: 'svc-1',
-          name: 'Jellyfin',
-          url: 'https://jellyfin.example.com',
-          iconUrl: 'https://example.com/jellyfin.svg',
-          healthUrl: 'https://jellyfin.example.com/health',
-        }]}
+        services={[
+          {
+            id: 'svc-1',
+            name: 'Jellyfin',
+            url: 'https://jellyfin.example.com',
+            iconUrl: 'https://example.com/jellyfin.svg',
+            healthUrl: 'https://jellyfin.example.com/health',
+          },
+        ]}
         serviceHealth={{
           'svc-1': {
             serviceId: 'svc-1',
@@ -46,11 +48,13 @@ describe('DesktopView', () => {
     render(
       <DesktopView
         {...defaultProps}
-        services={[{
-          id: 'svc-1',
-          name: 'Jellyfin',
-          url: 'https://jellyfin.example.com',
-        }]}
+        services={[
+          {
+            id: 'svc-1',
+            name: 'Jellyfin',
+            url: 'https://jellyfin.example.com',
+          },
+        ]}
         serviceHealth={{}}
       />,
     );

@@ -234,7 +234,7 @@
   font-size: var(--font-size-sm);
 }
 
-.toggleLabel input[type="checkbox"] {
+.toggleLabel input[type='checkbox'] {
   accent-color: var(--color-brand);
 }
 
@@ -389,7 +389,9 @@
   display: flex;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .serviceRow.dragging {
@@ -491,7 +493,7 @@
     min-height: 44px;
   }
 
-  .toggleLabel input[type="checkbox"] {
+  .toggleLabel input[type='checkbox'] {
     height: 22px;
     width: 22px;
   }

@@ -40,7 +40,11 @@ export function LoginScreen({ onLoggedIn, onToggleTheme, theme }: LoginScreenPro
       <form className={styles.loginPanel} onSubmit={handleSubmit}>
         <div className={styles.profileTile}>
           {lastUser?.avatarDataUrl ? (
-            <img className={styles.profileImage} src={lastUser.avatarDataUrl} alt={`Profile for ${lastUser.username}`} />
+            <img
+              className={styles.profileImage}
+              src={lastUser.avatarDataUrl}
+              alt={`Profile for ${lastUser.username}`}
+            />
           ) : (
             <Icon name="avatar-default" size={30} />
           )}
@@ -83,8 +87,17 @@ export function LoginScreen({ onLoggedIn, onToggleTheme, theme }: LoginScreenPro
           <span>Remember me</span>
         </label>
         {error && <p className={styles.loginError}>{error}</p>}
-        <button disabled={submitting || username.length === 0 || password.length === 0} type="submit">
-          {submitting ? <><Icon name="view-refresh" size={16} /> Logging in...</> : 'Log in'}
+        <button
+          disabled={submitting || username.length === 0 || password.length === 0}
+          type="submit"
+        >
+          {submitting ? (
+            <>
+              <Icon name="view-refresh" size={16} /> Logging in...
+            </>
+          ) : (
+            'Log in'
+          )}
         </button>
       </form>
     </main>

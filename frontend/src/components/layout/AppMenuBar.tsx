@@ -72,7 +72,10 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
       }
     };
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setOpenMenu(null); setFocusIdx(-1); }
+      if (e.key === 'Escape') {
+        setOpenMenu(null);
+        setFocusIdx(-1);
+      }
     };
     document.addEventListener('mousedown', handleClick);
     document.addEventListener('keydown', handleEscape);
@@ -116,47 +119,115 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
     el?.focus();
   };
 
-  const menus = windowType === 'trash'
-    ? MENUS.filter((menu) => menu.id !== 'view')
-    : MENUS;
+  const menus = windowType === 'trash' ? MENUS.filter((menu) => menu.id !== 'view') : MENUS;
 
   const handleItemClick = (onClick: () => void) => {
     onClick();
     setOpenMenu(null);
   };
 
-  const fileItems: MenuItem[] = windowType === 'trash'
-    ? [
-       { label: 'Restore', icon: 'edit-undo', disabled: handlers.selectedCount === 0, onClick: () => handlers.onRestore?.() },
-       { label: 'Delete Forever', icon: 'edit-delete', disabled: handlers.selectedCount === 0, danger: true, onClick: () => handlers.onDeleteForever?.() },
-       { label: '---', disabled: true, onClick: () => {} },
-       { label: 'Empty Trash', icon: 'edit-clear', danger: true, onClick: () => handlers.onEmptyTrash?.() },
-       { label: '---', disabled: true, onClick: () => {} },
-       { label: 'Close', icon: 'window-close', onClick: handlers.onClose ?? handlers.onGoDesktop },
-      ]
-    : [
-       { label: 'New Folder', icon: 'folder-new', disabled: !handlers.canWrite, onClick: handlers.onCreateFolder },
-       { label: 'Upload', icon: 'document-import', disabled: !handlers.canUpload, onClick: handlers.onUpload },
-       { label: '---', disabled: true, onClick: () => {} },
-       { label: 'Close', icon: 'window-close', onClick: handlers.onClose ?? handlers.onGoDesktop },
-      ];
+  const fileItems: MenuItem[] =
+    windowType === 'trash'
+      ? [
+          {
+            label: 'Restore',
+            icon: 'edit-undo',
+            disabled: handlers.selectedCount === 0,
+            onClick: () => handlers.onRestore?.(),
+          },
+          {
+            label: 'Delete Forever',
+            icon: 'edit-delete',
+            disabled: handlers.selectedCount === 0,
+            danger: true,
+            onClick: () => handlers.onDeleteForever?.(),
+          },
+          { label: '---', disabled: true, onClick: () => {} },
+          {
+            label: 'Empty Trash',
+            icon: 'edit-clear',
+            danger: true,
+            onClick: () => handlers.onEmptyTrash?.(),
+          },
+          { label: '---', disabled: true, onClick: () => {} },
+          {
+            label: 'Close',
+            icon: 'window-close',
+            onClick: handlers.onClose ?? handlers.onGoDesktop,
+          },
+        ]
+      : [
+          {
+            label: 'New Folder',
+            icon: 'folder-new',
+            disabled: !handlers.canWrite,
+            onClick: handlers.onCreateFolder,
+          },
+          {
+            label: 'Upload',
+            icon: 'document-import',
+            disabled: !handlers.canUpload,
+            onClick: handlers.onUpload,
+          },
+          { label: '---', disabled: true, onClick: () => {} },
+          {
+            label: 'Close',
+            icon: 'window-close',
+            onClick: handlers.onClose ?? handlers.onGoDesktop,
+          },
+        ];
 
-  const editItems: MenuItem[] = windowType === 'trash'
-    ? [
-       { label: 'Select All', icon: 'selection-select-all', onClick: handlers.onSelectAll },
-       { label: 'Invert Selection', icon: 'selection-invert', onClick: handlers.onInvertSelection },
-      ]
-    : [
-       { label: 'Cut', icon: 'edit-cut', disabled: !handlers.canWrite || handlers.selectedCount === 0, onClick: handlers.onCut },
-       { label: 'Copy', icon: 'edit-copy', disabled: handlers.selectedCount === 0, onClick: handlers.onCopy },
-       { label: 'Paste', icon: 'edit-paste', disabled: !handlers.canWrite, onClick: handlers.onPaste },
-       { label: '---', disabled: true, onClick: () => {} },
-       { label: 'Select All', icon: 'selection-select-all', onClick: handlers.onSelectAll },
-       { label: 'Invert Selection', icon: 'selection-invert', onClick: handlers.onInvertSelection },
-       { label: '---', disabled: true, onClick: () => {} },
-       { label: 'Rename', icon: 'edit-rename', disabled: !handlers.canWrite || handlers.selectedCount === 0, onClick: handlers.onRename },
-       { label: 'Delete', icon: 'edit-delete', disabled: !handlers.canWrite || handlers.selectedCount === 0, danger: true, onClick: handlers.onDelete },
-      ];
+  const editItems: MenuItem[] =
+    windowType === 'trash'
+      ? [
+          { label: 'Select All', icon: 'selection-select-all', onClick: handlers.onSelectAll },
+          {
+            label: 'Invert Selection',
+            icon: 'selection-invert',
+            onClick: handlers.onInvertSelection,
+          },
+        ]
+      : [
+          {
+            label: 'Cut',
+            icon: 'edit-cut',
+            disabled: !handlers.canWrite || handlers.selectedCount === 0,
+            onClick: handlers.onCut,
+          },
+          {
+            label: 'Copy',
+            icon: 'edit-copy',
+            disabled: handlers.selectedCount === 0,
+            onClick: handlers.onCopy,
+          },
+          {
+            label: 'Paste',
+            icon: 'edit-paste',
+            disabled: !handlers.canWrite,
+            onClick: handlers.onPaste,
+          },
+          { label: '---', disabled: true, onClick: () => {} },
+          { label: 'Select All', icon: 'selection-select-all', onClick: handlers.onSelectAll },
+          {
+            label: 'Invert Selection',
+            icon: 'selection-invert',
+            onClick: handlers.onInvertSelection,
+          },
+          { label: '---', disabled: true, onClick: () => {} },
+          {
+            label: 'Rename',
+            icon: 'edit-rename',
+            disabled: !handlers.canWrite || handlers.selectedCount === 0,
+            onClick: handlers.onRename,
+          },
+          {
+            label: 'Delete',
+            icon: 'edit-delete',
+            disabled: !handlers.canWrite || handlers.selectedCount === 0,
+            danger: true,
+            onClick: handlers.onDelete,
+          },
+        ];
 
   const viewItems: MenuItem[] = [
     {
@@ -179,7 +250,11 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
     { label: 'Sort by Name', icon: 'sort-desc', onClick: () => handlers.onSortChange('name:asc') },
     { label: 'Sort by Size', icon: 'sort-desc', onClick: () => handlers.onSortChange('size:desc') },
     { label: 'Sort by Type', icon: 'sort-desc', onClick: () => handlers.onSortChange('type:asc') },
-    { label: 'Sort by Date', icon: 'sort-desc', onClick: () => handlers.onSortChange('modifiedAt:desc') },
+    {
+      label: 'Sort by Date',
+      icon: 'sort-desc',
+      onClick: () => handlers.onSortChange('modifiedAt:desc'),
+    },
   ];
 
   const goItems: MenuItem[] = [
@@ -188,10 +263,12 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
     { label: 'Trash', icon: 'edit-delete', onClick: handlers.onGoTrash },
     { label: 'Transfers', icon: 'document-properties', onClick: handlers.onGoJobs },
     { label: 'Settings', icon: 'preferences-system', onClick: handlers.onGoSettings },
-    ...(windowType === 'trash' ? [] : [
-      { label: '---', disabled: true, onClick: () => {} },
-      { label: 'Go to Location...', icon: 'go-jump', onClick: handlers.onToggleLocation },
-    ] satisfies MenuItem[]),
+    ...(windowType === 'trash'
+      ? []
+      : ([
+          { label: '---', disabled: true, onClick: () => {} },
+          { label: 'Go to Location...', icon: 'go-jump', onClick: handlers.onToggleLocation },
+        ] satisfies MenuItem[])),
   ];
 
   const menuItems: Record<MenuId, MenuItem[]> = {
@@ -208,7 +285,9 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
           <button
             className={`${styles.menuTrigger}${openMenu === menu.id ? ` ${styles.menuTriggerOpen}` : ''}`}
             onClick={() => setOpenMenu(openMenu === menu.id ? null : menu.id)}
-            onMouseEnter={() => { if (openMenu) setOpenMenu(menu.id); }}
+            onMouseEnter={() => {
+              if (openMenu) setOpenMenu(menu.id);
+            }}
             onFocus={() => setFocusIdx(idx)}
             onKeyDown={(e) => handleMenuKeyDown(e, idx)}
             role="menuitem"
@@ -226,7 +305,9 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
                   <button
                     key={item.label}
                     className={`${styles.menuItem}${item.disabled ? ` ${styles.menuItemDisabled}` : ''}${item.danger ? ` ${styles.danger}` : ''}`}
-                    onClick={() => { if (!item.disabled) handleItemClick(item.onClick); }}
+                    onClick={() => {
+                      if (!item.disabled) handleItemClick(item.onClick);
+                    }}
                     onKeyDown={(e) => handleItemKeyDown(e, menuItems[menu.id], itemIdx)}
                     data-menu-index={itemIdx}
                     disabled={item.disabled}
@@ -237,7 +318,7 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
                     {item.icon && <Icon name={item.icon} size={16} className={styles.menuIcon} />}
                     {item.label}
                   </button>
-                )
+                ),
               )}
             </div>
           )}

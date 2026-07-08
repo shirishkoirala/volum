@@ -32,7 +32,15 @@ type FileItemProps = {
   className?: string;
 };
 
-function FileThumbnail({ entry, className, size }: { entry: FileEntry; className?: string; size: number }) {
+function FileThumbnail({
+  entry,
+  className,
+  size,
+}: {
+  entry: FileEntry;
+  className?: string;
+  size: number;
+}) {
   const [src, setSrc] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const frameRef = useRef<HTMLDivElement | null>(null);
@@ -67,11 +75,14 @@ function FileThumbnail({ entry, className, size }: { entry: FileEntry; className
     };
 
     if ('IntersectionObserver' in window) {
-      observer = new IntersectionObserver((observedEntries) => {
-        if (!observedEntries.some((observed) => observed.isIntersecting)) return;
-        observer?.disconnect();
-        load();
-      }, { rootMargin: '160px' });
+      observer = new IntersectionObserver(
+        (observedEntries) => {
+          if (!observedEntries.some((observed) => observed.isIntersecting)) return;
+          observer?.disconnect();
+          load();
+        },
+        { rootMargin: '160px' },
+      );
       observer.observe(frame);
     } else {
       load();
@@ -109,12 +120,26 @@ function FileThumbnail({ entry, className, size }: { entry: FileEntry; className
 }
 
 export function FileItem({
-  entry, viewMode, isSelected, isDragOver, canWrite, isFavorited,
-  renameState, renameInputRef,
-  onContextMenu, onClick,
-  onDragStart, onDragOver, onDragLeave, onDrop,
-  onTouchStart, onTouchMove, onTouchEnd,
-  onCommitRename, onCancelRename, onRenameChange,
+  entry,
+  viewMode,
+  isSelected,
+  isDragOver,
+  canWrite,
+  isFavorited,
+  renameState,
+  renameInputRef,
+  onContextMenu,
+  onClick,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
+  onCommitRename,
+  onCancelRename,
+  onRenameChange,
   className,
 }: FileItemProps) {
   const fileIconSize = viewMode === 'grid' ? GRID_ICON_SIZE : LIST_ICON_SIZE;

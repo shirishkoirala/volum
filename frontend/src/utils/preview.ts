@@ -9,7 +9,13 @@ export const MAX_EMBEDDED_PDF_BYTES = 50 * 1024 * 1024;
 
 export function isPreviewableFile(name: string): boolean {
   const ext = name.toLowerCase();
-  return isImageExtension(ext) || isVideoExtension(ext) || isAudioExtension(ext) || isTextExtension(ext) || ext.endsWith('.pdf');
+  return (
+    isImageExtension(ext) ||
+    isVideoExtension(ext) ||
+    isAudioExtension(ext) ||
+    isTextExtension(ext) ||
+    ext.endsWith('.pdf')
+  );
 }
 
 export function canThumbnail(entry: FileEntry): boolean {

@@ -1,4 +1,12 @@
-import { DragEvent, KeyboardEvent, RefObject, TouchEvent, useEffect, useLayoutEffect, useMemo } from 'react';
+import {
+  DragEvent,
+  KeyboardEvent,
+  RefObject,
+  TouchEvent,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+} from 'react';
 import { FileItem } from './FileItem';
 import type { FileEntry } from '../../api/client';
 import { isPreviewableFile, openFileExternally } from '../../utils/preview';
@@ -44,7 +52,12 @@ type FileGridViewProps = {
   onPreview: (entry: FileEntry) => void;
 };
 
-function handleFileClick(entry: FileEntry, renameState: RenameState | null, onNavigate: (path: string) => void, onPreview: (entry: FileEntry) => void) {
+function handleFileClick(
+  entry: FileEntry,
+  renameState: RenameState | null,
+  onNavigate: (path: string) => void,
+  onPreview: (entry: FileEntry) => void,
+) {
   if (renameState) return;
   if (entry.type === 'directory') {
     onNavigate(entry.path);
@@ -58,18 +71,41 @@ function handleFileClick(entry: FileEntry, renameState: RenameState | null, onNa
 }
 
 export function FileGridView({
-  filteredEntries, selectedPaths,
-  onContextMenu, onEmptyContextMenu,
-  canWrite, onFileDragStart, onFolderDragOver, onFolderDragLeave, onDropOnFolder,
-  dragOverPath, favorites,
-  renameState, renameInputRef, onSubmitRename, onCancelRename, onRenameChange,
-  fileGridRef, rubberBandStyle, fileClick,
-  onFileAreaDragOver, onFileAreaDragLeave, onFileAreaDrop,
-  onFileAreaMouseDown, onFileAreaKeyDown,
+  filteredEntries,
+  selectedPaths,
+  onContextMenu,
+  onEmptyContextMenu,
+  canWrite,
+  onFileDragStart,
+  onFolderDragOver,
+  onFolderDragLeave,
+  onDropOnFolder,
+  dragOverPath,
+  favorites,
+  renameState,
+  renameInputRef,
+  onSubmitRename,
+  onCancelRename,
+  onRenameChange,
+  fileGridRef,
+  rubberBandStyle,
+  fileClick,
+  onFileAreaDragOver,
+  onFileAreaDragLeave,
+  onFileAreaDrop,
+  onFileAreaMouseDown,
+  onFileAreaKeyDown,
   draggingUpload,
-  totalEntries, loadingMore, onLoadMoreEntries, onVisibleCountChange, resetKey,
-  onEntryTouchStart, onEntryTouchMove, onEntryTouchEnd,
-  onNavigate, onPreview,
+  totalEntries,
+  loadingMore,
+  onLoadMoreEntries,
+  onVisibleCountChange,
+  resetKey,
+  onEntryTouchStart,
+  onEntryTouchMove,
+  onEntryTouchEnd,
+  onNavigate,
+  onPreview,
 }: FileGridViewProps) {
   const incrementalEntries = useIncrementalEntries(filteredEntries, {
     totalCount: totalEntries,
@@ -118,9 +154,13 @@ export function FileGridView({
           onContextMenu={(event) => onContextMenu(entry, event)}
           onClick={() => handleFileClick(entry, renameState, onNavigate, onPreview)}
           onDragStart={(event) => onFileDragStart(event, entry)}
-          onDragOver={entry.type === 'directory' ? (event) => onFolderDragOver(event, entry.path) : undefined}
+          onDragOver={
+            entry.type === 'directory' ? (event) => onFolderDragOver(event, entry.path) : undefined
+          }
           onDragLeave={entry.type === 'directory' ? onFolderDragLeave : undefined}
-          onDrop={entry.type === 'directory' ? (event) => onDropOnFolder(event, entry.path) : undefined}
+          onDrop={
+            entry.type === 'directory' ? (event) => onDropOnFolder(event, entry.path) : undefined
+          }
           onTouchStart={onEntryTouchStart ? (event) => onEntryTouchStart(entry, event) : undefined}
           onTouchMove={onEntryTouchMove ? (event) => onEntryTouchMove(entry, event) : undefined}
           onTouchEnd={onEntryTouchEnd ? (event) => onEntryTouchEnd(entry, event) : undefined}
@@ -131,7 +171,12 @@ export function FileGridView({
         />
       ))}
       {incrementalEntries.hasMore && (
-        <div key={incrementalEntries.renderedCount} ref={incrementalEntries.loadMoreSentinelRef} className={styles.loadMoreStatus} aria-live="polite">
+        <div
+          key={incrementalEntries.renderedCount}
+          ref={incrementalEntries.loadMoreSentinelRef}
+          className={styles.loadMoreStatus}
+          aria-live="polite"
+        >
           {incrementalEntries.loadingMore ? 'Loading more...' : 'Scroll to load more'}
         </div>
       )}

@@ -1,4 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type KeyboardEvent,
+} from 'react';
 import { createPortal } from 'react-dom';
 import styles from './ContextMenu.module.css';
 
@@ -55,13 +62,15 @@ export function ContextMenuShell({ x, y, onClose, children }: ContextMenuShellPr
     }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
-      const buttons = menuRef.current?.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
+      const buttons =
+        menuRef.current?.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
       if (!buttons || buttons.length === 0) return;
       const current = document.activeElement;
       const idx = Array.from(buttons).indexOf(current as HTMLButtonElement);
-      const next = e.key === 'ArrowDown'
-        ? (idx + 1) % buttons.length
-        : (idx - 1 + buttons.length) % buttons.length;
+      const next =
+        e.key === 'ArrowDown'
+          ? (idx + 1) % buttons.length
+          : (idx - 1 + buttons.length) % buttons.length;
       buttons[next]?.focus();
     }
   }
@@ -75,7 +84,9 @@ export function ContextMenuShell({ x, y, onClose, children }: ContextMenuShellPr
         top: position.top,
         visibility: measured ? 'visible' : 'hidden',
       }}
-      onClick={(e) => { e.stopPropagation(); }}
+      onClick={(e) => {
+        e.stopPropagation();
+      }}
       onKeyDown={handleKeyDown}
       role="menu"
       tabIndex={-1}

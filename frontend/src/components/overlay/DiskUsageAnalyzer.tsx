@@ -12,10 +12,18 @@ type DiskUsageAnalyzerProps = {
 };
 
 function UsageBar({ percentage }: { percentage: number }) {
-  const color = percentage > 50 ? 'var(--color-danger)' : percentage > 20 ? 'var(--color-brand)' : 'var(--color-text-muted)';
+  const color =
+    percentage > 50
+      ? 'var(--color-danger)'
+      : percentage > 20
+        ? 'var(--color-brand)'
+        : 'var(--color-text-muted)';
   return (
     <span className={styles.usageBar}>
-      <span className={styles.usageBarFill} style={{ width: `${Math.min(percentage, 100)}%`, background: color }} />
+      <span
+        className={styles.usageBarFill}
+        style={{ width: `${Math.min(percentage, 100)}%`, background: color }}
+      />
     </span>
   );
 }
@@ -34,14 +42,36 @@ function TreeNode({ node, depth, total }: { node: DiskUsageNode; depth: number; 
         role="treeitem"
         aria-expanded={hasChildren ? expanded : undefined}
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (hasChildren) setExpanded(!expanded); } }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (hasChildren) setExpanded(!expanded);
+          }
+        }}
       >
         {hasChildren ? (
           <Icon name={expanded ? 'go-down' : 'go-next'} size={12} className={styles.treeChevron} />
         ) : (
           <span className={styles.treeSpacer} />
         )}
-        {node.isDir ? <FolderIcon size={18} /> : <FileIcon entry={{ name: node.name, type: 'file', path: node.path, size: node.size, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false }} size={18} />}
+        {node.isDir ? (
+          <FolderIcon size={18} />
+        ) : (
+          <FileIcon
+            entry={{
+              name: node.name,
+              type: 'file',
+              path: node.path,
+              size: node.size,
+              modifiedAt: '',
+              permissions: '',
+              owner: '',
+              group: '',
+              hidden: false,
+            }}
+            size={18}
+          />
+        )}
         <span className={styles.treeName}>{node.name}</span>
         <span className={styles.treeSize}>{formatBytes(node.size)}</span>
         <span className={styles.treePercent}>{node.percentage.toFixed(1)}%</span>
@@ -70,10 +100,18 @@ export function DiskUsageAnalyzer({ path, onClose }: DiskUsageAnalyzerProps) {
     setLoading(true);
     setError(null);
     analyzeDiskUsage(path)
-      .then((node) => { if (!cancelled) setData(node); })
-      .catch((err: Error) => { if (!cancelled) setError(err.message); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .then((node) => {
+        if (!cancelled) setData(node);
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [path]);
 
   const total = data?.size ?? 0;
@@ -113,7 +151,9 @@ export function DiskUsageAnalyzer({ path, onClose }: DiskUsageAnalyzerProps) {
                   <TreeNode key={child.path} node={child} depth={0} total={total} />
                 ))
               ) : (
-                <div className={styles.empty}><span>No files found</span></div>
+                <div className={styles.empty}>
+                  <span>No files found</span>
+                </div>
               )}
             </div>
           </>

@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react';
-import { isAudioExtension, isImageExtension, isTextExtension, isVideoExtension } from '../../utils/fileTypes';
+import {
+  isAudioExtension,
+  isImageExtension,
+  isTextExtension,
+  isVideoExtension,
+} from '../../utils/fileTypes';
 import { downloadUrl, rawUrl } from '../../api/client';
 import type { FileEntry } from '../../api/client';
 import { previewBlockedReason } from '../../utils/preview';
@@ -152,7 +157,8 @@ export function PreviewContent({
     setCopyStatus(copyPathFallback() ? 'copied' : 'failed');
   };
 
-  const copyTitle = copyStatus === 'copied' ? 'Path copied' : copyStatus === 'failed' ? 'Copy failed' : 'Copy path';
+  const copyTitle =
+    copyStatus === 'copied' ? 'Path copied' : copyStatus === 'failed' ? 'Copy failed' : 'Copy path';
 
   return (
     <div className={styles.previewShell}>
@@ -175,7 +181,12 @@ export function PreviewContent({
               <Icon name="go-next" size={18} />
             </IconButton>
           )}
-          <IconButton onClick={() => { void handleCopyPath(); }} title={copyTitle}>
+          <IconButton
+            onClick={() => {
+              void handleCopyPath();
+            }}
+            title={copyTitle}
+          >
             <Icon name="edit-copy" size={18} />
           </IconButton>
           {onShare && (
@@ -186,7 +197,10 @@ export function PreviewContent({
           <IconButton onClick={() => onDownload?.()} title="Download">
             <Icon name="edit-download" size={18} />
           </IconButton>
-          <IconButton onClick={() => window.open(fileUrl, '_blank', 'noopener,noreferrer')} title="Open raw">
+          <IconButton
+            onClick={() => window.open(fileUrl, '_blank', 'noopener,noreferrer')}
+            title="Open raw"
+          >
             <Icon name="document-open" size={18} />
           </IconButton>
           {onClose && (
@@ -201,14 +215,18 @@ export function PreviewContent({
         {previewBlocked && (
           <div className={styles.previewUnsupported}>
             <p>{blockedReason}</p>
-            <a href={downloadUrl(entry.path)} target="_blank" rel="noopener noreferrer">Download instead</a>
+            <a href={downloadUrl(entry.path)} target="_blank" rel="noopener noreferrer">
+              Download instead
+            </a>
           </div>
         )}
         {!previewBlocked && showImage && <PreviewImage alt={entry.name} src={fileUrl} />}
         {!previewBlocked && showVideo && <PreviewVideo src={fileUrl} />}
         {!previewBlocked && showAudio && <PreviewAudio name={entry.name} src={fileUrl} />}
         {!previewBlocked && showText && textContent !== null && (
-          <pre className={styles.previewText}><code>{textContent}</code></pre>
+          <pre className={styles.previewText}>
+            <code>{textContent}</code>
+          </pre>
         )}
         {!previewBlocked && showText && textError !== null && (
           <div className={styles.previewError}>{textError}</div>
@@ -217,7 +235,9 @@ export function PreviewContent({
         {!previewBlocked && !showImage && !showVideo && !showAudio && !showText && !showPDF && (
           <div className={styles.previewUnsupported}>
             <p>No preview available for this file type.</p>
-            <a href={downloadUrl(entry.path)} target="_blank" rel="noopener noreferrer">Download instead</a>
+            <a href={downloadUrl(entry.path)} target="_blank" rel="noopener noreferrer">
+              Download instead
+            </a>
           </div>
         )}
       </div>

@@ -27,7 +27,9 @@
   cursor: pointer;
   border-radius: var(--radius-md);
   position: relative;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   flex-shrink: 0;
 }
 
@@ -101,7 +103,9 @@
   min-width: 0;
   white-space: nowrap;
   position: relative;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   height: 44px;
   border-radius: var(--radius-md);
 }
@@ -135,7 +139,9 @@
   border-radius: var(--radius-xs);
   font-size: 10px;
   opacity: 0;
-  transition: opacity var(--transition-fast), background var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    background var(--transition-fast);
   flex-shrink: 0;
 }
 

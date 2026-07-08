@@ -23,8 +23,22 @@ const mockTree: DiskUsageNode = {
       isDir: true,
       percentage: 58.6,
       children: [
-        { path: '/storage/docs/file.txt', name: 'file.txt', size: 500000, isDir: false, percentage: 48.8, children: [] },
-        { path: '/storage/docs/notes.md', name: 'notes.md', size: 100000, isDir: false, percentage: 9.8, children: [] },
+        {
+          path: '/storage/docs/file.txt',
+          name: 'file.txt',
+          size: 500000,
+          isDir: false,
+          percentage: 48.8,
+          children: [],
+        },
+        {
+          path: '/storage/docs/notes.md',
+          name: 'notes.md',
+          size: 100000,
+          isDir: false,
+          percentage: 9.8,
+          children: [],
+        },
       ],
     },
     {

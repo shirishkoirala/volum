@@ -22,7 +22,9 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const copyRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -61,18 +63,32 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
   };
 
   return (
-    <Dialog title={share ? 'Share Created' : 'Create Share Link'} onClose={onClose} footer={
-      share ? (
-        <Button size="compact" onClick={onClose}>Close</Button>
-      ) : (
-        <>
-          <Button size="compact" onClick={onClose}>Cancel</Button>
-          <Button size="compact" variant="primary" disabled={submitting} onClick={handleSubmit}>
-            {submitting ? <><Icon name="view-refresh" size={15} className={uiStyles.spin} /> Creating...</> : 'Create Share Link'}
+    <Dialog
+      title={share ? 'Share Created' : 'Create Share Link'}
+      onClose={onClose}
+      footer={
+        share ? (
+          <Button size="compact" onClick={onClose}>
+            Close
           </Button>
-        </>
-      )
-    }>
+        ) : (
+          <>
+            <Button size="compact" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button size="compact" variant="primary" disabled={submitting} onClick={handleSubmit}>
+              {submitting ? (
+                <>
+                  <Icon name="view-refresh" size={15} className={uiStyles.spin} /> Creating...
+                </>
+              ) : (
+                'Create Share Link'
+              )}
+            </Button>
+          </>
+        )
+      }
+    >
       {share ? (
         <>
           <p className={dStyles.dialogMessage}>
@@ -81,14 +97,25 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
           <label className={dStyles.dialogField}>
             <span>Share URL</span>
             <div className={dStyles.dialogFieldRow}>
-              <input ref={copyRef} value={shareUrl} readOnly onClick={(e) => (e.target as HTMLInputElement).select()} />
+              <input
+                ref={copyRef}
+                value={shareUrl}
+                readOnly
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
               <IconButton onClick={handleCopy} title="Copy to clipboard">
                 <Icon name="edit-copy" size={16} />
               </IconButton>
             </div>
           </label>
-          {share.expiresAt && <p className={dStyles.dialogHelp}>Expires: {new Date(share.expiresAt).toLocaleString()}</p>}
-          {share.maxDownloads && <p className={dStyles.dialogHelp}>Max downloads: {share.maxDownloads}</p>}
+          {share.expiresAt && (
+            <p className={dStyles.dialogHelp}>
+              Expires: {new Date(share.expiresAt).toLocaleString()}
+            </p>
+          )}
+          {share.maxDownloads && (
+            <p className={dStyles.dialogHelp}>Max downloads: {share.maxDownloads}</p>
+          )}
         </>
       ) : (
         <>
@@ -103,7 +130,10 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
               type="text"
               placeholder="Leave empty for no password"
               value={password}
-              onChange={(e) => { setPassword(e.target.value); setError(null); }}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(null);
+              }}
             />
           </label>
           <label className={dStyles.dialogField}>
@@ -113,7 +143,10 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
               min="1"
               placeholder="e.g. 24"
               value={expiresIn}
-              onChange={(e) => { setExpiresIn(e.target.value); setError(null); }}
+              onChange={(e) => {
+                setExpiresIn(e.target.value);
+                setError(null);
+              }}
             />
           </label>
           <label className={dStyles.dialogField}>
@@ -123,7 +156,10 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
               min="1"
               placeholder="Leave empty for unlimited"
               value={maxDownloads}
-              onChange={(e) => { setMaxDownloads(e.target.value); setError(null); }}
+              onChange={(e) => {
+                setMaxDownloads(e.target.value);
+                setError(null);
+              }}
             />
           </label>
           {error && <p className={dStyles.dialogError}>{error}</p>}

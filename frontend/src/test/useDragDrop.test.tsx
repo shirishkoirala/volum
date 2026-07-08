@@ -4,8 +4,15 @@ import { useDragDrop } from '../hooks/useDragDrop';
 import type { FileEntry } from '../api/client';
 
 const entry: FileEntry = {
-  name: 'test.txt', path: '/src/test.txt', type: 'file',
-  size: 100, modifiedAt: '', permissions: '', owner: '', group: '', hidden: false,
+  name: 'test.txt',
+  path: '/src/test.txt',
+  type: 'file',
+  size: 100,
+  modifiedAt: '',
+  permissions: '',
+  owner: '',
+  group: '',
+  hidden: false,
 };
 
 function mockDataTransfer(overrides: Record<string, unknown> = {}): DataTransfer {
@@ -34,7 +41,7 @@ describe('useDragDrop', () => {
     const setTransferDialog = vi.fn();
     const handleUploadFiles = vi.fn();
     const { result } = renderHook(() =>
-      useDragDrop(true, [entry], ['/src/test.txt'], setTransferDialog, handleUploadFiles)
+      useDragDrop(true, [entry], ['/src/test.txt'], setTransferDialog, handleUploadFiles),
     );
 
     const event = createDragEvent();
@@ -50,7 +57,7 @@ describe('useDragDrop', () => {
     const setTransferDialog = vi.fn();
     const handleUploadFiles = vi.fn();
     const { result } = renderHook(() =>
-      useDragDrop(true, [entry], [], setTransferDialog, handleUploadFiles)
+      useDragDrop(true, [entry], [], setTransferDialog, handleUploadFiles),
     );
 
     const event = createDragEvent();
@@ -65,7 +72,7 @@ describe('useDragDrop', () => {
     const setTransferDialog = vi.fn();
     const handleUploadFiles = vi.fn();
     const { result } = renderHook(() =>
-      useDragDrop(true, [entry], [], setTransferDialog, handleUploadFiles)
+      useDragDrop(true, [entry], [], setTransferDialog, handleUploadFiles),
     );
 
     act(() => {
@@ -84,7 +91,7 @@ describe('useDragDrop', () => {
     const setTransferDialog = vi.fn();
     const handleUploadFiles = vi.fn();
     const { result } = renderHook(() =>
-      useDragDrop(true, [entry], [], setTransferDialog, handleUploadFiles)
+      useDragDrop(true, [entry], [], setTransferDialog, handleUploadFiles),
     );
 
     act(() => result.current.handleFileDragStart(createDragEvent(), entry));
@@ -101,7 +108,7 @@ describe('useDragDrop', () => {
     const setTransferDialog = vi.fn();
     const handleUploadFiles = vi.fn();
     const { result } = renderHook(() =>
-      useDragDrop(true, [entry], ['/src/test.txt'], setTransferDialog, handleUploadFiles)
+      useDragDrop(true, [entry], ['/src/test.txt'], setTransferDialog, handleUploadFiles),
     );
 
     const startEvent = createDragEvent();
@@ -114,7 +121,7 @@ describe('useDragDrop', () => {
     });
 
     expect(setTransferDialog).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: 'move', initialDestination: '/dst/folder' })
+      expect.objectContaining({ mode: 'move', initialDestination: '/dst/folder' }),
     );
     expect(result.current.draggingPaths).toBeNull();
   });
@@ -123,7 +130,7 @@ describe('useDragDrop', () => {
     const setTransferDialog = vi.fn();
     const handleUploadFiles = vi.fn();
     const { result } = renderHook(() =>
-      useDragDrop(true, [], [], setTransferDialog, handleUploadFiles)
+      useDragDrop(true, [], [], setTransferDialog, handleUploadFiles),
     );
 
     const event = createDragEvent({ dataTransfer: mockDataTransfer({ types: ['Files'] }) });
@@ -139,7 +146,7 @@ describe('useDragDrop', () => {
     const setTransferDialog = vi.fn();
     const handleUploadFiles = vi.fn();
     const { result } = renderHook(() =>
-      useDragDrop(false, [], [], setTransferDialog, handleUploadFiles)
+      useDragDrop(false, [], [], setTransferDialog, handleUploadFiles),
     );
 
     const event = createDragEvent({ dataTransfer: mockDataTransfer({ types: ['Files'] }) });
@@ -155,11 +162,13 @@ describe('useDragDrop', () => {
     const setTransferDialog = vi.fn();
     const handleUploadFiles = vi.fn();
     const { result } = renderHook(() =>
-      useDragDrop(true, [], [], setTransferDialog, handleUploadFiles)
+      useDragDrop(true, [], [], setTransferDialog, handleUploadFiles),
     );
 
     const file = new File(['content'], 'file.txt');
-    const event = createDragEvent({ dataTransfer: mockDataTransfer({ files: [file] as unknown as FileList, types: ['Files'] }) });
+    const event = createDragEvent({
+      dataTransfer: mockDataTransfer({ files: [file] as unknown as FileList, types: ['Files'] }),
+    });
 
     act(() => {
       result.current.handleFileAreaDrop(event);
@@ -173,11 +182,13 @@ describe('useDragDrop', () => {
     const setTransferDialog = vi.fn();
     const handleUploadFiles = vi.fn();
     const { result } = renderHook(() =>
-      useDragDrop(false, [], [], setTransferDialog, handleUploadFiles)
+      useDragDrop(false, [], [], setTransferDialog, handleUploadFiles),
     );
 
     const file = new File(['content'], 'file.txt');
-    const event = createDragEvent({ dataTransfer: mockDataTransfer({ files: [file] as unknown as FileList, types: ['Files'] }) });
+    const event = createDragEvent({
+      dataTransfer: mockDataTransfer({ files: [file] as unknown as FileList, types: ['Files'] }),
+    });
 
     act(() => {
       result.current.handleFileAreaDrop(event);
@@ -191,18 +202,20 @@ describe('useDragDrop', () => {
     const handleUploadFiles = vi.fn();
     const onUnsupportedDrop = vi.fn();
     const { result } = renderHook(() =>
-      useDragDrop(true, [], [], setTransferDialog, handleUploadFiles, onUnsupportedDrop)
+      useDragDrop(true, [], [], setTransferDialog, handleUploadFiles, onUnsupportedDrop),
     );
 
     const dirEntry = { isDirectory: true };
     const event = createDragEvent({
       dataTransfer: mockDataTransfer({
         types: ['Files'],
-        items: [{
-          kind: 'file',
-          type: '',
-          webkitGetAsEntry: () => dirEntry,
-        }] as unknown as DataTransferItemList,
+        items: [
+          {
+            kind: 'file',
+            type: '',
+            webkitGetAsEntry: () => dirEntry,
+          },
+        ] as unknown as DataTransferItemList,
       }),
     });
 
@@ -210,7 +223,9 @@ describe('useDragDrop', () => {
       result.current.handleFileAreaDrop(event);
     });
 
-    expect(onUnsupportedDrop).toHaveBeenCalledWith('Folder and app-bundle uploads are not supported yet');
+    expect(onUnsupportedDrop).toHaveBeenCalledWith(
+      'Folder and app-bundle uploads are not supported yet',
+    );
     expect(handleUploadFiles).not.toHaveBeenCalled();
   });
 });

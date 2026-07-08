@@ -1,5 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { cancelJob, getJobs, pauseJob, resumeJob, retryJob, retryJobItem, clearCompletedJobs, clearFailedJobs, resolveJobConflicts } from '../api/client';
+import {
+  cancelJob,
+  getJobs,
+  pauseJob,
+  resumeJob,
+  retryJob,
+  retryJobItem,
+  clearCompletedJobs,
+  clearFailedJobs,
+  resolveJobConflicts,
+} from '../api/client';
 import { apiUrl } from '../api/baseUrl';
 import { makeJobLabel, refreshesFiles } from '../utils/jobs';
 import type { Job, Session } from '../api/client';
@@ -57,11 +67,20 @@ export function useJobs(
         if (job.status === 'completed' && previousStatus !== 'completed' && refreshesFiles(job)) {
           refreshRef.current();
         }
-        if (browserNotificationsRef.current && typeof Notification !== 'undefined' && !knownJobIds.current.has(job.id) && Notification.permission === 'granted') {
+        if (
+          browserNotificationsRef.current &&
+          typeof Notification !== 'undefined' &&
+          !knownJobIds.current.has(job.id) &&
+          Notification.permission === 'granted'
+        ) {
           if (job.status === 'completed') {
-            new Notification(makeJobLabel(job.type, 'completed'), { body: `${job.sourcePath ?? job.id}` });
+            new Notification(makeJobLabel(job.type, 'completed'), {
+              body: `${job.sourcePath ?? job.id}`,
+            });
           } else if (job.status === 'failed') {
-            new Notification(makeJobLabel(job.type, 'failed'), { body: `${job.errorMessage ?? job.id}` });
+            new Notification(makeJobLabel(job.type, 'failed'), {
+              body: `${job.errorMessage ?? job.id}`,
+            });
           }
         }
       }
@@ -79,12 +98,24 @@ export function useJobs(
         if (!transition.current) return;
         const svc = servicesRef.current?.find((s) => s.id === transition.serviceId);
         const name = svc?.name ?? transition.serviceId;
-        if (transition.current.status === 'unhealthy' && transition.previous?.status === 'healthy') {
+        if (
+          transition.current.status === 'unhealthy' &&
+          transition.previous?.status === 'healthy'
+        ) {
           toastRef.current(`${name} health check failed`, 'error');
-          if (browserNotificationsRef.current && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-            new Notification(`${name} health check failed`, { body: transition.current.error ?? 'Service is unreachable' });
+          if (
+            browserNotificationsRef.current &&
+            typeof Notification !== 'undefined' &&
+            Notification.permission === 'granted'
+          ) {
+            new Notification(`${name} health check failed`, {
+              body: transition.current.error ?? 'Service is unreachable',
+            });
           }
-        } else if (transition.current.status === 'healthy' && transition.previous?.status === 'unhealthy') {
+        } else if (
+          transition.current.status === 'healthy' &&
+          transition.previous?.status === 'unhealthy'
+        ) {
           toastRef.current(`${name} recovered`, 'success');
         }
       } catch {

@@ -81,7 +81,10 @@ export function Taskbar({ launcherItems, onActivateLauncher }: TaskbarProps) {
             <span className={styles.label}>{win.title}</span>
             <span
               className={styles.closeBtn}
-              onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                closeWindow(win.id);
+              }}
               role="button"
               aria-label={`Close ${win.title}`}
               tabIndex={-1}

@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { isImageExtension, isVideoExtension, isAudioExtension, isTextExtension } from '../utils/fileTypes';
+import {
+  isImageExtension,
+  isVideoExtension,
+  isAudioExtension,
+  isTextExtension,
+} from '../utils/fileTypes';
 
 describe('isImageExtension', () => {
   it('returns true for common image extensions', () => {

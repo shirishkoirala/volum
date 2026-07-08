@@ -44,12 +44,18 @@ export function ServiceWindow({ name, url, iconUrl }: ServiceWindowProps) {
     <section className={styles.serviceWindow} aria-label={name}>
       <div className={styles.toolbar}>
         <div className={styles.address}>
-          {iconUrl && <IconImg src={iconUrl} alt="" width={20} height={20} className={styles.serviceIcon} />}
+          {iconUrl && (
+            <IconImg src={iconUrl} alt="" width={20} height={20} className={styles.serviceIcon} />
+          )}
           <span className={styles.serviceName}>{name}</span>
           <span className={styles.origin}>{origin}</span>
         </div>
         <div className={styles.actions}>
-          <IconButton aria-label={`Reload ${name}`} title="Reload" onClick={() => setReloadKey((key) => key + 1)}>
+          <IconButton
+            aria-label={`Reload ${name}`}
+            title="Reload"
+            onClick={() => setReloadKey((key) => key + 1)}
+          >
             <Icon name="view-refresh" size={16} />
           </IconButton>
           <Button size="compact" onClick={openExternal}>

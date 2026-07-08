@@ -182,7 +182,9 @@
   height: 32px;
   justify-content: center;
   min-width: 32px;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .moreBtn:hover {
@@ -258,14 +260,14 @@
     display: grid;
     gap: var(--space-sm);
     grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas: "left location";
+    grid-template-areas: 'left location';
     min-height: 0;
   }
 
   .header.withToolbar {
     grid-template-areas:
-      "left location"
-      "right right";
+      'left location'
+      'right right';
   }
 
   .left {

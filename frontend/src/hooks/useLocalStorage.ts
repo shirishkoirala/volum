@@ -18,19 +18,27 @@ function writeValue<T>(key: string, value: T): void {
   try {
     const serialized = typeof value === 'string' ? value : JSON.stringify(value);
     localStorage.setItem(key, serialized);
-  } catch { /* quota exceeded — ignore */ }
+  } catch {
+    /* quota exceeded — ignore */
+  }
 }
 
-export function useLocalStorage<T>(key: string, defaultValue: T): [T, (value: T | ((prev: T) => T)) => void] {
+export function useLocalStorage<T>(
+  key: string,
+  defaultValue: T,
+): [T, (value: T | ((prev: T) => T)) => void] {
   const [storedValue, setStoredValue] = useState<T>(() => readValue(key, defaultValue));
 
-  const setValue = useCallback((value: T | ((prev: T) => T)) => {
-    setStoredValue((prev) => {
-      const nextValue = value instanceof Function ? value(prev) : value;
-      writeValue(key, nextValue);
-      return nextValue;
-    });
-  }, [key]);
+  const setValue = useCallback(
+    (value: T | ((prev: T) => T)) => {
+      setStoredValue((prev) => {
+        const nextValue = value instanceof Function ? value(prev) : value;
+        writeValue(key, nextValue);
+        return nextValue;
+      });
+    },
+    [key],
+  );
 
   return [storedValue, setValue];
 }

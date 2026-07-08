@@ -37,7 +37,7 @@
   min-height: 0;
 }
 
-.emptyWrapper > [role="status"] {
+.emptyWrapper > [role='status'] {
   flex: 0 0 auto;
   width: auto;
 }

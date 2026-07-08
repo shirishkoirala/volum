@@ -27,6 +27,7 @@ Run lint and type-check before starting or testing a changed frontend UI:
 
 ```sh
 docker compose -f docker-compose.dev.yml run --rm frontend npm run typecheck
+docker compose -f docker-compose.dev.yml run --rm frontend npm run format:check
 docker compose -f docker-compose.dev.yml run --rm frontend npm run lint
 ```
 
@@ -36,11 +37,19 @@ Run a production build before opening a pull request when possible:
 docker compose -f docker-compose.server.yml build
 ```
 
+Run backend lint, vet, and tests through Docker when you need a focused
+backend check:
+
+```sh
+docker build --target backend-base .
+```
+
 Local frontend fallbacks are available when Docker is not practical:
 
 ```sh
 cd frontend
 npm run typecheck
+npm run format:check
 npm run lint
 npm run build
 ```

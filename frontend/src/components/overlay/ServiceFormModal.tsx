@@ -9,7 +9,14 @@ type FaviconStatus = 'idle' | 'detecting' | 'found' | 'not-found';
 
 type ServiceFormModalProps = {
   initial?: ServiceShortcut;
-  onSave: (data: { name: string; url: string; iconUrl?: string; healthUrl?: string; description?: string; openMode: 'embed' | 'tab' }) => void;
+  onSave: (data: {
+    name: string;
+    url: string;
+    iconUrl?: string;
+    healthUrl?: string;
+    description?: string;
+    openMode: 'embed' | 'tab';
+  }) => void;
   onClose: () => void;
 };
 
@@ -51,34 +58,63 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
         setFaviconStatus('not-found');
       }
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [debouncedUrl]);
 
   const handleSubmit = () => {
-    if (!name.trim()) { setError('Name is required.'); return; }
-    if (!url.trim()) { setError('URL is required.'); return; }
-    if (!validUrl(url.trim())) { setError('Enter a valid http:// or https:// URL.'); return; }
-    if (healthUrl.trim() && !validUrl(healthUrl.trim())) { setError('Enter a valid health check http:// or https:// URL.'); return; }
+    if (!name.trim()) {
+      setError('Name is required.');
+      return;
+    }
+    if (!url.trim()) {
+      setError('URL is required.');
+      return;
+    }
+    if (!validUrl(url.trim())) {
+      setError('Enter a valid http:// or https:// URL.');
+      return;
+    }
+    if (healthUrl.trim() && !validUrl(healthUrl.trim())) {
+      setError('Enter a valid health check http:// or https:// URL.');
+      return;
+    }
     onClose();
-    onSave({ name: name.trim(), url: url.trim(), iconUrl: iconUrl.trim() || undefined, healthUrl: healthUrl.trim() || undefined, description: description.trim() || undefined, openMode });
+    onSave({
+      name: name.trim(),
+      url: url.trim(),
+      iconUrl: iconUrl.trim() || undefined,
+      healthUrl: healthUrl.trim() || undefined,
+      description: description.trim() || undefined,
+      openMode,
+    });
   };
 
-  const urlError = touched.url && url.trim() && !validUrl(url.trim())
-    ? 'Must be a valid http:// or https:// URL'
-    : null;
-  const healthUrlError = touched.healthUrl && healthUrl.trim() && !validUrl(healthUrl.trim())
-    ? 'Must be a valid http:// or https:// URL'
-    : null;
+  const urlError =
+    touched.url && url.trim() && !validUrl(url.trim())
+      ? 'Must be a valid http:// or https:// URL'
+      : null;
+  const healthUrlError =
+    touched.healthUrl && healthUrl.trim() && !validUrl(healthUrl.trim())
+      ? 'Must be a valid http:// or https:// URL'
+      : null;
 
   return (
-    <Dialog title={initial ? 'Edit Service' : 'Add Service'} onClose={onClose} footer={
-      <>
-        <Button size="compact" onClick={onClose}>Cancel</Button>
-        <Button size="compact" variant="primary" onClick={handleSubmit}>
-          {initial ? 'Save' : 'Add'}
-        </Button>
-      </>
-    }>
+    <Dialog
+      title={initial ? 'Edit Service' : 'Add Service'}
+      onClose={onClose}
+      footer={
+        <>
+          <Button size="compact" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button size="compact" variant="primary" onClick={handleSubmit}>
+            {initial ? 'Save' : 'Add'}
+          </Button>
+        </>
+      }
+    >
       <label className={dStyles.dialogField} htmlFor="service-name">
         <span>Name</span>
         <input
@@ -86,10 +122,15 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
           ref={nameInputRef}
           data-svc-autofocus
           value={name}
-          onChange={(e) => { setName(e.target.value); setError(null); }}
+          onChange={(e) => {
+            setName(e.target.value);
+            setError(null);
+          }}
           onBlur={() => setTouched((p) => ({ ...p, name: true }))}
           placeholder="e.g. Plex"
-          onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSubmit();
+          }}
         />
       </label>
       <label className={dStyles.dialogField} htmlFor="service-url">
@@ -97,10 +138,15 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
         <input
           id="service-url"
           value={url}
-          onChange={(e) => { setUrl(e.target.value); setError(null); }}
+          onChange={(e) => {
+            setUrl(e.target.value);
+            setError(null);
+          }}
           onBlur={() => setTouched((p) => ({ ...p, url: true }))}
           placeholder="https://plex.example.com:32400"
-          onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSubmit();
+          }}
         />
         {urlError && <p className={dStyles.dialogError}>{urlError}</p>}
       </label>
@@ -111,9 +157,14 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
             id="service-icon-url"
             aria-label="Icon URL (optional)"
             value={iconUrl}
-            onChange={(e) => { setIconUrl(e.target.value); setError(null); }}
+            onChange={(e) => {
+              setIconUrl(e.target.value);
+              setError(null);
+            }}
             placeholder="https://example.com/favicon.ico"
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleSubmit();
+            }}
           />
           {faviconStatus === 'found' && iconUrl && (
             <img src={iconUrl} alt="" className={dStyles.faviconPreview} />
@@ -146,10 +197,15 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
           id="service-health-url"
           aria-label="Health Check URL (optional)"
           value={healthUrl}
-          onChange={(e) => { setHealthUrl(e.target.value); setError(null); }}
+          onChange={(e) => {
+            setHealthUrl(e.target.value);
+            setError(null);
+          }}
           onBlur={() => setTouched((p) => ({ ...p, healthUrl: true }))}
           placeholder="https://example.com/health"
-          onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSubmit();
+          }}
         />
         {healthUrlError && <p className={dStyles.dialogError}>{healthUrlError}</p>}
         <span className={dStyles.dialogHelp}>Used only for the desktop health indicator.</span>

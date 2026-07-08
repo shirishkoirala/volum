@@ -4,4 +4,3 @@
 
 /** The file/folder display modes used across the app. */
 export type ViewMode = 'list' | 'grid';
-

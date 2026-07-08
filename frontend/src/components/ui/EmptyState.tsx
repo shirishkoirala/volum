@@ -13,8 +13,18 @@ type EmptyStateProps = {
 
 export function EmptyState({ icon, title, subtitle, compact, children }: EmptyStateProps) {
   return (
-    <div className={`${styles.emptyState}${compact ? ` ${styles.compact}` : ''}`} role="status" aria-live="polite">
-      <IconImg src={icon || emptyIconUrl()} alt="" width={compact ? 48 : 64} height={compact ? 48 : 64} className={styles.icon} />
+    <div
+      className={`${styles.emptyState}${compact ? ` ${styles.compact}` : ''}`}
+      role="status"
+      aria-live="polite"
+    >
+      <IconImg
+        src={icon || emptyIconUrl()}
+        alt=""
+        width={compact ? 48 : 64}
+        height={compact ? 48 : 64}
+        className={styles.icon}
+      />
       <span className={styles.title}>{title}</span>
       {subtitle && <span className={styles.subtitle}>{subtitle}</span>}
       {children && <div className={styles.extra}>{children}</div>}

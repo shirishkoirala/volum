@@ -15,8 +15,16 @@ type StatusBarProps = {
 };
 
 export function StatusBar({
-  visible, totalItems, selectedCount, totalBytes,
-  rootAvail, rootSize, rootLabel, currentPath, viewContext, trashCount,
+  visible,
+  totalItems,
+  selectedCount,
+  totalBytes,
+  rootAvail,
+  rootSize,
+  rootLabel,
+  currentPath,
+  viewContext,
+  trashCount,
 }: StatusBarProps) {
   if (!visible) return null;
 
@@ -34,27 +42,23 @@ export function StatusBar({
     return `${totalItems} item${totalItems === 1 ? '' : 's'}`;
   })();
 
-  const storageText = (rootAvail != null && rootSize != null)
-    ? `${formatBytes(rootAvail)} free of ${formatBytes(rootSize)}`
-    : '';
+  const storageText =
+    rootAvail != null && rootSize != null
+      ? `${formatBytes(rootAvail)} free of ${formatBytes(rootSize)}`
+      : '';
 
-  const bytesText = selectedCount > 0 && totalBytes > 0
-    ? ` · ${formatBytes(totalBytes)}`
-    : '';
+  const bytesText = selectedCount > 0 && totalBytes > 0 ? ` · ${formatBytes(totalBytes)}` : '';
 
   const pathText = rootLabel || currentPath;
 
   return (
     <footer className={styles.statusBar} role="status" aria-live="polite">
       <span className={styles.statusLeft}>
-        {itemText}{bytesText}
+        {itemText}
+        {bytesText}
       </span>
-      {storageText && (
-        <span className={styles.statusCenter}>{storageText}</span>
-      )}
-      {pathText && (
-        <span className={styles.statusRight}>{pathText}</span>
-      )}
+      {storageText && <span className={styles.statusCenter}>{storageText}</span>}
+      {pathText && <span className={styles.statusRight}>{pathText}</span>}
     </footer>
   );
 }

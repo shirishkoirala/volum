@@ -32,5 +32,3 @@ export function uniquePaths(paths: string[]): string[] {
   }
   return out;
 }
-
-

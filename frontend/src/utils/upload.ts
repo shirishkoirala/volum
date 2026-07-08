@@ -1,4 +1,9 @@
-import { getUploadStatus, uploadChunk, UploadCancelledError, UploadPausedError } from '../api/client';
+import {
+  getUploadStatus,
+  uploadChunk,
+  UploadCancelledError,
+  UploadPausedError,
+} from '../api/client';
 
 export const CHUNK_SIZE = 1024 * 1024;
 
@@ -55,7 +60,15 @@ export async function uploadFileWithResume(
     const end = Math.min(offset + CHUNK_SIZE, file.size);
     const chunk = file.slice(offset, end);
 
-    const result = await uploadChunk(path, file.name, offset, file.size, chunk, jobId ?? undefined, signal);
+    const result = await uploadChunk(
+      path,
+      file.name,
+      offset,
+      file.size,
+      chunk,
+      jobId ?? undefined,
+      signal,
+    );
     jobId = result.jobId ?? jobId;
     reportJobId(jobId);
     offset = result.received;
@@ -83,14 +96,17 @@ export async function uploadFilesWithResume(
         onFileJobStarted?.(file.name, jobId);
       });
       lastJobId = result.jobId;
-      if (result.interrupted) return { jobId: lastJobId, completed, interrupted: result.interrupted };
+      if (result.interrupted)
+        return { jobId: lastJobId, completed, interrupted: result.interrupted };
       if (result.complete) {
         completed++;
         onFileComplete?.(file.name);
       }
     } catch (err) {
-      if (err instanceof UploadCancelledError) return { jobId: lastJobId, completed, interrupted: 'cancelled' };
-      if (err instanceof UploadPausedError) return { jobId: lastJobId, completed, interrupted: 'paused' };
+      if (err instanceof UploadCancelledError)
+        return { jobId: lastJobId, completed, interrupted: 'cancelled' };
+      if (err instanceof UploadPausedError)
+        return { jobId: lastJobId, completed, interrupted: 'paused' };
       throw err;
     }
   }

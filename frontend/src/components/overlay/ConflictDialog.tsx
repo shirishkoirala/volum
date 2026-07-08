@@ -56,9 +56,7 @@ export function ConflictDialog({ jobId, onResolve, onClose }: Props) {
       <div className={styles.dialog}>
         <div className={styles.header}>
           <h3>Resolve Conflicts</h3>
-          <p className={styles.subtitle}>
-            Choose how to handle each conflicting file
-          </p>
+          <p className={styles.subtitle}>Choose how to handle each conflicting file</p>
         </div>
 
         {loading && <p className={styles.loading}>Loading conflicts&hellip;</p>}
@@ -85,11 +83,14 @@ export function ConflictDialog({ jobId, onResolve, onClose }: Props) {
                 <option value="rename">Rename all</option>
               </Select>
               {defaultResolution && (
-                <Button size="compact" onClick={() => {
-                  const all: Record<string, ConflictResolution> = {};
-                  for (const c of conflicts) all[c.id] = defaultResolution;
-                  setResolutions(all);
-                }}>
+                <Button
+                  size="compact"
+                  onClick={() => {
+                    const all: Record<string, ConflictResolution> = {};
+                    for (const c of conflicts) all[c.id] = defaultResolution;
+                    setResolutions(all);
+                  }}
+                >
                   Apply
                 </Button>
               )}
@@ -128,7 +129,9 @@ export function ConflictDialog({ jobId, onResolve, onClose }: Props) {
         )}
 
         <div className={styles.footer}>
-          <Button size="compact" onClick={onClose}>Cancel</Button>
+          <Button size="compact" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             size="compact"
             variant="primary"

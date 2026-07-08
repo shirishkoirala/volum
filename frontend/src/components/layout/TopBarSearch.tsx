@@ -18,8 +18,17 @@ type TopBarSearchProps = {
 };
 
 export function TopBarSearch({
-  expanded, query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick, onShowAllResults,
-  onExpand, onCollapse, searchRef,
+  expanded,
+  query,
+  searchOpen,
+  searchResults,
+  onSearch,
+  onClearSearch,
+  onSearchResultClick,
+  onShowAllResults,
+  onExpand,
+  onCollapse,
+  searchRef,
 }: TopBarSearchProps) {
   if (!expanded) {
     return (
@@ -74,7 +83,10 @@ export function TopBarSearch({
               onClick={() => onSearchResultClick(result)}
               aria-label={result.name}
             >
-              <FileIcon entry={{ ...result, hidden: false, permissions: '', owner: '', group: '' }} size={16} />
+              <FileIcon
+                entry={{ ...result, hidden: false, permissions: '', owner: '', group: '' }}
+                size={16}
+              />
               <span className={styles.searchResultName}>{result.name}</span>
               <span className={styles.searchResultPath}>{result.root}</span>
             </button>

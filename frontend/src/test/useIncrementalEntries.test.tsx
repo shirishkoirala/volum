@@ -59,10 +59,12 @@ describe('useIncrementalEntries', () => {
   it('calls remote load on scroll when all loaded entries are visible but total has more', () => {
     const entries = Array.from({ length: 600 }, (_, index) => index);
     const onLoadMore = vi.fn();
-    const { result } = renderHook(() => useIncrementalEntries(entries, {
-      totalCount: 720,
-      onLoadMore,
-    }));
+    const { result } = renderHook(() =>
+      useIncrementalEntries(entries, {
+        totalCount: 720,
+        onLoadMore,
+      }),
+    );
 
     act(() => result.current.handleScroll(nearBottomScrollEvent()));
     act(() => result.current.handleScroll(nearBottomScrollEvent()));
@@ -75,12 +77,16 @@ describe('useIncrementalEntries', () => {
   it('keeps progress when a remote page is appended', () => {
     const firstPage = Array.from({ length: 600 }, (_, index) => index);
     const secondPage = Array.from({ length: 720 }, (_, index) => index);
-    const { result, rerender } = renderHook(({ entries }) => useIncrementalEntries(entries, {
-      totalCount: 720,
-      resetKey: '/folder:false::grid',
-    }), {
-      initialProps: { entries: firstPage },
-    });
+    const { result, rerender } = renderHook(
+      ({ entries }) =>
+        useIncrementalEntries(entries, {
+          totalCount: 720,
+          resetKey: '/folder:false::grid',
+        }),
+      {
+        initialProps: { entries: firstPage },
+      },
+    );
 
     act(() => result.current.loadMore());
     act(() => result.current.loadMore());

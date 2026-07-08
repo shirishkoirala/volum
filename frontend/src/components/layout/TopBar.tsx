@@ -55,11 +55,26 @@ function formatDateTime(date: Date) {
 }
 
 export function TopBar({
-  activeView, onGoDesktop, onOpenSettings, menuHandlers, title, session, onLogout,
-  focusedWindowType, focusedWindowExists,
-  searchQuery, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick, onShowAllSearchResults,
-  theme, onToggleTheme,
-  jobs, onOpenJobs,
+  activeView,
+  onGoDesktop,
+  onOpenSettings,
+  menuHandlers,
+  title,
+  session,
+  onLogout,
+  focusedWindowType,
+  focusedWindowExists,
+  searchQuery,
+  searchOpen,
+  searchResults,
+  onSearch,
+  onClearSearch,
+  onSearchResultClick,
+  onShowAllSearchResults,
+  theme,
+  onToggleTheme,
+  jobs,
+  onOpenJobs,
 }: TopBarProps) {
   const [dateTime, setDateTime] = useState(() => formatDateTime(new Date()));
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -120,16 +135,28 @@ export function TopBar({
 
   const showUserMenu = session?.authEnabled && session.authenticated;
   const showMenu = Boolean(
-    ((focusedWindowExists && (focusedWindowType === 'files' || focusedWindowType === 'trash')) || activeView === 'files' || activeView === 'trash')
-    && menuHandlers,
+    ((focusedWindowExists && (focusedWindowType === 'files' || focusedWindowType === 'trash')) ||
+      activeView === 'files' ||
+      activeView === 'trash') &&
+    menuHandlers,
   );
   const appMenuWindowType = !focusedWindowExists ? activeView : (focusedWindowType ?? activeView);
   const actions: TopBarAction[] = [];
 
   if (onOpenJobs && jobs) {
-    actions.push({ id: 'activity', label: 'Activity', kind: 'activity', onClick: () => setActivityOpen((v) => !v) });
+    actions.push({
+      id: 'activity',
+      label: 'Activity',
+      kind: 'activity',
+      onClick: () => setActivityOpen((v) => !v),
+    });
   }
-  actions.push({ id: 'theme', label: theme === 'light' ? 'Dark mode' : 'Light mode', kind: 'theme', onClick: onToggleTheme });
+  actions.push({
+    id: 'theme',
+    label: theme === 'light' ? 'Dark mode' : 'Light mode',
+    kind: 'theme',
+    onClick: onToggleTheme,
+  });
 
   useEffect(() => {
     if (searchQuery.length > 0 || searchOpen) setSearchExpanded(true);
@@ -144,13 +171,23 @@ export function TopBar({
 
     const updateVisibleActions = () => {
       const fixedRightWidth = right.offsetWidth - cluster.offsetWidth;
-      const availableWidth = Math.max(0, topbar.clientWidth - left.scrollWidth - fixedRightWidth - 24);
+      const availableWidth = Math.max(
+        0,
+        topbar.clientWidth - left.scrollWidth - fixedRightWidth - 24,
+      );
       const actionWidth = 34;
       const allActionsWidth = actions.length * actionWidth;
-      const nextCount = allActionsWidth <= availableWidth
-        ? actions.length
-        : Math.max(0, Math.min(actions.length - 1, Math.floor((availableWidth - actionWidth) / actionWidth)));
-      setVisibleActionCount((current) => current === nextCount ? current : nextCount);
+      const nextCount =
+        allActionsWidth <= availableWidth
+          ? actions.length
+          : Math.max(
+              0,
+              Math.min(
+                actions.length - 1,
+                Math.floor((availableWidth - actionWidth) / actionWidth),
+              ),
+            );
+      setVisibleActionCount((current) => (current === nextCount ? current : nextCount));
     };
 
     updateVisibleActions();
@@ -167,7 +204,13 @@ export function TopBar({
   return (
     <header className={styles.topbar} ref={topbarRef}>
       <div className={styles.left} ref={leftRef}>
-        <button className={styles.brand} onClick={onGoDesktop} type="button" title="Go to desktop" aria-label="Go to desktop">
+        <button
+          className={styles.brand}
+          onClick={onGoDesktop}
+          type="button"
+          title="Go to desktop"
+          aria-label="Go to desktop"
+        >
           <img className={styles.brandIcon} src={BRAND_ICON_URL} alt="" />
           <span className={styles.brandName}>{title ?? 'Volum Desktop'}</span>
         </button>
@@ -198,7 +241,14 @@ export function TopBar({
         <div className={styles.iconCluster} ref={iconClusterRef}>
           {visibleActions.map((action) => {
             if (action.kind === 'theme') {
-              return <ThemeToggle key={action.id} theme={theme} onClick={action.onClick} className={styles.toolbarIconButton} />;
+              return (
+                <ThemeToggle
+                  key={action.id}
+                  theme={theme}
+                  onClick={action.onClick}
+                  className={styles.toolbarIconButton}
+                />
+              );
             }
             if (action.kind === 'activity' && jobs && onOpenJobs) {
               return (
@@ -215,7 +265,15 @@ export function TopBar({
                       <span className={styles.activityBadge}>{countActiveTransfers(jobs)}</span>
                     )}
                   </IconButton>
-                  {activityOpen && <ActivityPanel jobs={jobs} onOpenJobs={() => { closeOverlays(); onOpenJobs(); }} />}
+                  {activityOpen && (
+                    <ActivityPanel
+                      jobs={jobs}
+                      onOpenJobs={() => {
+                        closeOverlays();
+                        onOpenJobs();
+                      }}
+                    />
+                  )}
                 </div>
               );
             }
@@ -262,7 +320,16 @@ export function TopBar({
                       disabled={action.disabled}
                       role="menuitem"
                     >
-                      {action.kind === 'theme' ? <Icon name={theme === 'light' ? 'weather-clear-night' : 'weather-clear'} size={16} /> : action.kind === 'activity' ? <Icon name="activity" size={16} /> : <Icon name={action.icon ?? 'view-more'} size={16} />}
+                      {action.kind === 'theme' ? (
+                        <Icon
+                          name={theme === 'light' ? 'weather-clear-night' : 'weather-clear'}
+                          size={16}
+                        />
+                      ) : action.kind === 'activity' ? (
+                        <Icon name="activity" size={16} />
+                      ) : (
+                        <Icon name={action.icon ?? 'view-more'} size={16} />
+                      )}
                       <span>{action.label}</span>
                     </button>
                   ))}
@@ -294,9 +361,15 @@ export function TopBar({
               <div className={styles.userDropdown} role="menu">
                 <div className={styles.dropdownHeader}>
                   {session.hasAvatar ? (
-                    <img className={styles.dropdownAvatar} src={profileAvatarUrl(session.avatarVersion)} alt="" />
+                    <img
+                      className={styles.dropdownAvatar}
+                      src={profileAvatarUrl(session.avatarVersion)}
+                      alt=""
+                    />
                   ) : (
-                    <span className={styles.dropdownAvatarFallback}><Icon name="avatar-default" size={18} /></span>
+                    <span className={styles.dropdownAvatarFallback}>
+                      <Icon name="avatar-default" size={18} />
+                    </span>
                   )}
                   <div className={styles.dropdownIdentity}>
                     <span className={styles.dropdownUsername}>{session.username}</span>
@@ -308,7 +381,10 @@ export function TopBar({
                   <button
                     type="button"
                     className={styles.dropdownItem}
-                    onClick={() => { setUserMenuOpen(false); onOpenSettings(); }}
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      onOpenSettings();
+                    }}
                     role="menuitem"
                   >
                     <Icon name="preferences-system" size={16} /> Settings
@@ -317,7 +393,10 @@ export function TopBar({
                 <button
                   type="button"
                   className={styles.dropdownItem}
-                  onClick={() => { setUserMenuOpen(false); onLogout?.(); }}
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    onLogout?.();
+                  }}
                   role="menuitem"
                 >
                   <Icon name="system-log-out" size={16} /> Log Out

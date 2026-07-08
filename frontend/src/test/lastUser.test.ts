@@ -5,10 +5,13 @@ describe('last user profile', () => {
   beforeEach(() => localStorage.clear());
 
   it('returns a stored username and avatar', () => {
-    localStorage.setItem('volum_last_user', JSON.stringify({
-      username: 'admin',
-      avatarDataUrl: 'data:image/png;base64,abc',
-    }));
+    localStorage.setItem(
+      'volum_last_user',
+      JSON.stringify({
+        username: 'admin',
+        avatarDataUrl: 'data:image/png;base64,abc',
+      }),
+    );
 
     expect(loadLastUser()).toEqual({
       username: 'admin',

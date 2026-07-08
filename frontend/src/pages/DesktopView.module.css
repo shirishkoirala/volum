@@ -27,7 +27,9 @@
   gap: 6px;
   padding: var(--space-lg);
   text-align: center;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
   user-select: none;
   touch-action: manipulation;
 }

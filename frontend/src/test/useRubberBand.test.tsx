@@ -10,7 +10,7 @@ describe('useRubberBand', () => {
     const ref = createRef<HTMLDivElement>();
 
     const { result } = renderHook(() =>
-      useRubberBand([], setSelectedPaths, setLastSelectedPath, ref)
+      useRubberBand([], setSelectedPaths, setLastSelectedPath, ref),
     );
 
     expect(result.current.rubberBandStyle).toBeNull();
@@ -24,7 +24,7 @@ describe('useRubberBand', () => {
     const ref = createRef<HTMLDivElement>();
 
     const { result } = renderHook(() =>
-      useRubberBand([], setSelectedPaths, setLastSelectedPath, ref)
+      useRubberBand([], setSelectedPaths, setLastSelectedPath, ref),
     );
 
     const el = document.createElement('div');
@@ -54,7 +54,7 @@ describe('useRubberBand', () => {
     const ref = createRef<HTMLDivElement>();
 
     const { result } = renderHook(() =>
-      useRubberBand([], setSelectedPaths, setLastSelectedPath, ref)
+      useRubberBand([], setSelectedPaths, setLastSelectedPath, ref),
     );
 
     const child = document.createElement('div');
@@ -82,7 +82,7 @@ describe('useRubberBand', () => {
     const ref = createRef<HTMLDivElement>();
 
     const { result } = renderHook(() =>
-      useRubberBand([], setSelectedPaths, setLastSelectedPath, ref)
+      useRubberBand([], setSelectedPaths, setLastSelectedPath, ref),
     );
 
     const mouseEvent = {
@@ -108,7 +108,7 @@ describe('useRubberBand', () => {
     const ref = createRef<HTMLDivElement>();
 
     const { result } = renderHook(() =>
-      useRubberBand([], setSelectedPaths, setLastSelectedPath, ref)
+      useRubberBand([], setSelectedPaths, setLastSelectedPath, ref),
     );
 
     const mouseEvent = {

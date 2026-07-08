@@ -19,8 +19,16 @@ type FileSearchBarProps = {
 };
 
 export function FileSearchBar({
-  query, searchOpen, searchResults, onSearch, onClearSearch, onSearchResultClick,
-  onUploadClick, onShowAllResults, searchRef, canUpload,
+  query,
+  searchOpen,
+  searchResults,
+  onSearch,
+  onClearSearch,
+  onSearchResultClick,
+  onUploadClick,
+  onShowAllResults,
+  searchRef,
+  canUpload,
 }: FileSearchBarProps) {
   return (
     <div className={styles.toolbar}>
@@ -31,7 +39,7 @@ export function FileSearchBar({
           data-control="embedded"
           placeholder="Search files"
           value={query}
-          onFocus={() => { }}
+          onFocus={() => {}}
           onChange={(event) => onSearch(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
@@ -55,7 +63,10 @@ export function FileSearchBar({
               onClick={() => onSearchResultClick(result)}
               aria-label={result.name}
             >
-              <FileIcon entry={{ ...result, hidden: false, permissions: '', owner: '', group: '' }} size={20} />
+              <FileIcon
+                entry={{ ...result, hidden: false, permissions: '', owner: '', group: '' }}
+                size={20}
+              />
               <span className={styles.searchResultName}>{result.name}</span>
               <span className={styles.searchResultPath}>{result.root}</span>
             </button>

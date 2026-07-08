@@ -17,7 +17,11 @@ type DockProps = {
 
 export function Dock({ items, onActivate, shellStatusVisible = false }: DockProps) {
   return (
-    <aside className={`${styles.dock}${shellStatusVisible ? ` ${styles.withShellStatus}` : ''}`} role="navigation" aria-label="App dock">
+    <aside
+      className={`${styles.dock}${shellStatusVisible ? ` ${styles.withShellStatus}` : ''}`}
+      role="navigation"
+      aria-label="App dock"
+    >
       {items.map((item) => (
         <button
           key={item.id}
@@ -30,7 +34,10 @@ export function Dock({ items, onActivate, shellStatusVisible = false }: DockProp
         >
           <IconImg src={item.icon} alt="" width={24} height={24} />
           {item.badge != null && item.badge > 0 && (
-            <span className={styles.dockBadge} aria-label={`${item.badge} ${item.label.toLowerCase()} items`}>
+            <span
+              className={styles.dockBadge}
+              aria-label={`${item.badge} ${item.label.toLowerCase()} items`}
+            >
               {item.badge}
             </span>
           )}

@@ -53,7 +53,9 @@
   display: flex;
   gap: var(--space-sm);
   padding: 5px 9px;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .brand:hover {
@@ -86,7 +88,7 @@
   white-space: nowrap;
 }
 
-:global([data-theme="light"]) .clock {
+:global([data-theme='light']) .clock {
   color: var(--color-text-secondary);
   opacity: 1;
 }
@@ -210,7 +212,9 @@
   height: 30px;
   justify-content: center;
   padding: 0;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   width: 30px;
 }
 
@@ -315,15 +319,22 @@
     padding-right: 4px;
     padding-top: env(safe-area-inset-top, 0);
   }
-  .brandName { display: none; }
-  .clock { display: none; }
+  .brandName {
+    display: none;
+  }
+  .clock {
+    display: none;
+  }
   .brand {
     height: 44px;
     justify-content: center;
     padding: 0;
     width: 44px;
   }
-  .brandIcon { height: 28px; width: 28px; }
+  .brandIcon {
+    height: 28px;
+    width: 28px;
+  }
 
   .right,
   .iconCluster {

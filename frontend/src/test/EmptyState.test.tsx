@@ -26,7 +26,7 @@ describe('EmptyState', () => {
     render(
       <EmptyState title="Empty">
         <button type="button">Retry</button>
-      </EmptyState>
+      </EmptyState>,
     );
     expect(screen.getByText('Retry')).toBeInTheDocument();
   });

@@ -1,7 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  FileEntry, Job, BlockDevice, RootEntry, Session, TrashEntry, SearchResult,
-  getDevices, getFiles, getRoots, getTrash, searchFiles,
+  FileEntry,
+  Job,
+  BlockDevice,
+  RootEntry,
+  Session,
+  TrashEntry,
+  SearchResult,
+  getDevices,
+  getFiles,
+  getRoots,
+  getTrash,
+  searchFiles,
 } from '../api/client';
 import { uniquePaths } from '../utils/path';
 
@@ -24,7 +34,12 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [filePage, setFilePage] = useState({ total: 0, limit: FILE_PAGE_SIZE, offset: 0, hasMore: false });
+  const [filePage, setFilePage] = useState({
+    total: 0,
+    limit: FILE_PAGE_SIZE,
+    offset: 0,
+    hasMore: false,
+  });
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -49,10 +64,15 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
       .catch((err: Error) => setDeviceError(err.message));
   }, []);
 
-  useEffect(() => { loadDevices(); }, [session, loadDevices]);
+  useEffect(() => {
+    loadDevices();
+  }, [session, loadDevices]);
 
   useEffect(() => {
-    if (!currentPath) { setLoading(false); return; }
+    if (!currentPath) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     setLoadingMore(false);
@@ -99,13 +119,20 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
   }, [session, refreshKey]);
 
   const handleGlobalSearch = useCallback((searchQuery: string) => {
-    if (searchQuery.trim().length < 2) { setSearchResults(null); return; }
-    searchFiles(searchQuery.trim(), 20).then((response) => setSearchResults(response.results ?? [])).catch(() => setSearchResults([]));
+    if (searchQuery.trim().length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    searchFiles(searchQuery.trim(), 20)
+      .then((response) => setSearchResults(response.results ?? []))
+      .catch(() => setSearchResults([]));
   }, []);
 
   const filteredEntries = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const filtered = needle ? entries.filter((e) => e.name.toLowerCase().includes(needle)) : entries;
+    const filtered = needle
+      ? entries.filter((e) => e.name.toLowerCase().includes(needle))
+      : entries;
     return [...filtered].sort((a, b) => {
       if (a.type !== b.type) return a.type === 'directory' ? -1 : 1;
       return a.name.localeCompare(b.name);
@@ -114,21 +141,31 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
 
   const sortedTrashEntries = useMemo(() => {
     return [...trashEntries].sort((a, b) => {
-      return (new Date(a.deletedAt).getTime() - new Date(b.deletedAt).getTime());
+      return new Date(a.deletedAt).getTime() - new Date(b.deletedAt).getTime();
     });
   }, [trashEntries]);
 
   const breadcrumbs = useMemo(() => {
     if (!currentPath) return [];
     const parts = currentPath.split('/').filter(Boolean);
-    const crumbs = parts.map((part, index) => ({ label: part, path: `/${parts.slice(0, index + 1).join('/')}` }));
+    const crumbs = parts.map((part, index) => ({
+      label: part,
+      path: `/${parts.slice(0, index + 1).join('/')}`,
+    }));
     if (crumbs.length === 0) return [{ label: '/', path: '/' }];
     return crumbs;
   }, [currentPath]);
 
   const folderSuggestions = useMemo(
-    () => uniquePaths([currentPath, ...roots.map((r) => r.path), ...devices.flatMap((d) => (d.partitions ?? []).filter((p) => p.volumPath).map((p) => p.volumPath!))]),
-    [currentPath, roots, devices]
+    () =>
+      uniquePaths([
+        currentPath,
+        ...roots.map((r) => r.path),
+        ...devices.flatMap((d) =>
+          (d.partitions ?? []).filter((p) => p.volumPath).map((p) => p.volumPath!),
+        ),
+      ]),
+    [currentPath, roots, devices],
   );
 
   const currentRoot = useMemo(() => {
@@ -138,20 +175,33 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
 
   const selectedFileBytes = useMemo(() => {
     let total = 0;
-    entries.forEach((entry) => { if (entry.size) total += entry.size; });
+    entries.forEach((entry) => {
+      if (entry.size) total += entry.size;
+    });
     return total;
   }, [entries]);
 
   return {
-    entries, setEntries,
-    trashEntries, setTrashEntries,
-    jobs, setJobs,
+    entries,
+    setEntries,
+    trashEntries,
+    setTrashEntries,
+    jobs,
+    setJobs,
     roots,
-    devices, deviceError, loadDevices,
-    loading, loadingMore, error, setError,
-    query, setQuery,
-    searchOpen, setSearchOpen,
-    searchResults, setSearchResults,
+    devices,
+    deviceError,
+    loadDevices,
+    loading,
+    loadingMore,
+    error,
+    setError,
+    query,
+    setQuery,
+    searchOpen,
+    setSearchOpen,
+    searchResults,
+    setSearchResults,
     filteredEntries,
     sortedTrashEntries,
     breadcrumbs,

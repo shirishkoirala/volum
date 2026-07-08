@@ -51,7 +51,13 @@ export function App() {
   }
 
   if (session?.authEnabled && !session.authenticated) {
-    return <LoginScreen onLoggedIn={handleLoggedIn} theme={theme} onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')} />;
+    return (
+      <LoginScreen
+        onLoggedIn={handleLoggedIn}
+        theme={theme}
+        onToggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+      />
+    );
   }
 
   return (

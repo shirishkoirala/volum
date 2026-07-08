@@ -87,7 +87,8 @@ export type SearchResponse = {
 };
 
 export type JobType = 'copy' | 'move' | 'upload' | 'extract' | 'archive' | 'checksum';
-export type JobStatus = 'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'needs_attention';
+export type JobStatus =
+  'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'needs_attention';
 
 export type ConflictItem = {
   id: string;
@@ -220,13 +221,13 @@ export function deleteProfileAvatar(): Promise<AvatarState> {
 export function login(username: string, password: string, rememberMe = false) {
   return request<Session>('/api/login', {
     method: 'POST',
-    body: JSON.stringify({ username, password, rememberMe })
+    body: JSON.stringify({ username, password, rememberMe }),
   });
 }
 
 export function logout() {
   return request<Session>('/api/logout', {
-    method: 'POST'
+    method: 'POST',
   });
 }
 
@@ -234,7 +235,7 @@ export function setup(username: string, password: string, bootstrapToken: string
   return request<Session>('/api/setup', {
     method: 'POST',
     headers: { 'X-Bootstrap-Token': bootstrapToken },
-    body: JSON.stringify({ username, password })
+    body: JSON.stringify({ username, password }),
   });
 }
 
@@ -245,37 +246,41 @@ export function listUsers() {
 export function createUser(username: string, password: string, role: 'admin' | 'readonly') {
   return requestVoid('/api/users', {
     method: 'POST',
-    body: JSON.stringify({ username, password, role })
+    body: JSON.stringify({ username, password, role }),
   });
 }
 
 export function deleteUser(userId: string) {
   return requestVoid(`/api/users/${userId}`, {
-    method: 'DELETE'
+    method: 'DELETE',
   });
 }
 
 export function changePassword(userId: string, password: string) {
   return requestVoid(`/api/users/${userId}/password`, {
     method: 'PATCH',
-    body: JSON.stringify({ newPassword: password })
+    body: JSON.stringify({ newPassword: password }),
   });
 }
 
 export function changeRole(userId: string, role: 'admin' | 'readonly') {
   return requestVoid(`/api/users/${userId}/role`, {
     method: 'PATCH',
-    body: JSON.stringify({ role })
+    body: JSON.stringify({ role }),
   });
 }
 
 export function revokeUserSessions(userId: string) {
   return requestVoid(`/api/users/${userId}/revoke-sessions`, {
-    method: 'POST'
+    method: 'POST',
   });
 }
 
-export function getFiles(path: string, hidden: boolean, options?: { limit?: number; offset?: number }) {
+export function getFiles(
+  path: string,
+  hidden: boolean,
+  options?: { limit?: number; offset?: number },
+) {
   const params = new URLSearchParams({ path, hidden: String(hidden) });
   if (options?.limit) params.set('limit', String(options.limit));
   if (options?.offset) params.set('offset', String(options.offset));
@@ -299,7 +304,7 @@ export function createJob(params: {
 }) {
   return request<Job>('/api/jobs', {
     method: 'POST',
-    body: JSON.stringify(params)
+    body: JSON.stringify(params),
   });
 }
 
@@ -307,7 +312,12 @@ export async function getUploadStatus(path: string, filename: string) {
   const params = new URLSearchParams({ path, filename });
   const response = await fetch(apiUrl(`/api/files/upload-status?${params.toString()}`));
   if (!response.ok) throw await parseError(response);
-  return response.json() as Promise<{ filename: string; received: number; complete: boolean; jobId?: string }>;
+  return response.json() as Promise<{
+    filename: string;
+    received: number;
+    complete: boolean;
+    jobId?: string;
+  }>;
 }
 
 type UploadChunkResponse = { received: number; complete: boolean; jobId?: string };
@@ -321,7 +331,12 @@ export async function uploadChunk(
   jobId?: string,
   signal?: AbortSignal,
 ) {
-  const params = new URLSearchParams({ path, filename, offset: String(offset), totalSize: String(totalSize) });
+  const params = new URLSearchParams({
+    path,
+    filename,
+    offset: String(offset),
+    totalSize: String(totalSize),
+  });
   if (jobId) params.set('jobId', jobId);
   const response = await fetch(apiUrl(`/api/files/upload-chunk?${params.toString()}`), {
     method: 'POST',
@@ -355,43 +370,43 @@ export class UploadPausedError extends Error {
 
 export function cancelJob(id: string) {
   return requestVoid(`/api/jobs/${id}/cancel`, {
-    method: 'POST'
+    method: 'POST',
   });
 }
 
 export function retryJob(id: string) {
   return requestVoid(`/api/jobs/${id}/retry`, {
-    method: 'POST'
+    method: 'POST',
   });
 }
 
 export function retryJobItem(jobId: string, itemId: string) {
   return requestVoid(`/api/jobs/${jobId}/items/${itemId}/retry`, {
-    method: 'POST'
+    method: 'POST',
   });
 }
 
 export function pauseJob(id: string) {
   return requestVoid(`/api/jobs/${id}/pause`, {
-    method: 'POST'
+    method: 'POST',
   });
 }
 
 export function resumeJob(id: string) {
   return requestVoid(`/api/jobs/${id}/resume`, {
-    method: 'POST'
+    method: 'POST',
   });
 }
 
 export function clearCompletedJobs() {
   return request<{ removed: number }>('/api/jobs/clear-completed', {
-    method: 'DELETE'
+    method: 'DELETE',
   });
 }
 
 export function clearFailedJobs() {
   return request<{ removed: number }>('/api/jobs/clear-failed', {
-    method: 'DELETE'
+    method: 'DELETE',
   });
 }
 
@@ -399,7 +414,11 @@ export function getJobConflicts(id: string) {
   return request<{ items: ConflictItem[] }>(`/api/jobs/${id}/conflicts`);
 }
 
-export function resolveJobConflicts(id: string, items: Array<{ itemId: string; resolution: 'skip' | 'overwrite' | 'rename' }>, defaultResolution?: 'skip' | 'overwrite' | 'rename') {
+export function resolveJobConflicts(
+  id: string,
+  items: Array<{ itemId: string; resolution: 'skip' | 'overwrite' | 'rename' }>,
+  defaultResolution?: 'skip' | 'overwrite' | 'rename',
+) {
   return request<{ status: string; resumed?: boolean }>(`/api/jobs/${id}/resolve`, {
     method: 'POST',
     body: JSON.stringify({ items, defaultResolution }),
@@ -409,47 +428,47 @@ export function resolveJobConflicts(id: string, items: Array<{ itemId: string; r
 export function createFolder(path: string, name: string) {
   return request<FileEntry>('/api/files/folder', {
     method: 'POST',
-    body: JSON.stringify({ path, name })
+    body: JSON.stringify({ path, name }),
   });
 }
 
 export function createFile(path: string, name: string) {
   return request<FileEntry>('/api/files/file', {
     method: 'POST',
-    body: JSON.stringify({ path, name })
+    body: JSON.stringify({ path, name }),
   });
 }
 
 export function renamePath(path: string, newName: string) {
   return request<FileEntry>('/api/files/rename', {
     method: 'PATCH',
-    body: JSON.stringify({ path, newName })
+    body: JSON.stringify({ path, newName }),
   });
 }
 
 export function chmodPath(path: string, mode: string) {
   return request<FileEntry>('/api/files/permissions', {
     method: 'PATCH',
-    body: JSON.stringify({ path, mode })
+    body: JSON.stringify({ path, mode }),
   });
 }
 
 export function deletePath(path: string, confirmName: string) {
   return requestVoid('/api/files', {
     method: 'DELETE',
-    body: JSON.stringify({ path, confirmName })
+    body: JSON.stringify({ path, confirmName }),
   });
 }
 
 export function restoreTrash(id: string) {
   return request<FileEntry>(`/api/trash/${encodeURIComponent(id)}/restore`, {
-    method: 'POST'
+    method: 'POST',
   });
 }
 
 export function deleteTrash(id: string) {
   return requestVoid(`/api/trash/${encodeURIComponent(id)}`, {
-    method: 'DELETE'
+    method: 'DELETE',
   });
 }
 
@@ -483,10 +502,13 @@ export function searchFiles(query: string, limit = 50) {
 }
 
 export async function batchRename(items: { path: string; newName: string }[]) {
-  return request<{ errors?: { path: string; error: string }[]; complete?: number }>('/api/files/batch-rename', {
-    method: 'POST',
-    body: JSON.stringify({ items })
-  });
+  return request<{ errors?: { path: string; error: string }[]; complete?: number }>(
+    '/api/files/batch-rename',
+    {
+      method: 'POST',
+      body: JSON.stringify({ items }),
+    },
+  );
 }
 
 export type Share = {
@@ -511,7 +533,7 @@ export type CreateShareRequest = {
 export function createShare(req: CreateShareRequest) {
   return request<Share>('/api/shares', {
     method: 'POST',
-    body: JSON.stringify(req)
+    body: JSON.stringify(req),
   });
 }
 
@@ -521,7 +543,7 @@ export function getShares() {
 
 export function deleteShare(id: string) {
   return requestVoid(`/api/shares/${encodeURIComponent(id)}`, {
-    method: 'DELETE'
+    method: 'DELETE',
   });
 }
 
@@ -548,7 +570,10 @@ export function dbVacuum() {
   return request<{ status: string }>('/api/db/vacuum', { method: 'POST' });
 }
 
-export function pruneTable(table: 'jobs' | 'audit-logs', olderThan?: string): Promise<{ removed: number }> {
+export function pruneTable(
+  table: 'jobs' | 'audit-logs',
+  olderThan?: string,
+): Promise<{ removed: number }> {
   const params = olderThan ? `?olderThan=${encodeURIComponent(olderThan)}` : '';
   return request<{ removed: number }>(`/api/db/prune-${table}${params}`, { method: 'POST' });
 }
@@ -609,21 +634,43 @@ export function listServiceHealth() {
   return request<Record<string, ServiceHealthInfo>>('/api/services/health');
 }
 
-export function createService(name: string, url: string, iconUrl?: string, healthUrl?: string, description?: string, openMode?: string) {
+export function createService(
+  name: string,
+  url: string,
+  iconUrl?: string,
+  healthUrl?: string,
+  description?: string,
+  openMode?: string,
+) {
   return request<ServiceInfo>('/api/services', {
     method: 'POST',
     body: JSON.stringify(serviceBody(name, url, iconUrl, healthUrl, description, openMode)),
   });
 }
 
-export function updateService(id: string, name: string, url: string, iconUrl?: string, healthUrl?: string, description?: string, openMode?: string) {
+export function updateService(
+  id: string,
+  name: string,
+  url: string,
+  iconUrl?: string,
+  healthUrl?: string,
+  description?: string,
+  openMode?: string,
+) {
   return request<ServiceInfo>(`/api/services/${encodeURIComponent(id)}`, {
     method: 'PUT',
     body: JSON.stringify(serviceBody(name, url, iconUrl, healthUrl, description, openMode)),
   });
 }
 
-function serviceBody(name: string, url: string, iconUrl?: string, healthUrl?: string, description?: string, openMode?: string) {
+function serviceBody(
+  name: string,
+  url: string,
+  iconUrl?: string,
+  healthUrl?: string,
+  description?: string,
+  openMode?: string,
+) {
   return { name, url, iconUrl, healthUrl, description, openMode };
 }
 

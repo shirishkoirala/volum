@@ -155,12 +155,30 @@
   flex-shrink: 0;
 }
 
-.fateNew { background: var(--color-brand-bg); color: var(--color-brand); }
-.fateSkip { background: var(--color-hover); color: var(--color-text-muted); }
-.fateOverwrite { background: var(--color-warning-bg); color: var(--color-warning-text); }
-.fateRename { background: var(--color-success-bg); color: var(--color-success-text); }
-.fateCancel { background: var(--color-danger-bg); color: var(--color-danger-text); }
-.fateAsk { background: var(--color-hover); color: var(--color-text-muted); }
+.fateNew {
+  background: var(--color-brand-bg);
+  color: var(--color-brand);
+}
+.fateSkip {
+  background: var(--color-hover);
+  color: var(--color-text-muted);
+}
+.fateOverwrite {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+.fateRename {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+.fateCancel {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+.fateAsk {
+  background: var(--color-hover);
+  color: var(--color-text-muted);
+}
 
 .previewItemName {
   font-weight: 600;

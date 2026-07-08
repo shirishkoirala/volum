@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TrashIcon } from '../components/ui/Icon';
 import { IconImg } from '../components/ui/shared';
-import { preferencesIconUrl, jobsIconUrl, multidiskIconUrl, folderBookmarksIconUrl, filesIconUrl } from '../api/icons';
+import {
+  preferencesIconUrl,
+  jobsIconUrl,
+  multidiskIconUrl,
+  folderBookmarksIconUrl,
+  filesIconUrl,
+} from '../api/icons';
 import type { TrashEntry, Job } from '../api/client';
 import { countActiveTransfers } from '../utils/jobs';
 import type { ServiceHealthResult, ServiceShortcut } from '../utils/services';
@@ -27,7 +33,15 @@ type DesktopViewProps = {
 
 export type DesktopIconItem = {
   id: string;
-  type: 'drives' | 'trash' | 'settings' | 'jobs' | 'files' | 'folderShortcut' | 'serviceShortcut' | 'emptySpace';
+  type:
+    | 'drives'
+    | 'trash'
+    | 'settings'
+    | 'jobs'
+    | 'files'
+    | 'folderShortcut'
+    | 'serviceShortcut'
+    | 'emptySpace';
   label: string;
   ariaLabel: string;
   onClick: () => void;
@@ -41,7 +55,9 @@ function loadOrder(): string[] {
   try {
     const raw = localStorage.getItem(ORDER_KEY);
     if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return [];
 }
 
@@ -54,9 +70,19 @@ function saveOrder(ids: string[]) {
 }
 
 export function DesktopView({
-  trashEntries, jobs, pendingTransferCount = 0, favorites, services,
+  trashEntries,
+  jobs,
+  pendingTransferCount = 0,
+  favorites,
+  services,
   serviceHealth,
-  onNavigateTo, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onOpenService, onShowMyPC,
+  onNavigateTo,
+  onNavigateToTrash,
+  onOpenSettings,
+  onOpenJobs,
+  onOpenFiles,
+  onOpenService,
+  onShowMyPC,
   onItemContextMenu,
 }: DesktopViewProps) {
   const activeTransferCount = countActiveTransfers(jobs, pendingTransferCount);
@@ -95,7 +121,9 @@ export function DesktopView({
       icon: (
         <div className={styles.desktopIconWrapper}>
           <TrashIcon full={trashEntries.length > 0} size={64} />
-          {trashEntries.length > 0 && <span className={styles.desktopTrashBadge}>{trashEntries.length}</span>}
+          {trashEntries.length > 0 && (
+            <span className={styles.desktopTrashBadge}>{trashEntries.length}</span>
+          )}
         </div>
       ),
     });
@@ -181,7 +209,16 @@ export function DesktopView({
               <IconImg src={svc.iconUrl} alt="" width={64} height={64} />
             ) : (
               <div className={styles.serviceGlobe}>
-                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="48"
+                  height="48"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <line x1="2" y1="12" x2="22" y2="12" />
                   <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -205,13 +242,30 @@ export function DesktopView({
     const used = new Set<string>();
     for (const id of order) {
       const item = items.find((i) => i.id === id);
-      if (item) { ordered.push(item); used.add(id); }
+      if (item) {
+        ordered.push(item);
+        used.add(id);
+      }
     }
     for (const item of items) {
       if (!used.has(item.id)) ordered.push(item);
     }
     return ordered;
-  }, [trashEntries, favorites, services, serviceHealth, activeTransferCount, iconOrder, onShowMyPC, onNavigateToTrash, onOpenSettings, onOpenJobs, onOpenFiles, onOpenService, onNavigateTo]);
+  }, [
+    trashEntries,
+    favorites,
+    services,
+    serviceHealth,
+    activeTransferCount,
+    iconOrder,
+    onShowMyPC,
+    onNavigateToTrash,
+    onOpenSettings,
+    onOpenJobs,
+    onOpenFiles,
+    onOpenService,
+    onNavigateTo,
+  ]);
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     e.dataTransfer.effectAllowed = 'move';
@@ -229,22 +283,33 @@ export function DesktopView({
     setDropTarget(null);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    const sourceId = e.dataTransfer.getData('text/plain');
-    if (!sourceId || sourceId === targetId) { setDragId(null); setDropTarget(null); return; }
-    const ids = iconOrder.filter((id) => iconItems.some((item) => item.id === id));
-    const srcIdx = ids.indexOf(sourceId);
-    const tgtIdx = ids.indexOf(targetId);
-    if (srcIdx === -1) { setDragId(null); setDropTarget(null); return; }
-    const next = [...ids];
-    next.splice(srcIdx, 1);
-    const insertAt = tgtIdx >= 0 ? tgtIdx : next.length;
-    next.splice(insertAt, 0, sourceId);
-    setIconOrder(next);
-    setDragId(null);
-    setDropTarget(null);
-  }, [iconOrder, iconItems]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent, targetId: string) => {
+      e.preventDefault();
+      const sourceId = e.dataTransfer.getData('text/plain');
+      if (!sourceId || sourceId === targetId) {
+        setDragId(null);
+        setDropTarget(null);
+        return;
+      }
+      const ids = iconOrder.filter((id) => iconItems.some((item) => item.id === id));
+      const srcIdx = ids.indexOf(sourceId);
+      const tgtIdx = ids.indexOf(targetId);
+      if (srcIdx === -1) {
+        setDragId(null);
+        setDropTarget(null);
+        return;
+      }
+      const next = [...ids];
+      next.splice(srcIdx, 1);
+      const insertAt = tgtIdx >= 0 ? tgtIdx : next.length;
+      next.splice(insertAt, 0, sourceId);
+      setIconOrder(next);
+      setDragId(null);
+      setDropTarget(null);
+    },
+    [iconOrder, iconItems],
+  );
 
   const handleDragEnd = useCallback(() => {
     setDragId(null);
@@ -259,17 +324,25 @@ export function DesktopView({
       const lp = longPressItemRef.current;
       if (lp) {
         longPressItemRef.current = null;
-        onItemContextMenu(lp.item, { clientX: lp.x, clientY: lp.y, preventDefault: () => {}, stopPropagation: () => {} } as unknown as React.MouseEvent<HTMLElement>);
+        onItemContextMenu(lp.item, {
+          clientX: lp.x,
+          clientY: lp.y,
+          preventDefault: () => {},
+          stopPropagation: () => {},
+        } as unknown as React.MouseEvent<HTMLElement>);
       }
     },
     delay: 500,
   });
 
-  const handleItemTouchStart = useCallback((item: DesktopIconItem, event: React.TouchEvent) => {
-    const touch = event.touches[0]!;
-    longPressItemRef.current = { item, x: touch.clientX, y: touch.clientY };
-    hookTouchStart();
-  }, [hookTouchStart]);
+  const handleItemTouchStart = useCallback(
+    (item: DesktopIconItem, event: React.TouchEvent) => {
+      const touch = event.touches[0]!;
+      longPressItemRef.current = { item, x: touch.clientX, y: touch.clientY };
+      hookTouchStart();
+    },
+    [hookTouchStart],
+  );
 
   const handleItemTouchMove = useCallback(() => {
     longPressItemRef.current = null;
@@ -283,7 +356,10 @@ export function DesktopView({
     <div
       className={styles.desktopWrapper}
       onContextMenu={(event) => {
-        onItemContextMenu({ id: '', type: 'emptySpace', label: '', ariaLabel: '', onClick: () => {} }, event);
+        onItemContextMenu(
+          { id: '', type: 'emptySpace', label: '', ariaLabel: '', onClick: () => {} },
+          event,
+        );
       }}
     >
       <div className={styles.desktop}>
@@ -292,7 +368,10 @@ export function DesktopView({
             key={item.id}
             className={`${styles.desktopIcon}${dragId === item.id ? ` ${styles.desktopDragging}` : ''}${dropTarget === item.id ? ` ${styles.desktopDropTarget}` : ''}`}
             onClick={item.onClick}
-            onContextMenu={(event) => { event.stopPropagation(); onItemContextMenu(item, event); }}
+            onContextMenu={(event) => {
+              event.stopPropagation();
+              onItemContextMenu(item, event);
+            }}
             type="button"
             aria-label={item.ariaLabel}
             draggable

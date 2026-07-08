@@ -4,7 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
 import { ToastViewport } from '../components/overlay/Toast';
 import { FolderSuggestions } from '../components/input/FolderPicker';
-import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } from '../components/overlay/Dialogs';
+import type {
+  ConfirmDialogState,
+  TextInputDialogState,
+  TransferDialogState,
+} from '../components/overlay/Dialogs';
 import type { FileEntry } from '../api/client';
 import type { Toast } from '../components/overlay/Toast';
 
@@ -108,7 +112,7 @@ describe('TransferDialog', () => {
         folderSuggestions={[]}
         onClose={vi.fn()}
         onSubmit={vi.fn()}
-      />
+      />,
     );
   }
 
@@ -131,7 +135,13 @@ describe('TransferDialog', () => {
 describe('FolderSuggestions', () => {
   it('renders label and path buttons', () => {
     const onSelect = vi.fn();
-    render(<FolderSuggestions label="Jump to" paths={['/storage', '/storage/docs']} onSelect={onSelect} />);
+    render(
+      <FolderSuggestions
+        label="Jump to"
+        paths={['/storage', '/storage/docs']}
+        onSelect={onSelect}
+      />,
+    );
     expect(screen.getByText('Jump to')).toBeInTheDocument();
     expect(screen.getByTitle('/storage')).toBeInTheDocument();
     expect(screen.getByTitle('/storage/docs')).toBeInTheDocument();
@@ -167,9 +177,7 @@ describe('ToastViewport', () => {
   });
 
   it('renders error variant', () => {
-    const toasts: Toast[] = [
-      { id: 1, title: 'Failed', variant: 'error' },
-    ];
+    const toasts: Toast[] = [{ id: 1, title: 'Failed', variant: 'error' }];
     render(<ToastViewport toasts={toasts} onDismiss={vi.fn()} />);
     expect(screen.getByText('Failed')).toBeInTheDocument();
   });
@@ -177,9 +185,7 @@ describe('ToastViewport', () => {
   it('calls onDismiss when dismiss button is clicked', async () => {
     const onDismiss = vi.fn();
     const user = userEvent.setup();
-    const toasts: Toast[] = [
-      { id: 1, title: 'Success', variant: 'success' },
-    ];
+    const toasts: Toast[] = [{ id: 1, title: 'Success', variant: 'success' }];
     render(<ToastViewport toasts={toasts} onDismiss={onDismiss} />);
     await user.click(screen.getByLabelText('Dismiss notification'));
     await waitFor(() => expect(onDismiss).toHaveBeenCalledWith(1));

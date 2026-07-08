@@ -29,15 +29,26 @@ type GridTileProps = {
 };
 
 export function GridTile({
-  icon, name, metadata,
-  isSelected, isDragOver,
+  icon,
+  name,
+  metadata,
+  isSelected,
+  isDragOver,
   className,
   draggable = false,
   role = 'button',
   tabIndex,
-  onClick, onDoubleClick, onContextMenu, onKeyDown,
-  onDragStart, onDragOver, onDragLeave, onDrop,
-  onTouchStart, onTouchMove, onTouchEnd,
+  onClick,
+  onDoubleClick,
+  onContextMenu,
+  onKeyDown,
+  onDragStart,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
   ...dataAttrs
 }: GridTileProps) {
   return (
@@ -59,9 +70,7 @@ export function GridTile({
       onTouchEnd={onTouchEnd}
       {...dataAttrs}
     >
-      <div className={styles.iconSlot}>
-        {icon}
-      </div>
+      <div className={styles.iconSlot}>{icon}</div>
       <span className={styles.name}>{name}</span>
       {metadata && <span className={styles.meta}>{metadata}</span>}
     </div>

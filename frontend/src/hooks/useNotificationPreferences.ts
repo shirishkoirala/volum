@@ -5,7 +5,9 @@ export type NotificationPreferences = {
 };
 
 export function useNotificationPreferences() {
-  const [prefs, setPrefs] = useLocalStorage<NotificationPreferences>('volum_notifications', { enabled: true });
+  const [prefs, setPrefs] = useLocalStorage<NotificationPreferences>('volum_notifications', {
+    enabled: true,
+  });
 
   const setEnabled = (enabled: boolean) => {
     setPrefs({ enabled });

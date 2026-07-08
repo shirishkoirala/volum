@@ -49,9 +49,16 @@ export function ShareManager({ onClose }: ShareManagerProps) {
 
   return (
     <>
-      <Dialog title="Manage Shares" onClose={onClose} width="lg" footer={
-        <Button size="compact" onClick={onClose}>Close</Button>
-      }>
+      <Dialog
+        title="Manage Shares"
+        onClose={onClose}
+        width="lg"
+        footer={
+          <Button size="compact" onClick={onClose}>
+            Close
+          </Button>
+        }
+      >
         {loading ? (
           <div className={styles.shareTable}>
             <div className={styles.shareHeader}>
@@ -65,9 +72,19 @@ export function ShareManager({ onClose }: ShareManagerProps) {
             <Skeleton variant="row" count={3} />
           </div>
         ) : error || deleteError ? (
-          <ErrorBanner message={error || deleteError || ''} onRetry={() => { loadShares(); setDeleteError(null); }} />
+          <ErrorBanner
+            message={error || deleteError || ''}
+            onRetry={() => {
+              loadShares();
+              setDeleteError(null);
+            }}
+          />
         ) : shares.length === 0 ? (
-          <EmptyState compact title="No shares yet" subtitle="Right-click a file or folder and select Share to create one." />
+          <EmptyState
+            compact
+            title="No shares yet"
+            subtitle="Right-click a file or folder and select Share to create one."
+          />
         ) : (
           <div className={styles.shareTable}>
             <div className={styles.shareHeader}>
@@ -80,13 +97,18 @@ export function ShareManager({ onClose }: ShareManagerProps) {
             </div>
             {shares.map((share) => (
               <div key={share.id} className={styles.shareRow}>
-                <span className={styles.shareColPath} data-label="Path" title={share.path}>{share.path}</span>
-                <span className={styles.shareColToken} data-label="Token">{share.token.slice(0, 8)}…</span>
+                <span className={styles.shareColPath} data-label="Path" title={share.path}>
+                  {share.path}
+                </span>
+                <span className={styles.shareColToken} data-label="Token">
+                  {share.token.slice(0, 8)}…
+                </span>
                 <span className={styles.shareColExpiry} data-label="Expires">
                   {share.expiresAt ? new Date(share.expiresAt).toLocaleDateString() : 'Never'}
                 </span>
                 <span className={styles.shareColDownloads} data-label="Downloads">
-                  {share.downloadCount}{share.maxDownloads ? ` / ${share.maxDownloads}` : ''}
+                  {share.downloadCount}
+                  {share.maxDownloads ? ` / ${share.maxDownloads}` : ''}
                 </span>
                 <span className={styles.shareColEnabled} data-label="Status">
                   <StatusBadge variant={share.enabled ? 'active' : 'disabled'}>
@@ -94,10 +116,19 @@ export function ShareManager({ onClose }: ShareManagerProps) {
                   </StatusBadge>
                 </span>
                 <span className={styles.shareColActions}>
-                  <IconButton className={styles.shareActionButton} onClick={() => handleCopyLink(share.token)} title="Copy share link">
+                  <IconButton
+                    className={styles.shareActionButton}
+                    onClick={() => handleCopyLink(share.token)}
+                    title="Copy share link"
+                  >
                     <Icon name="edit-copy" size={14} />
                   </IconButton>
-                  <IconButton className={styles.shareActionButton} onClick={() => handleDelete(share)} disabled={deleting === share.id} title="Delete share">
+                  <IconButton
+                    className={styles.shareActionButton}
+                    onClick={() => handleDelete(share)}
+                    disabled={deleting === share.id}
+                    title="Delete share"
+                  >
                     <Icon name="edit-delete" size={14} />
                   </IconButton>
                 </span>
@@ -113,7 +144,9 @@ export function ShareManager({ onClose }: ShareManagerProps) {
             message: 'Delete this share link? Anyone with this link will lose access.',
             confirmLabel: 'Delete',
             danger: true,
-            onConfirm: () => { void confirmDelete(); },
+            onConfirm: () => {
+              void confirmDelete();
+            },
           }}
           onClose={() => setPendingDelete(null)}
         />

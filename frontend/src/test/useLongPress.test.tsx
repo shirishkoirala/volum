@@ -51,7 +51,9 @@ describe('useLongPress', () => {
 
   it('calls onClick on touch end before the delay', () => {
     const onClick = vi.fn();
-    const { result } = renderHook(() => useLongPress({ onClick, onLongPress: vi.fn(), delay: 500 }));
+    const { result } = renderHook(() =>
+      useLongPress({ onClick, onLongPress: vi.fn(), delay: 500 }),
+    );
     result.current.onTouchStart();
     result.current.onTouchEnd();
     vi.advanceTimersByTime(500);

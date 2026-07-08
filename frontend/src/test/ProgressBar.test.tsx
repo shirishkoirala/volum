@@ -20,12 +20,18 @@ describe('ProgressBar', () => {
 
   it('sets aria-valuemax to 100', () => {
     const { container } = render(<ProgressBar value={50} />);
-    expect(container.querySelector('[role="progressbar"]')!).toHaveAttribute('aria-valuemax', '100');
+    expect(container.querySelector('[role="progressbar"]')!).toHaveAttribute(
+      'aria-valuemax',
+      '100',
+    );
   });
 
   it('sets aria-label when provided', () => {
     const { container } = render(<ProgressBar value={50} ariaLabel="Upload progress" />);
-    expect(container.querySelector('[role="progressbar"]')).toHaveAttribute('aria-label', 'Upload progress');
+    expect(container.querySelector('[role="progressbar"]')).toHaveAttribute(
+      'aria-label',
+      'Upload progress',
+    );
   });
 
   it('clamps value to 100 for the fill width', () => {

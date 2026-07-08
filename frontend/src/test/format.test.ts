@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { formatBytes, formatUptime, formatGridDate, formatDeviceUsage, formatDuration } from '../utils/format';
+import {
+  formatBytes,
+  formatUptime,
+  formatGridDate,
+  formatDeviceUsage,
+  formatDuration,
+} from '../utils/format';
 import type { BlockDevice } from '../api/client';
 
 describe('formatBytes', () => {

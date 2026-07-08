@@ -52,7 +52,6 @@ import { openFileExternally } from '../utils/preview';
 import { defaultRootPath as getDefaultRootPath } from '../utils/roots';
 import styles from './Home.module.css';
 
-
 interface HomeProps {
   session: Session;
   onSessionChange: (session: Session) => void;
@@ -72,7 +71,15 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     session,
   });
 
-  const { services, health: serviceHealth, addService, updateService, removeService, reorderServices, refreshHealth: refreshServiceHealth } = useServiceShortcuts();
+  const {
+    services,
+    health: serviceHealth,
+    addService,
+    updateService,
+    removeService,
+    reorderServices,
+    refreshHealth: refreshServiceHealth,
+  } = useServiceShortcuts();
   const isMobile = useIsMobile();
   const notifPrefs = useNotificationPreferences();
 
@@ -87,7 +94,13 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   });
   const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
-  const nav = useNavigation(browser.devices, browser.jobs, browser.trashEntries.length, viewPref.currentPath, pendingUploadCount);
+  const nav = useNavigation(
+    browser.devices,
+    browser.jobs,
+    browser.trashEntries.length,
+    viewPref.currentPath,
+    pendingUploadCount,
+  );
   const { favorites, addFavorite, removeFavorite } = useFavorites(viewPref.currentPath);
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
@@ -110,10 +123,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   });
 
   const wm = useWindowManager();
-  const defaultRootPath = useMemo(
-    () => getDefaultRootPath(browser.roots),
-    [browser.roots],
-  );
+  const defaultRootPath = useMemo(() => getDefaultRootPath(browser.roots), [browser.roots]);
 
   const workspaceOpeners = useWorkspaceOpeners({
     defaultRootPath,
@@ -131,7 +141,8 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     const hasHealthChecks = services.some((service) => service.healthUrl);
     if (!hasHealthChecks) return;
 
-    const shouldRefresh = () => nav.activeView === 'desktop' && document.visibilityState === 'visible';
+    const shouldRefresh = () =>
+      nav.activeView === 'desktop' && document.visibilityState === 'visible';
 
     async function checkHealth() {
       const next = await refreshServiceHealth();
@@ -159,10 +170,16 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
 
   // ── Desktop actions ──────────────────────────────────────
   const desktopActions = useDesktopActions({
-    browser, dialogs, toast, nav,
+    browser,
+    dialogs,
+    toast,
+    nav,
     viewPref: { currentPath: viewPref.currentPath, setCurrentPath: viewPref.setCurrentPath },
     selection,
-    removeFavorite, addService, updateService, removeService,
+    removeFavorite,
+    addService,
+    updateService,
+    removeService,
     refreshServiceHealth,
     serviceFormData: menus.serviceFormData,
     setDesktopContextMenu: menus.setDesktopContextMenu,
@@ -173,89 +190,116 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   });
 
   // ── Render window content from type+params ──────────────
-  const renderWindow = useCallback((win: WindowState) => {
-    switch (win.winType) {
-      case 'files':
-        return (
-          <FilesView
-            currentPath={(win.params.path as string) || defaultRootPath}
-            session={session}
-            favorites={favorites}
-            onNavigate={navActions.navigateTo}
-            onBack={navActions.goBack}
-            onAddFavorite={addFavorite}
-            onRemoveFavorite={removeFavorite}
-            onPreview={workspaceOpeners.openPreview}
-          />
-        );
-      case 'trash':
-        return <TrashView />;
-      case 'drives':
-        return <DrivesView onBackToDesktop={() => wm.closeWindow(win.id)} />;
-      case 'jobs':
-        return <JobsPage session={session} sessionLoading={false} />;
-      case 'settings':
-        return (
-          <SettingsPanel
-            onOpenShares={() => dialogs.setSharesOpen(true)}
-            theme={theme}
-            onToggleTheme={onToggleTheme}
-            onOpenShortcuts={() => fileActions.setShortcutsOpen(true)}
-            onLogout={onLogout}
-            session={session}
-            onSessionChange={onSessionChange}
-            services={services}
-            serviceHealth={serviceHealth}
-            onAddService={() => desktopActions.handleOpenServiceForm()}
-            onEditService={(id) => {
-              const svc = services.find((s) => s.id === id);
-              if (svc) desktopActions.handleOpenServiceForm(svc);
-            }}
-            onRemoveService={desktopActions.handleRemoveService}
-            onReorderServices={reorderServices}
-          />
-        );
-      case 'preview': {
-        const entry = win.params.entry as FileEntry | undefined;
-        const entries = Array.isArray(win.params.entries) ? win.params.entries as FileEntry[] : entry ? [entry] : [];
-        if (!entry) return null;
-        return (
-          <PreviewWindow
-            entry={entry}
-            entries={entries}
-            onShare={(shareEntry) => dialogs.setShareDialogPath({ path: shareEntry.path, name: shareEntry.name })}
-            onSelectEntry={(nextEntry) => {
-              wm.toggleWindow('preview', {
-                title: 'Preview',
-                icon: fileTypeIconUrl(nextEntry),
-                winType: 'preview',
-                params: { entry: nextEntry, entries },
-                width: win.width,
-                height: win.height,
-                x: win.x,
-                y: win.y,
-              });
-            }}
-          />
-        );
+  const renderWindow = useCallback(
+    (win: WindowState) => {
+      switch (win.winType) {
+        case 'files':
+          return (
+            <FilesView
+              currentPath={(win.params.path as string) || defaultRootPath}
+              session={session}
+              favorites={favorites}
+              onNavigate={navActions.navigateTo}
+              onBack={navActions.goBack}
+              onAddFavorite={addFavorite}
+              onRemoveFavorite={removeFavorite}
+              onPreview={workspaceOpeners.openPreview}
+            />
+          );
+        case 'trash':
+          return <TrashView />;
+        case 'drives':
+          return <DrivesView onBackToDesktop={() => wm.closeWindow(win.id)} />;
+        case 'jobs':
+          return <JobsPage session={session} sessionLoading={false} />;
+        case 'settings':
+          return (
+            <SettingsPanel
+              onOpenShares={() => dialogs.setSharesOpen(true)}
+              theme={theme}
+              onToggleTheme={onToggleTheme}
+              onOpenShortcuts={() => fileActions.setShortcutsOpen(true)}
+              onLogout={onLogout}
+              session={session}
+              onSessionChange={onSessionChange}
+              services={services}
+              serviceHealth={serviceHealth}
+              onAddService={() => desktopActions.handleOpenServiceForm()}
+              onEditService={(id) => {
+                const svc = services.find((s) => s.id === id);
+                if (svc) desktopActions.handleOpenServiceForm(svc);
+              }}
+              onRemoveService={desktopActions.handleRemoveService}
+              onReorderServices={reorderServices}
+            />
+          );
+        case 'preview': {
+          const entry = win.params.entry as FileEntry | undefined;
+          const entries = Array.isArray(win.params.entries)
+            ? (win.params.entries as FileEntry[])
+            : entry
+              ? [entry]
+              : [];
+          if (!entry) return null;
+          return (
+            <PreviewWindow
+              entry={entry}
+              entries={entries}
+              onShare={(shareEntry) =>
+                dialogs.setShareDialogPath({ path: shareEntry.path, name: shareEntry.name })
+              }
+              onSelectEntry={(nextEntry) => {
+                wm.toggleWindow('preview', {
+                  title: 'Preview',
+                  icon: fileTypeIconUrl(nextEntry),
+                  winType: 'preview',
+                  params: { entry: nextEntry, entries },
+                  width: win.width,
+                  height: win.height,
+                  x: win.x,
+                  y: win.y,
+                });
+              }}
+            />
+          );
+        }
+        case 'service': {
+          const name = typeof win.params.name === 'string' ? win.params.name : win.title;
+          const url = typeof win.params.url === 'string' ? win.params.url : '';
+          const iconUrl = typeof win.params.iconUrl === 'string' ? win.params.iconUrl : undefined;
+          if (!url) return null;
+          return <ServiceWindow name={name} url={url} iconUrl={iconUrl} />;
+        }
+        default:
+          return null;
       }
-      case 'service': {
-        const name = typeof win.params.name === 'string' ? win.params.name : win.title;
-        const url = typeof win.params.url === 'string' ? win.params.url : '';
-        const iconUrl = typeof win.params.iconUrl === 'string' ? win.params.iconUrl : undefined;
-        if (!url) return null;
-        return <ServiceWindow name={name} url={url} iconUrl={iconUrl} />;
-      }
-      default:
-        return null;
-    }
-  }, [session, onSessionChange, favorites, navActions, addFavorite, removeFavorite, theme, onToggleTheme, onLogout, dialogs, fileActions, defaultRootPath, wm, workspaceOpeners.openPreview, services, serviceHealth, desktopActions, reorderServices]);
+    },
+    [
+      session,
+      onSessionChange,
+      favorites,
+      navActions,
+      addFavorite,
+      removeFavorite,
+      theme,
+      onToggleTheme,
+      onLogout,
+      dialogs,
+      fileActions,
+      defaultRootPath,
+      wm,
+      workspaceOpeners.openPreview,
+      services,
+      serviceHealth,
+      desktopActions,
+      reorderServices,
+    ],
+  );
 
-  const {
-    previewPositionLabel,
-    previousPreviewEntry,
-    nextPreviewEntry,
-  } = usePreviewNavigation(fileActions.previewEntry, previewEntries);
+  const { previewPositionLabel, previousPreviewEntry, nextPreviewEntry } = usePreviewNavigation(
+    fileActions.previewEntry,
+    previewEntries,
+  );
 
   const fileCommands = useFileCommands({
     currentPath: viewPref.currentPath,
@@ -295,11 +339,16 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
 
   // ── Effects ──────────────────────────────────────────────
 
-  useEffect(() => { fileCommands.renameInputRef.current?.focus(); fileCommands.renameInputRef.current?.select(); }, [fileActions.renaming, fileCommands.renameInputRef]);
+  useEffect(() => {
+    fileCommands.renameInputRef.current?.focus();
+    fileCommands.renameInputRef.current?.select();
+  }, [fileActions.renaming, fileCommands.renameInputRef]);
 
   useKeyboardShortcuts({
     '?': () => fileActions.setShortcutsOpen((p) => !p),
-    'Escape': () => { if (fileActions.shortcutsOpen) fileActions.setShortcutsOpen(false); },
+    Escape: () => {
+      if (fileActions.shortcutsOpen) fileActions.setShortcutsOpen(false);
+    },
   });
 
   const [homeMenuStates, setHomeMenuStates] = useState<Record<string, boolean>>({});
@@ -316,57 +365,68 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     closeAllHomeMenus();
   });
 
-  useEffect(() => { if (typeof Notification !== 'undefined' && Notification.permission === 'default') void Notification.requestPermission(); }, []);
+  useEffect(() => {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default')
+      void Notification.requestPermission();
+  }, []);
 
   // ── Desktop handlers ─────────────────────────────────────
-  const handleDesktopItemContextMenu = useCallback((item: DesktopIconItem, event: React.MouseEvent<HTMLElement>) => {
-    event.preventDefault();
-    menus.setDesktopContextMenu({ x: event.clientX, y: event.clientY, item });
-  }, [menus]);
+  const handleDesktopItemContextMenu = useCallback(
+    (item: DesktopIconItem, event: React.MouseEvent<HTMLElement>) => {
+      event.preventDefault();
+      menus.setDesktopContextMenu({ x: event.clientX, y: event.clientY, item });
+    },
+    [menus],
+  );
 
   // ── Derived data ─────────────────────────────────────────
 
   const showStatusBar = !isMobile ? false : nav.activeView === 'trash';
 
   // ── Taskbar launcher handler ─────────────────────────────
-  const handleTaskbarLauncher = useCallback((id: string) => {
-    if (id === 'files') workspaceOpeners.openFiles();
-    else if (id === 'trash') workspaceOpeners.openTrash();
-    else if (id === 'jobs') workspaceOpeners.openJobs();
-    else if (id === 'settings') workspaceOpeners.openSettings();
-    else if (id === 'drives') workspaceOpeners.openDrives();
-    else if (id === 'desktop') workspaceOpeners.openDesktop();
-    else desktopActions.handleDockActivate(id);
-  }, [workspaceOpeners, desktopActions]);
+  const handleTaskbarLauncher = useCallback(
+    (id: string) => {
+      if (id === 'files') workspaceOpeners.openFiles();
+      else if (id === 'trash') workspaceOpeners.openTrash();
+      else if (id === 'jobs') workspaceOpeners.openJobs();
+      else if (id === 'settings') workspaceOpeners.openSettings();
+      else if (id === 'drives') workspaceOpeners.openDrives();
+      else if (id === 'desktop') workspaceOpeners.openDesktop();
+      else desktopActions.handleDockActivate(id);
+    },
+    [workspaceOpeners, desktopActions],
+  );
 
   // ── Focused window & reactive commands ──────────────────
   const [commandsMap, setCommandsMap] = useState<Record<string, WindowCommands>>({});
   const registerCommands = useCallback((id: string, cmds: WindowCommands) => {
-    setCommandsMap(prev => {
+    setCommandsMap((prev) => {
       const existing = prev[id];
-      if (existing &&
-          existing.onCreateFolder === cmds.onCreateFolder &&
-          existing.onUpload === cmds.onUpload &&
-          existing.onCut === cmds.onCut &&
-          existing.onCopy === cmds.onCopy &&
-          existing.onPaste === cmds.onPaste &&
-          existing.onSelectAll === cmds.onSelectAll &&
-          existing.onInvertSelection === cmds.onInvertSelection &&
-          existing.onRename === cmds.onRename &&
-          existing.onDelete === cmds.onDelete &&
-          existing.onRestore === cmds.onRestore &&
-          existing.onDeleteForever === cmds.onDeleteForever &&
-          existing.onEmptyTrash === cmds.onEmptyTrash &&
-          existing.canWrite === cmds.canWrite &&
-          existing.canUpload === cmds.canUpload &&
-          existing.selectedCount === cmds.selectedCount) {
+      if (
+        existing &&
+        existing.onCreateFolder === cmds.onCreateFolder &&
+        existing.onUpload === cmds.onUpload &&
+        existing.onCut === cmds.onCut &&
+        existing.onCopy === cmds.onCopy &&
+        existing.onPaste === cmds.onPaste &&
+        existing.onSelectAll === cmds.onSelectAll &&
+        existing.onInvertSelection === cmds.onInvertSelection &&
+        existing.onRename === cmds.onRename &&
+        existing.onDelete === cmds.onDelete &&
+        existing.onRestore === cmds.onRestore &&
+        existing.onDeleteForever === cmds.onDeleteForever &&
+        existing.onEmptyTrash === cmds.onEmptyTrash &&
+        existing.canWrite === cmds.canWrite &&
+        existing.canUpload === cmds.canUpload &&
+        existing.selectedCount === cmds.selectedCount
+      ) {
         return prev;
       }
       return { ...prev, [id]: cmds };
     });
   }, []);
   const unregisterCommands = useCallback((id: string) => {
-    setCommandsMap(prev => {
+    setCommandsMap((prev) => {
       const next = { ...prev };
       delete next[id];
       return next;
@@ -379,192 +439,247 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     return visibleWindows.reduce((a, b) => (a.zIndex > b.zIndex ? a : b));
   }, [wm.windows]);
 
-  const focusedCommands = focusedWindow ? (commandsMap[focusedWindow.id] ?? {}) : {} as WindowCommands;
+  const focusedCommands = focusedWindow
+    ? (commandsMap[focusedWindow.id] ?? {})
+    : ({} as WindowCommands);
   const topBarTitle = !isMobile
     ? (focusedWindow?.title ?? nav.topBarTitle ?? 'Desktop')
-    : (nav.topBarTitle);
+    : nav.topBarTitle;
 
   // ── Shell context value ────────────────────────────────
-  const shellContext = useMemo(() => ({
-    showToast: toast.showToast,
-    showToastObj: toast.showToastObj,
-    navigateTo: navActions.navigateTo,
-    refresh: browser.refresh,
-  }), [toast.showToast, toast.showToastObj, navActions.navigateTo, browser.refresh]);
+  const shellContext = useMemo(
+    () => ({
+      showToast: toast.showToast,
+      showToastObj: toast.showToastObj,
+      navigateTo: navActions.navigateTo,
+      refresh: browser.refresh,
+    }),
+    [toast.showToast, toast.showToastObj, navActions.navigateTo, browser.refresh],
+  );
 
   // ── Shell JSX ────────────────────────────────────────────
 
   const shell = (
     <>
       <main className={`${styles.appShell}${showStatusBar ? ` ${styles.withShellStatus}` : ''}`}>
-        <CommandsContext.Provider value={{ commands: commandsMap, register: registerCommands, unregister: unregisterCommands }}>
-        <ShellContext.Provider value={shellContext}>
-        <TopBar
-          activeView={nav.activeView}
-          title={topBarTitle}
-          onGoDesktop={navActions.resetToDesktopView}
-          onOpenSettings={workspaceOpeners.openSettings}
-          session={session}
-          onLogout={onLogout}
-          focusedWindowType={focusedWindow?.winType ?? null}
-          focusedWindowExists={!isMobile && focusedWindow !== null}
-          searchQuery={browser.query}
-          searchOpen={browser.searchOpen}
-          searchResults={browser.searchResults}
-          onSearch={(q) => { browser.setQuery(q); if (searchTimerRef.current) clearTimeout(searchTimerRef.current); searchTimerRef.current = setTimeout(() => browser.handleGlobalSearch(q), 200); browser.setSearchOpen(true); }}
-          onClearSearch={() => { browser.setQuery(''); browser.setSearchResults(null); browser.setSearchOpen(false); }}
-          onSearchResultClick={(result) => {
-            if (result.type === 'directory') navActions.navigateTo(result.path);
-            else { const idx = result.path.lastIndexOf('/'); navActions.navigateTo(idx < 0 ? '/' : result.path.substring(0, idx) || '/'); }
+        <CommandsContext.Provider
+          value={{
+            commands: commandsMap,
+            register: registerCommands,
+            unregister: unregisterCommands,
           }}
-          onShowAllSearchResults={(query) => { nav.setSearchQuery(query); nav.setShowingSearch(true); browser.setSearchOpen(false); }}
-          theme={theme}
-          onToggleTheme={onToggleTheme}
-          jobs={browser.jobs}
-          onOpenJobs={workspaceOpeners.openJobs}
-          menuHandlers={{
-            onCreateFolder: focusedCommands.onCreateFolder ?? (() => filesViewRef.current?.handleCreateFolder()),
-            onUpload: focusedCommands.onUpload ?? (() => filesViewRef.current?.handleUpload()),
-            onCut: focusedCommands.onCut ?? (() => filesViewRef.current?.handleCut()),
-            onCopy: focusedCommands.onCopy ?? (() => filesViewRef.current?.handleCopy()),
-            onPaste: focusedCommands.onPaste ?? (() => filesViewRef.current?.handlePaste()),
-            onSelectAll: focusedCommands.onSelectAll ?? (() => filesViewRef.current?.handleSelectAll()),
-            onInvertSelection: focusedCommands.onInvertSelection ?? (() => filesViewRef.current?.handleInvertSelection()),
-            onRename: focusedCommands.onRename ?? (() => filesViewRef.current?.handleRename()),
-            onDelete: focusedCommands.onDelete ?? (() => filesViewRef.current?.handleDelete()),
-            onRestore: focusedCommands.onRestore,
-            onDeleteForever: focusedCommands.onDeleteForever,
-            onEmptyTrash: focusedCommands.onEmptyTrash,
-            onClose: focusedWindow ? () => wm.closeWindow(focusedWindow.id) : navActions.resetToDesktopView,
-            viewMode: viewPref.viewMode,
-            onSetViewMode: viewPref.setViewMode,
-            showHidden: viewPref.showHidden,
-            onToggleHidden: () => viewPref.setShowHidden((v: boolean) => !v),
-            sortField: viewPref.sortField,
-            sortDirection: viewPref.sortDirection,
-            onSortChange: (value: string) => {
-              const [f, d] = value.split(':') as [SortField, SortDirection];
-              viewPref.setSortField(f);
-              viewPref.setSortDirection(d);
-            },
-            onGoDesktop: navActions.resetToDesktopView,
-            onGoFiles: () => workspaceOpeners.openFiles(),
-            onGoTrash: workspaceOpeners.openTrash,
-            onGoJobs: workspaceOpeners.openJobs,
-            onGoSettings: workspaceOpeners.openSettings,
-            onToggleLocation: () => filesViewRef.current?.handleToggleLocation(),
-            canWrite: focusedCommands.canWrite ?? browser.canWrite,
-            canUpload: focusedCommands.canUpload ?? browser.canWrite,
-            selectedCount: focusedCommands.selectedCount ?? (nav.showingTrash ? selection.selectedTrashIds.length : selection.selectedPaths.length),
-          }}
-        />
-        <Dock items={nav.dockItems} onActivate={handleTaskbarLauncher} shellStatusVisible={showStatusBar} />
-
-        <section className={styles.workspace} onClick={selection.handleWorkspaceClick}>
-          {nav.activeView === 'desktop' && (
-            <DesktopView
-              trashEntries={browser.trashEntries} jobs={browser.jobs}
-              pendingTransferCount={pendingUploadCount}
-              favorites={favorites} services={services} serviceHealth={serviceHealth}
-              onNavigateTo={workspaceOpeners.openFiles}
-              onNavigateToTrash={workspaceOpeners.openTrash}
+        >
+          <ShellContext.Provider value={shellContext}>
+            <TopBar
+              activeView={nav.activeView}
+              title={topBarTitle}
+              onGoDesktop={navActions.resetToDesktopView}
               onOpenSettings={workspaceOpeners.openSettings}
-              onOpenJobs={workspaceOpeners.openJobs}
-              onOpenFiles={() => workspaceOpeners.openFiles()}
-              onOpenService={workspaceOpeners.openService}
-              onShowMyPC={workspaceOpeners.openDrives}
-              onItemContextMenu={handleDesktopItemContextMenu}
-            />
-          )}
-          {nav.activeView === 'drives' && (
-            <DrivesView />
-          )}
-          {nav.activeView === 'trash' && (
-            <TrashView />
-          )}
-          {nav.activeView === 'search' && (
-            <SearchResultsView
-              initialQuery={nav.searchQuery}
               session={session}
-              onNavigate={navActions.navigateTo}
-              onClose={() => { nav.setShowingSearch(false); navActions.resetToDesktopView(); }}
-              onPreview={workspaceOpeners.openPreview}
-            />
-          )}
-          {nav.activeView === 'files' && (
-            <FilesView
-              ref={filesViewRef}
-              currentPath={viewPref.currentPath}
-              session={session}
-              favorites={favorites}
-              onNavigate={navActions.navigateTo}
-              onBack={navActions.goBack}
-              onAddFavorite={addFavorite}
-              onRemoveFavorite={removeFavorite}
-              onPreview={workspaceOpeners.openPreview}
-              onShowAllSearchResults={(query) => { nav.setSearchQuery(query); nav.setShowingSearch(true); }}
-            />
-          )}
-          {nav.activeView === 'jobs' && (
-            <JobsPage session={session} sessionLoading={false} />
-          )}
-          {nav.activeView === 'settings' && (
-            <SettingsPanel
-              onOpenShares={() => { nav.setShowingSettings(false); dialogs.setSharesOpen(true); }}
+              onLogout={onLogout}
+              focusedWindowType={focusedWindow?.winType ?? null}
+              focusedWindowExists={!isMobile && focusedWindow !== null}
+              searchQuery={browser.query}
+              searchOpen={browser.searchOpen}
+              searchResults={browser.searchResults}
+              onSearch={(q) => {
+                browser.setQuery(q);
+                if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+                searchTimerRef.current = setTimeout(() => browser.handleGlobalSearch(q), 200);
+                browser.setSearchOpen(true);
+              }}
+              onClearSearch={() => {
+                browser.setQuery('');
+                browser.setSearchResults(null);
+                browser.setSearchOpen(false);
+              }}
+              onSearchResultClick={(result) => {
+                if (result.type === 'directory') navActions.navigateTo(result.path);
+                else {
+                  const idx = result.path.lastIndexOf('/');
+                  navActions.navigateTo(idx < 0 ? '/' : result.path.substring(0, idx) || '/');
+                }
+              }}
+              onShowAllSearchResults={(query) => {
+                nav.setSearchQuery(query);
+                nav.setShowingSearch(true);
+                browser.setSearchOpen(false);
+              }}
               theme={theme}
               onToggleTheme={onToggleTheme}
-              onOpenShortcuts={() => fileActions.setShortcutsOpen(true)}
-              onLogout={onLogout}
-              session={session}
-              onSessionChange={onSessionChange}
-              services={services}
-              serviceHealth={serviceHealth}
-              onAddService={() => desktopActions.handleOpenServiceForm()}
-              onEditService={(id) => {
-                const svc = services.find((s) => s.id === id);
-                if (svc) desktopActions.handleOpenServiceForm(svc);
+              jobs={browser.jobs}
+              onOpenJobs={workspaceOpeners.openJobs}
+              menuHandlers={{
+                onCreateFolder:
+                  focusedCommands.onCreateFolder ??
+                  (() => filesViewRef.current?.handleCreateFolder()),
+                onUpload: focusedCommands.onUpload ?? (() => filesViewRef.current?.handleUpload()),
+                onCut: focusedCommands.onCut ?? (() => filesViewRef.current?.handleCut()),
+                onCopy: focusedCommands.onCopy ?? (() => filesViewRef.current?.handleCopy()),
+                onPaste: focusedCommands.onPaste ?? (() => filesViewRef.current?.handlePaste()),
+                onSelectAll:
+                  focusedCommands.onSelectAll ?? (() => filesViewRef.current?.handleSelectAll()),
+                onInvertSelection:
+                  focusedCommands.onInvertSelection ??
+                  (() => filesViewRef.current?.handleInvertSelection()),
+                onRename: focusedCommands.onRename ?? (() => filesViewRef.current?.handleRename()),
+                onDelete: focusedCommands.onDelete ?? (() => filesViewRef.current?.handleDelete()),
+                onRestore: focusedCommands.onRestore,
+                onDeleteForever: focusedCommands.onDeleteForever,
+                onEmptyTrash: focusedCommands.onEmptyTrash,
+                onClose: focusedWindow
+                  ? () => wm.closeWindow(focusedWindow.id)
+                  : navActions.resetToDesktopView,
+                viewMode: viewPref.viewMode,
+                onSetViewMode: viewPref.setViewMode,
+                showHidden: viewPref.showHidden,
+                onToggleHidden: () => viewPref.setShowHidden((v: boolean) => !v),
+                sortField: viewPref.sortField,
+                sortDirection: viewPref.sortDirection,
+                onSortChange: (value: string) => {
+                  const [f, d] = value.split(':') as [SortField, SortDirection];
+                  viewPref.setSortField(f);
+                  viewPref.setSortDirection(d);
+                },
+                onGoDesktop: navActions.resetToDesktopView,
+                onGoFiles: () => workspaceOpeners.openFiles(),
+                onGoTrash: workspaceOpeners.openTrash,
+                onGoJobs: workspaceOpeners.openJobs,
+                onGoSettings: workspaceOpeners.openSettings,
+                onToggleLocation: () => filesViewRef.current?.handleToggleLocation(),
+                canWrite: focusedCommands.canWrite ?? browser.canWrite,
+                canUpload: focusedCommands.canUpload ?? browser.canWrite,
+                selectedCount:
+                  focusedCommands.selectedCount ??
+                  (nav.showingTrash
+                    ? selection.selectedTrashIds.length
+                    : selection.selectedPaths.length),
               }}
-              onRemoveService={desktopActions.handleRemoveService}
-              onReorderServices={reorderServices}
             />
-          )}
+            <Dock
+              items={nav.dockItems}
+              onActivate={handleTaskbarLauncher}
+              shellStatusVisible={showStatusBar}
+            />
 
-          {menus.desktopContextMenu && (
-            <DesktopContextMenu
-              x={menus.desktopContextMenu.x} y={menus.desktopContextMenu.y}
-              item={menus.desktopContextMenu.item}
+            <section className={styles.workspace} onClick={selection.handleWorkspaceClick}>
+              {nav.activeView === 'desktop' && (
+                <DesktopView
+                  trashEntries={browser.trashEntries}
+                  jobs={browser.jobs}
+                  pendingTransferCount={pendingUploadCount}
+                  favorites={favorites}
+                  services={services}
+                  serviceHealth={serviceHealth}
+                  onNavigateTo={workspaceOpeners.openFiles}
+                  onNavigateToTrash={workspaceOpeners.openTrash}
+                  onOpenSettings={workspaceOpeners.openSettings}
+                  onOpenJobs={workspaceOpeners.openJobs}
+                  onOpenFiles={() => workspaceOpeners.openFiles()}
+                  onOpenService={workspaceOpeners.openService}
+                  onShowMyPC={workspaceOpeners.openDrives}
+                  onItemContextMenu={handleDesktopItemContextMenu}
+                />
+              )}
+              {nav.activeView === 'drives' && <DrivesView />}
+              {nav.activeView === 'trash' && <TrashView />}
+              {nav.activeView === 'search' && (
+                <SearchResultsView
+                  initialQuery={nav.searchQuery}
+                  session={session}
+                  onNavigate={navActions.navigateTo}
+                  onClose={() => {
+                    nav.setShowingSearch(false);
+                    navActions.resetToDesktopView();
+                  }}
+                  onPreview={workspaceOpeners.openPreview}
+                />
+              )}
+              {nav.activeView === 'files' && (
+                <FilesView
+                  ref={filesViewRef}
+                  currentPath={viewPref.currentPath}
+                  session={session}
+                  favorites={favorites}
+                  onNavigate={navActions.navigateTo}
+                  onBack={navActions.goBack}
+                  onAddFavorite={addFavorite}
+                  onRemoveFavorite={removeFavorite}
+                  onPreview={workspaceOpeners.openPreview}
+                  onShowAllSearchResults={(query) => {
+                    nav.setSearchQuery(query);
+                    nav.setShowingSearch(true);
+                  }}
+                />
+              )}
+              {nav.activeView === 'jobs' && <JobsPage session={session} sessionLoading={false} />}
+              {nav.activeView === 'settings' && (
+                <SettingsPanel
+                  onOpenShares={() => {
+                    nav.setShowingSettings(false);
+                    dialogs.setSharesOpen(true);
+                  }}
+                  theme={theme}
+                  onToggleTheme={onToggleTheme}
+                  onOpenShortcuts={() => fileActions.setShortcutsOpen(true)}
+                  onLogout={onLogout}
+                  session={session}
+                  onSessionChange={onSessionChange}
+                  services={services}
+                  serviceHealth={serviceHealth}
+                  onAddService={() => desktopActions.handleOpenServiceForm()}
+                  onEditService={(id) => {
+                    const svc = services.find((s) => s.id === id);
+                    if (svc) desktopActions.handleOpenServiceForm(svc);
+                  }}
+                  onRemoveService={desktopActions.handleRemoveService}
+                  onReorderServices={reorderServices}
+                />
+              )}
+
+              {menus.desktopContextMenu && (
+                <DesktopContextMenu
+                  x={menus.desktopContextMenu.x}
+                  y={menus.desktopContextMenu.y}
+                  item={menus.desktopContextMenu.item}
+                  trashCount={browser.trashEntries.length}
+                  onRefresh={desktopActions.handleRefreshDesktop}
+                  onEmptyTrash={desktopActions.handleEmptyTrash}
+                  onRemoveFavorite={desktopActions.handleRemoveDesktopFavorite}
+                  onAddService={() => desktopActions.handleOpenServiceForm()}
+                  onEditService={(id) => {
+                    const svc = services.find((s) => s.id === id);
+                    if (svc) desktopActions.handleOpenServiceForm(svc);
+                  }}
+                  onRemoveService={desktopActions.handleRemoveService}
+                  onClose={() => menus.setDesktopContextMenu(null)}
+                />
+              )}
+            </section>
+
+            <WindowHost renderWindow={renderWindow} />
+
+            <Taskbar launcherItems={nav.dockItems} onActivateLauncher={handleTaskbarLauncher} />
+
+            <StatusBar
+              visible={showStatusBar}
+              totalItems={
+                nav.activeView === 'trash' ? browser.trashEntries.length : browser.entries.length
+              }
+              selectedCount={
+                nav.activeView === 'trash'
+                  ? selection.selectedTrashIds.length
+                  : selection.selectedPaths.length
+              }
+              totalBytes={browser.selectedFileBytes}
+              rootAvail={browser.currentRoot?.freeBytes ?? null}
+              rootSize={browser.currentRoot?.totalBytes ?? null}
+              rootLabel={browser.currentRoot?.label || browser.currentRoot?.path || ''}
+              currentPath={viewPref.currentPath}
+              viewContext={nav.activeView}
               trashCount={browser.trashEntries.length}
-              onRefresh={desktopActions.handleRefreshDesktop}
-              onEmptyTrash={desktopActions.handleEmptyTrash}
-              onRemoveFavorite={desktopActions.handleRemoveDesktopFavorite}
-              onAddService={() => desktopActions.handleOpenServiceForm()}
-              onEditService={(id) => {
-                const svc = services.find((s) => s.id === id);
-                if (svc) desktopActions.handleOpenServiceForm(svc);
-              }}
-              onRemoveService={desktopActions.handleRemoveService}
-              onClose={() => menus.setDesktopContextMenu(null)}
             />
-          )}
-        </section>
-
-        <WindowHost renderWindow={renderWindow} />
-
-        <Taskbar launcherItems={nav.dockItems} onActivateLauncher={handleTaskbarLauncher} />
-
-        <StatusBar
-          visible={showStatusBar}
-          totalItems={nav.activeView === 'trash' ? browser.trashEntries.length : browser.entries.length}
-          selectedCount={nav.activeView === 'trash' ? selection.selectedTrashIds.length : selection.selectedPaths.length}
-          totalBytes={browser.selectedFileBytes}
-          rootAvail={browser.currentRoot?.freeBytes ?? null}
-          rootSize={browser.currentRoot?.totalBytes ?? null}
-          rootLabel={browser.currentRoot?.label || browser.currentRoot?.path || ''}
-          currentPath={viewPref.currentPath}
-          viewContext={nav.activeView}
-          trashCount={browser.trashEntries.length}
-        />
-        </ShellContext.Provider>
+          </ShellContext.Provider>
         </CommandsContext.Provider>
       </main>
       <ToastViewport toasts={toast.toasts} onDismiss={toast.dismissToast} />
@@ -576,21 +691,40 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   return (
     <>
       {shell}
-      {dialogs.shareDialogPath && <ShareDialog path={dialogs.shareDialogPath.path} name={dialogs.shareDialogPath.name} onClose={() => dialogs.setShareDialogPath(null)} />}
+      {dialogs.shareDialogPath && (
+        <ShareDialog
+          path={dialogs.shareDialogPath.path}
+          name={dialogs.shareDialogPath.name}
+          onClose={() => dialogs.setShareDialogPath(null)}
+        />
+      )}
       {fileActions.previewEntry && (
         <PreviewModal
           entry={fileActions.previewEntry}
           onClose={() => fileActions.setPreviewEntry(null)}
           onDownload={() => openFileExternally(fileActions.previewEntry!.path)}
-          onShare={() => dialogs.setShareDialogPath({ path: fileActions.previewEntry!.path, name: fileActions.previewEntry!.name })}
-          onPrevious={previousPreviewEntry ? () => fileActions.setPreviewEntry(previousPreviewEntry) : undefined}
-          onNext={nextPreviewEntry ? () => fileActions.setPreviewEntry(nextPreviewEntry) : undefined}
+          onShare={() =>
+            dialogs.setShareDialogPath({
+              path: fileActions.previewEntry!.path,
+              name: fileActions.previewEntry!.name,
+            })
+          }
+          onPrevious={
+            previousPreviewEntry
+              ? () => fileActions.setPreviewEntry(previousPreviewEntry)
+              : undefined
+          }
+          onNext={
+            nextPreviewEntry ? () => fileActions.setPreviewEntry(nextPreviewEntry) : undefined
+          }
           previousDisabled={!previousPreviewEntry}
           nextDisabled={!nextPreviewEntry}
           positionLabel={previewPositionLabel}
         />
       )}
-      {fileActions.shortcutsOpen && <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />}
+      {fileActions.shortcutsOpen && (
+        <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />
+      )}
       {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
       {menus.serviceFormData && (
         <ServiceFormModal

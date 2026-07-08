@@ -1,7 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Overlay, PanelHeader, Button, IconButton, Notice, StatusBadge, RotatedIcon, MutedText, IconImg } from '../components/ui/shared';
+import {
+  Overlay,
+  PanelHeader,
+  Button,
+  IconButton,
+  Notice,
+  StatusBadge,
+  RotatedIcon,
+  MutedText,
+  IconImg,
+} from '../components/ui/shared';
 
 describe('Button', () => {
   it('renders children', () => {
@@ -62,14 +72,22 @@ describe('IconButton', () => {
 
 describe('Overlay', () => {
   it('renders children', () => {
-    render(<Overlay><div>Content</div></Overlay>);
+    render(
+      <Overlay>
+        <div>Content</div>
+      </Overlay>,
+    );
     expect(screen.getByText('Content')).toBeInTheDocument();
   });
 
   it('calls onClose when clicking the backdrop', async () => {
     const onClose = vi.fn();
     const user = userEvent.setup();
-    render(<Overlay onClose={onClose}><div>Content</div></Overlay>);
+    render(
+      <Overlay onClose={onClose}>
+        <div>Content</div>
+      </Overlay>,
+    );
     await user.click(screen.getByText('Content').parentElement!);
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -77,7 +95,11 @@ describe('Overlay', () => {
   it('does not call onClose when clicking inside children', async () => {
     const onClose = vi.fn();
     const user = userEvent.setup();
-    render(<Overlay onClose={onClose}><div>Content</div></Overlay>);
+    render(
+      <Overlay onClose={onClose}>
+        <div>Content</div>
+      </Overlay>,
+    );
     await user.click(screen.getByText('Content'));
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -100,7 +122,11 @@ describe('PanelHeader', () => {
   });
 
   it('renders children', () => {
-    render(<PanelHeader title="Settings"><button type="button">Action</button></PanelHeader>);
+    render(
+      <PanelHeader title="Settings">
+        <button type="button">Action</button>
+      </PanelHeader>,
+    );
     expect(screen.getByText('Action')).toBeInTheDocument();
   });
 });
@@ -136,7 +162,11 @@ describe('StatusBadge', () => {
 
 describe('RotatedIcon', () => {
   it('renders children', () => {
-    render(<RotatedIcon><span>Arrow</span></RotatedIcon>);
+    render(
+      <RotatedIcon>
+        <span>Arrow</span>
+      </RotatedIcon>,
+    );
     expect(screen.getByText('Arrow')).toBeInTheDocument();
   });
 });

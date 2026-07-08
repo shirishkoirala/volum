@@ -72,9 +72,14 @@ describe('useJobs', () => {
 
     (api.getJobs as ReturnType<typeof vi.fn>).mockResolvedValue({ jobs: [makeJob()] });
 
-    renderHook(() => useJobs(setJobs, {
-      session: fakeSession, sessionLoading: false, onRefresh, showToast,
-    }));
+    renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     await waitFor(() => {
       expect(api.getJobs).toHaveBeenCalledTimes(1);
@@ -87,9 +92,14 @@ describe('useJobs', () => {
     const onRefresh = vi.fn();
     const showToast = vi.fn();
 
-    renderHook(() => useJobs(setJobs, {
-      session: fakeSession, sessionLoading: true, onRefresh, showToast,
-    }));
+    renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: true,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     expect(api.getJobs).not.toHaveBeenCalled();
   });
@@ -99,10 +109,14 @@ describe('useJobs', () => {
     const onRefresh = vi.fn();
     const showToast = vi.fn();
 
-    renderHook(() => useJobs(setJobs, {
-      session: { authEnabled: true, authenticated: false },
-      sessionLoading: false, onRefresh, showToast,
-    }));
+    renderHook(() =>
+      useJobs(setJobs, {
+        session: { authEnabled: true, authenticated: false },
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     expect(api.getJobs).not.toHaveBeenCalled();
   });
@@ -115,9 +129,14 @@ describe('useJobs', () => {
     (api.cancelJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
     (api.getJobs as ReturnType<typeof vi.fn>).mockResolvedValue({ jobs: [] });
 
-    const { result } = renderHook(() => useJobs(setJobs, {
-      session: fakeSession, sessionLoading: false, onRefresh, showToast,
-    }));
+    const { result } = renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
 
@@ -137,9 +156,14 @@ describe('useJobs', () => {
     (api.retryJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
     (api.getJobs as ReturnType<typeof vi.fn>).mockResolvedValue({ jobs: [] });
 
-    const { result } = renderHook(() => useJobs(setJobs, {
-      session: fakeSession, sessionLoading: false, onRefresh, showToast,
-    }));
+    const { result } = renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
 
@@ -159,9 +183,14 @@ describe('useJobs', () => {
     (api.pauseJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
     (api.getJobs as ReturnType<typeof vi.fn>).mockResolvedValue({ jobs: [] });
 
-    const { result } = renderHook(() => useJobs(setJobs, {
-      session: fakeSession, sessionLoading: false, onRefresh, showToast,
-    }));
+    const { result } = renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
 
@@ -181,9 +210,14 @@ describe('useJobs', () => {
     (api.resumeJob as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
     (api.getJobs as ReturnType<typeof vi.fn>).mockResolvedValue({ jobs: [] });
 
-    const { result } = renderHook(() => useJobs(setJobs, {
-      session: fakeSession, sessionLoading: false, onRefresh, showToast,
-    }));
+    const { result } = renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
 
@@ -203,9 +237,14 @@ describe('useJobs', () => {
     (api.clearCompletedJobs as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
     (api.getJobs as ReturnType<typeof vi.fn>).mockResolvedValue({ jobs: [] });
 
-    const { result } = renderHook(() => useJobs(setJobs, {
-      session: fakeSession, sessionLoading: false, onRefresh, showToast,
-    }));
+    const { result } = renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
 
@@ -225,9 +264,14 @@ describe('useJobs', () => {
     (api.clearFailedJobs as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
     (api.getJobs as ReturnType<typeof vi.fn>).mockResolvedValue({ jobs: [] });
 
-    const { result } = renderHook(() => useJobs(setJobs, {
-      session: fakeSession, sessionLoading: false, onRefresh, showToast,
-    }));
+    const { result } = renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
 
@@ -247,9 +291,14 @@ describe('useJobs', () => {
     (api.cancelJob as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('server error'));
     (api.getJobs as ReturnType<typeof vi.fn>).mockResolvedValue({ jobs: [] });
 
-    const { result } = renderHook(() => useJobs(setJobs, {
-      session: fakeSession, sessionLoading: false, onRefresh, showToast,
-    }));
+    const { result } = renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
 
@@ -266,13 +315,21 @@ describe('useJobs', () => {
     const showToast = vi.fn();
     const es = mockEventSource();
 
-    renderHook(() => useJobs(setJobs, {
-      session: fakeSession, sessionLoading: false, onRefresh, showToast,
-    }));
+    renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
 
-    es.dispatchEvent('jobs', JSON.stringify({ jobs: [{ ...makeJob(), id: '2', status: 'completed', type: 'copy' }] }));
+    es.dispatchEvent(
+      'jobs',
+      JSON.stringify({ jobs: [{ ...makeJob(), id: '2', status: 'completed', type: 'copy' }] }),
+    );
 
     await waitFor(() => {
       expect(onRefresh).toHaveBeenCalled();
@@ -285,13 +342,21 @@ describe('useJobs', () => {
     const showToast = vi.fn();
     const es = mockEventSource();
 
-    renderHook(() => useJobs(setJobs, {
-      session: fakeSession, sessionLoading: false, onRefresh, showToast,
-    }));
+    renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+      }),
+    );
 
     await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
 
-    es.dispatchEvent('jobs', JSON.stringify({ jobs: [{ ...makeJob(), id: '2', status: 'completed', type: 'checksum' }] }));
+    es.dispatchEvent(
+      'jobs',
+      JSON.stringify({ jobs: [{ ...makeJob(), id: '2', status: 'completed', type: 'checksum' }] }),
+    );
 
     expect(onRefresh).not.toHaveBeenCalled();
   });

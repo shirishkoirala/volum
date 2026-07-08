@@ -28,7 +28,7 @@ export function KeyboardShortcuts({ onClose }: KeyboardShortcutsProps) {
     <Dialog hideHeader onClose={onClose} width="sm">
       <div className={styles.shortcutsPanel}>
         <h3>Keyboard Shortcuts</h3>
-        {shortcuts.map(([label, key], index) => (
+        {shortcuts.map(([label, key], index) =>
           index === shortcuts.length - 2 ? (
             <>
               <hr key="hr" />
@@ -42,8 +42,8 @@ export function KeyboardShortcuts({ onClose }: KeyboardShortcutsProps) {
               <span>{label}</span>
               <span className={styles.shortcutKey}>{key}</span>
             </div>
-          )
-        ))}
+          ),
+        )}
       </div>
     </Dialog>
   );

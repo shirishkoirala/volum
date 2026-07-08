@@ -8,15 +8,21 @@ export function useToasts() {
     setToasts((items) => items.filter((toast) => toast.id !== id));
   }, []);
 
-  const showToastObj = useCallback((toast: Omit<Toast, 'id'>, timeout = 4000) => {
-    const id = Date.now() + Math.floor(Math.random() * 1000);
-    setToasts((items) => [...items.slice(-3), { ...toast, id }]);
-    window.setTimeout(() => dismissToast(id), timeout);
-  }, [dismissToast]);
+  const showToastObj = useCallback(
+    (toast: Omit<Toast, 'id'>, timeout = 4000) => {
+      const id = Date.now() + Math.floor(Math.random() * 1000);
+      setToasts((items) => [...items.slice(-3), { ...toast, id }]);
+      window.setTimeout(() => dismissToast(id), timeout);
+    },
+    [dismissToast],
+  );
 
-  const showToast = useCallback((title: string, variant?: Toast['variant'], message?: string) => {
-    showToastObj({ title, variant: variant ?? 'success', message });
-  }, [showToastObj]);
+  const showToast = useCallback(
+    (title: string, variant?: Toast['variant'], message?: string) => {
+      showToastObj({ title, variant: variant ?? 'success', message });
+    },
+    [showToastObj],
+  );
 
   return {
     toasts,

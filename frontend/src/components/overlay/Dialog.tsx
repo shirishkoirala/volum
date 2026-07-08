@@ -14,18 +14,28 @@ type DialogProps = {
   footer?: ReactNode;
 };
 
-export function Dialog({ title, subtitle, hideHeader, width = 'md', zIndex = 500, onClose, children, footer }: DialogProps) {
+export function Dialog({
+  title,
+  subtitle,
+  hideHeader,
+  width = 'md',
+  zIndex = 500,
+  onClose,
+  children,
+  footer,
+}: DialogProps) {
   useEscapeStack(onClose);
 
   return (
     <Overlay zIndex={zIndex} onClose={onClose}>
-      <div className={`${styles.dialog} ${styles[width]}${hideHeader ? ` ${styles.dialogNoPad}` : ''}`} role="dialog" aria-modal="true" aria-label={hideHeader ? undefined : title}>
+      <div
+        className={`${styles.dialog} ${styles[width]}${hideHeader ? ` ${styles.dialogNoPad}` : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={hideHeader ? undefined : title}
+      >
         {!hideHeader && <PanelHeader title={title ?? ''} subtitle={subtitle} onClose={onClose} />}
-        {!hideHeader ? (
-          <div className={styles.dialogBody}>{children}</div>
-        ) : (
-          children
-        )}
+        {!hideHeader ? <div className={styles.dialogBody}>{children}</div> : children}
         {footer && <div className={styles.dialogFooter}>{footer}</div>}
       </div>
     </Overlay>

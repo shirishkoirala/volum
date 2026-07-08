@@ -19,7 +19,11 @@ function ext(name: string) {
   return name.slice(dot + 1).toLowerCase();
 }
 
-const MIMETYPE_ASSETS = import.meta.glob<string>('../assets/mimetypes/*.svg', { eager: true, query: '?url', import: 'default' });
+const MIMETYPE_ASSETS = import.meta.glob<string>('../assets/mimetypes/*.svg', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+});
 
 const MIME_ICON_URLS = Object.fromEntries(
   Object.entries(MIMETYPE_ASSETS).map(([path, url]) => {
@@ -120,13 +124,25 @@ function genericMimetypeIcon(mimetype: string) {
   if (mimetype.startsWith('audio-')) return mimetypeAssetUrl('audio-x-generic');
   if (mimetype.startsWith('video-')) return mimetypeAssetUrl('video-x-generic');
   if (mimetype.startsWith('text-')) return mimetypeAssetUrl('text-x-generic');
-  if (mimetype.includes('spreadsheet') || mimetype.includes('excel')) return mimetypeAssetUrl('x-office-spreadsheet');
-  if (mimetype.includes('presentation') || mimetype.includes('powerpoint')) return mimetypeAssetUrl('x-office-presentation');
-  if (mimetype.includes('document') || mimetype.includes('word')) return mimetypeAssetUrl('x-office-document');
-  if (mimetype.includes('zip') || mimetype.includes('compressed') || mimetype.includes('tar') || mimetype.includes('gzip')) {
+  if (mimetype.includes('spreadsheet') || mimetype.includes('excel'))
+    return mimetypeAssetUrl('x-office-spreadsheet');
+  if (mimetype.includes('presentation') || mimetype.includes('powerpoint'))
+    return mimetypeAssetUrl('x-office-presentation');
+  if (mimetype.includes('document') || mimetype.includes('word'))
+    return mimetypeAssetUrl('x-office-document');
+  if (
+    mimetype.includes('zip') ||
+    mimetype.includes('compressed') ||
+    mimetype.includes('tar') ||
+    mimetype.includes('gzip')
+  ) {
     return mimetypeAssetUrl('application-zip');
   }
-  if (mimetype.includes('executable') || mimetype.includes('sharedlib') || mimetype.includes('octet-stream')) {
+  if (
+    mimetype.includes('executable') ||
+    mimetype.includes('sharedlib') ||
+    mimetype.includes('octet-stream')
+  ) {
     return mimetypeAssetUrl('application-octet-stream');
   }
   return mimetypeAssetUrl('unknown');
@@ -141,7 +157,8 @@ const MIMETYPE_ALIASES: Record<string, string> = {
   'application-vnd.oasis.opendocument.presentation': 'x-office-presentation',
   'application-vnd.oasis.opendocument.spreadsheet': 'x-office-spreadsheet',
   'application-vnd.oasis.opendocument.text': 'x-office-document',
-  'application-vnd.openxmlformats-officedocument.presentationml.presentation': 'x-office-presentation',
+  'application-vnd.openxmlformats-officedocument.presentationml.presentation':
+    'x-office-presentation',
   'application-vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'x-office-spreadsheet',
   'application-vnd.openxmlformats-officedocument.wordprocessingml.document': 'x-office-document',
   'application-x-cd-image': 'application-x-iso',

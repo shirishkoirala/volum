@@ -8,12 +8,17 @@ interface JobsEmptyMenuProps {
   onClose: () => void;
 }
 
-export function JobsEmptyMenu({
-  x, y, onRefresh, onClose,
-}: JobsEmptyMenuProps) {
+export function JobsEmptyMenu({ x, y, onRefresh, onClose }: JobsEmptyMenuProps) {
   return (
     <ContextMenuShell x={x} y={y} onClose={onClose}>
-      <button type="button" onClick={() => { onRefresh(); onClose(); }} role="menuitem">
+      <button
+        type="button"
+        onClick={() => {
+          onRefresh();
+          onClose();
+        }}
+        role="menuitem"
+      >
         <Icon name="view-refresh" size={16} /> Refresh
       </button>
     </ContextMenuShell>
