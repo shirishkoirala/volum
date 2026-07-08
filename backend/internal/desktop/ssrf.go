@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/netip"
 	"net/url"
-	"strings"
 	"time"
 )
 
@@ -134,18 +133,4 @@ func redirectBlocked(req *http.Request, via []*http.Request) error {
 	}
 
 	return nil
-}
-
-func parseHealthURL(raw string) (string, error) {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return "", nil
-	}
-
-	u, err := ValidateHealthURL(raw)
-	if err != nil {
-		return "", err
-	}
-
-	return u.String(), nil
 }

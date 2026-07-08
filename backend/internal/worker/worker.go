@@ -69,11 +69,9 @@ func (w *Worker) runOnce(ctx context.Context) {
 		var processErr error
 		switch job.Type {
 		case jobs.TypeArchive:
-			if _, processErr = w.processArchive(ctx, job); processErr != nil {
-			} // processArchive handles job state internally
+			_, processErr = w.processArchive(ctx, job)
 		case jobs.TypeExtract:
-			if _, processErr = w.processExtract(ctx, job); processErr != nil {
-			}
+			_, processErr = w.processExtract(ctx, job)
 		}
 		if processErr != nil {
 			w.log.Error("archive/extract job failed", "job_id", job.ID, "error", processErr)

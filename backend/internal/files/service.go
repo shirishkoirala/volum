@@ -483,7 +483,7 @@ func (s *Service) Search(query string, maxResults int) ([]SearchResult, error) {
 	for _, root := range roots {
 		err := filepath.WalkDir(root.InternalPath, func(path string, entry os.DirEntry, walkErr error) error {
 			if walkErr != nil {
-				return nil
+				return nil //nolint:nilerr // Search skips paths that cannot be read and continues with the rest.
 			}
 			name := entry.Name()
 			if strings.HasPrefix(name, ".") || strings.HasPrefix(name, ".volum-trash") || strings.HasPrefix(filepath.Base(filepath.Dir(path)), ".volum-tmp") {
@@ -496,17 +496,17 @@ func (s *Service) Search(query string, maxResults int) ([]SearchResult, error) {
 				return nil
 			}
 			if strings.Contains(strings.ToLower(name), lower) || (entry.IsDir() && strings.Contains(strings.ToLower(filepath.Base(path)), lower)) {
-				info, err := entry.Info()
-				if err != nil {
-					return nil
+				info, infoErr := entry.Info()
+				if infoErr != nil {
+					return nil //nolint:nilerr // Skip entries that disappear or cannot be statted during search.
 				}
 				entryType := "file"
 				if entry.IsDir() {
 					entryType = "directory"
 				}
-				publicPath, err := s.guard.PublicPath(path)
-				if err != nil {
-					return nil
+				publicPath, pathErr := s.guard.PublicPath(path)
+				if pathErr != nil {
+					return nil //nolint:nilerr // Ignore entries that cannot be mapped back to a public root path.
 				}
 				results = append(results, SearchResult{
 					Name:       name,

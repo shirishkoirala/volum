@@ -254,7 +254,6 @@ func TestVerifyInvalidFormat(t *testing.T) {
 	if ok {
 		t.Fatal("expected verify to reject invalid format")
 	}
-	ok = false
 	_, ok = s.verify("base64.payload.invalid.signature")
 	if ok {
 		t.Fatal("expected verify to reject triple-dot format")

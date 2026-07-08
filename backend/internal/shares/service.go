@@ -122,6 +122,9 @@ func (s *Store) List() ([]Share, error) {
 		}
 		shares = append(shares, sh)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate shares: %w", err)
+	}
 	if shares == nil {
 		shares = []Share{}
 	}

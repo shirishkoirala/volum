@@ -133,7 +133,7 @@ func extractTarFromReader(store *jobs.Store, ctx context.Context, reader io.Read
 			continue
 		}
 
-		if header.Typeflag != tar.TypeReg && header.Typeflag != tar.TypeRegA {
+		if header.Typeflag != tar.TypeReg {
 			continue
 		}
 

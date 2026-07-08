@@ -1,9 +1,9 @@
 FROM golang:1.23-alpine AS backend-base
 WORKDIR /app/backend
-RUN apk add --no-cache gcc musl-dev
+RUN apk add --no-cache binutils gcc musl-dev
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
-RUN go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+RUN CGO_ENABLED=0 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.3.1
 COPY backend ./
 RUN golangci-lint run ./...
 RUN go vet ./...

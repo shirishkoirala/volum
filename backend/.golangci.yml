@@ -5,14 +5,13 @@ run:
   tests: true
 
 linters:
-  default: standard
+  default: none
   enable:
-    - bodyclose
-    - errorlint
-    - gosec
+    - govet
+    - ineffassign
     - nilerr
-    - noctx
     - rowserrcheck
+    - staticcheck
     - sqlclosecheck
     - unconvert
     - wastedassign

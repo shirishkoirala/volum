@@ -186,7 +186,10 @@ func (s *Store) CompleteJob(ctx context.Context, jobID string) error {
 	// job chaining: queue the next job when this one completes
 	var nextJobID sql.NullString
 	if err := s.db.QueryRowContext(ctx, `SELECT next_job_id FROM jobs WHERE id = ?`, jobID).Scan(&nextJobID); err != nil {
-		return nil
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
 	}
 	if nextJobID.Valid && nextJobID.String != "" {
 		_, _ = s.db.ExecContext(ctx, `

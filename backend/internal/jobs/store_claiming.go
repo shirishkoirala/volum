@@ -16,7 +16,7 @@ func (s *Store) claimNextJob(ctx context.Context, types ...Type) (Job, bool, err
 	defer tx.Rollback()
 
 	query := `
-		SELECT `+jobColumns+`
+		SELECT ` + jobColumns + `
 		FROM jobs
 		WHERE status = ? AND type IN (?` + repeatParams(len(types)-1) + `)
 			AND (scheduled_at IS NULL OR scheduled_at <= ?)
@@ -89,5 +89,3 @@ func (s *Store) ClaimNextArchiveJob(ctx context.Context) (Job, bool, error) {
 func (s *Store) ClaimNextChecksumJob(ctx context.Context) (Job, bool, error) {
 	return s.claimNextJob(ctx, TypeChecksum)
 }
-
-

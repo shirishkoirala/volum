@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"image"
@@ -35,7 +34,6 @@ import (
 type testServer struct {
 	*Server
 	root   string
-	db     *sql.DB
 	cookie string
 }
 
