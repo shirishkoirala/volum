@@ -46,24 +46,27 @@ export function useWorkspaceOpeners({
   trashCount,
   wm,
 }: UseWorkspaceOpenersParams) {
-  const openFiles = useCallback((path?: string) => {
-    if (isMobile) {
-      navActions.navigateTo(path ?? defaultRootPath);
-      return;
-    }
+  const openFiles = useCallback(
+    (path?: string) => {
+      if (isMobile) {
+        navActions.navigateTo(path ?? defaultRootPath);
+        return;
+      }
 
-    const { x: fx, y: fy } = getStandardWindowPos();
-    wm.toggleWindow('files', {
-      title: 'Files',
-      icon: filesIconUrl(),
-      winType: 'files',
-      params: { path: path ?? defaultRootPath },
-      width: STANDARD_WINDOW_W,
-      height: STANDARD_WINDOW_H,
-      x: fx,
-      y: fy,
-    });
-  }, [defaultRootPath, isMobile, navActions, wm]);
+      const { x: fx, y: fy } = getStandardWindowPos();
+      wm.toggleWindow('files', {
+        title: 'Files',
+        icon: filesIconUrl(),
+        winType: 'files',
+        params: { path: path ?? defaultRootPath },
+        width: STANDARD_WINDOW_W,
+        height: STANDARD_WINDOW_H,
+        x: fx,
+        y: fy,
+      });
+    },
+    [defaultRootPath, isMobile, navActions, wm],
+  );
 
   const openDrives = useCallback(() => {
     if (isMobile) {
@@ -156,45 +159,51 @@ export function useWorkspaceOpeners({
     });
   }, [isMobile, nav, wm]);
 
-  const openPreview = useCallback((entry: FileEntry, entries: FileEntry[] = [entry]) => {
-    if (isMobile) {
-      setPreviewEntries(entries);
-      setPreviewEntry(entry);
-      return;
-    }
+  const openPreview = useCallback(
+    (entry: FileEntry, entries: FileEntry[] = [entry]) => {
+      if (isMobile) {
+        setPreviewEntries(entries);
+        setPreviewEntry(entry);
+        return;
+      }
 
-    const { x: px, y: py } = getStandardWindowPos();
-    wm.toggleWindow('preview', {
-      title: entry.name,
-      icon: fileTypeIconUrl(entry),
-      winType: 'preview',
-      params: { entry, entries },
-      width: STANDARD_WINDOW_W,
-      height: STANDARD_WINDOW_H,
-      x: px,
-      y: py,
-    });
-  }, [isMobile, setPreviewEntries, setPreviewEntry, wm]);
+      const { x: px, y: py } = getStandardWindowPos();
+      wm.toggleWindow('preview', {
+        title: entry.name,
+        icon: fileTypeIconUrl(entry),
+        winType: 'preview',
+        params: { entry, entries },
+        width: STANDARD_WINDOW_W,
+        height: STANDARD_WINDOW_H,
+        x: px,
+        y: py,
+      });
+    },
+    [isMobile, setPreviewEntries, setPreviewEntry, wm],
+  );
 
-  const openService = useCallback((service: ServiceShortcut) => {
-    if (service.openMode === 'tab' || isMobile) {
-      window.open(service.url, '_blank', 'noopener,noreferrer');
-      return;
-    }
+  const openService = useCallback(
+    (service: ServiceShortcut) => {
+      if (service.openMode === 'tab' || isMobile) {
+        window.open(service.url, '_blank', 'noopener,noreferrer');
+        return;
+      }
 
-    wm.openWindow({
-      id: `service-${service.id}`,
-      title: service.name,
-      icon: service.iconUrl ?? '',
-      winType: 'service',
-      params: {
-        name: service.name,
-        url: service.url,
-      },
-      width: 980,
-      height: 640,
-    });
-  }, [isMobile, wm]);
+      wm.openWindow({
+        id: `service-${service.id}`,
+        title: service.name,
+        icon: service.iconUrl ?? '',
+        winType: 'service',
+        params: {
+          name: service.name,
+          url: service.url,
+        },
+        width: 980,
+        height: 640,
+      });
+    },
+    [isMobile, wm],
+  );
 
   const openDesktop = useCallback(() => {
     if (isMobile) {

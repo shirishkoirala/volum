@@ -44,25 +44,6 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
           return prev.map((w) => (w.id === opts.id ? { ...w, minimized: false, zIndex: z } : w));
         }
         const z = nextZ();
-        return prev.map((w) => w.id === opts.id ? { ...w, minimized: false, zIndex: z } : w);
-      }
-      const z = nextZ();
-      return [...prev, {
-        id: opts.id,
-        title: opts.title,
-        icon: opts.icon,
-        winType: opts.winType,
-        params: opts.params,
-        x: opts.x ?? 100,
-        y: opts.y ?? 80,
-        width: opts.width ?? STANDARD_WINDOW_W,
-        height: opts.height ?? STANDARD_WINDOW_H,
-        minimized: false,
-        maximized: false,
-        zIndex: z,
-      }];
-    });
-  }, []);
         return [
           ...prev,
           {
@@ -73,8 +54,8 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
             params: opts.params,
             x: opts.x ?? 100,
             y: opts.y ?? 80,
-            width: opts.width ?? 800,
-            height: opts.height ?? 500,
+            width: opts.width ?? STANDARD_WINDOW_W,
+            height: opts.height ?? STANDARD_WINDOW_H,
             minimized: false,
             maximized: false,
             zIndex: z,
@@ -155,43 +136,27 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
       const x = 60 + (ci % 6) * WINDOW_OFFSET;
       const y = 40 + (ci % 6) * WINDOW_OFFSET;
       const z = nextZ();
-      setWindows((prev) => prev.map((w) => w.id === existing.id ? {
-        ...w,
-        title: opts.title,
-        icon: opts.icon,
-        winType: opts.winType,
-        params: opts.params,
-        width: opts.width ?? STANDARD_WINDOW_W,
-        height: opts.height ?? STANDARD_WINDOW_H,
-        minimized: false,
-        zIndex: z,
-      } : w));
-      return existing.id;
-    }
-    const count = (windowCounts.current[windowType] ?? 0) + 1;
-    windowCounts.current[windowType] = count;
-    const id = `${windowType}-${count}`;
-    const ci = cascadeIndex.current;
-    cascadeIndex.current = ci + 1;
-    const x = 60 + (ci % 6) * WINDOW_OFFSET;
-    const y = 40 + (ci % 6) * WINDOW_OFFSET;
-    const z = nextZ();
-    setWindows((prev) => [...prev, {
-      id,
-      title: opts.title,
-      icon: opts.icon,
-      winType: opts.winType,
-      params: opts.params,
-      x: opts.x ?? x,
-      y: opts.y ?? y,
-      width: opts.width ?? STANDARD_WINDOW_W,
-      height: opts.height ?? STANDARD_WINDOW_H,
-      minimized: false,
-      maximized: false,
-      zIndex: z,
-    }]);
-    return id;
-  }, []);
+      setWindows((prev) => [
+        ...prev,
+        {
+          id,
+          title: opts.title,
+          icon: opts.icon,
+          winType: opts.winType,
+          params: opts.params,
+          x: opts.x ?? x,
+          y: opts.y ?? y,
+          width: opts.width ?? STANDARD_WINDOW_W,
+          height: opts.height ?? STANDARD_WINDOW_H,
+          minimized: false,
+          maximized: false,
+          zIndex: z,
+        },
+      ]);
+      return id;
+    },
+    [],
+  );
 
   return (
     <WindowManagerContext.Provider

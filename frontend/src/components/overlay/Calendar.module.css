@@ -38,7 +38,9 @@
   flex: 0 0 24px;
   height: 24px;
   justify-content: center;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .nav:hover {

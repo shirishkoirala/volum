@@ -422,7 +422,7 @@ export function TopBar({
           >
             {dateTime}
           </button>
-          {calendarOpen && <Calendar onClose={() => setCalendarOpen(false)} />}
+          {calendarOpen && <Calendar />}
         </div>
       </div>
     </header>

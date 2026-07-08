@@ -93,7 +93,9 @@
   letter-spacing: 0;
   opacity: 1;
   padding: 0 8px;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   padding: 0 var(--space-xs) 0 var(--space-sm);
   user-select: none;
   white-space: nowrap;
@@ -104,7 +106,6 @@
   color: var(--color-text);
 }
 
-:global([data-theme="light"]) .clock {
 :global([data-theme='light']) .clock {
   color: var(--color-text-secondary);
   opacity: 1;

@@ -3,8 +3,18 @@ import styles from './Calendar.module.css';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 function getMonthGrid(year: number, month: number) {
@@ -34,28 +44,23 @@ function getMonthGrid(year: number, month: number) {
 }
 
 function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear()
-    && a.getMonth() === b.getMonth()
-    && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function formatDate(date: Date) {
   return date.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
-type CalendarProps = {
-  onClose: () => void;
-};
-
-export function Calendar({ onClose }: CalendarProps) {
+export function Calendar() {
   const today = useMemo(() => new Date(), []);
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
 
-  const { weeks } = useMemo(
-    () => getMonthGrid(viewYear, viewMonth),
-    [viewYear, viewMonth],
-  );
+  const { weeks } = useMemo(() => getMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
 
   const goToday = () => {
     setViewYear(today.getFullYear());
@@ -86,26 +91,52 @@ export function Calendar({ onClose }: CalendarProps) {
     <div className={styles.calendar}>
       <div className={styles.dateDisplay}>{formatDate(today)}</div>
       <div className={styles.header}>
-        <button type="button" className={styles.nav} onClick={prevMonth} aria-label="Previous month">
+        <button
+          type="button"
+          className={styles.nav}
+          onClick={prevMonth}
+          aria-label="Previous month"
+        >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M6 2L4 5l2 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M6 2L4 5l2 3"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
         <div className={styles.headerCenter}>
-          <span className={styles.monthLabel}>{MONTHS[viewMonth]} {viewYear}</span>
-          <button type="button" className={`${styles.todayBtn} ${isCurrentMonthView ? '' : styles.jumpAvailable}`} onClick={goToday} aria-label="Go to today">
+          <span className={styles.monthLabel}>
+            {MONTHS[viewMonth]} {viewYear}
+          </span>
+          <button
+            type="button"
+            className={`${styles.todayBtn} ${isCurrentMonthView ? '' : styles.jumpAvailable}`}
+            onClick={goToday}
+            aria-label="Go to today"
+          >
             Today
           </button>
         </div>
         <button type="button" className={styles.nav} onClick={nextMonth} aria-label="Next month">
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M4 2l2 3-2 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M4 2l2 3-2 3"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
       </div>
       <div className={styles.dayHeaders}>
         {DAYS.map((d) => (
-          <span key={d} className={styles.dayHeader}>{d}</span>
+          <span key={d} className={styles.dayHeader}>
+            {d}
+          </span>
         ))}
       </div>
       <div className={styles.grid}>
