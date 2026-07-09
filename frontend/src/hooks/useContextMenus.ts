@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { TrashEntry } from '../api/client';
-import type { DesktopIconItem } from '../pages/DesktopView';
+import type { DesktopIconItem } from './useDesktopIcons';
 import type { ServiceShortcut } from '../utils/services';
 
 export interface ContextMenus {

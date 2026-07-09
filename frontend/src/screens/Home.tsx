@@ -15,7 +15,7 @@ import { JobsPage } from '../pages/JobsPage';
 import { ToastViewport } from '../components/overlay/Toast';
 import { WindowHost } from '../components/window/WindowHost';
 import { DesktopContextMenu } from '../components/overlay/DesktopContextMenu';
-import type { DesktopIconItem } from '../pages/DesktopView';
+import type { DesktopIconItem } from '../hooks/useDesktopIcons';
 import type { ServiceHealthResult } from '../utils/services';
 import { useServiceShortcuts } from '../hooks/useServiceShortcuts';
 import { useJobs } from '../hooks/useJobs';

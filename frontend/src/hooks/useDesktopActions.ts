@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { getTrash, deleteTrash } from '../api/client';
 import type { ServiceShortcut } from '../utils/services';
-import type { DesktopIconItem } from '../pages/DesktopView';
+import type { DesktopIconItem } from './useDesktopIcons';
 import { defaultRootPath } from '../utils/roots';
 
 interface DesktopActionsOptions {
