@@ -30,6 +30,9 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
       - run: npm run test:ci
+      - name: Coverage (informational)
+        run: npm run test:coverage
+        continue-on-error: true
       - run: npm run build
 
   backend:
@@ -51,5 +54,8 @@ jobs:
           working-directory: backend
       - run: go vet ./...
       - run: go test ./...
+      - name: Coverage (informational)
+        run: go test -coverprofile=coverage.out -covermode=atomic ./...
+        continue-on-error: true
       - run: go build ./cmd/volum
       - run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...

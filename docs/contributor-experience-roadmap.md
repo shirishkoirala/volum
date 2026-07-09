@@ -259,7 +259,6 @@ and clearer failure modes.
   added a narrow test guard so those warnings fail instead of being ignored.
 - Added typed frontend builders for file entries, directories, jobs, and
   sessions, then migrated representative suites away from repeated literals.
-
 ### Completed
 
 - Split `backend/internal/api/server_test.go` by feature:
@@ -270,12 +269,15 @@ and clearer failure modes.
   - `handlers_profile_test.go` — avatar lifecycle and rejection
   - `handlers_shares_test.go` — service health, readonly mutation, password-protected shares
 - Moved `readBody` helper from deleted `server_test.go` into `test_helpers_test.go`.
+- Extended frontend test builders to `buildRootEntry`, `buildBlockDevice`, and
+  `buildServiceInfo` in `fixtures.ts`, then migrated `roots.test.ts`,
+  `useFileBrowser.test.tsx`, and `format.test.ts` to use them.
+- Added coverage configuration to vitest, Makefile targets
+  (`coverage`, `coverage-frontend`, `coverage-backend`), and CI
+  (`continue-on-error` steps for both frontend and backend).
 
 ### Work
-- Extend frontend test builders to roots and services when repeated setup
-  justifies shared defaults.
-- Keep frontend CI tests serialized until parallel execution is proven stable.
-- Add coverage reporting to CI as informational first.
+
 - Record an initial coverage baseline by package or subsystem.
 - Add thresholds only for critical packages after the baseline is stable:
   security, auth, upload cleanup, conflict handling, and migrations.

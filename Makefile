@@ -11,6 +11,7 @@ PACKAGE ?= ./...
 
 .PHONY: help setup doctor dev dev-detached stop status logs clean-dev clean-test \
 	check check-frontend check-backend test-frontend test-backend \
+	coverage coverage-frontend coverage-backend \
 	format-frontend build smoke smoke-proxy
 
 help:
@@ -37,7 +38,12 @@ help:
 		'  make format-frontend  Format frontend source files' \
 		'  make build            Build the production image' \
 		'  make smoke            Run the authenticated disposable smoke test' \
-		'  make smoke-proxy      Run the reverse-proxy upload smoke test'
+		'  make smoke-proxy      Run the reverse-proxy upload smoke test' \
+		'' \
+		'Coverage (informational):' \
+		'  make coverage-frontend  Run frontend tests with coverage' \
+		'  make coverage-backend   Run Go tests with coverage' \
+		'  make coverage           Run both frontend and backend coverage'
 
 setup:
 	@mkdir -p data storage
@@ -86,6 +92,14 @@ test-frontend:
 
 test-backend:
 	$(TEST_COMPOSE) run --rm --build backend-test go test $(BACKEND_TEST_FILTER) $(PACKAGE)
+
+coverage-frontend:
+	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run test:coverage'
+
+coverage-backend:
+	$(TEST_COMPOSE) run --rm --build backend-test go test -coverprofile=coverage.out -covermode=atomic $(BACKEND_TEST_FILTER) ./...
+
+coverage: coverage-frontend coverage-backend
 
 format-frontend:
 	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run format'
