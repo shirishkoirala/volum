@@ -90,7 +90,7 @@ describe('DiskUsageAnalyzer', () => {
   });
 
   it('renders close button with aria-label', () => {
-    vi.mocked(analyzeDiskUsage).mockResolvedValue(mockTree);
+    vi.mocked(analyzeDiskUsage).mockReturnValue(new Promise(() => {}));
     render(<DiskUsageAnalyzer path="/storage" onClose={() => {}} />);
     expect(screen.getByLabelText('Close')).toBeInTheDocument();
   });

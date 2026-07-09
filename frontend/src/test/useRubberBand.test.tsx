@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { useRubberBand } from '../hooks/useRubberBand';
 import { createRef } from 'react';
 
@@ -39,12 +39,20 @@ describe('useRubberBand', () => {
       clientY: 200,
     };
 
-    result.current.handleFileAreaMouseDown(mouseEvent as unknown as React.MouseEvent<HTMLElement>);
+    act(() => {
+      result.current.handleFileAreaMouseDown(
+        mouseEvent as unknown as React.MouseEvent<HTMLElement>,
+      );
+    });
 
     expect(addEventListener).toHaveBeenCalledWith('mousemove', expect.any(Function));
     expect(addEventListener).toHaveBeenCalledWith('mouseup', expect.any(Function));
     expect(setSelectedPaths).toHaveBeenCalledWith([]);
     expect(setLastSelectedPath).toHaveBeenCalledWith(null);
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent('mouseup'));
+    });
   });
 
   it('does not start rubber band when clicking on a child element', () => {

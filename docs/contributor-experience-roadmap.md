@@ -255,6 +255,8 @@ and clearer failure modes.
 - Added a testing guide with exact full, file, package, and named-test commands.
 - Extracted the shared API test server from `server_test.go` into
   `test_helpers_test.go`.
+- Fixed asynchronous test cleanup that produced React `act(...)` warnings and
+  added a narrow test guard so those warnings fail instead of being ignored.
 
 ### Work
 

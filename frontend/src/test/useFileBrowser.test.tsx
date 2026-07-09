@@ -64,35 +64,42 @@ beforeEach(() => {
 
 describe('useFileBrowser', () => {
   it('loads roots on mount', async () => {
-    renderHook(() =>
+    const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: fakeSession }),
     );
     await waitFor(() => {
       expect(api.getRoots).toHaveBeenCalledOnce();
+      expect(result.current.roots).toHaveLength(1);
     });
   });
 
   it('loads devices on mount', async () => {
-    renderHook(() =>
+    (api.getDevices as ReturnType<typeof vi.fn>).mockResolvedValue({
+      devices: [{ name: 'sda', size: '1 TB', type: 'disk', rotational: false }],
+    });
+    const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: fakeSession }),
     );
     await waitFor(() => {
       expect(api.getDevices).toHaveBeenCalledOnce();
+      expect(result.current.devices).toHaveLength(1);
     });
   });
 
-  it('returns canWrite=true for admin', () => {
+  it('returns canWrite=true for admin', async () => {
     const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: fakeSession }),
     );
     expect(result.current.canWrite).toBe(true);
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
-  it('returns canWrite=false for readonly', () => {
+  it('returns canWrite=false for readonly', async () => {
     const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: readonlySession }),
     );
     expect(result.current.canWrite).toBe(false);
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
   it('loads files for the current path', async () => {
@@ -198,11 +205,26 @@ describe('useFileBrowser', () => {
   });
 
   it('loads trash entries on mount', async () => {
-    renderHook(() =>
+    (api.getTrash as ReturnType<typeof vi.fn>).mockResolvedValue({
+      entries: [
+        {
+          id: 'trash-1',
+          name: 'deleted.txt',
+          originalPath: '/root/deleted.txt',
+          trashPath: '/root/.trash/deleted.txt',
+          type: 'file',
+          size: 10,
+          deletedAt: '2026-06-10T10:00:00Z',
+          rootPath: '/root',
+        },
+      ],
+    });
+    const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: fakeSession }),
     );
     await waitFor(() => {
       expect(api.getTrash).toHaveBeenCalledOnce();
+      expect(result.current.trashEntries).toHaveLength(1);
     });
   });
 
@@ -233,7 +255,7 @@ describe('useFileBrowser', () => {
     });
   });
 
-  it('clears search results for short queries', () => {
+  it('clears search results for short queries', async () => {
     const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: fakeSession }),
     );
@@ -241,6 +263,7 @@ describe('useFileBrowser', () => {
       result.current.handleGlobalSearch('f');
     });
     expect(result.current.searchResults).toBeNull();
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
   it('creates breadcrumbs from current path', async () => {
@@ -252,6 +275,7 @@ describe('useFileBrowser', () => {
       { label: 'folder', path: '/root/folder' },
       { label: 'sub', path: '/root/folder/sub' },
     ]);
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
   it('returns root breadcrumb for root path', async () => {
@@ -259,13 +283,15 @@ describe('useFileBrowser', () => {
       useFileBrowser({ currentPath: '/', showHidden: false, session: fakeSession }),
     );
     expect(result.current.breadcrumbs).toEqual([{ label: '/', path: '/' }]);
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
-  it('returns empty breadcrumbs for empty path', () => {
+  it('returns empty breadcrumbs for empty path', async () => {
     const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '', showHidden: false, session: fakeSession }),
     );
     expect(result.current.breadcrumbs).toEqual([]);
+    await waitFor(() => expect(result.current.roots).toHaveLength(1));
   });
 
   it('refresh triggers file reload', async () => {
@@ -282,6 +308,7 @@ describe('useFileBrowser', () => {
     );
     await waitFor(() => {
       expect(api.getFiles).toHaveBeenCalledTimes(1);
+      expect(result.current.loading).toBe(false);
     });
 
     act(() => {
