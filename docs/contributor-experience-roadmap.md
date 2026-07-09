@@ -203,34 +203,23 @@ make clean-dev        Remove only documented disposable development state
 
 Priority: high
 
+Status: completed
+
 The package structure is reasonable, but contributors still need to infer how
 the pieces collaborate.
 
-### Work
+### Completed
 
-- Add `docs/architecture.md` with:
-  - Runtime/container diagram
-  - Authenticated request lifecycle
-  - File-listing request lifecycle
-  - Background job lifecycle
-  - Upload lifecycle and partial-file cleanup
-  - SQLite ownership and migration rules
-  - SSE flow from worker state to React
-- Add a glossary for terms such as root, host root, device, job, job item,
-  conflict policy, desktop service, share, and public path.
-- Add `docs/change-guides/` with three short walkthroughs:
-  - Add a frontend setting
-  - Add an authenticated API endpoint
-  - Add or modify a background job
-- Add an environment variable reference generated from, or checked against,
-  `backend/internal/config/config.go`.
-- Add lightweight architecture decision records under `docs/adr/` for
-  decisions that are easy to accidentally reverse:
-  - All filesystem paths pass through `RootGuard`
-  - Cross-mount moves use copy, verify, delete
-  - SQLite uses one open connection
-  - API mutations enforce request-origin protections
-  - Frontend desktop/file icons use bundled assets
+- Added `docs/architecture.md` with runtime, startup, authenticated request,
+  path safety, file listing, background job, upload, SSE, SQLite, and testing
+  flows.
+- Added task-oriented guides for a frontend setting, authenticated API
+  endpoint, and background job change.
+- Added a glossary for project-specific file, job, root, and deployment terms.
+- Added a configuration reference covering application and Compose variables.
+- Added architecture decision records for path safety, cross-mount moves,
+  SQLite concurrency, browser mutation protection, and icon roles.
+- Linked the architecture and change guides from contributor entry points.
 
 ### Junior-friendly details
 

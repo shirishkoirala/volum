@@ -103,12 +103,16 @@ VOLUM_HOST_PATH=/ VOLUM_UID=0 VOLUM_GID=0 docker compose -f docker-compose.serve
 
 Reverse proxy examples are in [docs/reverse-proxy.md](docs/reverse-proxy.md).
 Release and Docker image publishing notes are in [docs/release.md](docs/release.md).
+All application and Compose variables are listed in the
+[configuration reference](docs/configuration.md).
 
 ## Development
 
 Development and contribution notes live in [CONTRIBUTING.md](CONTRIBUTING.md).
 Planned onboarding and repository improvements are tracked in the
 [contributor experience roadmap](docs/contributor-experience-roadmap.md).
+The [architecture overview](docs/architecture.md) explains request, path,
+upload, job, SSE, and database flows.
 
 Preferred dev server:
 

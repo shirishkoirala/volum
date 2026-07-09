@@ -74,6 +74,10 @@ file for the first run.
   enables authentication and documents host-mount settings.
 - Never commit `.env`; it may contain secrets and machine-specific paths.
 
+See the [configuration reference](docs/configuration.md) for defaults,
+validation rules, root mapping, and the distinction between application and
+Compose-only variables.
+
 ## Repository Map
 
 ```text
@@ -105,6 +109,13 @@ frontend/src/
 .github/workflows/       CI and release automation
 docs/                    Roadmap, deployment, release, and audit documents
 ```
+
+Read the [architecture overview](docs/architecture.md) before changing a
+cross-cutting workflow. The [change guides](docs/change-guides/README.md)
+provide focused checklists for frontend settings, API endpoints, and background
+jobs. The [glossary](docs/glossary.md) defines project terms, and
+[architecture decision records](docs/adr/README.md) explain constraints that
+must survive refactoring.
 
 ## Common Change Paths
 
@@ -290,4 +301,5 @@ Keep `README.md` focused on the product and first run. Put contributor workflow
 and code conventions here. Put deployment details in `docs/reverse-proxy.md`,
 release operations in `docs/release.md`, and planned product work in
 `docs/roadmap.md`. Track onboarding and repository-maintenance improvements in
-`docs/contributor-experience-roadmap.md`.
+`docs/contributor-experience-roadmap.md`. Keep runtime boundaries and common
+change paths in `docs/architecture.md` and `docs/change-guides/`.
