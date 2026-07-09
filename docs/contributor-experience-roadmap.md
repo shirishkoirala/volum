@@ -259,33 +259,30 @@ and clearer failure modes.
   added a narrow test guard so those warnings fail instead of being ignored.
 - Added typed frontend builders for file entries, directories, jobs, and
   sessions, then migrated representative suites away from repeated literals.
-### Completed
-
-- Split `backend/internal/api/server_test.go` by feature:
+- Split `backend/internal/api/server_test.go` (1163 lines) into 6 feature-aligned
+  test files:
   - `handlers_auth_test.go` — auth, session, login, logout, setup, CSRF, origin, rate limiting
   - `handlers_files_test.go` — roots, files listing, pagination, folder creation, rename, chmod, trash, search, download, raw
   - `handlers_upload_test.go` — upload, special characters, path normalization, chunk upload
   - `handlers_jobs_test.go` — job creation (copy, checksum)
   - `handlers_profile_test.go` — avatar lifecycle and rejection
   - `handlers_shares_test.go` — service health, readonly mutation, password-protected shares
-- Moved `readBody` helper from deleted `server_test.go` into `test_helpers_test.go`.
 - Extended frontend test builders to `buildRootEntry`, `buildBlockDevice`, and
   `buildServiceInfo` in `fixtures.ts`, then migrated `roots.test.ts`,
   `useFileBrowser.test.tsx`, and `format.test.ts` to use them.
-- Added coverage configuration to vitest, Makefile targets
-  (`coverage`, `coverage-frontend`, `coverage-backend`), and CI
-  (`continue-on-error` steps for both frontend and backend).
-
-### Completed
-
-- Recorded initial coverage baseline in `docs/coverage-baseline.md` for both
-  backend (per-package) and frontend (per-directory).
+- Added coverage configuration to vitest (`v8` provider, `text` + `lcov`
+  reporters), Makefile targets (`coverage`, `coverage-frontend`,
+  `coverage-backend`), and CI (`continue-on-error` for both frontend and
+  backend).
+- Recorded initial coverage baseline in `docs/coverage-baseline.md`
+  (per-package backend, per-directory frontend).
+- Added scheduled CI job for both `scripts/smoke.sh` and
+  `scripts/smoke-reverse-proxy-upload.sh` (weekly schedule only).
 
 ### Work
+
 - Add thresholds only for critical packages after the baseline is stable:
   security, auth, upload cleanup, conflict handling, and migrations.
-- Run `scripts/smoke.sh` in scheduled CI.
-- Run the reverse-proxy upload smoke test in scheduled CI or before release.
 - Add ShellCheck for shell scripts and a Markdown/link checker for docs.
 - Make visual scripts reproducible by declaring Playwright or Puppeteer in a
   dedicated tools package, then expose them through the root task runner.

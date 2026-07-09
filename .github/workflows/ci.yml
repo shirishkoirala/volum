@@ -59,3 +59,15 @@ jobs:
         continue-on-error: true
       - run: go build ./cmd/volum
       - run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  smoke:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Basic smoke test
+        run: ./scripts/smoke.sh 8091
+        timeout-minutes: 10
+      - name: Reverse-proxy upload smoke test
+        run: ./scripts/smoke-reverse-proxy-upload.sh 18092
+        timeout-minutes: 10
