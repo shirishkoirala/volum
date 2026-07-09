@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SortField, SortDirection } from '../types';
 import type { FileEntry, Session } from '../api/client';
-import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
-import { ShareDialog } from '../components/overlay/ShareDialog';
-import { ShareManager } from '../components/overlay/ShareManager';
-import { ServiceFormModal } from '../components/overlay/ServiceFormModal';
-import { PreviewModal } from '../components/overlay/PreviewModal';
+import { HomeOverlays } from '../components/overlay/HomeOverlays';
 import { SettingsPanel } from '../pages/SettingsPanel';
 import { TopBar } from '../components/layout/TopBar';
 import { Dock } from '../components/layout/Dock';
@@ -48,7 +44,6 @@ import { Taskbar } from '../components/layout/Taskbar';
 import { PreviewWindow } from '../components/window/PreviewWindow';
 import { ServiceWindow } from '../components/window/ServiceWindow';
 import { fileTypeIconUrl } from '../api/icons';
-import { openFileExternally } from '../utils/preview';
 import { defaultRootPath as getDefaultRootPath } from '../utils/roots';
 import styles from './Home.module.css';
 
@@ -686,53 +681,29 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     </>
   );
 
-  // ── Overlay rendering ────────────────────────────────────
-
   return (
     <>
       {shell}
-      {dialogs.shareDialogPath && (
-        <ShareDialog
-          path={dialogs.shareDialogPath.path}
-          name={dialogs.shareDialogPath.name}
-          onClose={() => dialogs.setShareDialogPath(null)}
-        />
-      )}
-      {fileActions.previewEntry && (
-        <PreviewModal
-          entry={fileActions.previewEntry}
-          onClose={() => fileActions.setPreviewEntry(null)}
-          onDownload={() => openFileExternally(fileActions.previewEntry!.path)}
-          onShare={() =>
-            dialogs.setShareDialogPath({
-              path: fileActions.previewEntry!.path,
-              name: fileActions.previewEntry!.name,
-            })
-          }
-          onPrevious={
-            previousPreviewEntry
-              ? () => fileActions.setPreviewEntry(previousPreviewEntry)
-              : undefined
-          }
-          onNext={
-            nextPreviewEntry ? () => fileActions.setPreviewEntry(nextPreviewEntry) : undefined
-          }
-          previousDisabled={!previousPreviewEntry}
-          nextDisabled={!nextPreviewEntry}
-          positionLabel={previewPositionLabel}
-        />
-      )}
-      {fileActions.shortcutsOpen && (
-        <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />
-      )}
-      {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
-      {menus.serviceFormData && (
-        <ServiceFormModal
-          initial={menus.serviceFormData.initial}
-          onSave={desktopActions.handleSaveService}
-          onClose={() => menus.setServiceFormData(null)}
-        />
-      )}
+      <HomeOverlays
+        shareDialogPath={dialogs.shareDialogPath}
+        onShareDialogClose={() => dialogs.setShareDialogPath(null)}
+        previewEntry={fileActions.previewEntry}
+        onPreviewClose={() => fileActions.setPreviewEntry(null)}
+        onPreviewShare={(entry) =>
+          dialogs.setShareDialogPath({ path: entry.path, name: entry.name })
+        }
+        setPreviewEntry={fileActions.setPreviewEntry}
+        previousPreviewEntry={previousPreviewEntry}
+        nextPreviewEntry={nextPreviewEntry}
+        previewPositionLabel={previewPositionLabel}
+        shortcutsOpen={fileActions.shortcutsOpen}
+        onShortcutsClose={() => fileActions.setShortcutsOpen(false)}
+        sharesOpen={dialogs.sharesOpen}
+        onSharesClose={() => dialogs.setSharesOpen(false)}
+        serviceFormData={menus.serviceFormData}
+        onServiceFormClose={() => menus.setServiceFormData(null)}
+        onSaveService={desktopActions.handleSaveService}
+      />
     </>
   );
 }
