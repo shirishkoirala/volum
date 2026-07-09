@@ -301,13 +301,10 @@ tests protecting behavior.
 
 ### Frontend candidates
 
-- Split `frontend/src/api/client.ts` by domain while preserving a stable public
-  import surface:
-  - auth and users
-  - files and uploads
-  - jobs
-  - shares
-  - desktop services and favorites
+- Split `frontend/src/api/client.ts` (688 lines) by domain into 7 files
+  (`client-base.ts`, `client-auth.ts`, `client-files.ts`, `client-jobs.ts`,
+  `client-shares.ts`, `client-services.ts`, with `client.ts` as barrel)
+  while preserving a stable public import surface.
 - Continue moving command orchestration out of
   `frontend/src/pages/FilesView.tsx` into focused hooks and components.
 - Split `frontend/src/pages/SettingsPanel.tsx` by settings category.
