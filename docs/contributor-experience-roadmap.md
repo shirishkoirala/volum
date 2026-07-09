@@ -260,15 +260,18 @@ and clearer failure modes.
 - Added typed frontend builders for file entries, directories, jobs, and
   sessions, then migrated representative suites away from repeated literals.
 
-### Work
+### Completed
 
 - Split `backend/internal/api/server_test.go` by feature:
-  - auth and setup
-  - files and trash
-  - uploads
-  - jobs
-  - users and profile
-  - services and shares
+  - `handlers_auth_test.go` — auth, session, login, logout, setup, CSRF, origin, rate limiting
+  - `handlers_files_test.go` — roots, files listing, pagination, folder creation, rename, chmod, trash, search, download, raw
+  - `handlers_upload_test.go` — upload, special characters, path normalization, chunk upload
+  - `handlers_jobs_test.go` — job creation (copy, checksum)
+  - `handlers_profile_test.go` — avatar lifecycle and rejection
+  - `handlers_shares_test.go` — service health, readonly mutation, password-protected shares
+- Moved `readBody` helper from deleted `server_test.go` into `test_helpers_test.go`.
+
+### Work
 - Extend frontend test builders to roots and services when repeated setup
   justifies shared defaults.
 - Keep frontend CI tests serialized until parallel execution is proven stable.

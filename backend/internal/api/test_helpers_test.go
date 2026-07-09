@@ -185,3 +185,9 @@ func readJSON(t *testing.T, resp *http.Response, dest any) {
 		t.Fatal(err)
 	}
 }
+
+func readBody(resp *http.Response) string {
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	return string(body)
+}
