@@ -283,7 +283,8 @@ and clearer failure modes.
 
 - Add thresholds only for critical packages after the baseline is stable:
   security, auth, upload cleanup, conflict handling, and migrations.
-- Add ShellCheck for shell scripts and a Markdown/link checker for docs.
+- Added ShellCheck (CI job, `make lint-shell`) and lychee link checker
+  (scheduled CI with `lycheeverse/lychee-action`, `make lint-markdown`).
 - Make visual scripts reproducible by declaring Playwright or Puppeteer in a
   dedicated tools package, then expose them through the root task runner.
 

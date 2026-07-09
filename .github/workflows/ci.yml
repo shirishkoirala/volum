@@ -60,6 +60,24 @@ jobs:
       - run: go build ./cmd/volum
       - run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+          shellcheck scripts/*.sh frontend/scripts/*.sh
+      - name: Lychee link check
+        if: github.event_name == 'schedule'
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --verbose --no-progress --exclude 'localhost|127\.0\.0\.1'
+            './**/*.md' './**/*.html' '!./frontend/node_modules' '!./.git'
+          fail: false
+
   smoke:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest

@@ -12,7 +12,7 @@ PACKAGE ?= ./...
 .PHONY: help setup doctor dev dev-detached stop status logs clean-dev clean-test \
 	check check-frontend check-backend test-frontend test-backend \
 	coverage coverage-frontend coverage-backend \
-	format-frontend build smoke smoke-proxy
+	format-frontend lint-shell lint-markdown build smoke smoke-proxy
 
 help:
 	@printf '%s\n' \
@@ -43,7 +43,11 @@ help:
 		'Coverage (informational):' \
 		'  make coverage-frontend  Run frontend tests with coverage' \
 		'  make coverage-backend   Run Go tests with coverage' \
-		'  make coverage           Run both frontend and backend coverage'
+		'  make coverage           Run both frontend and backend coverage' \
+		'' \
+		'Lint:' \
+		'  make lint-shell      Run ShellCheck on shell scripts' \
+		'  make lint-markdown   Print lychee command for MD link checking'
 
 setup:
 	@mkdir -p data storage
@@ -103,6 +107,12 @@ coverage: coverage-frontend coverage-backend
 
 format-frontend:
 	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run format'
+
+lint-shell:
+	shellcheck scripts/*.sh frontend/scripts/*.sh
+
+lint-markdown:
+	@echo "Run lychee locally: lychee --verbose --no-progress './**/*.md' './**/*.html' '!./frontend/node_modules' '!./.git'"
 
 build:
 	docker compose build
