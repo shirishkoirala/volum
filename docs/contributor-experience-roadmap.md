@@ -276,9 +276,12 @@ and clearer failure modes.
   (`coverage`, `coverage-frontend`, `coverage-backend`), and CI
   (`continue-on-error` steps for both frontend and backend).
 
-### Work
+### Completed
 
-- Record an initial coverage baseline by package or subsystem.
+- Recorded initial coverage baseline in `docs/coverage-baseline.md` for both
+  backend (per-package) and frontend (per-directory).
+
+### Work
 - Add thresholds only for critical packages after the baseline is stable:
   security, auth, upload cleanup, conflict handling, and migrations.
 - Run `scripts/smoke.sh` in scheduled CI.
