@@ -1,0 +1,114 @@
+name: Bug report
+description: Report reproducible behavior that is incorrect or unsafe.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Remove secrets, tokens, personal paths,
+        and private filenames from logs and screenshots.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: I reproduced this with the latest available Volum version.
+          required: true
+        - label: I tested with disposable data when file operations were involved.
+          required: true
+        - label: This report does not contain a security vulnerability.
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect instead?
+      placeholder: |
+        Actual:
+        Expected:
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest reliable sequence that triggers the problem.
+      placeholder: |
+        1. Start Volum with ...
+        2. Open ...
+        3. Perform ...
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment
+      options:
+        - Docker Compose development stack
+        - Docker Compose quick start
+        - Docker Compose server deployment
+        - Published Docker image
+        - Reverse proxy or subpath deployment
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Volum version or commit
+      description: Use the image tag, release version, or full commit SHA.
+      placeholder: v0.1.0 or 86efdffa...
+    validations:
+      required: true
+
+  - type: input
+    id: platform
+    attributes:
+      label: Host platform
+      description: Include operating system and CPU architecture.
+      placeholder: Ubuntu 24.04, linux/amd64
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: Required for interface problems; otherwise enter "Not applicable."
+      placeholder: Chrome 126, Firefox 128, Safari 18, or Not applicable
+    validations:
+      required: true
+
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Relevant configuration
+      description: |
+        Include relevant environment variable names and non-secret values.
+        Never include session secrets, bootstrap tokens, passwords, or cookies.
+      render: shell
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and screenshots
+      description: |
+        Include relevant container, browser-console, or network output after
+        removing secrets and personal information.
+      render: text
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include frequency, regression status, or a minimal sample layout.

@@ -13,7 +13,8 @@
   <a href="docs/roadmap.md">Roadmap</a> |
   <a href="docs/reverse-proxy.md">Reverse Proxy</a> |
   <a href="docs/release.md">Release</a> |
-  <a href="CONTRIBUTING.md">Contributing</a>
+  <a href="CONTRIBUTING.md">Contributing</a> |
+  <a href="SUPPORT.md">Support</a>
 </p>
 
 <p align="center">

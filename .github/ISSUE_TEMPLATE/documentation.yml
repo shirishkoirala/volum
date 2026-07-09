@@ -1,0 +1,45 @@
+name: Documentation issue
+description: Report missing, incorrect, or confusing documentation.
+title: "[Docs]: "
+labels:
+  - documentation
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the current documentation and existing issues.
+          required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Documentation location
+      description: Link the page or provide the repository path.
+      placeholder: README.md, CONTRIBUTING.md, or docs/reverse-proxy.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is unclear or incorrect?
+      description: Quote only the smallest relevant section.
+    validations:
+      required: true
+
+  - type: textarea
+    id: improvement
+    attributes:
+      label: Suggested improvement
+      description: Describe the information or example that would resolve the issue.
+    validations:
+      required: true
+
+  - type: textarea
+    id: audience
+    attributes:
+      label: Intended reader
+      description: Who was blocked and what were they trying to accomplish?
+      placeholder: First-time contributor starting the Docker development stack.

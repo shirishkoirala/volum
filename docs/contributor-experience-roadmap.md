@@ -87,25 +87,25 @@ when a feature or bug fix already touches a coherent area.
 
 Priority: immediate
 
+Status: in progress
+
 This phase removes uncertainty before a contributor writes code.
+
+### Completed
+
+- Added a standard pull request template for normal Volum changes.
+- Added structured bug, feature, and documentation issue forms.
+- Added `CODE_OF_CONDUCT.md`, `SECURITY.md`, and `SUPPORT.md`.
+- Added `.github/CODEOWNERS` with explicit review ownership.
+- Linked contributor and support material from the README.
+
+Repository settings still need to enable private vulnerability reporting and
+create the labels referenced by the issue forms.
 
 ### Work
 
-- Add `.github/PULL_REQUEST_TEMPLATE.md` for normal Volum changes.
 - Move the Awesome Selfhosted template into a clearly named specialized
   template or remove it from the repository if it is no longer used.
-- Add GitHub issue forms:
-  - Bug report with reproduction, expected behavior, logs, deployment mode,
-    architecture, browser, and Volum version
-  - Feature request with use case, proposed workflow, alternatives, and data
-    safety implications
-  - Documentation issue
-- Add `CODE_OF_CONDUCT.md`.
-- Add `SECURITY.md` with a private vulnerability-reporting route.
-- Add `SUPPORT.md` separating usage questions, bug reports, and security
-  reports.
-- Add `.github/CODEOWNERS` once maintainers are comfortable publishing
-  ownership boundaries.
 - Add repository labels such as:
   - `good first issue`
   - `help wanted`
@@ -116,8 +116,7 @@ This phase removes uncertainty before a contributor writes code.
   - `area/docs`
   - `needs reproduction`
   - `blocked`
-- Link the contributor guide and this roadmap from the README development
-  section.
+- Enable GitHub private vulnerability reporting for the repository.
 
 ### Junior-friendly details
 

@@ -1,0 +1,92 @@
+name: Feature request
+description: Propose a focused improvement to an existing Volum workflow.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Volum prioritizes reliable file management and focused desktop-style
+        workflows. Describe the user need before the proposed implementation.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and the product roadmap.
+          required: true
+        - label: This request describes one focused workflow.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Who needs this, and what can they not do reliably today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Proposed workflow
+      description: Describe the user-visible behavior from start to finish.
+      placeholder: |
+        1. The user ...
+        2. Volum ...
+        3. The result ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workarounds or simpler approaches did you consider?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Primary area
+      options:
+        - File browsing and search
+        - File operations and background jobs
+        - Uploads
+        - Sharing
+        - Authentication and users
+        - Desktop services and health
+        - User interface and accessibility
+        - Deployment and configuration
+        - Contributor tooling and documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: safety
+    attributes:
+      label: Data and security considerations
+      description: |
+        Could this affect existing files, permissions, authentication, public
+        links, server resources, or database migrations?
+      placeholder: None identified, or describe the risks and expected safeguards.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Acceptance criteria
+      description: List observable outcomes and explicit non-goals.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+
+        Non-goals:
+        - ...
+    validations:
+      required: true
