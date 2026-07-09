@@ -113,8 +113,13 @@ Planned onboarding and repository improvements are tracked in the
 Preferred dev server:
 
 ```sh
-docker compose -f docker-compose.dev.yml up --build
+make setup
+make dev
 ```
+
+Run `make help` to see development, verification, build, and smoke-test
+commands. Docker Compose remains available directly for environments without
+Make.
 
 ## License
 

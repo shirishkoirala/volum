@@ -139,10 +139,25 @@ create the labels referenced by the issue forms.
 
 Priority: immediate
 
+Status: in progress
+
 The repository needs a small task runner at the root. A `Makefile` is the
 simplest cross-project option because it can wrap Docker without introducing a
 new runtime. A shell-based `scripts/dev` command is a reasonable alternative
 if Windows support is explicitly handled.
+
+### Completed
+
+- Added a root `Makefile` with setup, doctor, development lifecycle, checks,
+  production build, and smoke-test commands.
+- Added a non-destructive environment doctor for Docker, Compose, CPU
+  architecture, ports, and writable development directories.
+- Added lockfile-aware frontend dependency installation that runs `npm ci` only
+  when `package-lock.json` changes or dependencies are missing.
+- Updated the Docker dev frontend to use deterministic dependency setup.
+- Aligned CI and local full checks on the serialized `test:ci` command.
+- Documented the development and server environment examples.
+- Made `make clean-dev` preserve bind-mounted `data/` and `storage/`.
 
 ### Proposed commands
 
@@ -164,22 +179,9 @@ make clean-dev        Remove only documented disposable development state
 
 ### Work
 
-- Add the task runner with `help` as the default target.
-- Keep task definitions as thin wrappers around existing Docker/npm commands.
 - Make CI call the same underlying scripts used by contributors where
-  practical.
-- Replace `npm install` in `docker-compose.dev.yml` with a lockfile-respecting
-  setup such as `npm ci` when the named volume is empty, without reinstalling
-  dependencies on every start.
-- Add a `doctor` or `make setup` check for:
-  - Docker availability
-  - Docker Compose v2
-  - available ports `8342` and `8090`
-  - writable `data/` and `storage/`
-  - supported CPU architecture
-- Document `.env.development.example` and `.env.server.example` by purpose.
-- Ensure cleanup commands refuse to remove arbitrary paths and only affect
-  known development resources.
+  practical without making CI depend on Docker-in-Docker.
+- Verify the command surface on Linux CI in addition to local macOS testing.
 
 ### Junior-friendly details
 

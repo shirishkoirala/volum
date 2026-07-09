@@ -32,10 +32,16 @@ items with a clear acceptance condition.
 
 1. Fork and clone the repository.
 2. Create a branch from `master`.
-3. Start the Docker development stack:
+3. Prepare the development environment:
 
 ```sh
-docker compose -f docker-compose.dev.yml up --build
+make setup
+```
+
+4. Start the Docker development stack:
+
+```sh
+make dev
 ```
 
 Open `http://localhost:8342`. The API is also exposed at
@@ -53,6 +59,20 @@ a development instance at storage you cannot afford to modify.
 Authentication is enabled by default in the dev stack. Follow the first-run
 setup screen in the browser. Local state can be reset by stopping the stack and
 removing the development database yourself; do not include it in a commit.
+
+Run `make help` for the supported command list. The default workflow requires
+Docker and Make, but does not require Node.js or Go on the host.
+
+### Environment files
+
+The Docker development stack has safe defaults and does not require an `.env`
+file for the first run.
+
+- Copy `.env.development.example` to `.env` only when you need to override
+  development paths or authentication behavior.
+- Use `.env.server.example` as the starting point for a server deployment. It
+  enables authentication and documents host-mount settings.
+- Never commit `.env`; it may contain secrets and machine-specific paths.
 
 ## Repository Map
 
@@ -155,33 +175,32 @@ database upgraded in place. Do not rewrite or delete user data implicitly.
 
 ## Tests and Checks
 
-Run checks through Docker when possible. Before starting the server after a
-frontend change, run:
+Run checks through Docker when possible. The supported full check is:
 
 ```sh
-docker compose -f docker-compose.dev.yml run --rm frontend npm run typecheck
-docker compose -f docker-compose.dev.yml run --rm frontend npm run format:check
-docker compose -f docker-compose.dev.yml run --rm frontend npm run lint
+make check
 ```
 
-Run the frontend test suite in the same serialized mode used by Docker release
-builds:
+Focused command groups are available when iterating:
 
 ```sh
-docker compose -f docker-compose.dev.yml run --rm frontend npm run test:ci
+make check-frontend
+make check-backend
+make test-frontend
+make test-backend
 ```
 
-The production image build is the broad local check. It runs frontend
-formatting, tests, and build, plus backend lint, vet, tests, and build:
+Build the production image before a release or when Docker packaging changes:
 
 ```sh
-docker compose build
+make build
 ```
 
-For a focused backend verification through Docker:
+Run disposable end-to-end checks for relevant deployment changes:
 
 ```sh
-docker build --target backend-base .
+make smoke
+make smoke-proxy
 ```
 
 Local frontend commands are acceptable when Docker is unavailable:

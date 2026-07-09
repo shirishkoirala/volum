@@ -23,7 +23,7 @@ services:
   frontend:
     image: node:22-alpine
     working_dir: /app/frontend
-    command: sh -c "npm install && npm run dev"
+    command: sh -c "sh ./scripts/ensure-dependencies.sh && npm run dev"
     ports:
       - "8342:5173"
     volumes:
