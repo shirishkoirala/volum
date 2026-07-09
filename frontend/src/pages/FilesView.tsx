@@ -17,18 +17,7 @@ import { Notice } from '../components/ui/shared';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
 import { FileGridView } from '../components/ui/FileGridView';
 import { FileListView } from '../components/ui/FileListView';
-import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
-import { PreviewModal } from '../components/overlay/PreviewModal';
-import { InfoPanel } from '../components/overlay/InfoPanel';
-import { BatchRenameModal } from '../components/overlay/BatchRenameModal';
-import { ShareDialog } from '../components/overlay/ShareDialog';
-import { ShareManager } from '../components/overlay/ShareManager';
-import { DiskUsageAnalyzer } from '../components/overlay/DiskUsageAnalyzer';
-import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
-import { FileContextMenu } from '../components/overlay/FileContextMenu';
-import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
-import { FilesEmptyMenu } from '../components/overlay/FilesEmptyMenu';
-import { ProgressBar } from '../components/ui/ProgressBar';
+import { FilesViewOverlays } from '../components/overlay/FilesViewOverlays';
 import { Skeleton } from '../components/ui/Skeleton';
 import { folderIconUrl } from '../api/icons';
 import { useWindowId, useCommandsContext } from '../contexts/WindowCommands';
@@ -50,7 +39,6 @@ import { useNavStack } from '../hooks/useNavStack';
 import { usePreviewNavigation } from '../hooks/usePreviewNavigation';
 import { useShellContext } from '../contexts/ShellContext';
 import type { UploadProgress } from '../utils/upload';
-import { formatBytes } from '../utils/format';
 import styles from './FilesView.module.css';
 
 type FilesViewProps = {
@@ -681,183 +669,87 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         </AppPanel>
       </div>
 
-      {fileActions.contextMenu && (
-        <FileContextMenu
-          x={fileActions.contextMenu.x}
-          y={fileActions.contextMenu.y}
-          caps={{
-            canWrite: browser.canWrite,
-            canPreview: selection.canPreview,
-            canInfo: selection.canInfo,
-            canDownload: selection.canDownload,
-            canRename: selection.canRename,
-            canArchive: selection.canArchive,
-            canExtract: selection.canExtract,
-            canChecksum: selection.canChecksum,
-            canCopy: selection.canCopy,
-            canMove: selection.canMove,
-            canPaste: selection.canPaste,
-            canDelete: selection.canDelete,
-            canAnalyze: selection.canAnalyze,
-          }}
-          isFavorited={selectedEntryIsFavorited}
-          selectedCount={selection.selectedEntries.length}
-          onPreview={fileCommands.handlePreview}
-          onShowInfo={fileCommands.handleShowInfo}
-          onDownload={fileCommands.handleDownload}
-          onRename={fileCommands.handleRename}
-          onBatchRename={fileCommands.handleBatchRename}
-          onCopy={fileCommands.handleCopy}
-          onMove={fileCommands.handleMove}
-          onArchive={fileCommands.handleCreateArchive}
-          onExtract={fileCommands.handleExtractArchive}
-          onChecksum={fileCommands.handleCreateChecksum}
-          onPaste={fileCommands.handlePaste}
-          onQuickShare={fileCommands.handleQuickShare}
-          onShare={() => {
-            const e = fileActions.contextMenu!.entry;
-            if (e) dialogs.setShareDialogPath({ path: e.path, name: e.name });
-          }}
-          onAnalyze={fileCommands.handleAnalyze}
-          onToggleFavorite={() => {
-            const e = fileActions.contextMenu!.entry;
-            if (e) {
-              if (favorites.includes(e.path)) onRemoveFavorite(e.path);
-              else onAddFavorite(e.path);
-            }
-          }}
-          onDelete={fileCommands.handleDelete}
-          onClose={() => fileActions.setContextMenu(null)}
-        />
-      )}
-      {menus.trashContextMenu && browser.canWrite && (
-        <TrashContextMenu
-          x={menus.trashContextMenu.x}
-          y={menus.trashContextMenu.y}
-          onRestore={() => fileCommands.handleRestoreTrash(menus.trashContextMenu!.entry)}
-          onDeletePermanently={() => fileCommands.handleDeleteTrash(menus.trashContextMenu!.entry)}
-          onClose={() => menus.setTrashContextMenu(null)}
-        />
-      )}
-      {menus.filesEmptyMenu && (
-        <FilesEmptyMenu
-          x={menus.filesEmptyMenu.x}
-          y={menus.filesEmptyMenu.y}
-          canWrite={browser.canWrite}
-          canUpload={canUpload}
-          canPaste={selection.canPaste}
-          onCreateFolder={fileCommands.handleCreateFolder}
-          onCreateFile={fileCommands.handleCreateFile}
-          onUpload={openUploadPicker}
-          onRefresh={refresh}
-          onPaste={() => {
-            menus.setFilesEmptyMenu(null);
-            fileCommands.handlePaste();
-          }}
-          onClose={() => menus.setFilesEmptyMenu(null)}
-        />
-      )}
-
-      {uploadProgress && (
-        <div className={styles.uploadProgress} role="status" aria-live="polite">
-          <div className={styles.uploadProgressHeader}>
-            <strong>Uploading</strong>
-            <span>
-              {Math.round(
-                uploadProgress.total > 0
-                  ? (uploadProgress.received / uploadProgress.total) * 100
-                  : 0,
-              )}
-              %
-            </span>
-          </div>
-          <span className={styles.uploadProgressName}>{uploadProgress.filename}</span>
-          <ProgressBar
-            value={
-              uploadProgress.total > 0 ? (uploadProgress.received / uploadProgress.total) * 100 : 0
-            }
-            ariaLabel="Upload progress"
-          />
-          <span className={styles.uploadProgressMeta}>
-            {formatBytes(uploadProgress.received)} of {formatBytes(uploadProgress.total)}
-          </span>
-        </div>
-      )}
-
-      {fileActions.previewEntry && (
-        <PreviewModal
-          entry={fileActions.previewEntry}
-          onClose={() => fileActions.setPreviewEntry(null)}
-          onDownload={() => fileCommands.handleDownload(fileActions.previewEntry!)}
-          onShare={() =>
-            dialogs.setShareDialogPath({
-              path: fileActions.previewEntry!.path,
-              name: fileActions.previewEntry!.name,
-            })
-          }
-          onPrevious={
-            previousPreviewEntry ? () => setPreviewTarget(previousPreviewEntry) : undefined
-          }
-          onNext={nextPreviewEntry ? () => setPreviewTarget(nextPreviewEntry) : undefined}
-          previousDisabled={!previousPreviewEntry}
-          nextDisabled={!nextPreviewEntry}
-          positionLabel={previewPositionLabel}
-        />
-      )}
-      {fileActions.infoEntry && (
-        <InfoPanel
-          entry={fileActions.infoEntry}
-          onClose={() => fileActions.setInfoEntry(null)}
-          onRefresh={refresh}
-        />
-      )}
-      {fileActions.batchRenameOpen && (
-        <BatchRenameModal
-          entries={selection.selectedEntries}
-          onClose={() => fileActions.setBatchRenameOpen(false)}
-          onDone={() => {
-            shell.showToastObj({ title: 'Items renamed', variant: 'success' });
-            refresh();
-          }}
-        />
-      )}
-      {dialogs.confirmDialog && (
-        <ConfirmDialog
-          dialog={dialogs.confirmDialog}
-          onClose={() => dialogs.setConfirmDialog(null)}
-        />
-      )}
-      {dialogs.textInputDialog && (
-        <TextInputDialog
-          dialog={dialogs.textInputDialog}
-          onClose={() => dialogs.setTextInputDialog(null)}
-        />
-      )}
-      {dialogs.transferDialog && (
-        <TransferDialog
-          dialog={dialogs.transferDialog}
-          folderSuggestions={browser.folderSuggestions}
-          onClose={() => dialogs.setTransferDialog(null)}
-          onSubmit={fileCommands.handleTransferSubmit}
-        />
-      )}
-      {dialogs.shareDialogPath && (
-        <ShareDialog
-          path={dialogs.shareDialogPath.path}
-          name={dialogs.shareDialogPath.name}
-          onClose={() => dialogs.setShareDialogPath(null)}
-        />
-      )}
-      {fileActions.shortcutsOpen && (
-        <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />
-      )}
-      {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
-      {fileActions.analyzePath && (
-        <DiskUsageAnalyzer
-          path={fileActions.analyzePath}
-          onClose={() => fileActions.setAnalyzePath(null)}
-        />
-      )}
+      <FilesViewOverlays
+        contextMenu={fileActions.contextMenu}
+        onContextMenuClose={() => fileActions.setContextMenu(null)}
+        trashContextMenu={menus.trashContextMenu}
+        onTrashContextMenuClose={() => menus.setTrashContextMenu(null)}
+        filesEmptyMenu={menus.filesEmptyMenu}
+        onFilesEmptyMenuClose={() => menus.setFilesEmptyMenu(null)}
+        canWrite={browser.canWrite}
+        canUpload={canUpload}
+        caps={{
+          canWrite: browser.canWrite,
+          canPreview: selection.canPreview,
+          canInfo: selection.canInfo,
+          canDownload: selection.canDownload,
+          canRename: selection.canRename,
+          canArchive: selection.canArchive,
+          canExtract: selection.canExtract,
+          canChecksum: selection.canChecksum,
+          canCopy: selection.canCopy,
+          canMove: selection.canMove,
+          canPaste: selection.canPaste,
+          canDelete: selection.canDelete,
+          canAnalyze: selection.canAnalyze,
+        }}
+        selectedEntryIsFavorited={selectedEntryIsFavorited}
+        selectedCount={selection.selectedEntries.length}
+        selectedEntries={selection.selectedEntries}
+        previewEntry={fileActions.previewEntry}
+        onPreviewClose={() => fileActions.setPreviewEntry(null)}
+        infoEntry={fileActions.infoEntry}
+        onInfoClose={() => fileActions.setInfoEntry(null)}
+        batchRenameOpen={fileActions.batchRenameOpen}
+        onBatchRenameClose={() => fileActions.setBatchRenameOpen(false)}
+        shortcutsOpen={fileActions.shortcutsOpen}
+        onShortcutsClose={() => fileActions.setShortcutsOpen(false)}
+        analyzePath={fileActions.analyzePath}
+        onAnalyzeClose={() => fileActions.setAnalyzePath(null)}
+        confirmDialog={dialogs.confirmDialog}
+        onConfirmClose={() => dialogs.setConfirmDialog(null)}
+        textInputDialog={dialogs.textInputDialog}
+        onTextInputClose={() => dialogs.setTextInputDialog(null)}
+        transferDialog={dialogs.transferDialog}
+        folderSuggestions={browser.folderSuggestions}
+        onTransferClose={() => dialogs.setTransferDialog(null)}
+        shareDialogPath={dialogs.shareDialogPath}
+        onShareDialogClose={() => dialogs.setShareDialogPath(null)}
+        sharesOpen={dialogs.sharesOpen}
+        onSharesClose={() => dialogs.setSharesOpen(false)}
+        uploadProgress={uploadProgress}
+        previousPreviewEntry={previousPreviewEntry}
+        nextPreviewEntry={nextPreviewEntry}
+        previewPositionLabel={previewPositionLabel}
+        onPreview={fileCommands.handlePreview}
+        onShowInfo={fileCommands.handleShowInfo}
+        onDownload={fileCommands.handleDownload}
+        onRename={fileCommands.handleRename}
+        onBatchRename={fileCommands.handleBatchRename}
+        onCopyPaths={fileCommands.handleCopy}
+        onMovePaths={fileCommands.handleMove}
+        onArchive={fileCommands.handleCreateArchive}
+        onExtract={fileCommands.handleExtractArchive}
+        onChecksum={fileCommands.handleCreateChecksum}
+        onPasteFiles={fileCommands.handlePaste}
+        onQuickShare={fileCommands.handleQuickShare}
+        onShare={(entry) => dialogs.setShareDialogPath({ path: entry.path, name: entry.name })}
+        onAnalyze={fileCommands.handleAnalyze}
+        onToggleFavorite={(entry) => {
+          if (favorites.includes(entry.path)) onRemoveFavorite(entry.path);
+          else onAddFavorite(entry.path);
+        }}
+        onDelete={fileCommands.handleDelete}
+        onRestoreTrash={fileCommands.handleRestoreTrash}
+        onDeleteTrash={fileCommands.handleDeleteTrash}
+        onCreateFolder={fileCommands.handleCreateFolder}
+        onCreateFile={fileCommands.handleCreateFile}
+        onUpload={openUploadPicker}
+        onRefresh={refresh}
+        onTransferSubmit={fileCommands.handleTransferSubmit}
+        setPreviewTarget={setPreviewTarget}
+        showToast={(toast) => shell.showToastObj({ title: toast.title, variant: toast.variant })}
+      />
     </>
   );
 });
