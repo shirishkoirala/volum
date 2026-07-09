@@ -2,12 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, FileIcon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
-import { FileContextMenu } from '../components/overlay/FileContextMenu';
-import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
+import { SearchResultsOverlays } from '../components/overlay/SearchResultsOverlays';
 import { Skeleton } from '../components/ui/Skeleton';
-import { ShareDialog } from '../components/overlay/ShareDialog';
-import { InfoPanel } from '../components/overlay/InfoPanel';
-import { PreviewModal } from '../components/overlay/PreviewModal';
 import { useShellContext } from '../contexts/ShellContext';
 import { usePreviewNavigation } from '../hooks/usePreviewNavigation';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
@@ -387,12 +383,6 @@ export function SearchResultsView({
     });
   }, [selectedResults, runAction]);
 
-  const handleAnalyze = useCallback(() => {
-    const entry = selectedResults[0];
-    if (!entry || entry.type !== 'directory') return;
-    setError('Disk analysis is not available from search results. Navigate to the folder first.');
-  }, [selectedResults]);
-
   const handleTransferSubmit = useCallback(
     (dialog: TransferDialogState, destinationValue: string, conflictPolicy: ConflictPolicy) => {
       if (!dialog) return;
@@ -507,72 +497,45 @@ export function SearchResultsView({
         ) : null}
       </div>
 
-      {contextMenu && (
-        <FileContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          caps={caps}
-          isFavorited={isFavorited}
-          selectedCount={selectedResults.length}
-          onPreview={handlePreview}
-          onShowInfo={handleShowInfo}
-          onDownload={handleDownload}
-          onRename={handleRename}
-          onBatchRename={() => {}}
-          onCopy={handleCopy}
-          onMove={handleMove}
-          onArchive={handleArchive}
-          onExtract={handleExtract}
-          onChecksum={handleChecksum}
-          onPaste={() => {}}
-          onQuickShare={handleQuickShare}
-          onShare={handleShare}
-          onAnalyze={handleAnalyze}
-          onToggleFavorite={() => {}}
-          onDelete={handleDelete}
-          onClose={() => setContextMenu(null)}
-        />
-      )}
-
-      {previewEntry && (
-        <PreviewModal
-          entry={previewEntry}
-          onClose={() => setPreviewEntry(null)}
-          onDownload={() => openFileExternally(previewEntry.path)}
-          onShare={() => setShareDialogPath({ path: previewEntry.path, name: previewEntry.name })}
-          onPrevious={
-            previousPreviewEntry ? () => setPreviewEntry(previousPreviewEntry) : undefined
-          }
-          onNext={nextPreviewEntry ? () => setPreviewEntry(nextPreviewEntry) : undefined}
-          previousDisabled={!previousPreviewEntry}
-          nextDisabled={!nextPreviewEntry}
-          positionLabel={previewPositionLabel}
-        />
-      )}
-      {infoEntry && (
-        <InfoPanel entry={infoEntry} onClose={() => setInfoEntry(null)} onRefresh={() => {}} />
-      )}
-      {confirmDialog && (
-        <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} />
-      )}
-      {textInputDialog && (
-        <TextInputDialog dialog={textInputDialog} onClose={() => setTextInputDialog(null)} />
-      )}
-      {transferDialog && (
-        <TransferDialog
-          dialog={transferDialog}
-          folderSuggestions={['/']}
-          onClose={() => setTransferDialog(null)}
-          onSubmit={handleTransferSubmit}
-        />
-      )}
-      {shareDialogPath && (
-        <ShareDialog
-          path={shareDialogPath.path}
-          name={shareDialogPath.name}
-          onClose={() => setShareDialogPath(null)}
-        />
-      )}
+      <SearchResultsOverlays
+        contextMenu={contextMenu}
+        onContextMenuClose={() => setContextMenu(null)}
+        caps={caps}
+        isFavorited={isFavorited}
+        selectedCount={selectedResults.length}
+        previewEntry={previewEntry}
+        onPreviewClose={() => setPreviewEntry(null)}
+        onPreviewShare={(entry) => setShareDialogPath({ path: entry.path, name: entry.name })}
+        onPreviewPrevious={(entry) => setPreviewEntry(entry)}
+        onPreviewNext={(entry) => setPreviewEntry(entry)}
+        infoEntry={infoEntry}
+        onInfoClose={() => setInfoEntry(null)}
+        confirmDialog={confirmDialog}
+        onConfirmClose={() => setConfirmDialog(null)}
+        textInputDialog={textInputDialog}
+        onTextInputClose={() => setTextInputDialog(null)}
+        transferDialog={transferDialog}
+        folderSuggestions={['/']}
+        onTransferClose={() => setTransferDialog(null)}
+        onTransferSubmit={handleTransferSubmit}
+        shareDialogPath={shareDialogPath}
+        onShareDialogClose={() => setShareDialogPath(null)}
+        previousPreviewEntry={previousPreviewEntry}
+        nextPreviewEntry={nextPreviewEntry}
+        previewPositionLabel={previewPositionLabel}
+        onPreview={handlePreview}
+        onShowInfo={handleShowInfo}
+        onDownload={handleDownload}
+        onRename={handleRename}
+        onCopy={handleCopy}
+        onMove={handleMove}
+        onArchive={handleArchive}
+        onExtract={handleExtract}
+        onChecksum={handleChecksum}
+        onQuickShare={handleQuickShare}
+        onShare={handleShare}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }
