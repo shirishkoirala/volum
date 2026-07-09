@@ -241,48 +241,34 @@ the pieces collaborate.
 
 Priority: high
 
-Status: in progress
+Status: completed
 
-The repository has meaningful tests, but contributors need faster targeting
-and clearer failure modes.
+The repository has meaningful tests, and contributors can now run targeted
+tests, get coverage information, and verify visual output through a documented
+command surface.
 
-### Completed
+### Items completed across this phase
 
-- Added Docker-based targeted Go tests that do not run global lint and tests
-  before the selected package.
-- Added `FILE` and `NAME` filters for frontend tests.
-- Added `PACKAGE` and `NAME` filters for backend tests.
-- Added a testing guide with exact full, file, package, and named-test commands.
-- Extracted the shared API test server from `server_test.go` into
-  `test_helpers_test.go`.
-- Fixed asynchronous test cleanup that produced React `act(...)` warnings and
-  added a narrow test guard so those warnings fail instead of being ignored.
-- Added typed frontend builders for file entries, directories, jobs, and
-  sessions, then migrated representative suites away from repeated literals.
-- Split `backend/internal/api/server_test.go` (1163 lines) into 6 feature-aligned
-  test files:
-  - `handlers_auth_test.go` — auth, session, login, logout, setup, CSRF, origin, rate limiting
-  - `handlers_files_test.go` — roots, files listing, pagination, folder creation, rename, chmod, trash, search, download, raw
-  - `handlers_upload_test.go` — upload, special characters, path normalization, chunk upload
-  - `handlers_jobs_test.go` — job creation (copy, checksum)
-  - `handlers_profile_test.go` — avatar lifecycle and rejection
-  - `handlers_shares_test.go` — service health, readonly mutation, password-protected shares
-- Extended frontend test builders to `buildRootEntry`, `buildBlockDevice`, and
-  `buildServiceInfo` in `fixtures.ts`, then migrated `roots.test.ts`,
-  `useFileBrowser.test.tsx`, and `format.test.ts` to use them.
-- Added coverage configuration to vitest (`v8` provider, `text` + `lcov`
-  reporters), Makefile targets (`coverage`, `coverage-frontend`,
-  `coverage-backend`), and CI (`continue-on-error` for both frontend and
-  backend).
-- Recorded initial coverage baseline in `docs/coverage-baseline.md`
-  (per-package backend, per-directory frontend).
-- Added scheduled CI job for both `scripts/smoke.sh` and
-  `scripts/smoke-reverse-proxy-upload.sh` (weekly schedule only).
+- Docker-based targeted Go tests (`PACKAGE`, `NAME` filters)
+- Frontend test filters (`FILE`, `NAME`)
+- Testing guide with exact commands
+- Shared API test server extraction from `server_test.go`
+- React `act(...)` warning guard
+- Typed frontend builders (`buildFileEntry`, `buildDirectoryEntry`, `buildJob`,
+  `buildSession`, `buildRootEntry`, `buildBlockDevice`, `buildServiceInfo`)
+- API test file split (6 files replacing 1163-line `server_test.go`)
+- Coverage reporting (vitest + Go, CI informational)
+- Coverage baseline (`docs/coverage-baseline.md`)
+- Smoke tests in scheduled CI (basic + reverse-proxy upload)
+- ShellCheck + lychee link checker (CI + Makefile)
+- Visual tools package (`tools/visual/` with Playwright, `make setup-visual`,
+  `make visual-capture`, `make visual-audit`)
 
-### Work
+### Deferred (needs baseline stability)
 
-- Add thresholds only for critical packages after the baseline is stable:
-  security, auth, upload cleanup, conflict handling, and migrations.
+- Add coverage thresholds only for critical packages (security, auth, upload
+  cleanup, conflict handling, migrations) after several CI runs confirm the
+  baseline is stable.
 - Added ShellCheck (CI job, `make lint-shell`) and lychee link checker
   (scheduled CI with `lycheeverse/lychee-action`, `make lint-markdown`).
 - Created `tools/visual/` package with Playwright as a declared dependency,
