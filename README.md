@@ -13,7 +13,7 @@
   <a href="docs/roadmap.md">Roadmap</a> |
   <a href="docs/reverse-proxy.md">Reverse Proxy</a> |
   <a href="docs/release.md">Release</a> |
-  <a href="CONTRIBUTION.md">Contributing</a>
+  <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
 <p align="center">
@@ -105,7 +105,9 @@ Release and Docker image publishing notes are in [docs/release.md](docs/release.
 
 ## Development
 
-Development and contribution notes live in [CONTRIBUTION.md](CONTRIBUTION.md).
+Development and contribution notes live in [CONTRIBUTING.md](CONTRIBUTING.md).
+Planned onboarding and repository improvements are tracked in the
+[contributor experience roadmap](docs/contributor-experience-roadmap.md).
 
 Preferred dev server:
 
