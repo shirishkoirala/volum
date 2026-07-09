@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AppMenuBar, type AppMenuHandlers } from './AppMenuBar';
 import { TopBarSearch } from './TopBarSearch';
+import { UserMenu } from './UserMenu';
 import { ActivityPanel } from './ActivityPanel';
 import { Calendar } from '../overlay/Calendar';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { IconButton } from '../ui/shared';
 import { Icon } from '../ui/Icon';
-import { profileAvatarUrl, type Session, type SearchResult, type Job } from '../../api/client';
+import { type Session, type SearchResult, type Job } from '../../api/client';
 import { BRAND_ICON_URL } from '../../utils/brand';
 import { countActiveTransfers } from '../../utils/jobs';
 import styles from './TopBar.module.css';
@@ -346,71 +347,15 @@ export function TopBar({
           )}
         </div>
         {showUserMenu && (
-          <div className={styles.userArea} ref={menuRef}>
-            <button
-              className={styles.userButton}
-              onClick={() => setUserMenuOpen((v) => !v)}
-              type="button"
-              aria-label={`User menu for ${session.username}`}
-              aria-expanded={userMenuOpen}
-            >
-              {session.hasAvatar ? (
-                <img
-                  className={styles.userAvatar}
-                  src={profileAvatarUrl(session.avatarVersion)}
-                  alt=""
-                />
-              ) : (
-                <Icon name="avatar-default" size={16} />
-              )}
-            </button>
-            {userMenuOpen && (
-              <div className={styles.userDropdown} role="menu">
-                <div className={styles.dropdownHeader}>
-                  {session.hasAvatar ? (
-                    <img
-                      className={styles.dropdownAvatar}
-                      src={profileAvatarUrl(session.avatarVersion)}
-                      alt=""
-                    />
-                  ) : (
-                    <span className={styles.dropdownAvatarFallback}>
-                      <Icon name="avatar-default" size={18} />
-                    </span>
-                  )}
-                  <div className={styles.dropdownIdentity}>
-                    <span className={styles.dropdownUsername}>{session.username}</span>
-                    {session.role && <span className={styles.dropdownRole}>{session.role}</span>}
-                  </div>
-                </div>
-                <div className={styles.dropdownDivider} />
-                {onOpenSettings && (
-                  <button
-                    type="button"
-                    className={styles.dropdownItem}
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      onOpenSettings();
-                    }}
-                    role="menuitem"
-                  >
-                    <Icon name="preferences-system" size={16} /> Settings
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    onLogout?.();
-                  }}
-                  role="menuitem"
-                >
-                  <Icon name="system-log-out" size={16} /> Log Out
-                </button>
-              </div>
-            )}
-          </div>
+          <UserMenu
+            session={session}
+            open={userMenuOpen}
+            menuRef={menuRef}
+            onToggle={() => setUserMenuOpen((v) => !v)}
+            onClose={() => setUserMenuOpen(false)}
+            onOpenSettings={onOpenSettings}
+            onLogout={onLogout}
+          />
         )}
         <div className={styles.calendarArea} ref={calendarRef}>
           <button
