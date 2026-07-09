@@ -201,6 +201,9 @@ make test-frontend
 make test-backend
 ```
 
+Both test commands accept filters. See the [testing guide](docs/testing.md) for
+single-file, single-package, and single-test examples.
+
 Build the production image before a release or when Docker packaging changes:
 
 ```sh

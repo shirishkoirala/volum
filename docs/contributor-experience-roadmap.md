@@ -241,13 +241,23 @@ the pieces collaborate.
 
 Priority: high
 
+Status: in progress
+
 The repository has meaningful tests, but contributors need faster targeting
 and clearer failure modes.
 
+### Completed
+
+- Added Docker-based targeted Go tests that do not run global lint and tests
+  before the selected package.
+- Added `FILE` and `NAME` filters for frontend tests.
+- Added `PACKAGE` and `NAME` filters for backend tests.
+- Added a testing guide with exact full, file, package, and named-test commands.
+- Extracted the shared API test server from `server_test.go` into
+  `test_helpers_test.go`.
+
 ### Work
 
-- Document commands for one frontend test file, one Vitest test name, one Go
-  package, and one Go test name.
 - Split `backend/internal/api/server_test.go` by feature:
   - auth and setup
   - files and trash
@@ -255,8 +265,6 @@ and clearer failure modes.
   - jobs
   - users and profile
   - services and shares
-- Extract shared API test setup into a small test helper that creates a
-  temporary database, guarded root, server, and authenticated request.
 - Add frontend test builders for frequently repeated objects such as file
   entries, jobs, roots, services, and sessions.
 - Keep frontend CI tests serialized until parallel execution is proven stable.

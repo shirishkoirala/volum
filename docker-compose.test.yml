@@ -1,0 +1,15 @@
+name: volum-test
+
+services:
+  backend-test:
+    build:
+      context: .
+      target: backend-toolchain
+    working_dir: /app/backend
+    command: go test ./...
+    volumes:
+      - ./backend:/app/backend
+      - backend_go_build_cache:/root/.cache/go-build
+
+volumes:
+  backend_go_build_cache:

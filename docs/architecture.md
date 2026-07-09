@@ -299,6 +299,8 @@ make smoke
 make smoke-proxy
 ```
 
+See the [testing guide](testing.md) for targeted commands and test conventions.
+
 ## Where Changes Belong
 
 | Change | Primary location |

@@ -1,11 +1,15 @@
 SHELL := /bin/sh
 
 DEV_COMPOSE := docker compose -f docker-compose.dev.yml
-FRONTEND_RUN := $(DEV_COMPOSE) run --rm frontend sh -c
+TEST_COMPOSE := docker compose -f docker-compose.test.yml
+FRONTEND_RUN := $(DEV_COMPOSE) run --rm --no-deps frontend sh -c
+FRONTEND_TEST_FILTER := $(strip $(if $(FILE),$(FILE)) $(if $(NAME),-t "$(NAME)"))
+BACKEND_TEST_FILTER := $(strip $(if $(NAME),-run "$(NAME)"))
+PACKAGE ?= ./...
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup doctor dev dev-detached stop status logs clean-dev \
+.PHONY: help setup doctor dev dev-detached stop status logs clean-dev clean-test \
 	check check-frontend check-backend test-frontend test-backend \
 	format-frontend build smoke smoke-proxy
 
@@ -22,13 +26,14 @@ help:
 		'  make status           Show development containers' \
 		'  make logs             Follow development logs' \
 		'  make clean-dev        Remove dev containers and dependency volume (keeps data)' \
+		'  make clean-test       Remove the isolated backend test network and cache' \
 		'' \
 		'Verification:' \
 		'  make check            Run all required frontend and backend checks' \
 		'  make check-frontend   Typecheck, format-check, lint, test, and build frontend' \
 		'  make check-backend    Lint, vet, test, and build backend' \
-		'  make test-frontend    Run serialized frontend tests' \
-		'  make test-backend     Run backend checks and tests' \
+		'  make test-frontend    Run frontend tests; optional FILE=... NAME=...' \
+		'  make test-backend     Run Go tests; optional PACKAGE=... NAME=...' \
 		'  make format-frontend  Format frontend source files' \
 		'  make build            Build the production image' \
 		'  make smoke            Run the authenticated disposable smoke test' \
@@ -65,6 +70,9 @@ clean-dev:
 	@printf 'Files under data/ and storage/ will be preserved.\n'
 	$(DEV_COMPOSE) down --remove-orphans --volumes
 
+clean-test:
+	$(TEST_COMPOSE) down --remove-orphans --volumes
+
 check: check-frontend check-backend
 
 check-frontend:
@@ -74,9 +82,10 @@ check-backend:
 	docker build --target backend-base .
 
 test-frontend:
-	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run test:ci'
+	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run test:ci -- $(FRONTEND_TEST_FILTER)'
 
-test-backend: check-backend
+test-backend:
+	$(TEST_COMPOSE) run --rm --build backend-test go test $(BACKEND_TEST_FILTER) $(PACKAGE)
 
 format-frontend:
 	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run format'
