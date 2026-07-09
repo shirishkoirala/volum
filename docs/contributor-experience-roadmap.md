@@ -285,8 +285,9 @@ and clearer failure modes.
   security, auth, upload cleanup, conflict handling, and migrations.
 - Added ShellCheck (CI job, `make lint-shell`) and lychee link checker
   (scheduled CI with `lycheeverse/lychee-action`, `make lint-markdown`).
-- Make visual scripts reproducible by declaring Playwright or Puppeteer in a
-  dedicated tools package, then expose them through the root task runner.
+- Created `tools/visual/` package with Playwright as a declared dependency,
+  converted `capture-screenshots.mjs` from Puppeteer to Playwright, and exposed
+  `make setup-visual`, `make visual-capture`, `make visual-audit` targets.
 
 ### Junior-friendly details
 
