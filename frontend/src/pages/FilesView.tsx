@@ -15,8 +15,7 @@ import { AppPanel } from '../components/layout/AppPanel';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Notice } from '../components/ui/shared';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
-import { FileGridView } from '../components/ui/FileGridView';
-import { FileListView } from '../components/ui/FileListView';
+import { FileEntriesView } from '../components/ui/FileEntriesView';
 import { FilesViewOverlays } from '../components/overlay/FilesViewOverlays';
 import { Skeleton } from '../components/ui/Skeleton';
 import { folderIconUrl } from '../api/icons';
@@ -466,100 +465,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     fileCommands.commitRename(entry);
   }
 
-  function renderEntries() {
-    const incrementalResetKey = `${effectivePath}:${viewPref.showHidden}:${browser.query}:${viewPref.viewMode}`;
-
-    if (viewPref.viewMode === 'grid') {
-      return (
-        <FileGridView
-          filteredEntries={browser.filteredEntries}
-          selectedPaths={selection.selectedPaths}
-          onContextMenu={handleContextMenuEvent}
-          onEmptyContextMenu={handleFilesEmptyContextMenu}
-          canWrite={browser.canWrite}
-          onFileDragStart={dragDrop.handleFileDragStart}
-          onFolderDragOver={dragDrop.handleFolderDragOver}
-          onFolderDragLeave={dragDrop.handleFolderDragLeave}
-          onDropOnFolder={dragDrop.handleDropOnFolder}
-          dragOverPath={dragDrop.dragOverPath}
-          favorites={favorites}
-          renameState={fileActions.renaming}
-          renameInputRef={fileCommands.renameInputRef as RefObject<HTMLInputElement | null>}
-          onSubmitRename={commitRename}
-          onCancelRename={fileCommands.cancelRename}
-          onRenameChange={(value) =>
-            fileActions.setRenaming({ path: fileActions.renaming?.path ?? '', value })
-          }
-          fileGridRef={fileGridRef as RefObject<HTMLDivElement | null>}
-          rubberBandStyle={rubberBandStyle}
-          fileClick={selection.handleFileClick}
-          onFileAreaDragOver={dragDrop.handleFileAreaDragOver}
-          onFileAreaDragLeave={dragDrop.handleFileAreaDragLeave}
-          onFileAreaDrop={dragDrop.handleFileAreaDrop}
-          onFileAreaMouseDown={handleFileAreaMouseDown}
-          onFileAreaKeyDown={handleFileAreaKeyDown}
-          draggingUpload={dragDrop.draggingUpload}
-          totalEntries={totalEntries}
-          loadingMore={browser.loadingMore}
-          onLoadMoreEntries={localFilterActive ? undefined : browser.loadMoreEntries}
-          onVisibleCountChange={handleVisibleCountChange}
-          resetKey={incrementalResetKey}
-          onEntryTouchStart={handleEntryTouchStart}
-          onEntryTouchMove={handleEntryTouchMove}
-          onEntryTouchEnd={handleEntryTouchEnd}
-          onNavigate={handleNavigate}
-          onPreview={(entry) => {
-            if (isPreviewableFile(entry.name)) showPreviewEntry(entry);
-            else fileCommands.handleDownload(entry);
-          }}
-        />
-      );
-    }
-    return (
-      <FileListView
-        filteredEntries={browser.filteredEntries}
-        selectedPaths={selection.selectedPaths}
-        onContextMenu={handleContextMenuEvent}
-        onEmptyContextMenu={handleFilesEmptyContextMenu}
-        canWrite={browser.canWrite}
-        onFileDragStart={dragDrop.handleFileDragStart}
-        onFolderDragOver={dragDrop.handleFolderDragOver}
-        onFolderDragLeave={dragDrop.handleFolderDragLeave}
-        onDropOnFolder={dragDrop.handleDropOnFolder}
-        dragOverPath={dragDrop.dragOverPath}
-        favorites={favorites}
-        renameState={fileActions.renaming}
-        renameInputRef={fileCommands.renameInputRef as RefObject<HTMLInputElement | null>}
-        onSubmitRename={commitRename}
-        onCancelRename={fileCommands.cancelRename}
-        onRenameChange={(value) =>
-          fileActions.setRenaming({ path: fileActions.renaming?.path ?? '', value })
-        }
-        fileGridRef={fileGridRef as RefObject<HTMLDivElement | null>}
-        rubberBandStyle={rubberBandStyle}
-        fileClick={selection.handleFileClick}
-        onFileAreaDragOver={dragDrop.handleFileAreaDragOver}
-        onFileAreaDragLeave={dragDrop.handleFileAreaDragLeave}
-        onFileAreaDrop={dragDrop.handleFileAreaDrop}
-        onFileAreaMouseDown={handleFileAreaMouseDown}
-        onFileAreaKeyDown={handleFileAreaKeyDown}
-        draggingUpload={dragDrop.draggingUpload}
-        totalEntries={totalEntries}
-        loadingMore={browser.loadingMore}
-        onLoadMoreEntries={localFilterActive ? undefined : browser.loadMoreEntries}
-        onVisibleCountChange={handleVisibleCountChange}
-        resetKey={incrementalResetKey}
-        onEntryTouchStart={handleEntryTouchStart}
-        onEntryTouchMove={handleEntryTouchMove}
-        onEntryTouchEnd={handleEntryTouchEnd}
-        onNavigate={handleNavigate}
-        onPreview={(entry) => {
-          if (isPreviewableFile(entry.name)) showPreviewEntry(entry);
-          else fileCommands.handleDownload(entry);
-        }}
-      />
-    );
-  }
+  const incrementalResetKey = `${effectivePath}:${viewPref.showHidden}:${browser.query}:${viewPref.viewMode}`;
 
   return (
     <>
@@ -663,7 +569,49 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
                 />
               </div>
             ) : (
-              renderEntries()
+              <FileEntriesView
+                viewMode={viewPref.viewMode}
+                filteredEntries={browser.filteredEntries}
+                selectedPaths={selection.selectedPaths}
+                onContextMenu={handleContextMenuEvent}
+                onEmptyContextMenu={handleFilesEmptyContextMenu}
+                canWrite={browser.canWrite}
+                onFileDragStart={dragDrop.handleFileDragStart}
+                onFolderDragOver={dragDrop.handleFolderDragOver}
+                onFolderDragLeave={dragDrop.handleFolderDragLeave}
+                onDropOnFolder={dragDrop.handleDropOnFolder}
+                dragOverPath={dragDrop.dragOverPath}
+                favorites={favorites}
+                renameState={fileActions.renaming}
+                renameInputRef={fileCommands.renameInputRef as RefObject<HTMLInputElement | null>}
+                onSubmitRename={commitRename}
+                onCancelRename={fileCommands.cancelRename}
+                onRenameChange={(value) =>
+                  fileActions.setRenaming({ path: fileActions.renaming?.path ?? '', value })
+                }
+                fileGridRef={fileGridRef as RefObject<HTMLDivElement | null>}
+                rubberBandStyle={rubberBandStyle}
+                fileClick={selection.handleFileClick}
+                onFileAreaDragOver={dragDrop.handleFileAreaDragOver}
+                onFileAreaDragLeave={dragDrop.handleFileAreaDragLeave}
+                onFileAreaDrop={dragDrop.handleFileAreaDrop}
+                onFileAreaMouseDown={handleFileAreaMouseDown}
+                onFileAreaKeyDown={handleFileAreaKeyDown}
+                draggingUpload={dragDrop.draggingUpload}
+                totalEntries={totalEntries}
+                loadingMore={browser.loadingMore}
+                onLoadMoreEntries={localFilterActive ? undefined : browser.loadMoreEntries}
+                onVisibleCountChange={handleVisibleCountChange}
+                resetKey={incrementalResetKey}
+                onEntryTouchStart={handleEntryTouchStart}
+                onEntryTouchMove={handleEntryTouchMove}
+                onEntryTouchEnd={handleEntryTouchEnd}
+                onNavigate={handleNavigate}
+                onPreview={(entry) => {
+                  if (isPreviewableFile(entry.name)) showPreviewEntry(entry);
+                  else fileCommands.handleDownload(entry);
+                }}
+              />
             )}
           </div>
         </AppPanel>
