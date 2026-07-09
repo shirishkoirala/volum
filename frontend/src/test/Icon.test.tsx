@@ -1,19 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { Icon, FileIcon, FolderIcon, DeviceIcon, TrashIcon } from '../components/ui/Icon';
-import type { FileEntry } from '../api/client';
+import { buildFileEntry } from './fixtures';
 
-const mockEntry: FileEntry = {
+const mockEntry = buildFileEntry({
   name: 'test.txt',
   path: '/storage/test.txt',
-  type: 'file',
-  size: 1024,
   modifiedAt: '2026-05-22T10:00:00Z',
-  permissions: '-rw-r--r--',
-  owner: '1000',
-  group: '1000',
-  hidden: false,
-};
+});
 
 describe('Icon', () => {
   it('renders an svg for known action', () => {

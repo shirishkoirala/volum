@@ -3,6 +3,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { useFileBrowser } from '../hooks/useFileBrowser';
 import type { Session, FileEntry } from '../api/client';
 import * as api from '../api/client';
+import { buildDirectoryEntry, buildFileEntry, buildSession } from './fixtures';
 
 vi.mock('../api/client', () => ({
   getRoots: vi.fn(),
@@ -12,26 +13,27 @@ vi.mock('../api/client', () => ({
   searchFiles: vi.fn(),
 }));
 
-const fakeSession: Session = { authEnabled: true, authenticated: true, role: 'admin' };
-const readonlySession: Session = { authEnabled: true, authenticated: true, role: 'readonly' };
+const fakeSession: Session = buildSession();
+const readonlySession: Session = buildSession({ role: 'readonly' });
 
 function makeFile(overrides: Partial<FileEntry> = {}): FileEntry {
-  return {
-    name: 'file.txt',
+  return buildFileEntry({
     path: '/root/file.txt',
-    type: 'file',
     size: 100,
-    modifiedAt: '2026-06-10T10:00:00Z',
     permissions: 'rw-r--r--',
     owner: 'admin',
     group: 'users',
-    hidden: false,
     ...overrides,
-  };
+  });
 }
 
 function makeDir(overrides: Partial<FileEntry> = {}): FileEntry {
-  return makeFile({ name: 'folder', path: '/root/folder', type: 'directory', ...overrides });
+  return buildDirectoryEntry({
+    path: '/root/folder',
+    owner: 'admin',
+    group: 'users',
+    ...overrides,
+  });
 }
 
 beforeEach(() => {

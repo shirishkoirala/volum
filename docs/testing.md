@@ -36,12 +36,17 @@ Library, and `userEvent`.
 
 Guidelines:
 
+- Build common file entries, directories, jobs, and sessions with
+  `frontend/src/test/fixtures.ts`, overriding fields relevant to the scenario.
 - Test observable behavior rather than component internals.
 - Prefer queries by role, label, or accessible name.
 - Await `userEvent` calls.
 - Use `waitFor` for asynchronous state that the user can observe.
 - Do not add sleeps or increase global timeouts to hide a race.
 - Treat React `act(...)` warnings as test defects even when the test passes.
+
+Fixture builders provide valid domain defaults; they should not hide the value
+under test. Keep specialized request payloads and one-off component props local.
 
 Run the complete frontend quality gate with:
 

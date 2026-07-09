@@ -257,6 +257,8 @@ and clearer failure modes.
   `test_helpers_test.go`.
 - Fixed asynchronous test cleanup that produced React `act(...)` warnings and
   added a narrow test guard so those warnings fail instead of being ignored.
+- Added typed frontend builders for file entries, directories, jobs, and
+  sessions, then migrated representative suites away from repeated literals.
 
 ### Work
 
@@ -267,8 +269,8 @@ and clearer failure modes.
   - jobs
   - users and profile
   - services and shares
-- Add frontend test builders for frequently repeated objects such as file
-  entries, jobs, roots, services, and sessions.
+- Extend frontend test builders to roots and services when repeated setup
+  justifies shared defaults.
 - Keep frontend CI tests serialized until parallel execution is proven stable.
 - Add coverage reporting to CI as informational first.
 - Record an initial coverage baseline by package or subsystem.

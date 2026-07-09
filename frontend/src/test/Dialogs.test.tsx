@@ -9,8 +9,8 @@ import type {
   TextInputDialogState,
   TransferDialogState,
 } from '../components/overlay/Dialogs';
-import type { FileEntry } from '../api/client';
 import type { Toast } from '../components/overlay/Toast';
+import { buildDirectoryEntry, buildFileEntry } from './fixtures';
 
 describe('ConfirmDialog', () => {
   const baseDialog: NonNullable<ConfirmDialogState> = {
@@ -87,23 +87,17 @@ describe('TextInputDialog', () => {
 });
 
 describe('TransferDialog', () => {
-  const fileEntry: FileEntry = {
+  const fileEntry = buildFileEntry({
     name: 'report.txt',
     path: '/source/report.txt',
-    type: 'file',
     size: 42,
-    modifiedAt: '2026-01-01T00:00:00Z',
-    permissions: '-rw-r--r--',
     owner: 'user',
     group: 'staff',
-    hidden: false,
-  };
-  const folderEntry: FileEntry = {
-    ...fileEntry,
+  });
+  const folderEntry = buildDirectoryEntry({
     name: 'docs',
     path: '/source/docs',
-    type: 'directory',
-  };
+  });
 
   function renderTransferDialog(dialog: NonNullable<TransferDialogState>) {
     return render(
