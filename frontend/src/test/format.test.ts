@@ -6,7 +6,7 @@ import {
   formatDeviceUsage,
   formatDuration,
 } from '../utils/format';
-import type { BlockDevice } from '../api/client';
+import { buildBlockDevice } from './fixtures';
 
 describe('formatBytes', () => {
   it('returns 0 B for null', () => {
@@ -94,17 +94,7 @@ describe('formatGridDate', () => {
 });
 
 describe('formatDeviceUsage', () => {
-  const basePart: BlockDevice = {
-    name: 'sda1',
-    size: '100G',
-    type: 'disk',
-    rotational: false,
-    mountPoint: '/mnt/data',
-    totalBytes: 1_000_000_000,
-    usedBytes: 400_000_000,
-    freeBytes: 600_000_000,
-    fsType: 'ext4',
-  };
+  const basePart = buildBlockDevice();
 
   it('shows usage when totalBytes > 0', () => {
     const result = formatDeviceUsage(basePart);

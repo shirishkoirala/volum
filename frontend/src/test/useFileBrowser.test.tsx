@@ -3,7 +3,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { useFileBrowser } from '../hooks/useFileBrowser';
 import type { Session, FileEntry } from '../api/client';
 import * as api from '../api/client';
-import { buildDirectoryEntry, buildFileEntry, buildSession } from './fixtures';
+import { buildDirectoryEntry, buildFileEntry, buildRootEntry, buildSession } from './fixtures';
 
 vi.mock('../api/client', () => ({
   getRoots: vi.fn(),
@@ -39,18 +39,7 @@ function makeDir(overrides: Partial<FileEntry> = {}): FileEntry {
 beforeEach(() => {
   vi.clearAllMocks();
   (api.getRoots as ReturnType<typeof vi.fn>).mockResolvedValue({
-    roots: [
-      {
-        path: '/root',
-        label: 'Root',
-        available: true,
-        discovered: false,
-        totalBytes: 0,
-        freeBytes: 0,
-        usedBytes: 0,
-        isHome: false,
-      },
-    ],
+    roots: [buildRootEntry({ path: '/root', label: 'Root' })],
   });
   (api.getDevices as ReturnType<typeof vi.fn>).mockResolvedValue({ devices: [] });
   (api.getFiles as ReturnType<typeof vi.fn>).mockResolvedValue({
