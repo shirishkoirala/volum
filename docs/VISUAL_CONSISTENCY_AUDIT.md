@@ -444,9 +444,9 @@ The toolbar shows the service name and origin as text, but no icon — even thou
 The screenshots referenced in this audit were captured via Playwright headless browser:
 
 ```bash
-# Prerequisites: dev server running (frontend :8342, backend :8090)
-npx playwright install chromium
-node scripts/visual-audit.mjs    # login, desktop, files
+# Prerequisites: dev server running (make dev)
+make setup-visual              # Install Playwright + Chromium
+make visual-audit              # Capture screenshots
 # Screenshots saved to /tmp/volum-screens/*.png
 ```
 

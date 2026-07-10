@@ -58,10 +58,11 @@ Use `t.TempDir()` and `httptest`; never use a developer's real files.
 
 ## 5. Add the frontend client
 
-Define request/response types and a function in `frontend/src/api/client.ts`.
-Use the shared `request<T>()` helper for JSON calls. Direct `fetch` calls must
-preserve `apiUrl()`, error parsing, and the `X-Volum-Request` header for unsafe
-methods.
+Define request/response types and a function in the appropriate
+`frontend/src/api/client-*.ts` domain file, then re-export through
+`frontend/src/api/client.ts` (the barrel). Use the shared `request<T>()`
+helper for JSON calls. Direct `fetch` calls must preserve `apiUrl()`, error
+parsing, and the `X-Volum-Request` header for unsafe methods.
 
 Keep transport details out of components.
 

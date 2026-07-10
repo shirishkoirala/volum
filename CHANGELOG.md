@@ -27,6 +27,16 @@ Changelog](https://keepachangelog.com/).
 
 ### Fixed
 - Upload filenames with leading/trailing spaces are now trimmed before storage
+- Documentation audit: fixed stale references to removed files (`server_test.go`,
+  `handlers_upload.go`, `visual-audit.mjs`) and stale file sizes across all docs
+
+### Changed
+- Updated docs to reference `make smoke-proxy`, `make visual-audit` instead of
+  raw script paths
+- Updated change guides to reference domain-specific `client-*.ts` files instead
+  of the monolithic `client.ts`
+- Updated CONTRIBUTING.md test and client references to current file layout
+- Removed `storage/deadcode.md` (leftover from unrelated project)
 
 ### Infrastructure
 - Coverage reporting (vitest + Go, CI informational, baseline recorded)

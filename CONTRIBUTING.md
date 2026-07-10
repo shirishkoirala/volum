@@ -134,10 +134,11 @@ must survive refactoring.
 2. Implement it in the matching `handlers_*.go` file.
 3. Apply `requireUser`, `requireAdmin`, and `requireAPIRequest` consistently
    with routes of the same sensitivity.
-4. Add backend coverage in the owning package or
-   `backend/internal/api/server_test.go`.
-5. Add the typed client request and response definitions in
-   `frontend/src/api/client.ts`.
+4. Add backend coverage in the owning package or the matching
+   `backend/internal/api/handlers_*_test.go` file.
+5. Add the typed client request and response function in the appropriate
+   `frontend/src/api/client-*.ts` domain file and re-export it through
+   `frontend/src/api/client.ts` (the barrel).
 6. Test authorization failures as well as the successful path.
 
 ### File operation or job change

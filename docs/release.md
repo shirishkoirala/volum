@@ -27,7 +27,7 @@ or bill the repository owner when billing is enabled.
 3. Run the reverse-proxy upload smoke:
 
    ```sh
-   ./scripts/smoke-reverse-proxy-upload.sh
+   make smoke-proxy
    ```
 
 4. Update `CHANGELOG.md` with changes since the last release. Contributors are

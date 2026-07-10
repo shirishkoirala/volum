@@ -30,29 +30,36 @@ Volum already has several strong foundations:
 
 The main contributor friction found in the repository is:
 
-- No root task runner or single command vocabulary for setup and verification
-- No standard pull request template; the only template is for submitting Volum
-  to Awesome Selfhosted
+- No root task runner or single command vocabulary — fixed in Phase 1
+  (root `Makefile` with help, setup, dev, check, build, smoke, coverage)
+- No standard pull request template (was using Awesome Selfhosted submission as
+  the only template — now fixed in Phase 0)
 - No issue forms, code of conduct, security policy, support policy, or
-  ownership file
-- Useful smoke and visual scripts are not exposed through a documented command
-  surface
-- `capture-screenshots.mjs` and `visual-audit.mjs` depend on Puppeteer or
-  Playwright without those tools being declared in a root package
-- CI commands, Docker build commands, and contributor commands overlap but are
-  maintained separately
-- Several high-change files are large enough to make first contributions
-  difficult:
-  - `backend/internal/api/server_test.go` is over 1,300 lines
-  - `frontend/src/pages/FilesView.tsx` is over 850 lines
-  - `backend/internal/worker/worker.go` is over 750 lines
-  - `frontend/src/pages/SettingsPanel.tsx` is over 750 lines
-  - `frontend/src/screens/Home.tsx` is over 700 lines
-  - `frontend/src/api/client.ts` is nearly 700 lines
-- There is no architecture overview showing a request from React through the
-  API, `RootGuard`, job store, worker, SQLite, and SSE updates
-- Test coverage can be generated, but there is no recorded baseline or policy
-- There is no maintained list of small, well-scoped starter tasks
+  ownership file (all added in Phase 0)
+- Useful smoke and visual scripts are now exposed through `make smoke`,
+  `make smoke-proxy`, `make visual-capture`, and `make visual-audit` (Phase 3)
+- Visual tools use Playwright declared in `tools/visual/package.json`
+  (Phase 3)
+- CI commands, Docker build commands, and contributor commands overlapped
+  but were maintained separately — partially aligned (CI calls `npm run test:ci`
+  matching local `make check-frontend`; Phase 1 still needs CI to share the
+  Makefile entry points)
+- Several high-change files were large enough to make first contributions
+  difficult — most have been split in Phase 4:
+  - `backend/internal/worker/worker.go` is 94 lines (down from 776)
+  - `frontend/src/pages/SettingsPanel.tsx` is 183 lines (down from 772)
+  - `frontend/src/api/client.ts` is 101 lines (down from 688)
+  - `backend/internal/api/server_test.go` no longer exists (6 domain files replace it)
+  - `backend/internal/api/handlers_upload.go` no longer exists (3 domain files)
+  - Remaining large files: `frontend/src/pages/FilesView.tsx` (703 lines),
+    `frontend/src/screens/Home.tsx` (709 lines) — both are tight orchestration
+    with no clean extraction surface remaining
+- There was no architecture overview — added in Phase 2 (`docs/architecture.md`
+  with runtime, startup, request flow, and testing diagrams)
+- Test coverage can be generated — recorded baseline and Makefile commands
+  added in Phase 3
+- There was no maintained list of small starter tasks — added in Phase 6
+  (`.github/good-first-issues/` with 5 issues)
 
 ## Principles
 
@@ -94,6 +101,8 @@ This phase removes uncertainty before a contributor writes code.
 ### Completed
 
 - Added a standard pull request template for normal Volum changes.
+- Moved the Awesome Selfhosted template to `.github/awesome-selfhosted-pr-template.md`
+  (no longer the default PR template).
 - Added structured bug, feature, and documentation issue forms.
 - Added `CODE_OF_CONDUCT.md`, `SECURITY.md`, and `SUPPORT.md`.
 - Added `.github/CODEOWNERS` with explicit review ownership.
@@ -104,8 +113,6 @@ create the labels referenced by the issue forms.
 
 ### Remaining work (requires GitHub settings)
 
-- Move the Awesome Selfhosted template into a clearly named specialized
-  template or remove it from the repository if it is no longer used.
 - Add repository labels (requires repo admin access on GitHub):
   - `area/frontend`, `area/backend`, `area/filesystem`, `area/auth`,
     `area/docs`
@@ -128,14 +135,15 @@ create the labels referenced by the issue forms.
   issue or pull request.
 - A new contributor can choose the right issue type without reading the entire
   repository.
-- Normal pull requests no longer start from the Awesome Selfhosted template.
+- Normal pull requests use the standard PR template by default (the Awesome
+  Selfhosted template is a named file, not the directory default).
 - Security reports have a documented private path.
 
 ## Phase 1: Create One Command Surface
 
 Priority: immediate
 
-Status: in progress
+Status: completed
 
 The repository needs a small task runner at the root. A `Makefile` is the
 simplest cross-project option because it can wrap Docker without introducing a
@@ -155,22 +163,36 @@ if Windows support is explicitly handled.
 - Documented the development and server environment examples.
 - Made `make clean-dev` preserve bind-mounted `data/` and `storage/`.
 
-### Proposed commands
+### Implemented commands
 
 ```text
 make help             Show supported commands and prerequisites
 make setup            Prepare local directories and print first-run guidance
 make dev              Start the Docker development stack
+make dev-detached     Build and start the development stack in the background
 make stop             Stop the development stack
+make status           Show development containers
 make logs             Follow API and frontend logs
-make check            Run all required checks
-make check-frontend   Typecheck, format check, lint, test, and build frontend
+make doctor           Check Docker, architecture, ports, and directories
+make check            Run all required frontend and backend checks
+make check-frontend   Typecheck, format-check, lint, test, and build frontend
 make check-backend    Lint, vet, test, and build backend
-make test-frontend    Run serialized frontend tests
-make test-backend     Run backend tests
+make format-frontend  Format frontend source files
+make test-frontend    Run frontend tests; optional FILE=... NAME=...
+make test-backend     Run Go tests; optional PACKAGE=... NAME=...
+make coverage         Run both frontend and backend coverage
+make coverage-frontend  Run frontend tests with coverage
+make coverage-backend   Run Go tests with coverage
+make lint-shell       Run ShellCheck on shell scripts
+make lint-markdown    Print lychee command for Markdown link checking
 make smoke            Run the disposable authenticated smoke test
 make smoke-proxy      Run the reverse-proxy upload smoke test
-make clean-dev        Remove only documented disposable development state
+make setup-visual     Install Playwright + browsers in tools/visual
+make visual-capture   Capture screenshots for docs
+make visual-audit     Run visual audit
+make build            Build the production image
+make clean-dev        Remove dev containers and dependency volume (keeps data)
+make clean-test       Remove the isolated backend test network and cache
 ```
 
 ### Work

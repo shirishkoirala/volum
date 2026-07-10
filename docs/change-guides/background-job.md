@@ -57,7 +57,8 @@ instead of adding another creation endpoint.
 
 ## 5. Update the frontend
 
-Update job types in `frontend/src/api/client.ts`, labels and predicates in
+Update job types in the appropriate `frontend/src/api/client-*.ts` domain file
+(re-exported through `frontend/src/api/client.ts`), labels and predicates in
 `frontend/src/utils/jobs.ts`, and controls in the jobs page or initiating
 workflow.
 
