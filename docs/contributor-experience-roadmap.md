@@ -102,21 +102,17 @@ This phase removes uncertainty before a contributor writes code.
 Repository settings still need to enable private vulnerability reporting and
 create the labels referenced by the issue forms.
 
-### Work
+### Remaining work (requires GitHub settings)
 
 - Move the Awesome Selfhosted template into a clearly named specialized
   template or remove it from the repository if it is no longer used.
-- Add repository labels such as:
-  - `good first issue`
-  - `help wanted`
-  - `area/frontend`
-  - `area/backend`
-  - `area/filesystem`
-  - `area/auth`
-  - `area/docs`
-  - `needs reproduction`
-  - `blocked`
-- Enable GitHub private vulnerability reporting for the repository.
+- Add repository labels (requires repo admin access on GitHub):
+  - `area/frontend`, `area/backend`, `area/filesystem`, `area/auth`,
+    `area/docs`
+  - `good first issue`, `help wanted`
+  - `needs reproduction`, `blocked`
+- Enable GitHub private vulnerability reporting for the repository (requires
+  repo admin access on GitHub).
 
 ### Junior-friendly details
 
@@ -340,26 +336,23 @@ tests protecting behavior.
 
 Priority: medium
 
+Status: completed
+
 Contributor friendliness depends on maintainers responding consistently and
 keeping automation healthy.
 
-### Work
+### Completed
 
-- Add Dependabot or Renovate for GitHub Actions, npm, Go modules, and Docker
-  base images.
-- Group routine dependency updates to reduce pull request noise.
-- Pin or deliberately version CI actions and document update policy.
-- Add a changelog fragment or pull request label convention so contributors do
-  not edit the release changelog concurrently.
-- Define a lightweight review policy:
-  - acknowledge new pull requests
-  - identify blocking versus optional feedback
-  - close stale requests with a reason
-  - explain when a proposal does not fit product scope
-- Add release notes that credit external contributors.
-- Periodically verify all commands in `CONTRIBUTING.md`.
-- Add a scheduled workflow that detects broken docs links and stale generated
-  references.
+- Dependabot configuration for GitHub Actions, npm, Go modules, and Docker
+  (`monthly`, grouped by ecosystem, prefixed with `chore:`).
+- Changelog (`CHANGELOG.md`) with Keep a Changelog format and PR label
+  convention (`changelog/fix`, `changelog/feat`, `changelog/infra`) documented
+  in `docs/release.md`.
+- Lightweight review policy in `CONTRIBUTING.md` (blocking vs non-blocking,
+  stale closure, out-of-scope handling, external contributor credit).
+- CI step verifying every `make <target>` in `CONTRIBUTING.md` exists in the
+  `Makefile`.
+- Lychee link checker already runs on schedule (`fail: false`, weekly).
 
 ### Definition of done
 
@@ -372,10 +365,12 @@ keeping automation healthy.
 
 Priority: ongoing
 
+Status: completed (initial queue)
+
 Labels alone do not make an issue suitable for a junior developer. Starter
 issues need bounded scope and enough context to succeed.
 
-### Good first issue standard
+### Good first issue standard (`.github/good-first-issues/`)
 
 Every `good first issue` should include:
 
@@ -388,17 +383,21 @@ Every `good first issue` should include:
 - Screenshots or reproduction steps when relevant
 - Maintainer available to answer design questions
 
-### Suggested initial issue themes
+### Current starter issues (5)
 
-- Add Markdown and link checking to CI
-- Add a standard pull request template
-- Add one-command log and status tasks
-- Document running a single frontend and backend test
-- Extract one API test feature group from `server_test.go`
-- Add frontend object builders for a repeated test fixture
-- Add an environment variable reference table
-- Make one visual audit script reproducible
-- Add accessible names or keyboard tests to an existing component
+Each file under `.github/good-first-issues/` is a ready-to-file issue
+description meeting the standard above:
+
+1. **`aria-labels-breadcrumb-overflow.md`** — Add accessible labels to
+   BreadcrumbNav overflow button (frontend, accessibility).
+2. **`skeleton-drives-view.md`** — Add loading skeleton to DrivesView (frontend,
+   UI polish).
+3. **`keyboard-desktop-icons.md`** — Add keyboard navigation to desktop icons
+   (frontend, accessibility).
+4. **`aria-labels-settings-categories.md`** — Add aria-labels to SettingsPanel
+   category filter buttons (frontend, accessibility).
+5. **`dry-up-chunk-upload-cancel-check.md`** — DRY up cancel/paused check in
+   chunk upload handler (backend, refactor).
 
 Do not label broad work such as "split `Home.tsx`," "improve test coverage," or
 "make mobile work" as a good first issue. Break it into one behavior with a
