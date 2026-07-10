@@ -69,6 +69,15 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck
           shellcheck scripts/*.sh frontend/scripts/*.sh
+      - name: Verify CONTRIBUTING.md commands match Makefile
+        run: |
+          for cmd in $(grep -oP '`make \K[a-z-]+' CONTRIBUTING.md | sort -u); do
+            if ! grep -q "^$cmd:" Makefile; then
+              echo "ERROR: CONTRIBUTING.md references 'make $cmd' but Makefile has no '$cmd' target"
+              exit 1
+            fi
+          done
+          echo "All CONTRIBUTING.md make targets exist in Makefile"
       - name: Lychee link check
         if: github.event_name == 'schedule'
         uses: lycheeverse/lychee-action@v2

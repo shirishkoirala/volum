@@ -30,7 +30,11 @@ or bill the repository owner when billing is enabled.
    ./scripts/smoke-reverse-proxy-upload.sh
    ```
 
-4. Update `CHANGELOG.md`.
+4. Update `CHANGELOG.md` with changes since the last release. Contributors are
+   encouraged to label their pull requests with `changelog/fix`, `changelog/feat`,
+   `changelog/breaking`, or `changelog/infra` to help identify which changes
+   belong in the changelog and under which section. The maintainer curates the
+   changelog during release preparation; contributors do not edit it.
 5. Confirm `README.md` deployment instructions match the published image.
 
 ## Publish

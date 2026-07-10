@@ -287,6 +287,23 @@ A pull request should include:
 - Deployment, migration, security, or compatibility notes
 - Follow-up work intentionally left out of scope
 
+## Review Policy
+
+Pull requests are reviewed within a few business days on average.
+
+- **Blocking feedback** prevents merging until resolved. This includes security
+  concerns, data-safety risks, incorrect behavior, or architecture decisions
+  that would be costly to undo.
+- **Non-blocking feedback** is optional but worth considering. The author may
+  address it in a follow-up.
+- **Stale pull requests** with no activity for 30 days may be closed with a
+  comment explaining why. The author is welcome to reopen when ready.
+- **Out-of-scope proposals** are closed with an explanation linking to the
+  roadmap or an existing discussion. This is not a rejection of the person or
+  the idea, only a scope decision.
+- Release notes credit external contributors by linking their GitHub usernames
+  in the changelog.
+
 Before requesting review:
 
 - Rebase or merge the latest `master` as appropriate.
