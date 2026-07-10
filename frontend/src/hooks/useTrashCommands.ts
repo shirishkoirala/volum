@@ -8,9 +8,23 @@ type TrashCommandDeps = {
     React.SetStateAction<{ x: number; y: number; entry: TrashEntry } | null>
   >;
   setConfirmDialog: React.Dispatch<
-    React.SetStateAction<{ title: string; message: string; confirmLabel: string; danger?: boolean; onConfirm: () => void } | null>
+    React.SetStateAction<{
+      title: string;
+      message: string;
+      confirmLabel: string;
+      danger?: boolean;
+      onConfirm: () => void;
+    } | null>
   >;
-  showToastObj: (toast: { title: string; message?: string; variant: 'success' | 'error' | 'warning'; action?: { label: string; onClick: () => void } }, timeout?: number) => void;
+  showToastObj: (
+    toast: {
+      title: string;
+      message?: string;
+      variant: 'success' | 'error' | 'warning';
+      action?: { label: string; onClick: () => void };
+    },
+    timeout?: number,
+  ) => void;
 };
 
 export function useTrashCommands(deps: TrashCommandDeps) {

@@ -24,7 +24,10 @@ type TransferCommandDeps = {
   canWrite: boolean;
   setFileClipboard: React.Dispatch<React.SetStateAction<ClipboardState>>;
   fileClipboard: ClipboardState | null;
-  showToastObj: (toast: { title: string; message?: string; variant: 'success' | 'error' | 'warning' }, timeout?: number) => void;
+  showToastObj: (
+    toast: { title: string; message?: string; variant: 'success' | 'error' | 'warning' },
+    timeout?: number,
+  ) => void;
   contextMenu: ContextMenuStateValue;
 };
 

@@ -161,21 +161,13 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
             )}
             Vacuum DB
           </Button>
-          <Button
-            size="compact"
-            onClick={handlePruneJobs}
-            disabled={maintenanceBusy !== null}
-          >
+          <Button size="compact" onClick={handlePruneJobs} disabled={maintenanceBusy !== null}>
             {maintenanceBusy === 'pruneJobs' && (
               <Icon name="view-refresh" size={12} className={styles.spin} />
             )}
             Prune Old Transfers
           </Button>
-          <Button
-            size="compact"
-            onClick={handlePruneAuditLogs}
-            disabled={maintenanceBusy !== null}
-          >
+          <Button size="compact" onClick={handlePruneAuditLogs} disabled={maintenanceBusy !== null}>
             {maintenanceBusy === 'pruneAudit' && (
               <Icon name="view-refresh" size={12} className={styles.spin} />
             )}
@@ -268,10 +260,7 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
                             <Button
                               size="compact"
                               onClick={() =>
-                                handleChangeRole(
-                                  u.id,
-                                  u.role === 'admin' ? 'readonly' : 'admin',
-                                )
+                                handleChangeRole(u.id, u.role === 'admin' ? 'readonly' : 'admin')
                               }
                             >
                               Make {u.role === 'admin' ? 'readonly' : 'admin'}
@@ -319,8 +308,7 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
               >
                 {creatingUser ? (
                   <>
-                    <Icon name="view-refresh" size={12} className={styles.spin} />{' '}
-                    Creating...
+                    <Icon name="view-refresh" size={12} className={styles.spin} /> Creating...
                   </>
                 ) : (
                   'Create'
@@ -337,9 +325,7 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
         <section className={styles.settingsSection}>
           <h4>Shares</h4>
           <p>
-            <MutedText compact>
-              Manage expiring share links for files and folders.
-            </MutedText>
+            <MutedText compact>Manage expiring share links for files and folders.</MutedText>
           </p>
           <div className={styles.sharesActions}>
             <Button size="compact" onClick={onOpenShares}>

@@ -3,11 +3,7 @@
 
 export { shareUrl } from './client-base';
 
-export type {
-  Session,
-  AvatarState,
-  UserInfo,
-} from './client-auth';
+export type { Session, AvatarState, UserInfo } from './client-auth';
 export {
   getSession,
   profileAvatarUrl,
@@ -85,20 +81,10 @@ export {
   resolveJobConflicts,
 } from './client-jobs';
 
-export type {
-  Share,
-  CreateShareRequest,
-} from './client-shares';
-export {
-  createShare,
-  getShares,
-  deleteShare,
-} from './client-shares';
+export type { Share, CreateShareRequest } from './client-shares';
+export { createShare, getShares, deleteShare } from './client-shares';
 
-export type {
-  ServiceInfo,
-  ServiceHealthInfo,
-} from './client-services';
+export type { ServiceInfo, ServiceHealthInfo } from './client-services';
 export {
   listFavorites,
   addFavorite,

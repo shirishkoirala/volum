@@ -229,9 +229,7 @@ export function FilesViewOverlays({
           <span className={styles.uploadProgressName}>{uploadProgress.filename}</span>
           <ProgressBar
             value={
-              uploadProgress.total > 0
-                ? (uploadProgress.received / uploadProgress.total) * 100
-                : 0
+              uploadProgress.total > 0 ? (uploadProgress.received / uploadProgress.total) * 100 : 0
             }
             ariaLabel="Upload progress"
           />
@@ -256,13 +254,7 @@ export function FilesViewOverlays({
           positionLabel={previewPositionLabel}
         />
       )}
-      {infoEntry && (
-        <InfoPanel
-          entry={infoEntry}
-          onClose={onInfoClose}
-          onRefresh={onRefresh}
-        />
-      )}
+      {infoEntry && <InfoPanel entry={infoEntry} onClose={onInfoClose} onRefresh={onRefresh} />}
       {batchRenameOpen && (
         <BatchRenameModal
           entries={selectedEntries}
@@ -273,18 +265,8 @@ export function FilesViewOverlays({
           }}
         />
       )}
-      {confirmDialog && (
-        <ConfirmDialog
-          dialog={confirmDialog}
-          onClose={onConfirmClose}
-        />
-      )}
-      {textInputDialog && (
-        <TextInputDialog
-          dialog={textInputDialog}
-          onClose={onTextInputClose}
-        />
-      )}
+      {confirmDialog && <ConfirmDialog dialog={confirmDialog} onClose={onConfirmClose} />}
+      {textInputDialog && <TextInputDialog dialog={textInputDialog} onClose={onTextInputClose} />}
       {transferDialog && (
         <TransferDialog
           dialog={transferDialog}
@@ -300,16 +282,9 @@ export function FilesViewOverlays({
           onClose={onShareDialogClose}
         />
       )}
-      {shortcutsOpen && (
-        <KeyboardShortcuts onClose={onShortcutsClose} />
-      )}
+      {shortcutsOpen && <KeyboardShortcuts onClose={onShortcutsClose} />}
       {sharesOpen && <ShareManager onClose={onSharesClose} />}
-      {analyzePath && (
-        <DiskUsageAnalyzer
-          path={analyzePath}
-          onClose={onAnalyzeClose}
-        />
-      )}
+      {analyzePath && <DiskUsageAnalyzer path={analyzePath} onClose={onAnalyzeClose} />}
     </>
   );
 }

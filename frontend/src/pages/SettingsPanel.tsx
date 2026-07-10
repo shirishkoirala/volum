@@ -123,11 +123,7 @@ export function SettingsPanel({
           {(!filterQuery.trim()
             ? activeCategory === 'admin'
             : filteredCategories.some((c) => c.id === 'admin')) && (
-            <SettingsAdmin
-              status={status}
-              session={session}
-              onOpenShares={onOpenShares}
-            />
+            <SettingsAdmin status={status} session={session} onOpenShares={onOpenShares} />
           )}
 
           {(!filterQuery.trim()

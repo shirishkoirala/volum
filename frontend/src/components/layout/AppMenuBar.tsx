@@ -125,12 +125,15 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
   const viewItems = useMemo(() => buildViewItems(handlers), [handlers]);
   const goItems = useMemo(() => buildGoItems(handlers, windowType), [handlers, windowType]);
 
-  const menuItems: Record<MenuId, MenuItem[]> = useMemo(() => ({
-    file: fileItems,
-    edit: editItems,
-    view: viewItems,
-    go: goItems,
-  }), [fileItems, editItems, viewItems, goItems]);
+  const menuItems: Record<MenuId, MenuItem[]> = useMemo(
+    () => ({
+      file: fileItems,
+      edit: editItems,
+      view: viewItems,
+      go: goItems,
+    }),
+    [fileItems, editItems, viewItems, goItems],
+  );
 
   return (
     <div className={styles.menuBar} ref={menuBarRef} role="menubar">

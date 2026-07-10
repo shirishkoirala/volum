@@ -8,10 +8,7 @@ export type MenuItem = {
   onClick: () => void;
 };
 
-export function buildFileItems(
-  handlers: AppMenuHandlers,
-  windowType?: string,
-): MenuItem[] {
+export function buildFileItems(handlers: AppMenuHandlers, windowType?: string): MenuItem[] {
   if (windowType === 'trash') {
     return [
       {
@@ -65,10 +62,7 @@ export function buildFileItems(
   ];
 }
 
-export function buildEditItems(
-  handlers: AppMenuHandlers,
-  windowType?: string,
-): MenuItem[] {
+export function buildEditItems(handlers: AppMenuHandlers, windowType?: string): MenuItem[] {
   if (windowType === 'trash') {
     return [
       { label: 'Select All', icon: 'selection-select-all', onClick: handlers.onSelectAll },
@@ -77,29 +71,66 @@ export function buildEditItems(
   }
 
   return [
-    { label: 'Cut', icon: 'edit-cut', disabled: !handlers.canWrite || handlers.selectedCount === 0, onClick: handlers.onCut },
-    { label: 'Copy', icon: 'edit-copy', disabled: handlers.selectedCount === 0, onClick: handlers.onCopy },
+    {
+      label: 'Cut',
+      icon: 'edit-cut',
+      disabled: !handlers.canWrite || handlers.selectedCount === 0,
+      onClick: handlers.onCut,
+    },
+    {
+      label: 'Copy',
+      icon: 'edit-copy',
+      disabled: handlers.selectedCount === 0,
+      onClick: handlers.onCopy,
+    },
     { label: 'Paste', icon: 'edit-paste', disabled: !handlers.canWrite, onClick: handlers.onPaste },
     { label: '---', disabled: true, onClick: () => {} },
     { label: 'Select All', icon: 'selection-select-all', onClick: handlers.onSelectAll },
     { label: 'Invert Selection', icon: 'selection-invert', onClick: handlers.onInvertSelection },
     { label: '---', disabled: true, onClick: () => {} },
-    { label: 'Rename', icon: 'edit-rename', disabled: !handlers.canWrite || handlers.selectedCount === 0, onClick: handlers.onRename },
-    { label: 'Delete', icon: 'edit-delete', disabled: !handlers.canWrite || handlers.selectedCount === 0, danger: true, onClick: handlers.onDelete },
+    {
+      label: 'Rename',
+      icon: 'edit-rename',
+      disabled: !handlers.canWrite || handlers.selectedCount === 0,
+      onClick: handlers.onRename,
+    },
+    {
+      label: 'Delete',
+      icon: 'edit-delete',
+      disabled: !handlers.canWrite || handlers.selectedCount === 0,
+      danger: true,
+      onClick: handlers.onDelete,
+    },
   ];
 }
 
 export function buildViewItems(handlers: AppMenuHandlers): MenuItem[] {
   return [
-    { label: `Grid${handlers.viewMode === 'grid' ? ' ✓' : ''}`, icon: 'view-grid', onClick: () => handlers.onSetViewMode('grid') },
-    { label: `List${handlers.viewMode === 'list' ? ' ✓' : ''}`, icon: 'view-list-tree', onClick: () => handlers.onSetViewMode('list') },
+    {
+      label: `Grid${handlers.viewMode === 'grid' ? ' ✓' : ''}`,
+      icon: 'view-grid',
+      onClick: () => handlers.onSetViewMode('grid'),
+    },
+    {
+      label: `List${handlers.viewMode === 'list' ? ' ✓' : ''}`,
+      icon: 'view-list-tree',
+      onClick: () => handlers.onSetViewMode('list'),
+    },
     { label: '---', disabled: true, onClick: () => {} },
-    { label: `${handlers.showHidden ? 'Hide' : 'Show'} Hidden Files`, icon: 'view-hidden', onClick: handlers.onToggleHidden },
+    {
+      label: `${handlers.showHidden ? 'Hide' : 'Show'} Hidden Files`,
+      icon: 'view-hidden',
+      onClick: handlers.onToggleHidden,
+    },
     { label: '---', disabled: true, onClick: () => {} },
     { label: 'Sort by Name', icon: 'sort-desc', onClick: () => handlers.onSortChange('name:asc') },
     { label: 'Sort by Size', icon: 'sort-desc', onClick: () => handlers.onSortChange('size:desc') },
     { label: 'Sort by Type', icon: 'sort-desc', onClick: () => handlers.onSortChange('type:asc') },
-    { label: 'Sort by Date', icon: 'sort-desc', onClick: () => handlers.onSortChange('modifiedAt:desc') },
+    {
+      label: 'Sort by Date',
+      icon: 'sort-desc',
+      onClick: () => handlers.onSortChange('modifiedAt:desc'),
+    },
   ];
 }
 

@@ -41,7 +41,11 @@ export async function uploadProfileAvatar(file: File): Promise<AvatarState> {
     headers: { 'X-Volum-Request': 'fetch' },
     body: form,
   });
-  if (!response.ok) throw new Error((await response.json().catch(() => ({ error: response.statusText }))).error ?? response.statusText);
+  if (!response.ok)
+    throw new Error(
+      (await response.json().catch(() => ({ error: response.statusText }))).error ??
+        response.statusText,
+    );
   return response.json() as Promise<AvatarState>;
 }
 

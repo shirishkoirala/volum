@@ -31,11 +31,7 @@ export function UserMenu({
         aria-expanded={open}
       >
         {session.hasAvatar ? (
-          <img
-            className={styles.userAvatar}
-            src={profileAvatarUrl(session.avatarVersion)}
-            alt=""
-          />
+          <img className={styles.userAvatar} src={profileAvatarUrl(session.avatarVersion)} alt="" />
         ) : (
           <Icon name="avatar-default" size={16} />
         )}

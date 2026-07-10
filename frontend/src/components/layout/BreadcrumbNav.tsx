@@ -89,10 +89,7 @@ export function BreadcrumbNav({ crumbs, onNavigate }: BreadcrumbNavProps) {
         {overflowCount > 1 && (
           <span className={styles.crumbRow}>
             <Icon name="go-next" size={16} />
-            <span
-              className={styles.overflowDots}
-              onClick={() => setShowOverflow(!showOverflow)}
-            >
+            <span className={styles.overflowDots} onClick={() => setShowOverflow(!showOverflow)}>
               <span className={styles.overflowBtn}>···</span>
             </span>
             {showOverflow && (

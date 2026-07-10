@@ -150,15 +150,9 @@ export function SearchResultsOverlays({
           positionLabel={previewPositionLabel}
         />
       )}
-      {infoEntry && (
-        <InfoPanel entry={infoEntry} onClose={onInfoClose} onRefresh={() => {}} />
-      )}
-      {confirmDialog && (
-        <ConfirmDialog dialog={confirmDialog} onClose={onConfirmClose} />
-      )}
-      {textInputDialog && (
-        <TextInputDialog dialog={textInputDialog} onClose={onTextInputClose} />
-      )}
+      {infoEntry && <InfoPanel entry={infoEntry} onClose={onInfoClose} onRefresh={() => {}} />}
+      {confirmDialog && <ConfirmDialog dialog={confirmDialog} onClose={onConfirmClose} />}
+      {textInputDialog && <TextInputDialog dialog={textInputDialog} onClose={onTextInputClose} />}
       {transferDialog && (
         <TransferDialog
           dialog={transferDialog}

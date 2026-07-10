@@ -68,23 +68,15 @@ export function HomeOverlays({
           onDownload={() => openFileExternally(previewEntry.path)}
           onShare={() => onPreviewShare(previewEntry)}
           onPrevious={
-            previousPreviewEntry
-              ? () => setPreviewEntry(previousPreviewEntry)
-              : undefined
+            previousPreviewEntry ? () => setPreviewEntry(previousPreviewEntry) : undefined
           }
-          onNext={
-            nextPreviewEntry
-              ? () => setPreviewEntry(nextPreviewEntry)
-              : undefined
-          }
+          onNext={nextPreviewEntry ? () => setPreviewEntry(nextPreviewEntry) : undefined}
           previousDisabled={!previousPreviewEntry}
           nextDisabled={!nextPreviewEntry}
           positionLabel={previewPositionLabel}
         />
       )}
-      {shortcutsOpen && (
-        <KeyboardShortcuts onClose={onShortcutsClose} />
-      )}
+      {shortcutsOpen && <KeyboardShortcuts onClose={onShortcutsClose} />}
       {sharesOpen && <ShareManager onClose={onSharesClose} />}
       {serviceFormData && (
         <ServiceFormModal
