@@ -119,6 +119,31 @@ func TestMigrateIdempotent(t *testing.T) {
 	}
 }
 
+func TestMigrateAddsScheduledAtBeforeClaimIndex(t *testing.T) {
+	db, err := sql.Open("sqlite3", filepath.Join(t.TempDir(), "legacy.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	if _, err := db.Exec(`CREATE TABLE jobs (
+		id TEXT PRIMARY KEY,
+		type TEXT NOT NULL,
+		status TEXT NOT NULL,
+		created_at DATETIME NOT NULL
+	)`); err != nil {
+		t.Fatal(err)
+	}
+	if err := migrate(db); err != nil {
+		t.Fatal(err)
+	}
+
+	var indexName string
+	if err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_jobs_claim'`).Scan(&indexName); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestAddColumnIfMissingNewColumn(t *testing.T) {
 	db, err := Open(filepath.Join(t.TempDir(), "addcolumn.db"))
 	if err != nil {

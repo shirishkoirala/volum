@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/volum-app/volum/backend/internal/files"
 	"github.com/volum-app/volum/backend/internal/jobs"
@@ -172,6 +173,7 @@ func (s *Server) uploadPart(ctx context.Context, targetPublic, targetDir string,
 
 	buffer := make([]byte, 1024*1024)
 	var written int64
+	progressThrottle := newUploadProgressThrottle()
 	for {
 		n, readErr := part.Read(buffer)
 		if n > 0 {
@@ -189,20 +191,27 @@ func (s *Server) uploadPart(ctx context.Context, targetPublic, targetDir string,
 				return jobs.Job{}, io.ErrShortWrite
 			}
 			written += int64(count)
-			if err := s.jobs.UpdateItemStatus(ctx, item.ID, jobs.StatusRunning, written, nil); err != nil {
-				temp.Close()
-				s.cleanupUploadPaths(tempPath)
-				_ = s.jobs.FailJob(ctx, job.ID, err)
-				return jobs.Job{}, err
-			}
-			if err := s.jobs.UpdateJobProgress(ctx, job.ID, written, 0, name); err != nil {
-				temp.Close()
-				s.cleanupUploadPaths(tempPath)
-				_ = s.jobs.FailJob(ctx, job.ID, err)
-				return jobs.Job{}, err
+			if progressThrottle.Ready(written) {
+				if err := s.jobs.UpdateItemStatus(ctx, item.ID, jobs.StatusRunning, written, nil); err != nil {
+					temp.Close()
+					s.cleanupUploadPaths(tempPath)
+					_ = s.jobs.FailJob(ctx, job.ID, err)
+					return jobs.Job{}, err
+				}
+				if err := s.jobs.UpdateJobProgress(ctx, job.ID, written, 0, name); err != nil {
+					temp.Close()
+					s.cleanupUploadPaths(tempPath)
+					_ = s.jobs.FailJob(ctx, job.ID, err)
+					return jobs.Job{}, err
+				}
 			}
 		}
 		if errors.Is(readErr, io.EOF) {
+			// Flush final progress
+			if written != progressThrottle.lastBytes {
+				_ = s.jobs.UpdateItemStatus(ctx, item.ID, jobs.StatusRunning, written, nil)
+				_ = s.jobs.UpdateJobProgress(ctx, job.ID, written, 0, name)
+			}
 			break
 		}
 		if readErr != nil {
@@ -247,4 +256,25 @@ func (s *Server) uploadPart(ctx context.Context, targetPublic, targetDir string,
 		return jobs.Job{}, err
 	}
 	return job, nil
+}
+
+type uploadProgressThrottle struct {
+	lastBytes int64
+	lastTime  time.Time
+}
+
+const uploadThrottleMinBytes = 16 * 1024 * 1024
+const uploadThrottleInterval = 500 * time.Millisecond
+
+func newUploadProgressThrottle() *uploadProgressThrottle {
+	return &uploadProgressThrottle{lastTime: time.Now()}
+}
+
+func (t *uploadProgressThrottle) Ready(currentBytes int64) bool {
+	if currentBytes-t.lastBytes < uploadThrottleMinBytes && time.Since(t.lastTime) < uploadThrottleInterval {
+		return false
+	}
+	t.lastBytes = currentBytes
+	t.lastTime = time.Now()
+	return true
 }

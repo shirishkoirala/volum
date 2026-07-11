@@ -117,6 +117,9 @@ func migrate(db *sql.DB) error {
 	if err := addColumnIfMissing(db, "jobs", "scheduled_at", "DATETIME"); err != nil {
 		return err
 	}
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_jobs_claim ON jobs(status, type, scheduled_at, created_at)`); err != nil {
+		return fmt.Errorf("create job claim index: %w", err)
+	}
 	return nil
 }
 

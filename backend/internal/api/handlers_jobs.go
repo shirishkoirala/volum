@@ -44,7 +44,22 @@ func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
+	var lastVersion jobs.ListVersion
+	versionSent := false
+
 	sendJobs := func() bool {
+		version, err := s.jobs.ListVersion(r.Context())
+		if err != nil {
+			_, _ = fmt.Fprintf(w, "event: error\ndata: %q\n\n", err.Error())
+			flusher.Flush()
+			return false
+		}
+		if versionSent && version == lastVersion {
+			return true
+		}
+		lastVersion = version
+		versionSent = true
+
 		jobs, err := s.jobs.List(r.Context(), 200, 0)
 		if err != nil {
 			_, _ = fmt.Fprintf(w, "event: error\ndata: %q\n\n", err.Error())

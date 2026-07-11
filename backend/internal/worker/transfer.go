@@ -357,29 +357,27 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 	buffer := make([]byte, 1024*1024)
 	copied := item.Processed
 	progress := newProgressThrottle(copied, 16*1024*1024, 500*time.Millisecond)
+	statusCheck := newStatusThrottle(300 * time.Millisecond)
 	for {
 		if ctx.Err() != nil {
 			temp.Close()
 			return copied, ctx.Err()
 		}
-		cancelled, err := w.store.IsCancelled(ctx, job.ID)
-		if err != nil {
-			temp.Close()
-			return copied, err
-		}
-		if cancelled {
-			temp.Close()
-			return copied, nil
-		}
-		paused, err := w.store.IsPaused(ctx, job.ID)
-		if err != nil {
-			temp.Close()
-			return copied, err
-		}
-		if paused {
-			temp.Close()
-			_ = w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusPaused, copied, nil)
-			return copied, errJobPaused
+		if statusCheck.Ready() {
+			status, err := w.store.GetJobStatus(ctx, job.ID)
+			if err != nil {
+				temp.Close()
+				return copied, err
+			}
+			if status == jobs.StatusCancelled {
+				temp.Close()
+				return copied, nil
+			}
+			if status == jobs.StatusPaused {
+				temp.Close()
+				_ = w.store.UpdateItemStatus(ctx, item.ID, jobs.StatusPaused, copied, nil)
+				return copied, errJobPaused
+			}
 		}
 
 		n, readErr := source.Read(buffer)
@@ -555,6 +553,24 @@ func deref(value *string) string {
 		return ""
 	}
 	return *value
+}
+
+type statusThrottle struct {
+	lastCheck time.Time
+	interval  time.Duration
+}
+
+func newStatusThrottle(interval time.Duration) *statusThrottle {
+	return &statusThrottle{interval: interval}
+}
+
+func (t *statusThrottle) Ready() bool {
+	now := time.Now()
+	if now.Sub(t.lastCheck) < t.interval {
+		return false
+	}
+	t.lastCheck = now
+	return true
 }
 
 func (w *Worker) publicPath(path string) string {

@@ -88,6 +88,20 @@ func (s *Store) List(ctx context.Context, limit, offset int) ([]Job, error) {
 	return out, rows.Err()
 }
 
+type ListVersion struct {
+	Count         int64
+	LatestUpdated string
+}
+
+func (s *Store) ListVersion(ctx context.Context) (ListVersion, error) {
+	var version ListVersion
+	err := s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*), COALESCE(MAX(updated_at), '1970-01-01T00:00:00Z')
+		FROM jobs
+	`).Scan(&version.Count, &version.LatestUpdated)
+	return version, err
+}
+
 func (s *Store) Get(ctx context.Context, id string) (Job, error) {
 	row := s.db.QueryRowContext(ctx, `
 		SELECT `+jobColumns+`
@@ -191,9 +205,17 @@ func (s *Store) FailJob(ctx context.Context, jobID string, cause error) error {
 	return err
 }
 
-func (s *Store) IsCancelled(ctx context.Context, jobID string) (bool, error) {
+func (s *Store) GetJobStatus(ctx context.Context, jobID string) (Status, error) {
 	var status Status
 	err := s.db.QueryRowContext(ctx, `SELECT status FROM jobs WHERE id = ?`, jobID).Scan(&status)
+	if err != nil {
+		return "", err
+	}
+	return status, nil
+}
+
+func (s *Store) IsCancelled(ctx context.Context, jobID string) (bool, error) {
+	status, err := s.GetJobStatus(ctx, jobID)
 	if err != nil {
 		return false, err
 	}
@@ -201,8 +223,7 @@ func (s *Store) IsCancelled(ctx context.Context, jobID string) (bool, error) {
 }
 
 func (s *Store) IsPaused(ctx context.Context, jobID string) (bool, error) {
-	var status Status
-	err := s.db.QueryRowContext(ctx, `SELECT status FROM jobs WHERE id = ?`, jobID).Scan(&status)
+	status, err := s.GetJobStatus(ctx, jobID)
 	if err != nil {
 		return false, err
 	}

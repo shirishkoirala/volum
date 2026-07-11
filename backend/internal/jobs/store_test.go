@@ -63,6 +63,29 @@ func TestListJobs(t *testing.T) {
 	}
 }
 
+func TestListVersionChangesWhenJobsAreDeleted(t *testing.T) {
+	store, ctx := setupStore(t)
+	job := createTestJob(t, store, ctx, TypeCopy)
+	if err := store.CompleteJob(ctx, job.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	before, err := store.ListVersion(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.ClearCompleted(ctx); err != nil {
+		t.Fatal(err)
+	}
+	after, err := store.ListVersion(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before == after {
+		t.Fatal("expected job list version to change after deletion")
+	}
+}
+
 func TestCancelJob(t *testing.T) {
 	store, ctx := setupStore(t)
 	job := createTestJob(t, store, ctx, TypeCopy)

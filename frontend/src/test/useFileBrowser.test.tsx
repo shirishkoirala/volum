@@ -174,7 +174,7 @@ describe('useFileBrowser', () => {
     expect(result.current.filteredEntries[0]?.name).toBe('readme.md');
   });
 
-  it('returns directories first in filtered entries', async () => {
+  it('preserves server ordering in filtered entries', async () => {
     const entries = [makeFile({ name: 'z_file.txt' }), makeDir({ name: 'a_folder' })];
     (api.getFiles as ReturnType<typeof vi.fn>).mockResolvedValue({
       entries,
@@ -190,9 +190,9 @@ describe('useFileBrowser', () => {
     await waitFor(() => {
       expect(result.current.entries).toHaveLength(2);
     });
-    expect(result.current.filteredEntries[0]?.type).toBe('directory');
-    expect(result.current.filteredEntries[0]?.name).toBe('a_folder');
-    expect(result.current.filteredEntries[1]?.type).toBe('file');
+    expect(result.current.filteredEntries).toHaveLength(2);
+    expect(result.current.filteredEntries[0]?.name).toBe('z_file.txt');
+    expect(result.current.filteredEntries[1]?.name).toBe('a_folder');
   });
 
   it('loads trash entries on mount', async () => {
