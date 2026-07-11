@@ -11,9 +11,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    watch: {
-      ignored: ['**/src/assets/**'],
-    },
     proxy: {
       '/api': {
         target: apiProxyTarget,
