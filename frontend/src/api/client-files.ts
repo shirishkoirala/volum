@@ -1,5 +1,6 @@
 import { apiUrl } from './baseUrl';
 import { parseError, request, requestVoid } from './client-base';
+import type { Job } from './client-jobs';
 
 export type BlockDevice = {
   name: string;
@@ -172,7 +173,7 @@ export function deletePath(path: string, confirmName: string) {
 }
 
 export function restoreTrash(id: string) {
-  return request<FileEntry>(`/api/trash/${encodeURIComponent(id)}/restore`, {
+  return request<Job>(`/api/trash/${encodeURIComponent(id)}/restore`, {
     method: 'POST',
   });
 }

@@ -16,6 +16,19 @@ import (
 )
 
 func (s *Service) Trash(path string) (TrashEntry, error) {
+	return s.TrashWithID(path, uuid.NewString())
+}
+
+// TrashWithID makes a trash move retryable by using the persistent job ID.
+func (s *Service) TrashWithID(path, id string) (TrashEntry, error) {
+	if !security.ValidBaseName(id) {
+		return TrashEntry{}, ErrInvalidName
+	}
+	if entry, _, err := s.trashEntryByID(id); err == nil {
+		if _, statErr := os.Stat(entry.TrashPath); statErr == nil {
+			return entry, nil
+		}
+	}
 	resolved, err := s.guard.Resolve(path)
 	if err != nil {
 		return TrashEntry{}, err
@@ -37,7 +50,6 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 		return TrashEntry{}, ErrTrashOperation
 	}
 
-	id := uuid.NewString()
 	trashFiles := filepath.Join(trashRoot, "files")
 	trashMeta := filepath.Join(trashRoot, "meta")
 	if err := s.guard.MkdirAll(trashFiles, 0o755); err != nil {
@@ -63,11 +75,12 @@ func (s *Service) Trash(path string) (TrashEntry, error) {
 		RootPath:     root.Path,
 	}
 
-	if err := s.moveAcrossFS(resolved, trashPath); err != nil {
+	metaPath := filepath.Join(trashMeta, id+".json")
+	if err := s.writeTrashEntry(metaPath, entry); err != nil {
 		return TrashEntry{}, err
 	}
-	if err := s.writeTrashEntry(filepath.Join(trashMeta, id+".json"), entry); err != nil {
-		_ = s.moveAcrossFS(trashPath, resolved)
+	if err := s.moveAcrossFS(resolved, trashPath); err != nil {
+		_ = s.guard.Remove(metaPath)
 		return TrashEntry{}, err
 	}
 	return entry, nil
@@ -105,6 +118,15 @@ func (s *Service) ListTrash() ([]TrashEntry, error) {
 }
 
 func (s *Service) RestoreTrash(id string) (Entry, error) {
+	return s.restoreTrash(id, false)
+}
+
+// RestoreTrashRetry resumes a worker-owned restore after an interrupted copy.
+func (s *Service) RestoreTrashRetry(id string) (Entry, error) {
+	return s.restoreTrash(id, true)
+}
+
+func (s *Service) restoreTrash(id string, retry bool) (Entry, error) {
 	entry, metaPath, err := s.trashEntryByID(id)
 	if err != nil {
 		return Entry{}, err
@@ -117,7 +139,18 @@ func (s *Service) RestoreTrash(id string) (Entry, error) {
 		return Entry{}, security.ErrOutsideRoots
 	}
 	if _, err := os.Stat(originalPath); err == nil {
-		return Entry{}, ErrDestinationExists
+		if !retry {
+			return Entry{}, ErrDestinationExists
+		}
+		if _, trashErr := os.Stat(entry.TrashPath); errors.Is(trashErr, os.ErrNotExist) {
+			if err := s.guard.Remove(metaPath); err != nil {
+				return Entry{}, err
+			}
+			return s.entryFromPath(originalPath)
+		}
+		if err := s.guard.RemoveAll(originalPath); err != nil {
+			return Entry{}, err
+		}
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return Entry{}, err
 	}

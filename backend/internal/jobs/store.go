@@ -380,8 +380,8 @@ func (s *Store) MarkInterruptedRunningJobs(ctx context.Context) error {
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, current_item = NULL, error_message = ?, updated_at = ?, started_at = NULL
-		WHERE status = ? AND type IN (?, ?)
-	`, StatusQueued, "server restarted; job will resume from validated partial files", now, StatusRunning, TypeCopy, TypeMove); err != nil {
+		WHERE status = ? AND type IN (?, ?, ?, ?)
+	`, StatusQueued, "server restarted; job will resume", now, StatusRunning, TypeCopy, TypeMove, TypeTrash, TypeRestore); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `
@@ -389,16 +389,16 @@ func (s *Store) MarkInterruptedRunningJobs(ctx context.Context) error {
 		SET status = ?, updated_at = ?
 		WHERE status = ? AND job_id IN (
 			SELECT id FROM jobs
-			WHERE status = ? AND type IN (?, ?)
+			WHERE status = ? AND type IN (?, ?, ?, ?)
 		)
-	`, StatusQueued, now, StatusRunning, StatusQueued, TypeCopy, TypeMove); err != nil {
+	`, StatusQueued, now, StatusRunning, StatusQueued, TypeCopy, TypeMove, TypeTrash, TypeRestore); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, error_message = ?, updated_at = ?, completed_at = ?
-		WHERE status = ? AND type NOT IN (?, ?)
-	`, StatusFailed, "server stopped before job completed; resume validation is not implemented yet", now, now, StatusRunning, TypeCopy, TypeMove); err != nil {
+		WHERE status = ? AND type NOT IN (?, ?, ?, ?)
+	`, StatusFailed, "server stopped before job completed; resume validation is not implemented yet", now, now, StatusRunning, TypeCopy, TypeMove, TypeTrash, TypeRestore); err != nil {
 		return err
 	}
 	return tx.Commit()

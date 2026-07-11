@@ -1,6 +1,7 @@
 import { request, requestVoid } from './client-base';
 
-export type JobType = 'copy' | 'move' | 'upload' | 'extract' | 'archive' | 'checksum';
+export type JobType =
+  'copy' | 'move' | 'upload' | 'extract' | 'archive' | 'checksum' | 'trash' | 'restore';
 export type JobStatus =
   'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'needs_attention';
 

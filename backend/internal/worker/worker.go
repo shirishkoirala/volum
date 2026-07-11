@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/volum-app/volum/backend/internal/files"
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/security"
 )
@@ -12,11 +13,12 @@ import (
 type Worker struct {
 	store *jobs.Store
 	guard *security.RootGuard
+	files *files.Service
 	log   *slog.Logger
 }
 
 func New(store *jobs.Store, guard *security.RootGuard, log *slog.Logger) *Worker {
-	return &Worker{store: store, guard: guard, log: log}
+	return &Worker{store: store, guard: guard, files: files.NewService(guard, files.NewDirSizeCache(5*time.Minute)), log: log}
 }
 
 func (w *Worker) Recover(ctx context.Context) error {
@@ -40,7 +42,20 @@ func (w *Worker) Start(ctx context.Context) {
 }
 
 func (w *Worker) runOnce(ctx context.Context) {
-	job, ok, err := w.store.ClaimNextTransferJob(ctx)
+	job, ok, err := w.store.ClaimNextTrashJob(ctx)
+	if err != nil {
+		w.log.Error("claim trash job failed", "error", err)
+		return
+	}
+	if ok {
+		if err := w.processTrash(ctx, job); err != nil {
+			w.log.Error("trash job failed", "job_id", job.ID, "error", err)
+			_ = w.store.FailJob(ctx, job.ID, err)
+		}
+		return
+	}
+
+	job, ok, err = w.store.ClaimNextTransferJob(ctx)
 	if err != nil {
 		w.log.Error("claim transfer job failed", "error", err)
 		return

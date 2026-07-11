@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/volum-app/volum/backend/internal/files"
+	"github.com/volum-app/volum/backend/internal/jobs"
 )
 
 func TestGetRoots(t *testing.T) {
@@ -158,7 +159,7 @@ func TestChmod(t *testing.T) {
 	}
 }
 
-func TestDeleteMovesToTrash(t *testing.T) {
+func TestDeleteQueuesPersistentTrashJob(t *testing.T) {
 	ts, cleanup := setupTestServer(t)
 	defer cleanup()
 
@@ -169,20 +170,16 @@ func TestDeleteMovesToTrash(t *testing.T) {
 		"path":        path,
 		"confirmName": "todelete.txt",
 	})
-	if resp.StatusCode != http.StatusNoContent {
-		t.Fatalf("expected 204, got %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusAccepted {
+		t.Fatalf("expected 202, got %d", resp.StatusCode)
 	}
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		t.Fatal("original file should be gone")
+	var job jobs.Job
+	readJSON(t, resp, &job)
+	if job.Type != jobs.TypeTrash || job.Status != jobs.StatusQueued {
+		t.Fatalf("unexpected trash job: %#v", job)
 	}
-
-	trashResp := ts.get("/api/trash")
-	var trashBody struct {
-		Entries []files.TrashEntry `json:"entries"`
-	}
-	readJSON(t, trashResp, &trashBody)
-	if len(trashBody.Entries) != 1 || trashBody.Entries[0].Name != "todelete.txt" {
-		t.Fatalf("expected trashed file, got %#v", trashBody.Entries)
+	if _, err := os.Stat(path); err != nil {
+		t.Fatal("request handler should leave the file for the worker")
 	}
 }
 

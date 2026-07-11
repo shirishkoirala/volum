@@ -276,7 +276,7 @@ export function SearchResultsView({
           for (const entry of entriesToDelete) await deletePath(entry.path, entry.name);
           setSelectedPaths([]);
           reSearch();
-        }, 'Moved to trash');
+        }, 'Queued for trash');
       },
     });
   }, [selectedResults, runAction, reSearch]);

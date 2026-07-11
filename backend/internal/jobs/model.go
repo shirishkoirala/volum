@@ -7,7 +7,8 @@ type Type string
 const (
 	TypeCopy     Type = "copy"
 	TypeMove     Type = "move"
-	TypeDelete   Type = "delete"
+	TypeTrash    Type = "trash"
+	TypeRestore  Type = "restore"
 	TypeUpload   Type = "upload"
 	TypeExtract  Type = "extract"
 	TypeArchive  Type = "archive"

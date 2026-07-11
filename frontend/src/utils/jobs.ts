@@ -25,6 +25,8 @@ export function refreshesFiles(job: Job): boolean {
     job.type === 'move' ||
     job.type === 'upload' ||
     job.type === 'archive' ||
-    job.type === 'extract'
+    job.type === 'extract' ||
+    job.type === 'trash' ||
+    job.type === 'restore'
   );
 }

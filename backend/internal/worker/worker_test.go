@@ -36,6 +36,44 @@ func setupWorker(t *testing.T, root string) (*Worker, *jobs.Store, context.Conte
 	return w, store, ctx
 }
 
+func TestTrashAndRestoreRunAsPersistentJobs(t *testing.T) {
+	root := t.TempDir()
+	w, store, ctx := setupWorker(t, root)
+	path := filepath.Join(root, "large-folder")
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(path, "file.txt"), []byte("persistent"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	trashJob, err := store.Create(ctx, jobs.CreateRequest{Type: jobs.TypeTrash, SourcePath: path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.runOnce(ctx)
+	got, err := store.Get(ctx, trashJob.ID)
+	if err != nil || got.Status != jobs.StatusCompleted {
+		t.Fatalf("trash job did not complete: %#v, %v", got, err)
+	}
+	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("source still exists after trash: %v", err)
+	}
+
+	restoreJob, err := store.Create(ctx, jobs.CreateRequest{Type: jobs.TypeRestore, SourcePath: trashJob.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.runOnce(ctx)
+	got, err = store.Get(ctx, restoreJob.ID)
+	if err != nil || got.Status != jobs.StatusCompleted {
+		t.Fatalf("restore job did not complete: %#v, %v", got, err)
+	}
+	if data, err := os.ReadFile(filepath.Join(path, "file.txt")); err != nil || string(data) != "persistent" {
+		t.Fatalf("restored content mismatch: %q, %v", data, err)
+	}
+}
+
 func TestProcessTransferResumesPartialFile(t *testing.T) {
 	ctx := context.Background()
 	root := t.TempDir()

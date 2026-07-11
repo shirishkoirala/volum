@@ -205,7 +205,7 @@ export function useFileCommands(deps: FileCommandDeps) {
           for (const entry of entriesToDelete) await deletePath(entry.path, entry.name);
           const response = await getTrash();
           setTrashEntries(response.entries ?? []);
-        }, 'Moved to trash');
+        }, 'Queued for trash');
       },
     });
   };
@@ -217,7 +217,6 @@ export function useFileCommands(deps: FileCommandDeps) {
     setTrashEntries,
     setTrashContextMenu,
     setConfirmDialog,
-    showToastObj,
   });
 
   // ── Preview / Info / Download / Batch ─────────────────

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/volum-app/volum/backend/internal/files"
+	"github.com/volum-app/volum/backend/internal/jobs"
 )
 
 // Unsafe content types that should never render inline in the Volum origin.
@@ -207,16 +208,12 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entry, err := s.files.Trash(req.Path)
+	job, err := s.jobs.Create(r.Context(), jobs.CreateRequest{Type: jobs.TypeTrash, SourcePath: req.Path})
 	if err != nil {
 		writeError(w, err)
 		return
 	}
-	if err := s.jobs.CreateAuditLog(r.Context(), "trash", req.Path, "moved to trash "+entry.ID); err != nil {
-		writeError(w, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
+	writeJSON(w, http.StatusAccepted, job)
 }
 
 func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {

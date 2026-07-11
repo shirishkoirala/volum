@@ -72,6 +72,11 @@ describe('refreshesFiles', () => {
     expect(refreshesFiles(buildJob({ type: 'extract' }))).toBe(true);
   });
 
+  it('returns true for trash and restore', () => {
+    expect(refreshesFiles(buildJob({ type: 'trash' }))).toBe(true);
+    expect(refreshesFiles(buildJob({ type: 'restore' }))).toBe(true);
+  });
+
   it('returns false for checksum', () => {
     expect(refreshesFiles(buildJob({ type: 'checksum' }))).toBe(false);
   });
