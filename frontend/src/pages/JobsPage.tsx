@@ -51,6 +51,9 @@ function JobItem({
   const needsResolve = job.status === 'needs_attention';
   const showLiveStats = job.status === 'running';
   const hasKnownTotal = job.totalBytes > 0;
+  const byteProgress = hasKnownTotal
+    ? `${formatBytes(job.processedBytes)} / ${formatBytes(job.totalBytes)}`
+    : formatBytes(job.processedBytes);
 
   return (
     <article
@@ -76,21 +79,13 @@ function JobItem({
             {job.processedItems} / {job.totalItems} files
           </span>
         )}
-        <span>
-          {hasKnownTotal
-            ? `${formatBytes(job.processedBytes)} / ${formatBytes(job.totalBytes)}`
-            : `${formatBytes(job.processedBytes)} uploaded`}
-        </span>
-        <span className={!showLiveStats ? styles.mutedPlaceholder : undefined}>
-          {showLiveStats && job.speedBytesPerSecond
-            ? `${formatBytes(job.speedBytesPerSecond)}/s`
-            : '\u2014/s'}
-        </span>
-        <span className={!showLiveStats ? styles.mutedPlaceholder : undefined}>
-          {showLiveStats && job.etaSeconds !== undefined
-            ? `${formatDuration(job.etaSeconds)} left`
-            : '\u2014 left'}
-        </span>
+        <span>{byteProgress}</span>
+        {showLiveStats && job.speedBytesPerSecond ? (
+          <span>{formatBytes(job.speedBytesPerSecond)}/s</span>
+        ) : null}
+        {showLiveStats && job.etaSeconds !== undefined ? (
+          <span>{formatDuration(job.etaSeconds)} left</span>
+        ) : null}
       </div>
       <div className={styles.jobFooter}>
         <span className={styles.jobTimestamp}>Created {formatGridDate(job.createdAt)}</span>

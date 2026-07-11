@@ -91,4 +91,8 @@
     min-height: 126px;
     padding: 4px;
   }
+
+  .meta span + span {
+    display: none;
+  }
 }

@@ -218,6 +218,10 @@
     padding: 4px;
   }
 
+  .fileDate {
+    display: none;
+  }
+
   .listType,
   .listModified,
   .listPermissions,

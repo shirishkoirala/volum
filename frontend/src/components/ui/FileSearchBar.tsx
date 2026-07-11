@@ -37,6 +37,7 @@ export function FileSearchBar({
         <input
           ref={searchRef as RefObject<HTMLInputElement>}
           data-control="embedded"
+          aria-label="Search files"
           placeholder="Search files"
           value={query}
           onFocus={() => {}}

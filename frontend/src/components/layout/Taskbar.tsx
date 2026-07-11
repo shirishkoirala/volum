@@ -18,6 +18,11 @@ type TaskbarProps = {
 
 export function Taskbar({ launcherItems, onActivateLauncher }: TaskbarProps) {
   const { windows, focusWindow, toggleMinimize, closeWindow } = useWindowManager();
+  const launcherIds = useMemo(() => new Set(launcherItems.map((item) => item.id)), [launcherItems]);
+  const visibleWindowItems = useMemo(
+    () => windows.filter((win) => !launcherIds.has(win.id.split('-')[0] ?? win.id)),
+    [launcherIds, windows],
+  );
 
   const focusedId = useMemo(() => {
     if (windows.length === 0) return null;
@@ -64,9 +69,9 @@ export function Taskbar({ launcherItems, onActivateLauncher }: TaskbarProps) {
         );
       })}
 
-      {windows.length > 0 && <div className={styles.divider} />}
+      {visibleWindowItems.length > 0 && <div className={styles.divider} />}
 
-      {windows.map((win) => {
+      {visibleWindowItems.map((win) => {
         const isFocused = focusedId === win.id && !win.minimized;
         return (
           <button

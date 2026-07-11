@@ -72,79 +72,98 @@ export function SettingsGeneral({
   return (
     <section className={styles.settingsSection}>
       <h4>General</h4>
-      {session?.authEnabled && (
-        <div className={styles.profileImageRow}>
-          {session.hasAvatar ? (
-            <img
-              className={styles.profileImage}
-              src={profileAvatarUrl(session.avatarVersion)}
-              alt="Current profile"
-            />
-          ) : (
-            <span className={styles.profileImageFallback}>
-              <Icon name="avatar-default" size={24} />
-            </span>
-          )}
-          <div className={styles.profileImageDetails}>
-            <strong>Profile image</strong>
-            <span>PNG or JPEG, up to 2 MB</span>
+      <div className={styles.generalSections}>
+        {session?.authEnabled && (
+          <div className={styles.generalGroup}>
+            <h5>Profile</h5>
+            <div className={styles.profileImageRow}>
+              {session.hasAvatar ? (
+                <img
+                  className={styles.profileImage}
+                  src={profileAvatarUrl(session.avatarVersion)}
+                  alt="Current profile"
+                />
+              ) : (
+                <span className={styles.profileImageFallback}>
+                  <Icon name="avatar-default" size={24} />
+                </span>
+              )}
+              <div className={styles.profileImageDetails}>
+                <strong>Profile image</strong>
+                <span>PNG or JPEG, up to 2 MB</span>
+              </div>
+              <input
+                ref={avatarInputRef}
+                className={styles.avatarInput}
+                type="file"
+                accept="image/png,image/jpeg"
+                onChange={(event) => void handleAvatarUpload(event.target.files?.[0])}
+              />
+              <div className={styles.profileImageActions}>
+                <Button
+                  size="compact"
+                  disabled={avatarBusy}
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  {avatarBusy ? 'Saving...' : session.hasAvatar ? 'Replace' : 'Upload'}
+                </Button>
+                {session.hasAvatar && (
+                  <Button
+                    size="compact"
+                    disabled={avatarBusy}
+                    onClick={() => void handleAvatarDelete()}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+            {avatarError && <p className={styles.avatarError}>{avatarError}</p>}
           </div>
-          <input
-            ref={avatarInputRef}
-            className={styles.avatarInput}
-            type="file"
-            accept="image/png,image/jpeg"
-            onChange={(event) => void handleAvatarUpload(event.target.files?.[0])}
-          />
-          <div className={styles.profileImageActions}>
-            <Button
-              size="compact"
-              disabled={avatarBusy}
-              onClick={() => avatarInputRef.current?.click()}
-            >
-              {avatarBusy ? 'Saving...' : session.hasAvatar ? 'Replace' : 'Upload'}
+        )}
+
+        <div className={styles.generalGroup}>
+          <h5>Appearance</h5>
+          <div className={styles.settingsActions}>
+            <Button size="compact" onClick={onToggleTheme}>
+              {theme === 'light' ? 'Use Dark Theme' : 'Use Light Theme'}
             </Button>
-            {session.hasAvatar && (
-              <Button
-                size="compact"
-                disabled={avatarBusy}
-                onClick={() => void handleAvatarDelete()}
-              >
-                Remove
-              </Button>
-            )}
+            <Button size="compact" onClick={onOpenShortcuts}>
+              Keyboard Shortcuts
+            </Button>
           </div>
         </div>
-      )}
-      {avatarError && <p className={styles.avatarError}>{avatarError}</p>}
-      <div className={styles.settingsActions}>
-        <Button size="compact" onClick={onToggleTheme}>
-          {theme === 'light' ? 'Use Dark Theme' : 'Use Light Theme'}
-        </Button>
-        <Button size="compact" onClick={onOpenShortcuts}>
-          Keyboard Shortcuts
-        </Button>
-        <label className={styles.toggleLabel}>
-          <input
-            type="checkbox"
-            checked={notifPrefs.enabled}
-            onChange={(e) => {
-              notifPrefs.setEnabled(e.target.checked);
-              if (
-                e.target.checked &&
-                typeof Notification !== 'undefined' &&
-                Notification.permission === 'default'
-              ) {
-                void Notification.requestPermission();
-              }
-            }}
-          />
-          <span>Browser notifications</span>
-        </label>
+
+        <div className={styles.generalGroup}>
+          <h5>Notifications</h5>
+          <label className={styles.toggleLabel}>
+            <input
+              type="checkbox"
+              checked={notifPrefs.enabled}
+              onChange={(e) => {
+                notifPrefs.setEnabled(e.target.checked);
+                if (
+                  e.target.checked &&
+                  typeof Notification !== 'undefined' &&
+                  Notification.permission === 'default'
+                ) {
+                  void Notification.requestPermission();
+                }
+              }}
+            />
+            <span>Browser notifications</span>
+          </label>
+        </div>
+
         {session?.authEnabled && (
-          <Button size="compact" onClick={onLogout}>
-            Log Out
-          </Button>
+          <div className={styles.generalGroup}>
+            <h5>Session</h5>
+            <div className={styles.settingsActions}>
+              <Button size="compact" onClick={onLogout}>
+                Log Out
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </section>

@@ -168,8 +168,25 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
-  margin-top: var(--space-sm);
   align-items: center;
+}
+
+.generalSections {
+  display: grid;
+  gap: var(--space-md);
+  max-width: 560px;
+}
+
+.generalGroup {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.generalGroup h5 {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin: 0;
 }
 
 .profileImageRow {
