@@ -19,7 +19,6 @@ var unsafeInlineExts = map[string]bool{
 	".html":  true,
 	".htm":   true,
 	".shtml": true,
-	".svg":   true,
 	".xml":   true,
 	".xsl":   true,
 	".xslt":  true,
