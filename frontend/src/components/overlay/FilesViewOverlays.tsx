@@ -5,14 +5,9 @@ import { FilesEmptyMenu } from './FilesEmptyMenu';
 import { PreviewModal } from './PreviewModal';
 import { InfoPanel } from './InfoPanel';
 import { BatchRenameModal } from './BatchRenameModal';
-import {
-  ConfirmDialog,
-  TextInputDialog,
-  TransferDialog,
-  type ConfirmDialogState,
-  type TextInputDialogState,
-  type TransferDialogState,
-} from './Dialogs';
+import { ConfirmDialog, type ConfirmDialogState } from './ConfirmDialog';
+import { TextInputDialog, type TextInputDialogState } from './TextInputDialog';
+import { TransferDialog, type TransferDialogState } from './TransferDialog';
 import { ShareDialog } from './ShareDialog';
 import { ShareManager } from './ShareManager';
 import { KeyboardShortcuts } from './KeyboardShortcuts';

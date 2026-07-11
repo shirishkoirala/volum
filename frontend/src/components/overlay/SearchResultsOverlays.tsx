@@ -1,11 +1,12 @@
 import { FileContextMenu } from './FileContextMenu';
-import { ConfirmDialog, TextInputDialog, TransferDialog } from './Dialogs';
+import { ConfirmDialog, type ConfirmDialogState } from './ConfirmDialog';
+import { TextInputDialog, type TextInputDialogState } from './TextInputDialog';
+import { TransferDialog, type TransferDialogState } from './TransferDialog';
 import { ShareDialog } from './ShareDialog';
 import { InfoPanel } from './InfoPanel';
 import { PreviewModal } from './PreviewModal';
 import { openFileExternally } from '../../utils/preview';
 import type { FileEntry, ConflictPolicy } from '../../api/client';
-import type { ConfirmDialogState, TextInputDialogState, TransferDialogState } from './Dialogs';
 
 type C = {
   canWrite: boolean;

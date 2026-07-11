@@ -19,7 +19,6 @@ var ErrInvalidConflictPolicy = errors.New("conflict policy must be ask, skip, ov
 const jobColumns = `id, type, status, source_path, destination_path,
 	total_bytes, processed_bytes, total_items, processed_items,
 	current_item, error_message, conflict_policy, verify_mode,
-	scheduled_at, next_job_id,
 	created_at, updated_at, started_at, completed_at`
 
 func NewStore(db *sql.DB) *Store {
@@ -56,9 +55,9 @@ func (s *Store) Create(ctx context.Context, req CreateRequest) (Job, error) {
 	_, err := s.db.ExecContext(ctx, `
 		INSERT INTO jobs (
 			id, type, status, source_path, destination_path,
-			conflict_policy, verify_mode, scheduled_at, next_job_id, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, job.ID, job.Type, job.Status, job.SourcePath, job.DestinationPath, job.ConflictPolicy, job.VerifyMode, job.ScheduledAt, job.NextJobID, job.CreatedAt, job.UpdatedAt)
+			conflict_policy, verify_mode, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, job.ID, job.Type, job.Status, job.SourcePath, job.DestinationPath, job.ConflictPolicy, job.VerifyMode, job.CreatedAt, job.UpdatedAt)
 	if err != nil {
 		return Job{}, err
 	}
@@ -179,36 +178,6 @@ func (s *Store) CompleteJob(ctx context.Context, jobID string) error {
 		SET status = ?, current_item = NULL, error_message = NULL, updated_at = ?, completed_at = ?
 		WHERE id = ?
 	`, StatusCompleted, now, now, jobID)
-	if err != nil {
-		return err
-	}
-
-	// job chaining: queue the next job when this one completes
-	var nextJobID sql.NullString
-	if err := s.db.QueryRowContext(ctx, `SELECT next_job_id FROM jobs WHERE id = ?`, jobID).Scan(&nextJobID); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-	if nextJobID.Valid && nextJobID.String != "" {
-		_, _ = s.db.ExecContext(ctx, `
-			UPDATE jobs
-			SET status = ?, updated_at = ?, started_at = NULL, completed_at = NULL,
-				error_message = NULL, processed_bytes = 0, processed_items = 0
-			WHERE id = ? AND status = ?
-		`, StatusQueued, now, nextJobID.String, StatusQueued)
-	}
-	return nil
-}
-
-func (s *Store) SetNextJob(ctx context.Context, jobID, nextJobID string) error {
-	now := now()
-	_, err := s.db.ExecContext(ctx, `
-		UPDATE jobs
-		SET next_job_id = ?, updated_at = ?
-		WHERE id = ?
-	`, nextJobID, now, jobID)
 	return err
 }
 
@@ -406,13 +375,12 @@ func (s *Store) MarkInterruptedRunningJobs(ctx context.Context) error {
 
 func scanJob(row sqlutil.Scanner) (Job, error) {
 	var job Job
-	var source, destination, current, message, nextID sql.NullString
-	var started, completed, scheduled sql.NullTime
+	var source, destination, current, message sql.NullString
+	var started, completed sql.NullTime
 	if err := row.Scan(
 		&job.ID, &job.Type, &job.Status, &source, &destination,
 		&job.TotalBytes, &job.ProcessedBytes, &job.TotalItems, &job.ProcessedItems,
 		&current, &message, &job.ConflictPolicy, &job.VerifyMode,
-		&scheduled, &nextID,
 		&job.CreatedAt, &job.UpdatedAt, &started, &completed,
 	); err != nil {
 		return Job{}, err
@@ -421,10 +389,6 @@ func scanJob(row sqlutil.Scanner) (Job, error) {
 	job.DestinationPath = nullString(destination)
 	job.CurrentItem = nullString(current)
 	job.ErrorMessage = nullString(message)
-	job.NextJobID = nullString(nextID)
-	if scheduled.Valid {
-		job.ScheduledAt = &scheduled.Time
-	}
 	if started.Valid {
 		job.StartedAt = &started.Time
 	}

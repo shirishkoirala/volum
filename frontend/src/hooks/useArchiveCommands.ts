@@ -3,7 +3,7 @@ import type { FileEntry } from '../api/client';
 import { createJob } from '../api/client';
 import { archiveBaseName, archiveFileName, isArchiveFile } from '../utils/archive';
 import { joinPath, normalizeFolderPath } from '../utils/path';
-import type { TextInputDialogState } from '../components/overlay/Dialogs';
+import type { TextInputDialogState } from '../components/overlay/TextInputDialog';
 import type { ContextMenuState } from '../types';
 import type { RunAction } from './types';
 

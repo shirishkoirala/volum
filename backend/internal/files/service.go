@@ -85,14 +85,6 @@ func NewService(guard *security.RootGuard, cache *DirSizeCache) *Service {
 	return &Service{guard: guard, cache: cache}
 }
 
-func (s *Service) Cache() *DirSizeCache {
-	return s.cache
-}
-
-func (s *Service) Roots() []string {
-	return s.guard.Roots()
-}
-
 func (s *Service) RootUsage() []Root {
 	roots := s.guard.RootEntries()
 	usage := make([]Root, 0, len(roots))

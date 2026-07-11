@@ -18,17 +18,13 @@ func (w *Worker) processTrash(ctx context.Context, job jobs.Job) error {
 		if err != nil {
 			return err
 		}
-		if err := w.store.CreateAuditLog(ctx, "trash", *job.SourcePath, "moved to trash "+entry.ID); err != nil {
-			return err
-		}
+		_ = w.store.CreateAuditLog(ctx, "trash", *job.SourcePath, "moved to trash "+entry.ID)
 	case jobs.TypeRestore:
 		entry, err := w.files.RestoreTrashRetry(*job.SourcePath)
 		if err != nil {
 			return err
 		}
-		if err := w.store.CreateAuditLog(ctx, "restore", entry.Path, "restored from trash"); err != nil {
-			return err
-		}
+		_ = w.store.CreateAuditLog(ctx, "restore", entry.Path, "restored from trash")
 	default:
 		return errors.New("unsupported trash job type")
 	}

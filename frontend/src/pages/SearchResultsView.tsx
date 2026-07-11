@@ -22,11 +22,9 @@ import {
   type Session,
   type ConflictPolicy,
 } from '../api/client';
-import type {
-  ConfirmDialogState,
-  TextInputDialogState,
-  TransferDialogState,
-} from '../components/overlay/Dialogs';
+import type { ConfirmDialogState } from '../components/overlay/ConfirmDialog';
+import type { TextInputDialogState } from '../components/overlay/TextInputDialog';
+import type { TransferDialogState } from '../components/overlay/TransferDialog';
 import styles from './SearchResultsView.module.css';
 
 function searchResultToFileEntry(result: SearchResult): FileEntry {

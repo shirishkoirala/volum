@@ -5,11 +5,9 @@ import type { UploadProgress } from '../utils/upload';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
 import { joinPath } from '../utils/path';
 import type { RenameState, ContextMenuState } from '../types';
-import type {
-  ConfirmDialogState,
-  TextInputDialogState,
-  TransferDialogState,
-} from '../components/overlay/Dialogs';
+import type { ConfirmDialogState } from '../components/overlay/ConfirmDialog';
+import type { TextInputDialogState } from '../components/overlay/TextInputDialog';
+import type { TransferDialogState } from '../components/overlay/TransferDialog';
 import type { Toast } from '../components/overlay/Toast';
 import { useArchiveCommands } from './useArchiveCommands';
 import { useUploadCommands } from './useUploadCommands';

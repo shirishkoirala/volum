@@ -1,14 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
+import { ConfirmDialog, type ConfirmDialogState } from '../components/overlay/ConfirmDialog';
+import { TextInputDialog, type TextInputDialogState } from '../components/overlay/TextInputDialog';
+import { TransferDialog, type TransferDialogState } from '../components/overlay/TransferDialog';
 import { ToastViewport } from '../components/overlay/Toast';
 import { FolderSuggestions } from '../components/input/FolderPicker';
-import type {
-  ConfirmDialogState,
-  TextInputDialogState,
-  TransferDialogState,
-} from '../components/overlay/Dialogs';
 import type { Toast } from '../components/overlay/Toast';
 import { buildDirectoryEntry, buildFileEntry } from './fixtures';
 

@@ -14,7 +14,7 @@ interface DesktopActionsOptions {
   };
   dialogs: {
     setConfirmDialog: React.Dispatch<
-      React.SetStateAction<import('../components/overlay/Dialogs').ConfirmDialogState>
+      React.SetStateAction<import('../components/overlay/ConfirmDialog').ConfirmDialogState>
     >;
   };
   toast: {

@@ -39,12 +39,6 @@ func migrate(db *sql.DB) error {
 	if _, err := db.Exec(initialSchema); err != nil {
 		return fmt.Errorf("apply initial schema: %w", err)
 	}
-	if err := addColumnIfMissing(db, "jobs", "scheduled_at", "DATETIME"); err != nil {
-		return err
-	}
-	if err := addColumnIfMissing(db, "jobs", "next_job_id", "TEXT"); err != nil {
-		return err
-	}
 	_, _ = db.Exec(`
 		CREATE TABLE IF NOT EXISTS shares (
 			id TEXT PRIMARY KEY,
@@ -120,6 +114,9 @@ func migrate(db *sql.DB) error {
 	if err := addColumnIfMissing(db, "job_items", "conflict_resolution", "TEXT"); err != nil {
 		return err
 	}
+	if err := addColumnIfMissing(db, "jobs", "scheduled_at", "DATETIME"); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -146,12 +143,11 @@ CREATE TABLE IF NOT EXISTS jobs (
     error_message TEXT,
     conflict_policy TEXT DEFAULT 'ask',
     verify_mode TEXT DEFAULT 'size',
-    scheduled_at DATETIME,
-    next_job_id TEXT,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     started_at DATETIME,
-    completed_at DATETIME
+    completed_at DATETIME,
+    scheduled_at DATETIME
 );
 
 CREATE TABLE IF NOT EXISTS job_items (
