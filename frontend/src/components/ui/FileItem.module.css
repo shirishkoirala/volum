@@ -50,19 +50,19 @@
 
 .fileRowList.selected {
   background: var(--glass-selected-bg);
-  outline: 2px solid var(--color-brand);
+  outline: var(--selection-ring-width) solid var(--color-brand);
   outline-offset: -2px;
 }
 
 .fileRowList.dragOver {
   background: var(--glass-selected-bg) !important;
   border-color: var(--color-brand) !important;
-  box-shadow: inset 0 0 0 2px var(--color-brand);
+  box-shadow: inset 0 0 0 var(--selection-ring-width) var(--color-brand);
   outline: none;
 }
 
 .fileRowList:focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: var(--selection-ring-width) solid var(--color-brand);
   outline-offset: -2px;
 }
 
@@ -114,7 +114,7 @@
 .fileRowGrid.dragOver {
   background: var(--glass-selected-bg) !important;
   border-color: var(--color-brand) !important;
-  box-shadow: inset 0 0 0 2px var(--color-brand);
+  box-shadow: inset 0 0 0 var(--selection-ring-width) var(--color-brand);
 }
 
 .fileRowGrid > span:not(.fileName):not(.fileMeta):not(.iconWrap) {

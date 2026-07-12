@@ -166,6 +166,19 @@ body,
   overflow: hidden;
 }
 
+.appSurface.isFocused {
+  border-color: color-mix(in srgb, var(--color-brand) 36%, var(--app-surface-border));
+  box-shadow: var(--app-surface-shadow-active);
+}
+
+.appSurface.isUnfocused {
+  box-shadow: var(--app-surface-shadow-inactive);
+}
+
+.appSurface.isUnfocused .appSurfaceHeader {
+  color: var(--color-text-secondary);
+}
+
 .appSurfaceHeader {
   background: var(--app-surface-header-bg);
   border-bottom: 1px solid var(--app-surface-divider);

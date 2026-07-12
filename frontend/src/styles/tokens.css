@@ -8,9 +8,9 @@
   --color-text-secondary: #4a5568;
   --color-text-muted: #5f6b7a;
   --color-text-tertiary: #a0aec0;
-  --color-border: #e2e8f0;
-  --color-border-light: #e8ecf1;
-  --color-border-subtle: #edf2f7;
+  --color-border: #e8edf3;
+  --color-border-light: #eef2f6;
+  --color-border-subtle: #f3f6fa;
   --color-border-row: #f0f4f8;
   --color-brand: #3b82f6;
   --color-brand-bg: #eff6ff;
@@ -53,7 +53,7 @@
     'JetBrains Mono Variable', 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, ui-monospace,
     monospace;
   /* Opacity */
-  --opacity-disabled: 0.45;
+  --opacity-disabled: 0.58;
   --opacity-ghost: 0.3;
   /* Spacing */
   --space-xxs: 2px;
@@ -64,6 +64,11 @@
   --space-xl: 20px;
   --space-2xl: 24px;
   --space-3xl: 32px;
+  --size-touch-target: 44px;
+  --size-badge-sm: 16px;
+  --size-status-dot: 14px;
+  --selection-ring-width: 2px;
+  --selection-indicator-width: 3px;
   --radius-xs: 3px;
   /* Radius */
   --radius-2xs: 4px;
@@ -84,7 +89,7 @@
   --glass-control-bg: color-mix(in srgb, var(--color-surface) 62%, transparent);
   --glass-hover-bg: color-mix(in srgb, var(--color-hover) 78%, transparent);
   --glass-selected-bg: color-mix(in srgb, var(--color-brand-bg) 72%, transparent);
-  --glass-border: color-mix(in srgb, var(--color-border) 62%, transparent);
+  --glass-border: color-mix(in srgb, var(--color-border) 48%, transparent);
   --glass-backdrop: blur(6px) saturate(110%);
   --app-surface-bg: var(--glass-bg);
   --app-surface-header-bg: var(--glass-bg);
@@ -92,9 +97,11 @@
   --app-surface-control-bg: var(--glass-control-bg);
   --app-surface-control-hover-bg: var(--glass-hover-bg);
   --app-surface-control-selected-bg: var(--glass-selected-bg);
-  --app-surface-border: color-mix(in srgb, var(--color-border) 55%, transparent);
-  --app-surface-divider: color-mix(in srgb, var(--color-border-subtle) 55%, transparent);
-  --app-surface-shadow: 0 8px 32px color-mix(in srgb, var(--color-shadow) 80%, transparent);
+  --app-surface-border: color-mix(in srgb, var(--color-border) 42%, transparent);
+  --app-surface-divider: color-mix(in srgb, var(--color-border-subtle) 48%, transparent);
+  --app-surface-shadow: 0 8px 28px color-mix(in srgb, var(--color-shadow) 74%, transparent);
+  --app-surface-shadow-active: 0 18px 48px color-mix(in srgb, var(--color-shadow) 130%, transparent);
+  --app-surface-shadow-inactive: 0 4px 18px color-mix(in srgb, var(--color-shadow) 54%, transparent);
   /* Animation */
   --transition-fast: 120ms ease;
   --transition-progress: 300ms ease;
@@ -188,6 +195,11 @@
   --space-xl: 20px;
   --space-2xl: 24px;
   --space-3xl: 32px;
+  --size-touch-target: 44px;
+  --size-badge-sm: 16px;
+  --size-status-dot: 14px;
+  --selection-ring-width: 2px;
+  --selection-indicator-width: 3px;
   /* Radius */
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -215,6 +227,8 @@
   --app-surface-border: color-mix(in srgb, var(--color-border) 55%, transparent);
   --app-surface-divider: color-mix(in srgb, var(--color-border-subtle) 55%, transparent);
   --app-surface-shadow: 0 8px 32px color-mix(in srgb, var(--color-shadow) 80%, transparent);
+  --app-surface-shadow-active: 0 18px 48px color-mix(in srgb, var(--color-shadow) 120%, transparent);
+  --app-surface-shadow-inactive: 0 4px 18px color-mix(in srgb, var(--color-shadow) 58%, transparent);
   /* Animation */
   --anim-skeleton: skeletonPulse 1.5s ease-in-out infinite;
   --anim-spin: spin 1s linear infinite;

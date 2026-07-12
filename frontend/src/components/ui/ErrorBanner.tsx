@@ -10,7 +10,7 @@ type ErrorBannerProps = {
 export function ErrorBanner({ message, onRetry, onDismiss }: ErrorBannerProps) {
   return (
     <div className={styles.errorBanner}>
-      <Icon name="alert-triangle" size={16} />
+      <Icon name="dialog-warning" size={16} />
       <span className={styles.errorText}>{message}</span>
       <div className={styles.errorActions}>
         {onRetry && (
@@ -25,7 +25,7 @@ export function ErrorBanner({ message, onRetry, onDismiss }: ErrorBannerProps) {
             onClick={onDismiss}
             aria-label="Dismiss error"
           >
-            <Icon name="x" size={14} />
+            <Icon name="window-close" size={14} />
           </button>
         )}
       </div>

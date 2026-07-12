@@ -50,7 +50,7 @@
   backdrop-filter: var(--glass-backdrop);
   background: var(--glass-selected-bg);
   border-color: var(--color-brand);
-  box-shadow: inset 0 0 0 2px var(--color-brand);
+  box-shadow: inset 0 0 0 var(--selection-ring-width) var(--color-brand);
 }
 
 .desktopIconLabel {
@@ -80,8 +80,8 @@
   position: absolute;
   right: -5px;
   bottom: 5px;
-  width: 14px;
-  height: 14px;
+  width: var(--size-status-dot);
+  height: var(--size-status-dot);
   border: 2px solid var(--color-surface);
   border-radius: var(--radius-pill);
   box-shadow: var(--shadow-card);

@@ -10,7 +10,7 @@ import {
 } from '../api/icons';
 import type { WindowManagerType } from '../contexts/WindowManager';
 import type { ServiceShortcut } from '../utils/services';
-import { STANDARD_WINDOW_W, STANDARD_WINDOW_H, getStandardWindowPos } from '../utils/window';
+import { STANDARD_WINDOW_W, STANDARD_WINDOW_H } from '../utils/window';
 
 type WorkspaceNav = {
   setShowingTrash: (value: boolean) => void;
@@ -53,7 +53,6 @@ export function useWorkspaceOpeners({
         return;
       }
 
-      const { x: fx, y: fy } = getStandardWindowPos();
       wm.toggleWindow('files', {
         title: 'Files',
         icon: filesIconUrl(),
@@ -61,8 +60,6 @@ export function useWorkspaceOpeners({
         params: { path: path ?? defaultRootPath },
         width: STANDARD_WINDOW_W,
         height: STANDARD_WINDOW_H,
-        x: fx,
-        y: fy,
       });
     },
     [defaultRootPath, isMobile, navActions, wm],
@@ -77,7 +74,6 @@ export function useWorkspaceOpeners({
       return;
     }
 
-    const { x: dx, y: dy } = getStandardWindowPos();
     wm.toggleWindow('drives', {
       title: 'Drives',
       icon: multidiskIconUrl(),
@@ -85,8 +81,6 @@ export function useWorkspaceOpeners({
       params: {},
       width: STANDARD_WINDOW_W,
       height: STANDARD_WINDOW_H,
-      x: dx,
-      y: dy,
     });
   }, [isMobile, nav, wm]);
 
@@ -100,7 +94,6 @@ export function useWorkspaceOpeners({
       return;
     }
 
-    const { x: tx, y: ty } = getStandardWindowPos();
     wm.toggleWindow('trash', {
       title: 'Trash',
       icon: trashIconUrl(trashCount > 0),
@@ -108,8 +101,6 @@ export function useWorkspaceOpeners({
       params: {},
       width: STANDARD_WINDOW_W,
       height: STANDARD_WINDOW_H,
-      x: tx,
-      y: ty,
     });
   }, [isMobile, nav, trashCount, wm]);
 
@@ -123,7 +114,6 @@ export function useWorkspaceOpeners({
       return;
     }
 
-    const { x: jx, y: jy } = getStandardWindowPos();
     wm.toggleWindow('jobs', {
       title: 'Transfers',
       icon: jobsIconUrl(),
@@ -131,8 +121,6 @@ export function useWorkspaceOpeners({
       params: {},
       width: STANDARD_WINDOW_W,
       height: STANDARD_WINDOW_H,
-      x: jx,
-      y: jy,
     });
   }, [isMobile, nav, wm]);
 
@@ -146,7 +134,6 @@ export function useWorkspaceOpeners({
       return;
     }
 
-    const { x: sx, y: sy } = getStandardWindowPos();
     wm.toggleWindow('settings', {
       title: 'Settings',
       icon: preferencesIconUrl(),
@@ -154,8 +141,6 @@ export function useWorkspaceOpeners({
       params: {},
       width: STANDARD_WINDOW_W,
       height: STANDARD_WINDOW_H,
-      x: sx,
-      y: sy,
     });
   }, [isMobile, nav, wm]);
 
@@ -167,7 +152,6 @@ export function useWorkspaceOpeners({
         return;
       }
 
-      const { x: px, y: py } = getStandardWindowPos();
       wm.toggleWindow('preview', {
         title: entry.name,
         icon: fileTypeIconUrl(entry),
@@ -175,8 +159,6 @@ export function useWorkspaceOpeners({
         params: { entry, entries },
         width: STANDARD_WINDOW_W,
         height: STANDARD_WINDOW_H,
-        x: px,
-        y: py,
       });
     },
     [isMobile, setPreviewEntries, setPreviewEntry, wm],

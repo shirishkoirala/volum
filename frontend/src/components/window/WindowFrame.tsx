@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useWindowManager, type WindowState } from '../../contexts/WindowManager';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { WindowTitleBar } from './WindowTitleBar';
@@ -16,8 +16,15 @@ import {
 import styles from './WindowFrame.module.css';
 
 export function WindowFrame({ win, children }: { win: WindowState; children?: React.ReactNode }) {
-  const { focusWindow, closeWindow, toggleMinimize, toggleMaximize, updatePosition, updateSize } =
-    useWindowManager();
+  const {
+    windows,
+    focusWindow,
+    closeWindow,
+    toggleMinimize,
+    toggleMaximize,
+    updatePosition,
+    updateSize,
+  } = useWindowManager();
   const prevRectRef = useRef<WindowRect | null>(null);
   const [snapPreview, setSnapPreview] = useState<WindowRect | null>(null);
   const isMobile = useIsMobile();
@@ -25,6 +32,11 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
   const zIndex = win.zIndex;
   const isMaximized = win.maximized;
   const isMinimized = win.minimized;
+  const focusedWindowId = useMemo(() => {
+    const visible = windows.filter((w) => !w.minimized);
+    return visible.length > 0 ? visible.reduce((a, b) => (a.zIndex > b.zIndex ? a : b)).id : null;
+  }, [windows]);
+  const isFocused = focusedWindowId === win.id;
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -240,7 +252,7 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
         />
       )}
       <div
-        className={`${styles.windowFrame} appSurface`}
+        className={`${styles.windowFrame} appSurface ${isFocused ? 'isFocused' : 'isUnfocused'}`}
         style={style}
         onMouseDown={() => focusWindow(win.id)}
       >
