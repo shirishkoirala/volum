@@ -79,6 +79,7 @@ export function DesktopView({
         {iconItems.map((item) => (
           <button
             key={item.id}
+            data-icon-id={item.id}
             className={`${styles.desktopIcon}${dragId === item.id ? ` ${styles.desktopDragging}` : ''}${dropTarget === item.id ? ` ${styles.desktopDropTarget}` : ''}`}
             onClick={item.onClick}
             onContextMenu={(event) => {
@@ -94,8 +95,8 @@ export function DesktopView({
             onDrop={(e) => handleDrop(e, item.id)}
             onDragEnd={handleDragEnd}
             onTouchStart={(event) => handleItemTouchStart(item, event)}
-            onTouchMove={handleItemTouchMove}
-            onTouchEnd={handleItemTouchEnd}
+            onTouchMove={(event) => handleItemTouchMove(event)}
+            onTouchEnd={(event) => handleItemTouchEnd(event)}
           >
             {item.icon}
             <span className={styles.desktopIconLabel}>{item.label}</span>

@@ -290,7 +290,7 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
         setDropTarget(null);
         return;
       }
-      const ids = iconOrder.filter((id) => iconItems.some((item) => item.id === id));
+      const ids = iconItems.map((item) => item.id);
       const srcIdx = ids.indexOf(sourceId);
       const tgtIdx = ids.indexOf(targetId);
       if (srcIdx === -1) {
@@ -306,7 +306,7 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
       setDragId(null);
       setDropTarget(null);
     },
-    [iconOrder, iconItems],
+    [iconItems],
   );
 
   const handleDragEnd = useCallback(() => {
@@ -314,8 +314,14 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
     setDropTarget(null);
   }, []);
 
-  // ── Touch long-press context menu ────────────────────────
+  // ── Touch long-press context menu + drag-reorder ────────
   const longPressItemRef = useRef<{ item: DesktopIconItem; x: number; y: number } | null>(null);
+  const touchDragRef = useRef<{
+    startX: number;
+    startY: number;
+    dragging: boolean;
+    dragId: string | null;
+  } | null>(null);
 
   const { onTouchStart: hookTouchStart, onTouchEnd: hookTouchEnd } = useLongPress({
     onLongPress: () => {
@@ -337,18 +343,85 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
     (item: DesktopIconItem, event: React.TouchEvent) => {
       const touch = event.touches[0]!;
       longPressItemRef.current = { item, x: touch.clientX, y: touch.clientY };
+      touchDragRef.current = {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        dragging: false,
+        dragId: item.id,
+      };
       hookTouchStart();
     },
     [hookTouchStart],
   );
 
-  const handleItemTouchMove = useCallback(() => {
-    longPressItemRef.current = null;
-  }, []);
+  const handleItemTouchMove = useCallback(
+    (event: React.TouchEvent) => {
+      const state = touchDragRef.current;
+      if (!state) return;
 
-  const handleItemTouchEnd = useCallback(() => {
-    hookTouchEnd();
-  }, [hookTouchEnd]);
+      const touch = event.touches[0]!;
+      const dx = touch.clientX - state.startX;
+      const dy = touch.clientY - state.startY;
+
+      if (!state.dragging) {
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+          state.dragging = true;
+          longPressItemRef.current = null;
+          hookTouchEnd();
+          setDragId(state.dragId);
+          setDropTarget(null);
+        }
+        return;
+      }
+
+      event.preventDefault();
+
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const targetId = el?.closest('[data-icon-id]')?.getAttribute('data-icon-id') ?? null;
+      setDropTarget(targetId && targetId !== state.dragId ? targetId : null);
+    },
+    [hookTouchEnd],
+  );
+
+  const handleItemTouchEnd = useCallback(
+    (event: React.TouchEvent) => {
+      const state = touchDragRef.current;
+      touchDragRef.current = null;
+
+      if (!state) {
+        hookTouchEnd();
+        return;
+      }
+
+      if (state.dragging) {
+        event.preventDefault();
+
+        const touch = event.changedTouches[0]!;
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        const targetId = el?.closest('[data-icon-id]')?.getAttribute('data-icon-id') ?? null;
+
+        if (state.dragId && targetId && state.dragId !== targetId) {
+          const ids = iconItems.map((item) => item.id);
+          const srcIdx = ids.indexOf(state.dragId);
+          const tgtIdx = ids.indexOf(targetId);
+          if (srcIdx !== -1) {
+            const next = [...ids];
+            next.splice(srcIdx, 1);
+            const insertAt = tgtIdx >= 0 ? tgtIdx : next.length;
+            next.splice(insertAt, 0, state.dragId);
+            setIconOrder(next);
+          }
+        }
+
+        setDragId(null);
+        setDropTarget(null);
+        return;
+      }
+
+      hookTouchEnd();
+    },
+    [iconItems, hookTouchEnd],
+  );
 
   return {
     iconItems,
