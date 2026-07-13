@@ -155,12 +155,10 @@ func (w *Worker) processDiskAnalyze(ctx context.Context, job jobs.Job) error {
 
 	for _, kv := range sorted {
 		parent := filepath.Dir(kv.path)
-		if parent != source && parent != "." {
-			if pa, ok := accum[parent]; ok {
-				pa.sizeBytes += kv.accum.sizeBytes
-				pa.fileCount += kv.accum.fileCount
-				pa.dirCount += kv.accum.dirCount + 1
-			}
+		if pa, ok := accum[parent]; ok {
+			pa.sizeBytes += kv.accum.sizeBytes
+			pa.fileCount += kv.accum.fileCount
+			pa.dirCount += kv.accum.dirCount + 1
 		}
 	}
 

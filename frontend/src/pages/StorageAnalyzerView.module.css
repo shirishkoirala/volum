@@ -24,6 +24,16 @@
   border-color: var(--color-border);
 }
 
+.tab:focus-visible,
+.rootBtn:focus-visible,
+.scanBtn:focus-visible,
+.secondaryBtn:focus-visible,
+.trashBtn:focus-visible,
+.dirRow:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
 .body {
   flex: 1;
   overflow-y: auto;
@@ -127,6 +137,55 @@
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-md);
   margin-bottom: var(--space-md);
+}
+
+.scanToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.scanToolbar > div:first-child {
+  min-width: 0;
+}
+
+.pathLabel,
+.completionText {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.scannedPath {
+  display: block;
+  overflow: hidden;
+  color: var(--color-text);
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scanActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--space-sm);
+}
+
+.secondaryBtn {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+
+.secondaryBtn:hover {
+  background: var(--color-surface-hover);
 }
 
 .currentItem {
@@ -442,4 +501,86 @@
 .trashBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.emptyResult {
+  padding: var(--space-lg);
+}
+
+@media (max-width: 760px) {
+  .body {
+    padding: var(--space-sm);
+  }
+
+  .picker {
+    width: 100%;
+    padding: var(--space-lg) 0;
+  }
+
+  .pickerCustom,
+  .scanToolbar,
+  .scanStatus {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .scanBtn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .summary {
+    flex-wrap: wrap;
+    gap: var(--space-md);
+  }
+
+  .summaryItem {
+    min-width: calc(50% - var(--space-md));
+  }
+
+  .scanActions {
+    width: 100%;
+  }
+
+  .scanActions .secondaryBtn {
+    flex: 1;
+  }
+
+  .headerPercent,
+  .headerBar,
+  .percent,
+  .barWrapper,
+  .dupDate {
+    display: none;
+  }
+
+  .size,
+  .headerSize {
+    width: 76px;
+  }
+
+  .dupFile {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .dupName {
+    min-width: 0;
+    max-width: calc(100% - 54px);
+  }
+
+  .dupPath {
+    flex-basis: 100%;
+    margin-left: 46px;
+  }
+
+  .bulkBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .trashBtn {
+    justify-content: center;
+    margin-left: 0;
+  }
 }

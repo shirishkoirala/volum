@@ -63,6 +63,7 @@ type FilesViewProps = {
   onRemoveFavorite: (path: string) => void;
   onPreview?: (entry: FileEntry, entries?: FileEntry[]) => void;
   onShowAllSearchResults?: (query: string) => void;
+  onOpenStorageAnalyzer: (path: string) => void;
 };
 
 export type FilesViewHandle = {
@@ -93,6 +94,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     onRemoveFavorite,
     onPreview,
     onShowAllSearchResults,
+    onOpenStorageAnalyzer,
   },
   ref,
 ) {
@@ -666,6 +668,12 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
               path: fileActions.contextMenu!.entry.path,
               name: fileActions.contextMenu!.entry.name,
             })
+          }
+          onAnalyze={
+            fileActions.contextMenu.entry.type === 'directory' &&
+            selection.selectedEntries.length === 1
+              ? () => onOpenStorageAnalyzer(fileActions.contextMenu!.entry.path)
+              : undefined
           }
           onToggleFavorite={() => {
             const entry = fileActions.contextMenu!.entry;

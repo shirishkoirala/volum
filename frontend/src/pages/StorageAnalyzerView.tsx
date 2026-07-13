@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, FileIcon, FolderIcon } from '../components/ui/Icon';
 import { AppPanel } from '../components/layout/AppPanel';
 import {
+  cancelJob,
   createJob,
   getDiskUsageResults,
   getDiskUsageSummary,
@@ -9,6 +10,8 @@ import {
   getDuplicateSummary,
   deletePath,
 } from '../api/client';
+import { ConfirmDialog } from '../components/overlay/ConfirmDialog';
+import { EmptyState } from '../components/ui/EmptyState';
 import type {
   Job,
   DiskUsageResult,
@@ -168,6 +171,7 @@ export function StorageAnalyzerView({
   const [summary, setSummary] = useState<DiskUsageSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const preselectedScanStarted = useRef(false);
 
   // Duplicate scan state
   const [dupJobId, setDupJobId] = useState<string | null>(null);
@@ -178,6 +182,7 @@ export function StorageAnalyzerView({
   const [dupError, setDupError] = useState<string | null>(null);
   const [dupSelected, setDupSelected] = useState<Set<string>>(new Set());
   const [dupTrashing, setDupTrashing] = useState(false);
+  const [confirmTrash, setConfirmTrash] = useState(false);
 
   const currentJob = useMemo(() => {
     if (!currentJobId) return null;
@@ -216,6 +221,12 @@ export function StorageAnalyzerView({
     }
   }, []);
 
+  useEffect(() => {
+    if (!preselectedPath || preselectedScanStarted.current) return;
+    preselectedScanStarted.current = true;
+    void startScan(preselectedPath);
+  }, [preselectedPath, startScan]);
+
   const startDupScan = useCallback(async (path: string) => {
     setDupLoading(true);
     setDupError(null);
@@ -248,8 +259,8 @@ export function StorageAnalyzerView({
           next.set(parentPath, res.results);
           return next;
         });
-      } catch {
-        // ignore
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load scan contents');
       }
     },
     [currentJobId],
@@ -260,8 +271,8 @@ export function StorageAnalyzerView({
     try {
       const s = await getDiskUsageSummary(currentJobId);
       setSummary(s);
-    } catch {
-      // ignore
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load scan summary');
     }
   }, [currentJobId]);
 
@@ -274,16 +285,16 @@ export function StorageAnalyzerView({
       ]);
       setDupResults(res.results);
       setDupSummary(s);
-    } catch {
-      // ignore
+    } catch (err) {
+      setDupError(err instanceof Error ? err.message : 'Failed to load duplicate results');
     }
   }, [dupJobId]);
 
   useEffect(() => {
-    if (isScanDone && currentJobId) {
-      loadSummary();
+    if (isScanDone && currentJobId && scanPath) {
+      void Promise.all([loadSummary(), loadChildren(scanPath)]);
     }
-  }, [isScanDone, currentJobId, loadSummary]);
+  }, [isScanDone, currentJobId, scanPath, loadSummary, loadChildren]);
 
   useEffect(() => {
     if (!dupJob) return;
@@ -358,6 +369,45 @@ export function StorageAnalyzerView({
     }
   }, [dupSelected]);
 
+  const requestTrashSelected = useCallback(() => {
+    const removesEveryCopy = duplicateGroups.some(([, files]) =>
+      files.every((file) => dupSelected.has(file.path)),
+    );
+    if (removesEveryCopy) {
+      setDupError('Keep at least one copy from every duplicate group.');
+      return;
+    }
+    setConfirmTrash(true);
+  }, [duplicateGroups, dupSelected]);
+
+  const resetDiskScan = useCallback(() => {
+    setScanPath(null);
+    setCurrentJobId(null);
+    setTreeData(new Map());
+    setExpandedPaths(new Set());
+    setSummary(null);
+    setError(null);
+  }, []);
+
+  const resetDuplicateScan = useCallback(() => {
+    setDupJobId(null);
+    setDupPath(null);
+    setDupResults([]);
+    setDupSummary(null);
+    setDupSelected(new Set());
+    setDupError(null);
+  }, []);
+
+  const cancelCurrentScan = useCallback(async (jobId: string, duplicate = false) => {
+    try {
+      await cancelJob(jobId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to cancel scan';
+      if (duplicate) setDupError(message);
+      else setError(message);
+    }
+  }, []);
+
   const retry = useCallback(() => {
     if (scanPath) startScan(scanPath);
   }, [scanPath, startScan]);
@@ -372,16 +422,20 @@ export function StorageAnalyzerView({
       padding="none"
       scroll={false}
       header={
-        <div className={styles.tabs}>
+        <div className={styles.tabs} role="tablist" aria-label="Storage analysis mode">
           <button
             className={`${styles.tab} ${section === 'disk-usage' ? styles.tabActive : ''}`}
             onClick={() => setSection('disk-usage')}
+            role="tab"
+            aria-selected={section === 'disk-usage'}
           >
             Disk Usage
           </button>
           <button
             className={`${styles.tab} ${section === 'duplicates' ? styles.tabActive : ''}`}
             onClick={() => setSection('duplicates')}
+            role="tab"
+            aria-selected={section === 'duplicates'}
           >
             Duplicates
           </button>
@@ -390,10 +444,6 @@ export function StorageAnalyzerView({
     >
       {section === 'disk-usage' && (
         <div className={styles.body}>
-          {!currentJobId && scanPath && (
-            <PathPicker roots={roots} onStartScan={startScan} loading={loading} />
-          )}
-
           {!scanPath && !currentJobId && (
             <PathPicker roots={roots} onStartScan={startScan} loading={loading} />
           )}
@@ -423,11 +473,37 @@ export function StorageAnalyzerView({
                 <span className={styles.currentItem}>{currentJob.currentItem}</span>
               )}
               <span className={styles.processedCount}>{currentJob.processedItems} items found</span>
+              <button
+                className={styles.secondaryBtn}
+                onClick={() => void cancelCurrentScan(currentJob.id)}
+              >
+                Cancel
+              </button>
             </div>
           )}
 
           {summary && isScanDone && currentJob?.status === 'completed' && (
             <>
+              <div className={styles.scanToolbar}>
+                <div>
+                  <span className={styles.pathLabel}>Scanned folder</span>
+                  <span className={styles.scannedPath}>{scanPath}</span>
+                  <span className={styles.completionText}>
+                    Completed · {currentJob.processedItems.toLocaleString()} items
+                  </span>
+                </div>
+                <div className={styles.scanActions}>
+                  <button
+                    className={styles.secondaryBtn}
+                    onClick={() => scanPath && void startScan(scanPath)}
+                  >
+                    Rescan
+                  </button>
+                  <button className={styles.secondaryBtn} onClick={resetDiskScan}>
+                    Scan another folder
+                  </button>
+                </div>
+              </div>
               <div className={styles.summary}>
                 <div className={styles.summaryItem}>
                   <span className={styles.summaryLabel}>Total</span>
@@ -453,35 +529,40 @@ export function StorageAnalyzerView({
                 )}
               </div>
 
-              <div className={styles.headerRow}>
-                <span className={styles.headerSpacer} />
-                <span className={styles.headerName}>Name</span>
-                <span className={styles.headerSize}>Size</span>
-                <span className={styles.headerPercent}>%</span>
-                <span className={styles.headerBar}>Usage</span>
-              </div>
-
-              <div className={styles.tree} role="tree">
-                <button
-                  className={styles.loadRootBtn}
-                  onClick={() => loadChildren(scanPath || '')}
-                  disabled={treeData.has(scanPath || '')}
-                >
-                  <Icon name="view-refresh" size={14} />
-                  <span>Load contents</span>
-                </button>
-
-                {treeNodes.length > 0 &&
-                  treeNodes.map((node) => (
-                    <DirRow
-                      key={node.path}
-                      node={node}
-                      totalBytes={summary.totalBytes}
-                      onToggle={handleToggle}
-                      depth={0}
-                    />
-                  ))}
-              </div>
+              {summary.fileCount === 0 && summary.directoryCount === 0 ? (
+                <EmptyState
+                  title="This folder is empty"
+                  subtitle="Choose another folder to analyze."
+                  compact
+                />
+              ) : treeData.has(scanPath || '') && treeNodes.length === 0 ? (
+                <EmptyState
+                  title="No subfolders to display"
+                  subtitle="The total above is from files directly inside this folder."
+                  compact
+                />
+              ) : (
+                <>
+                  <div className={styles.headerRow}>
+                    <span className={styles.headerSpacer} />
+                    <span className={styles.headerName}>Name</span>
+                    <span className={styles.headerSize}>Size</span>
+                    <span className={styles.headerPercent}>%</span>
+                    <span className={styles.headerBar}>Usage</span>
+                  </div>
+                  <div className={styles.tree} role="tree">
+                    {treeNodes.map((node) => (
+                      <DirRow
+                        key={node.path}
+                        node={node}
+                        totalBytes={summary.totalBytes}
+                        onToggle={handleToggle}
+                        depth={0}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -491,6 +572,14 @@ export function StorageAnalyzerView({
               <span>Scan failed: {currentJob.errorMessage}</span>
               <button className={styles.retryBtn} onClick={retry}>
                 Retry
+              </button>
+            </div>
+          )}
+          {currentJob?.status === 'cancelled' && (
+            <div className={styles.status}>
+              <span>Scan cancelled.</span>
+              <button className={styles.secondaryBtn} onClick={resetDiskScan}>
+                Scan another folder
               </button>
             </div>
           )}
@@ -528,11 +617,34 @@ export function StorageAnalyzerView({
                 <span className={styles.currentItem}>{dupJob.currentItem}</span>
               )}
               <span className={styles.processedCount}>{dupJob.processedItems} files scanned</span>
+              <button
+                className={styles.secondaryBtn}
+                onClick={() => void cancelCurrentScan(dupJob.id, true)}
+              >
+                Cancel
+              </button>
             </div>
           )}
 
           {dupSummary && dupResults.length > 0 && (
             <>
+              <div className={styles.scanToolbar}>
+                <div>
+                  <span className={styles.pathLabel}>Scanned folder</span>
+                  <span className={styles.scannedPath}>{dupPath}</span>
+                </div>
+                <div className={styles.scanActions}>
+                  <button
+                    className={styles.secondaryBtn}
+                    onClick={() => dupPath && void startDupScan(dupPath)}
+                  >
+                    Rescan
+                  </button>
+                  <button className={styles.secondaryBtn} onClick={resetDuplicateScan}>
+                    Scan another folder
+                  </button>
+                </div>
+              </div>
               <div className={styles.summary}>
                 <div className={styles.summaryItem}>
                   <span className={styles.summaryLabel}>Duplicate groups</span>
@@ -563,7 +675,7 @@ export function StorageAnalyzerView({
                   <span>{dupSelected.size} file(s) selected</span>
                   <button
                     className={styles.trashBtn}
-                    onClick={handleTrashSelected}
+                    onClick={requestTrashSelected}
                     disabled={dupTrashing}
                   >
                     {dupTrashing ? (
@@ -587,15 +699,13 @@ export function StorageAnalyzerView({
                         <span>
                           {files.length} copies &middot; {formatBytes(first.sizeBytes)} each
                         </span>
-                        <span className={styles.dupChecksum}>
-                          SHA-256: {first.checksum.slice(0, 12)}...
-                        </span>
                       </div>
                       {files.map((f) => (
                         <div key={f.path} className={styles.dupFile}>
                           <label className={styles.dupCheck}>
                             <input
                               type="checkbox"
+                              aria-label={`Select ${f.path}`}
                               checked={dupSelected.has(f.path)}
                               onChange={() => handleSelectDup(f.path)}
                             />
@@ -629,9 +739,16 @@ export function StorageAnalyzerView({
           )}
 
           {dupSummary && dupResults.length === 0 && dupJob?.status === 'completed' && (
-            <div className={styles.status}>
-              <Icon name="dialog-information" size={18} />
-              <span>No duplicates found in {dupPath}</span>
+            <div className={styles.emptyResult}>
+              <EmptyState
+                title="No duplicates found"
+                subtitle={`No matching file contents were found in ${dupPath}.`}
+                compact
+              >
+                <button className={styles.secondaryBtn} onClick={resetDuplicateScan}>
+                  Scan another folder
+                </button>
+              </EmptyState>
             </div>
           )}
 
@@ -643,6 +760,26 @@ export function StorageAnalyzerView({
                 Retry
               </button>
             </div>
+          )}
+          {dupJob?.status === 'cancelled' && (
+            <div className={styles.status}>
+              <span>Duplicate scan cancelled.</span>
+              <button className={styles.secondaryBtn} onClick={resetDuplicateScan}>
+                Scan another folder
+              </button>
+            </div>
+          )}
+          {confirmTrash && (
+            <ConfirmDialog
+              dialog={{
+                title: 'Trash duplicate files?',
+                message: `Move ${dupSelected.size} selected file(s) to Trash? At least one copy from every group will be kept.`,
+                confirmLabel: 'Move to Trash',
+                danger: true,
+                onConfirm: () => void handleTrashSelected(),
+              }}
+              onClose={() => setConfirmTrash(false)}
+            />
           )}
         </div>
       )}

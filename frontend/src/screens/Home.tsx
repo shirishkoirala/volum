@@ -200,6 +200,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
               onAddFavorite={addFavorite}
               onRemoveFavorite={removeFavorite}
               onPreview={workspaceOpeners.openPreview}
+              onOpenStorageAnalyzer={workspaceOpeners.openStorageAnalyzer}
             />
           );
         case 'trash':
@@ -209,7 +210,14 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
         case 'jobs':
           return <JobsPage session={session} sessionLoading={false} />;
         case 'storage-analyzer':
-          return <StorageAnalyzerView roots={browser.roots} jobs={browser.jobs} />;
+          return (
+            <StorageAnalyzerView
+              key={win.params.path as string | undefined}
+              roots={browser.roots}
+              jobs={browser.jobs}
+              preselectedPath={win.params.path as string | undefined}
+            />
+          );
         case 'settings':
           return (
             <SettingsPanel
@@ -289,6 +297,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       browser.jobs,
       wm,
       workspaceOpeners.openPreview,
+      workspaceOpeners.openStorageAnalyzer,
       services,
       serviceHealth,
       desktopActions,
@@ -438,6 +447,19 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     if (visibleWindows.length === 0) return null;
     return visibleWindows.reduce((a, b) => (a.zIndex > b.zIndex ? a : b));
   }, [wm.windows]);
+
+  const previousMobileRef = useRef(isMobile);
+  const analyzerTransferredToMobileRef = useRef(false);
+  useEffect(() => {
+    if (isMobile && !previousMobileRef.current && focusedWindow?.winType === 'storage-analyzer') {
+      nav.setShowingStorageAnalyzer(true);
+      analyzerTransferredToMobileRef.current = true;
+    } else if (!isMobile && previousMobileRef.current && analyzerTransferredToMobileRef.current) {
+      nav.setShowingStorageAnalyzer(false);
+      analyzerTransferredToMobileRef.current = false;
+    }
+    previousMobileRef.current = isMobile;
+  }, [focusedWindow?.winType, isMobile, nav]);
 
   const focusedCommands = focusedWindow
     ? (commandsMap[focusedWindow.id] ?? {})
@@ -607,6 +629,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                   onAddFavorite={addFavorite}
                   onRemoveFavorite={removeFavorite}
                   onPreview={workspaceOpeners.openPreview}
+                  onOpenStorageAnalyzer={workspaceOpeners.openStorageAnalyzer}
                   onShowAllSearchResults={(query) => {
                     nav.setSearchQuery(query);
                     nav.setShowingSearch(true);

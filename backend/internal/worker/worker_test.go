@@ -42,6 +42,35 @@ func setupWorkerWithDB(t *testing.T, root string) (*Worker, *jobs.Store, context
 	return w, store, ctx, db
 }
 
+func TestDiskAnalyzeIncludesNestedFilesInRootTotal(t *testing.T) {
+	root := t.TempDir()
+	nested := filepath.Join(root, "nested")
+	if err := os.Mkdir(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "direct.bin"), make([]byte, 3), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(nested, "child.bin"), make([]byte, 5), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	w, store, ctx := setupWorker(t, root)
+	job, err := store.Create(ctx, jobs.CreateRequest{Type: jobs.TypeDiskAnalyze, SourcePath: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.runOnce(ctx)
+
+	summary, err := store.GetDiskUsageSummary(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.TotalBytes != 8 || summary.FileCount != 2 || summary.DirectoryCount != 1 {
+		t.Fatalf("unexpected summary: %#v", summary)
+	}
+}
+
 func TestTrashAndRestoreRunAsPersistentJobs(t *testing.T) {
 	root := t.TempDir()
 	w, store, ctx := setupWorker(t, root)

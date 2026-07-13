@@ -126,26 +126,30 @@ export function useWorkspaceOpeners({
     });
   }, [isMobile, nav, wm]);
 
-  const openStorageAnalyzer = useCallback(() => {
-    if (isMobile) {
-      nav.setShowingStorageAnalyzer(true);
-      nav.setShowingSettings(false);
-      nav.setShowingTrash(false);
-      nav.setShowingJobs(false);
-      nav.setShowingMyPC(false);
-      nav.setSelectedDriveName(null);
-      return;
-    }
+  const openStorageAnalyzer = useCallback(
+    (path?: string) => {
+      const selectedPath = typeof path === 'string' ? path : undefined;
+      if (isMobile) {
+        nav.setShowingStorageAnalyzer(true);
+        nav.setShowingSettings(false);
+        nav.setShowingTrash(false);
+        nav.setShowingJobs(false);
+        nav.setShowingMyPC(false);
+        nav.setSelectedDriveName(null);
+        return;
+      }
 
-    wm.toggleWindow('storage-analyzer', {
-      title: 'Storage Analyzer',
-      icon: storageAnalyzerIconUrl(),
-      winType: 'storage-analyzer',
-      params: {},
-      width: STANDARD_WINDOW_W,
-      height: STANDARD_WINDOW_H,
-    });
-  }, [isMobile, nav, wm]);
+      wm.toggleWindow('storage-analyzer', {
+        title: 'Storage Analyzer',
+        icon: storageAnalyzerIconUrl(),
+        winType: 'storage-analyzer',
+        params: selectedPath ? { path: selectedPath } : {},
+        width: STANDARD_WINDOW_W,
+        height: STANDARD_WINDOW_H,
+      });
+    },
+    [isMobile, nav, wm],
+  );
 
   const openSettings = useCallback(() => {
     if (isMobile) {
