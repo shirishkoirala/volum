@@ -1,4 +1,4 @@
-import { request, requestVoid } from './client-base';
+import { request } from './client-base';
 
 export type Share = {
   id: string;
@@ -31,7 +31,7 @@ export function getShares() {
 }
 
 export function deleteShare(id: string) {
-  return requestVoid(`/api/shares/${encodeURIComponent(id)}`, {
+  return request(`/api/shares/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
 }

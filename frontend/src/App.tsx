@@ -5,7 +5,6 @@ import { SetupScreen } from './screens/SetupScreen';
 import { Home } from './screens/Home';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { WindowManagerProvider } from './contexts/WindowManagerProvider';
-import { saveLastUser } from './utils/lastUser';
 import styles from './App.module.css';
 
 export function App() {
@@ -30,14 +29,13 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (session?.authenticated && session.username) void saveLastUser(session);
+    if (session?.authenticated && session.username) localStorage.setItem('volum_last_user', session.username);
   }, [session]);
 
   const handleLoggedIn = (nextSession: Session) => setSession(nextSession);
   const handleLogout = () => {
-    const cacheUser = session?.authenticated ? saveLastUser(session) : Promise.resolve();
-    void cacheUser
-      .then(logout)
+    if (session?.authenticated && session.username) localStorage.setItem('volum_last_user', session.username);
+    void logout()
       .then(setSession)
       .catch(() => setSession(null));
   };

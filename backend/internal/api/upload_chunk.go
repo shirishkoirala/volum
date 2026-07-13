@@ -266,7 +266,6 @@ func (s *Server) handleUploadChunk(w http.ResponseWriter, r *http.Request) {
 			tempPath:          partialPath,
 			destination:       destination,
 			destinationPublic: destinationPublic,
-			uploadName:        filename,
 			name:              filename,
 			bytes:             totalSize,
 			conflictPolicy:    uploadConflictPolicy(r),

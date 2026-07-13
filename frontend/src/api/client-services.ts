@@ -1,4 +1,4 @@
-import { request, requestVoid } from './client-base';
+import { request } from './client-base';
 
 export type ServiceInfo = {
   id: string;
@@ -28,21 +28,21 @@ export function listFavorites() {
 }
 
 export function addFavorite(path: string) {
-  return requestVoid('/api/favorites', {
+  return request('/api/favorites', {
     method: 'POST',
     body: JSON.stringify({ path }),
   });
 }
 
 export function removeFavorite(path: string) {
-  return requestVoid('/api/favorites', {
+  return request('/api/favorites', {
     method: 'DELETE',
     body: JSON.stringify({ path }),
   });
 }
 
 export function reorderFavorites(paths: string[]) {
-  return requestVoid('/api/favorites/reorder', {
+  return request('/api/favorites/reorder', {
     method: 'PUT',
     body: JSON.stringify({ paths }),
   });
@@ -97,13 +97,13 @@ export function updateService(
 }
 
 export function deleteService(id: string) {
-  return requestVoid(`/api/services/${encodeURIComponent(id)}`, {
+  return request(`/api/services/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
 }
 
 export function reorderServices(ids: string[]) {
-  return requestVoid('/api/services/reorder', {
+  return request('/api/services/reorder', {
     method: 'PUT',
     body: JSON.stringify({ ids }),
   });

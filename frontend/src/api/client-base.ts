@@ -30,6 +30,3 @@ export async function request<T>(url: string, options?: RequestInit): Promise<T>
   return response.json() as Promise<T>;
 }
 
-export async function requestVoid<T>(path: string, options: RequestInit = {}): Promise<void> {
-  await request<T>(path, options);
-}

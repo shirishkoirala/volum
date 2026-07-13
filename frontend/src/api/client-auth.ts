@@ -1,4 +1,4 @@
-import { request, requestVoid } from './client-base';
+import { request } from './client-base';
 
 export type Session = {
   authEnabled: boolean;
@@ -79,34 +79,34 @@ export function listUsers() {
 }
 
 export function createUser(username: string, password: string, role: 'admin' | 'readonly') {
-  return requestVoid('/api/users', {
+  return request('/api/users', {
     method: 'POST',
     body: JSON.stringify({ username, password, role }),
   });
 }
 
 export function deleteUser(userId: string) {
-  return requestVoid(`/api/users/${userId}`, {
+  return request(`/api/users/${userId}`, {
     method: 'DELETE',
   });
 }
 
 export function changePassword(userId: string, password: string) {
-  return requestVoid(`/api/users/${userId}/password`, {
+  return request(`/api/users/${userId}/password`, {
     method: 'PATCH',
     body: JSON.stringify({ newPassword: password }),
   });
 }
 
 export function changeRole(userId: string, role: 'admin' | 'readonly') {
-  return requestVoid(`/api/users/${userId}/role`, {
+  return request(`/api/users/${userId}/role`, {
     method: 'PATCH',
     body: JSON.stringify({ role }),
   });
 }
 
 export function revokeUserSessions(userId: string) {
-  return requestVoid(`/api/users/${userId}/revoke-sessions`, {
+  return request(`/api/users/${userId}/revoke-sessions`, {
     method: 'POST',
   });
 }

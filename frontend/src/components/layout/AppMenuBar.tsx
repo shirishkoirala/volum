@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import type { ViewMode } from '../../utils/view';
+type ViewMode = 'list' | 'grid';
 import type { SortField, SortDirection } from '../../types';
 import { buildFileItems, buildEditItems, buildViewItems, buildGoItems } from './menuItems';
 import type { MenuItem } from './menuItems';

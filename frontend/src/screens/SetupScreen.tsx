@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
 import { setup } from '../api/client';
 import type { Session } from '../api/client';
-import { BRAND_ICON_URL } from '../utils/brand';
+
 import styles from './LoginScreen.module.css';
 
 type SetupScreenProps = {
@@ -34,7 +34,7 @@ export function SetupScreen({ onComplete }: SetupScreenProps) {
   return (
     <main className={styles.authShell}>
       <form className={styles.loginPanel} onSubmit={handleSubmit}>
-        <img className={styles.brandMark} src={BRAND_ICON_URL} alt="" />
+        <img className={styles.brandMark} src="/volum_logo.svg" alt="" />
         <h1>Setup Admin Account</h1>
         <p
           style={{

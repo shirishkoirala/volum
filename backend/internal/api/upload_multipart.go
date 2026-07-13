@@ -105,7 +105,6 @@ func (s *Server) uploadPart(ctx context.Context, targetPublic, targetDir string,
 		return jobs.Job{}, files.ErrInvalidName
 	}
 	name := strings.TrimSpace(rawName)
-	uploadName := name
 
 	destinationPublic := filepath.Join(filepath.Clean(targetPublic), name)
 	destination, err := s.guard.Resolve(destinationPublic)
@@ -245,7 +244,6 @@ func (s *Server) uploadPart(ctx context.Context, targetPublic, targetDir string,
 		tempPath:          tempPath,
 		destination:       destination,
 		destinationPublic: destinationPublic,
-		uploadName:        uploadName,
 		name:              name,
 		bytes:             written,
 		conflictPolicy:    conflictPolicy,

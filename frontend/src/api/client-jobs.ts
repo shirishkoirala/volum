@@ -1,4 +1,4 @@
-import { request, requestVoid } from './client-base';
+import { request } from './client-base';
 
 export type JobType =
   'copy' | 'move' | 'upload' | 'extract' | 'archive' | 'checksum' | 'trash' | 'restore';
@@ -60,31 +60,31 @@ export function createJob(params: {
 }
 
 export function cancelJob(id: string) {
-  return requestVoid(`/api/jobs/${id}/cancel`, {
+  return request(`/api/jobs/${id}/cancel`, {
     method: 'POST',
   });
 }
 
 export function retryJob(id: string) {
-  return requestVoid(`/api/jobs/${id}/retry`, {
+  return request(`/api/jobs/${id}/retry`, {
     method: 'POST',
   });
 }
 
 export function retryJobItem(jobId: string, itemId: string) {
-  return requestVoid(`/api/jobs/${jobId}/items/${itemId}/retry`, {
+  return request(`/api/jobs/${jobId}/items/${itemId}/retry`, {
     method: 'POST',
   });
 }
 
 export function pauseJob(id: string) {
-  return requestVoid(`/api/jobs/${id}/pause`, {
+  return request(`/api/jobs/${id}/pause`, {
     method: 'POST',
   });
 }
 
 export function resumeJob(id: string) {
-  return requestVoid(`/api/jobs/${id}/resume`, {
+  return request(`/api/jobs/${id}/resume`, {
     method: 'POST',
   });
 }

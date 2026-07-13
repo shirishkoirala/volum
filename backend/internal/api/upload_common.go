@@ -26,7 +26,6 @@ type uploadFinalizeRequest struct {
 	tempPath          string
 	destination       string
 	destinationPublic string
-	uploadName        string
 	name              string
 	bytes             int64
 	conflictPolicy    string
@@ -57,13 +56,6 @@ func (s *Server) finalizeUpload(ctx context.Context, req uploadFinalizeRequest) 
 		s.cleanupUploadPaths(path)
 	}
 	s.cleanupUploadPaths(filepath.Dir(req.tempPath))
-
-	if appBundle, converted, err := s.finalizeAppBundleArchive(destination, req.uploadName, req.conflictPolicy); err != nil {
-		return jobs.Job{}, err
-	} else if converted {
-		destinationPublic = appBundle.publicPath
-		name = appBundle.filename
-	}
 
 	if name != req.name || destinationPublic != req.destinationPublic {
 		if err := s.jobs.UpdateJobPaths(ctx, req.jobID, name, destinationPublic); err != nil {

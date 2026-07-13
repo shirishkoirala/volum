@@ -8,7 +8,7 @@ import { ThemeToggle } from '../ui/ThemeToggle';
 import { IconButton } from '../ui/shared';
 import { Icon } from '../ui/Icon';
 import { type Session, type SearchResult, type Job } from '../../api/client';
-import { BRAND_ICON_URL } from '../../utils/brand';
+
 import { countActiveTransfers } from '../../utils/jobs';
 import styles from './TopBar.module.css';
 
@@ -219,7 +219,7 @@ export function TopBar({
           title="Go to desktop"
           aria-label="Go to desktop"
         >
-          <img className={styles.brandIcon} src={BRAND_ICON_URL} alt="" />
+          <img className={styles.brandIcon} src="/volum_logo.svg" alt="" />
           <span className={styles.brandName}>{title ?? 'Volum Desktop'}</span>
         </button>
         {showMenu && (

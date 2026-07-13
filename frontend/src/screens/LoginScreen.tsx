@@ -3,8 +3,6 @@ import { Icon } from '../components/ui/Icon';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { login } from '../api/client';
 import type { Session } from '../api/client';
-import { BRAND_ICON_URL } from '../utils/brand';
-import { loadLastUser } from '../utils/lastUser';
 import styles from './LoginScreen.module.css';
 
 type LoginScreenProps = {
@@ -14,8 +12,7 @@ type LoginScreenProps = {
 };
 
 export function LoginScreen({ onLoggedIn, onToggleTheme, theme }: LoginScreenProps) {
-  const [lastUser] = useState(loadLastUser);
-  const [username, setUsername] = useState(lastUser?.username ?? '');
+  const [username, setUsername] = useState(() => localStorage.getItem('volum_last_user') ?? '');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,22 +30,11 @@ export function LoginScreen({ onLoggedIn, onToggleTheme, theme }: LoginScreenPro
   return (
     <main className={styles.authShell}>
       <div className={styles.brandHeader} aria-label="Volum Desktop">
-        <img src={BRAND_ICON_URL} alt="" />
+        <img src="/volum_logo.svg" alt="" />
         <span>Volum</span>
       </div>
       <ThemeToggle theme={theme} onClick={onToggleTheme} className={styles.themeToggle} size={17} />
       <form className={styles.loginPanel} onSubmit={handleSubmit}>
-        <div className={styles.profileTile}>
-          {lastUser?.avatarDataUrl ? (
-            <img
-              className={styles.profileImage}
-              src={lastUser.avatarDataUrl}
-              alt={`Profile for ${lastUser.username}`}
-            />
-          ) : (
-            <Icon name="avatar-default" size={30} />
-          )}
-        </div>
         <div className={styles.loginHeading}>
           <h1>Sign in to Volum</h1>
           <p>Access your files and services.</p>

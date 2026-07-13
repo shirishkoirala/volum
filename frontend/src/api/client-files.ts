@@ -1,5 +1,5 @@
 import { apiUrl } from './baseUrl';
-import { parseError, request, requestVoid } from './client-base';
+import { parseError, request } from './client-base';
 import type { Job } from './client-jobs';
 
 export type BlockDevice = {
@@ -166,7 +166,7 @@ export function chmodPath(path: string, mode: string) {
 }
 
 export function deletePath(path: string, confirmName: string) {
-  return requestVoid('/api/files', {
+  return request('/api/files', {
     method: 'DELETE',
     body: JSON.stringify({ path, confirmName }),
   });
@@ -179,7 +179,7 @@ export function restoreTrash(id: string) {
 }
 
 export function deleteTrash(id: string) {
-  return requestVoid(`/api/trash/${encodeURIComponent(id)}`, {
+  return request(`/api/trash/${encodeURIComponent(id)}`, {
     method: 'DELETE',
   });
 }

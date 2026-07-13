@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import type { SortField, SortDirection } from '../types';
-import type { ViewMode } from '../utils/view';
+type ViewMode = 'list' | 'grid';
 
 type FolderPrefs = Record<
   string,

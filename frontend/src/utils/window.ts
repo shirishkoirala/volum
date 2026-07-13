@@ -28,10 +28,6 @@ export function getCenteredWindowPos(width: number, height: number) {
   };
 }
 
-export function getStandardWindowPos() {
-  return getCenteredWindowPos(STANDARD_WINDOW_W, STANDARD_WINDOW_H);
-}
-
 export function getWorkArea() {
   return {
     x: 0,
