@@ -54,11 +54,17 @@
 }
 
 .desktopIconLabel {
+  display: -webkit-box;
   font-size: var(--font-size-base);
   font-weight: 600;
+  line-height: 1.25;
+  min-height: 2.5em;
   overflow: hidden;
+  overflow-wrap: anywhere;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   max-width: 100%;
   color: var(--color-text);
 }
