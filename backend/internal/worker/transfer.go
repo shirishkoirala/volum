@@ -11,6 +11,7 @@ import (
 
 	"github.com/volum-app/volum/backend/internal/jobs"
 	"github.com/volum-app/volum/backend/internal/security"
+	"github.com/volum-app/volum/backend/internal/sysutil"
 )
 
 var errSkipDestination = errors.New("destination skipped by conflict policy")
@@ -356,14 +357,14 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 
 	buffer := make([]byte, 1024*1024)
 	copied := item.Processed
-	progress := newProgressThrottle(copied, 16*1024*1024, 500*time.Millisecond)
-	statusCheck := newStatusThrottle(300 * time.Millisecond)
+	progress := sysutil.NewThrottle(copied, 16*1024*1024, 500*time.Millisecond)
+	statusCheck := sysutil.NewThrottle(0, 0, 300*time.Millisecond)
 	for {
 		if ctx.Err() != nil {
 			temp.Close()
 			return copied, ctx.Err()
 		}
-		if statusCheck.Ready() {
+		if statusCheck.Ready(0) {
 			status, err := w.store.GetJobStatus(ctx, job.ID)
 			if err != nil {
 				temp.Close()
@@ -455,32 +456,6 @@ func partialFileSize(path string, expectedSize int64) (int64, error) {
 	return info.Size(), nil
 }
 
-type progressThrottle struct {
-	lastBytes int64
-	lastTime  time.Time
-	minBytes  int64
-	minPeriod time.Duration
-}
-
-func newProgressThrottle(startBytes, minBytes int64, minPeriod time.Duration) *progressThrottle {
-	return &progressThrottle{
-		lastBytes: startBytes,
-		lastTime:  time.Now(),
-		minBytes:  minBytes,
-		minPeriod: minPeriod,
-	}
-}
-
-func (t *progressThrottle) Ready(currentBytes int64) bool {
-	now := time.Now()
-	if currentBytes-t.lastBytes < t.minBytes && now.Sub(t.lastTime) < t.minPeriod {
-		return false
-	}
-	t.lastBytes = currentBytes
-	t.lastTime = now
-	return true
-}
-
 func (w *Worker) resolveConflictDestination(ctx context.Context, source, destination, policy string) (string, error) {
 	if policy == "" {
 		policy = "ask"
@@ -553,24 +528,6 @@ func deref(value *string) string {
 		return ""
 	}
 	return *value
-}
-
-type statusThrottle struct {
-	lastCheck time.Time
-	interval  time.Duration
-}
-
-func newStatusThrottle(interval time.Duration) *statusThrottle {
-	return &statusThrottle{interval: interval}
-}
-
-func (t *statusThrottle) Ready() bool {
-	now := time.Now()
-	if now.Sub(t.lastCheck) < t.interval {
-		return false
-	}
-	t.lastCheck = now
-	return true
 }
 
 func (w *Worker) publicPath(path string) string {
