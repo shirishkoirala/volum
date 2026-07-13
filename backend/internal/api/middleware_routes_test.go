@@ -52,7 +52,6 @@ func TestRouteMiddlewareGroups(t *testing.T) {
 				{method: http.MethodGet, path: "/api/files/download?path=/" + t.TempDir()},
 				{method: http.MethodGet, path: "/api/files/raw?path=/" + t.TempDir()},
 				{method: http.MethodGet, path: "/api/files/search?query=test"},
-				{method: http.MethodGet, path: "/api/files/analyze?path=/" + t.TempDir()},
 				{method: http.MethodGet, path: "/api/trash"},
 				{method: http.MethodGet, path: "/api/jobs"},
 				{method: http.MethodGet, path: "/api/jobs/events"},

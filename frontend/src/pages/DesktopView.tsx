@@ -15,6 +15,7 @@ type DesktopViewProps = {
   onOpenSettings: () => void;
   onOpenJobs: () => void;
   onOpenFiles: () => void;
+  onOpenStorageAnalyzer: () => void;
   onOpenService: (service: ServiceShortcut) => void;
   onShowMyPC: () => void;
   onItemContextMenu: (item: DesktopIconItem, event: React.MouseEvent<HTMLElement>) => void;
@@ -32,6 +33,7 @@ export function DesktopView({
   onOpenSettings,
   onOpenJobs,
   onOpenFiles,
+  onOpenStorageAnalyzer,
   onOpenService,
   onShowMyPC,
   onItemContextMenu,
@@ -60,6 +62,7 @@ export function DesktopView({
     onOpenSettings,
     onOpenJobs,
     onOpenFiles,
+    onOpenStorageAnalyzer,
     onNavigateTo,
     onOpenService,
     onItemContextMenu,

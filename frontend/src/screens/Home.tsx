@@ -12,6 +12,7 @@ import { DrivesView } from '../pages/DrivesView';
 import { TrashView } from '../pages/TrashView';
 import { SearchResultsView } from '../pages/SearchResultsView';
 import { JobsPage } from '../pages/JobsPage';
+import { StorageAnalyzerView } from '../pages/StorageAnalyzerView';
 import { ToastViewport } from '../components/overlay/Toast';
 import { WindowHost } from '../components/window/WindowHost';
 import { DesktopContextMenu } from '../components/overlay/DesktopContextMenu';
@@ -207,6 +208,8 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
           return <DrivesView onBackToDesktop={() => wm.closeWindow(win.id)} />;
         case 'jobs':
           return <JobsPage session={session} sessionLoading={false} />;
+        case 'storage-analyzer':
+          return <StorageAnalyzerView roots={browser.roots} jobs={browser.jobs} />;
         case 'settings':
           return (
             <SettingsPanel
@@ -282,6 +285,8 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       dialogs,
       fileActions,
       defaultRootPath,
+      browser.roots,
+      browser.jobs,
       wm,
       workspaceOpeners.openPreview,
       services,
@@ -313,7 +318,6 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     setPreviewEntry: fileActions.setPreviewEntry,
     setInfoEntry: fileActions.setInfoEntry,
     setBatchRenameOpen: fileActions.setBatchRenameOpen,
-    setAnalyzePath: fileActions.setAnalyzePath,
     fileClipboard: fileActions.fileClipboard,
     setFileClipboard: fileActions.setFileClipboard,
     setConfirmDialog: dialogs.setConfirmDialog,
@@ -386,6 +390,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       else if (id === 'jobs') workspaceOpeners.openJobs();
       else if (id === 'settings') workspaceOpeners.openSettings();
       else if (id === 'drives') workspaceOpeners.openDrives();
+      else if (id === 'storage-analyzer') workspaceOpeners.openStorageAnalyzer();
       else if (id === 'desktop') workspaceOpeners.openDesktop();
       else desktopActions.handleDockActivate(id);
     },
@@ -571,6 +576,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                   onOpenSettings={workspaceOpeners.openSettings}
                   onOpenJobs={workspaceOpeners.openJobs}
                   onOpenFiles={() => workspaceOpeners.openFiles()}
+                  onOpenStorageAnalyzer={workspaceOpeners.openStorageAnalyzer}
                   onOpenService={workspaceOpeners.openService}
                   onShowMyPC={workspaceOpeners.openDrives}
                   onItemContextMenu={handleDesktopItemContextMenu}
@@ -608,6 +614,9 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                 />
               )}
               {nav.activeView === 'jobs' && <JobsPage session={session} sessionLoading={false} />}
+              {nav.activeView === 'storage-analyzer' && (
+                <StorageAnalyzerView roots={browser.roots} jobs={browser.jobs} />
+              )}
               {nav.activeView === 'settings' && (
                 <SettingsPanel
                   onOpenShares={() => {

@@ -7,6 +7,7 @@ import {
   multidiskIconUrl,
   folderBookmarksIconUrl,
   filesIconUrl,
+  storageAnalyzerIconUrl,
 } from '../api/icons';
 import type { TrashEntry, Job } from '../api/client';
 import { countActiveTransfers } from '../utils/jobs';
@@ -22,6 +23,7 @@ type DesktopIconItem = {
     | 'settings'
     | 'jobs'
     | 'files'
+    | 'storage-analyzer'
     | 'folderShortcut'
     | 'serviceShortcut'
     | 'emptySpace';
@@ -44,6 +46,7 @@ type UseDesktopIconsProps = {
   onOpenSettings: () => void;
   onOpenJobs: () => void;
   onOpenFiles: () => void;
+  onOpenStorageAnalyzer: () => void;
   onNavigateTo: (path: string) => void;
   onOpenService: (service: ServiceShortcut) => void;
   onItemContextMenu: (item: DesktopIconItem, event: React.MouseEvent<HTMLElement>) => void;
@@ -84,6 +87,7 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
     onOpenSettings,
     onOpenJobs,
     onOpenFiles,
+    onOpenStorageAnalyzer,
     onNavigateTo,
     onOpenService,
     onItemContextMenu,
@@ -170,6 +174,19 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
       icon: (
         <div className={styles.desktopIconWrapper}>
           <IconImg src={filesIconUrl()} alt="" width={64} height={64} />
+        </div>
+      ),
+    });
+
+    items.push({
+      id: 'storage-analyzer',
+      type: 'storage-analyzer',
+      label: 'Storage',
+      ariaLabel: 'Open Storage Analyzer',
+      onClick: onOpenStorageAnalyzer,
+      icon: (
+        <div className={styles.desktopIconWrapper}>
+          <IconImg src={storageAnalyzerIconUrl()} alt="" width={64} height={64} />
         </div>
       ),
     });
@@ -261,6 +278,7 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
     onOpenSettings,
     onOpenJobs,
     onOpenFiles,
+    onOpenStorageAnalyzer,
     onOpenService,
     onNavigateTo,
   ]);

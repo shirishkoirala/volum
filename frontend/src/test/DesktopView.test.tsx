@@ -11,6 +11,7 @@ const defaultProps = {
   onOpenSettings: vi.fn(),
   onOpenJobs: vi.fn(),
   onOpenFiles: vi.fn(),
+  onOpenStorageAnalyzer: vi.fn(),
   onOpenService: vi.fn(),
   onShowMyPC: vi.fn(),
   onItemContextMenu: vi.fn(),

@@ -13,7 +13,6 @@ interface ArchiveCommandDeps {
   selectedEntries: FileEntry[];
   setContextMenu: Dispatch<SetStateAction<ContextMenuState>>;
   setTextInputDialog: Dispatch<SetStateAction<TextInputDialogState>>;
-  setAnalyzePath: Dispatch<SetStateAction<string | null>>;
   runAction: RunAction;
 }
 
@@ -23,7 +22,6 @@ export function useArchiveCommands({
   selectedEntries,
   setContextMenu,
   setTextInputDialog,
-  setAnalyzePath,
   runAction,
 }: ArchiveCommandDeps) {
   const handleCreateArchive = () => {
@@ -90,13 +88,6 @@ export function useArchiveCommands({
     });
   };
 
-  const handleAnalyze = () => {
-    const entry = selectedEntries[0];
-    if (!entry || entry.type !== 'directory') return;
-    setContextMenu(null);
-    setAnalyzePath(entry.path);
-  };
-
   const handleCreateChecksum = () => {
     const entry = selectedEntries[0];
     if (!entry || selectedEntries.length !== 1) return;
@@ -120,7 +111,6 @@ export function useArchiveCommands({
   return {
     handleCreateArchive,
     handleExtractArchive,
-    handleAnalyze,
     handleCreateChecksum,
   };
 }

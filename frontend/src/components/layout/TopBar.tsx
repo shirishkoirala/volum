@@ -12,7 +12,8 @@ import { type Session, type SearchResult, type Job } from '../../api/client';
 import { countActiveTransfers } from '../../utils/jobs';
 import styles from './TopBar.module.css';
 
-type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives' | 'search';
+type ActiveView =
+  'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives' | 'search' | 'storage-analyzer';
 
 type TopBarProps = {
   activeView: ActiveView;

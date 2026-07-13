@@ -22,7 +22,6 @@ interface FileContextMenuProps {
   onPaste: () => void;
   onQuickShare: () => void;
   onShare: () => void;
-  onAnalyze: () => void;
   onToggleFavorite: () => void;
   onDelete: () => void;
   onClose: () => void;
@@ -47,7 +46,6 @@ export function FileContextMenu({
   onPaste,
   onQuickShare,
   onShare,
-  onAnalyze,
   onToggleFavorite,
   onDelete,
   onClose,
@@ -65,7 +63,6 @@ export function FileContextMenu({
     canMove,
     canPaste,
     canDelete,
-    canAnalyze,
   } = caps;
 
   return (
@@ -206,18 +203,6 @@ export function FileContextMenu({
           role="menuitem"
         >
           <Icon name="mail-send" size={16} /> Share
-        </button>
-      )}
-      {canAnalyze && (
-        <button
-          type="button"
-          onClick={() => {
-            onAnalyze();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="view-refresh" size={16} /> Analyze
         </button>
       )}
       <button

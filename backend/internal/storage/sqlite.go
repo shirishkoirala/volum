@@ -120,6 +120,33 @@ func migrate(db *sql.DB) error {
 	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_jobs_claim ON jobs(status, type, scheduled_at, created_at)`); err != nil {
 		return fmt.Errorf("create job claim index: %w", err)
 	}
+
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS disk_usage_results (
+			job_id TEXT NOT NULL,
+			path TEXT NOT NULL,
+			parent_path TEXT,
+			name TEXT NOT NULL,
+			is_dir INTEGER NOT NULL DEFAULT 0,
+			size_bytes INTEGER NOT NULL DEFAULT 0,
+			file_count INTEGER NOT NULL DEFAULT 0,
+			dir_count INTEGER NOT NULL DEFAULT 0,
+			FOREIGN KEY(job_id) REFERENCES jobs(id) ON DELETE CASCADE
+		)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_disk_usage_job ON disk_usage_results(job_id, parent_path)`)
+
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS duplicate_results (
+			job_id TEXT NOT NULL,
+			group_id INTEGER NOT NULL,
+			path TEXT NOT NULL,
+			size_bytes INTEGER NOT NULL DEFAULT 0,
+			checksum TEXT NOT NULL,
+			modified_at DATETIME,
+			FOREIGN KEY(job_id) REFERENCES jobs(id) ON DELETE CASCADE
+		)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_duplicate_job ON duplicate_results(job_id, group_id)`)
+
 	return nil
 }
 

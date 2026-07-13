@@ -42,26 +42,23 @@ export function App() {
 
   useEffect(() => {
     if (session?.authenticated && session.username)
-      localStorage.setItem(
-        'volum_last_user',
-        JSON.stringify({ username: session.username }),
-      );
+      localStorage.setItem('volum_last_user', JSON.stringify({ username: session.username }));
   }, [session]);
 
   const handleLoggedIn = (nextSession: Session) => setSession(nextSession);
   const handleLogout = async () => {
     if (session?.authenticated && session.username) {
-      const savedUser: { username: string; avatarDataUrl?: string } = { username: session.username };
+      const savedUser: { username: string; avatarDataUrl?: string } = {
+        username: session.username,
+      };
       if (session.hasAvatar) {
         try {
           savedUser.avatarDataUrl = await getProfileAvatarData();
         } catch {
+          /* empty */
         }
       }
-      localStorage.setItem(
-        'volum_last_user',
-        JSON.stringify(savedUser),
-      );
+      localStorage.setItem('volum_last_user', JSON.stringify(savedUser));
     }
     try {
       setSession(await logout());

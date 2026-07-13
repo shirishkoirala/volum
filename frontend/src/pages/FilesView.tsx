@@ -30,7 +30,6 @@ import { TransferDialog } from '../components/overlay/TransferDialog';
 import { ShareDialog } from '../components/overlay/ShareDialog';
 import { ShareManager } from '../components/overlay/ShareManager';
 import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
-import { DiskUsageAnalyzer } from '../components/overlay/DiskUsageAnalyzer';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { formatBytes } from '../utils/format';
 import { useWindowId, useCommandsContext } from '../contexts/WindowCommands';
@@ -203,7 +202,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     setPreviewEntry: setPreviewTarget,
     setInfoEntry: fileActions.setInfoEntry,
     setBatchRenameOpen: fileActions.setBatchRenameOpen,
-    setAnalyzePath: fileActions.setAnalyzePath,
     fileClipboard: fileActions.fileClipboard,
     setFileClipboard: fileActions.setFileClipboard,
     setConfirmDialog: dialogs.setConfirmDialog,
@@ -648,7 +646,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
             canMove: selection.canMove,
             canPaste: selection.canPaste,
             canDelete: selection.canDelete,
-            canAnalyze: selection.canAnalyze,
           }}
           isFavorited={selectedEntryIsFavorited}
           selectedCount={selection.selectedEntries.length}
@@ -670,7 +667,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
               name: fileActions.contextMenu!.entry.name,
             })
           }
-          onAnalyze={fileCommands.handleAnalyze}
           onToggleFavorite={() => {
             const entry = fileActions.contextMenu!.entry;
             if (favorites.includes(entry.path)) onRemoveFavorite(entry.path);
@@ -802,12 +798,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />
       )}
       {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
-      {fileActions.analyzePath && (
-        <DiskUsageAnalyzer
-          path={fileActions.analyzePath}
-          onClose={() => fileActions.setAnalyzePath(null)}
-        />
-      )}
     </>
   );
 });

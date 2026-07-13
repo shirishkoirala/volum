@@ -68,6 +68,12 @@ export function multidiskIconUrl() {
   return multidiskIcon;
 }
 
+import storageAnalyzerIconSvg from '../assets/storage-analyzer.svg?url';
+
+export function storageAnalyzerIconUrl() {
+  return storageAnalyzerIconSvg;
+}
+
 export function trashIconUrl(full: boolean) {
   return full ? trashFullIcon : trashIcon;
 }

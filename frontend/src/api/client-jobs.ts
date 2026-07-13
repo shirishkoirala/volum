@@ -1,7 +1,16 @@
 import { request } from './client-base';
 
 export type JobType =
-  'copy' | 'move' | 'upload' | 'extract' | 'archive' | 'checksum' | 'trash' | 'restore';
+  | 'copy'
+  | 'move'
+  | 'upload'
+  | 'extract'
+  | 'archive'
+  | 'checksum'
+  | 'trash'
+  | 'restore'
+  | 'disk_analyze'
+  | 'duplicate_find';
 export type JobStatus =
   'queued' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled' | 'needs_attention';
 

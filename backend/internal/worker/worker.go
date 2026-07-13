@@ -97,13 +97,43 @@ func (w *Worker) runOnce(ctx context.Context) {
 		w.log.Error("claim checksum job failed", "error", err)
 		return
 	}
+	if ok {
+		if err := w.processChecksum(ctx, job); err != nil {
+			w.log.Error("checksum job failed", "job_id", job.ID, "error", err)
+			if failErr := w.store.FailJob(ctx, job.ID, err); failErr != nil {
+				w.log.Error("mark checksum job failed", "job_id", job.ID, "error", failErr)
+			}
+		}
+		return
+	}
+
+	job, ok, err = w.store.ClaimNextAnalyzeJob(ctx)
+	if err != nil {
+		w.log.Error("claim analyze job failed", "error", err)
+		return
+	}
+	if ok {
+		if err := w.processDiskAnalyze(ctx, job); err != nil {
+			w.log.Error("analyze job failed", "job_id", job.ID, "error", err)
+			if failErr := w.store.FailJob(ctx, job.ID, err); failErr != nil {
+				w.log.Error("mark analyze job failed", "job_id", job.ID, "error", failErr)
+			}
+		}
+		return
+	}
+
+	job, ok, err = w.store.ClaimNextDuplicateJob(ctx)
+	if err != nil {
+		w.log.Error("claim duplicate job failed", "error", err)
+		return
+	}
 	if !ok {
 		return
 	}
-	if err := w.processChecksum(ctx, job); err != nil {
-		w.log.Error("checksum job failed", "job_id", job.ID, "error", err)
+	if err := w.processDuplicateFind(ctx, job); err != nil {
+		w.log.Error("duplicate job failed", "job_id", job.ID, "error", err)
 		if failErr := w.store.FailJob(ctx, job.ID, err); failErr != nil {
-			w.log.Error("mark checksum job failed", "job_id", job.ID, "error", failErr)
+			w.log.Error("mark duplicate job failed", "job_id", job.ID, "error", failErr)
 		}
 	}
 }

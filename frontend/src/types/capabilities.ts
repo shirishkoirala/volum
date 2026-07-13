@@ -11,5 +11,4 @@ export type MenuCapabilities = {
   canMove: boolean;
   canPaste: boolean;
   canDelete: boolean;
-  canAnalyze: boolean;
 };

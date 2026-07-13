@@ -148,7 +148,6 @@ export function SearchResultsView({
       canMove: selectedEntries.length > 0,
       canPaste: canWrite,
       canDelete: selectedEntries.length > 0,
-      canAnalyze: selectedEntries.length === 1 && selectedEntries[0]?.type === 'directory',
     }),
     [canWrite, selectedEntries],
   );
@@ -381,12 +380,6 @@ export function SearchResultsView({
     });
   }, [selectedResults, runAction]);
 
-  const handleAnalyze = useCallback(() => {
-    const entry = selectedResults[0];
-    if (!entry || entry.type !== 'directory') return;
-    setError('Disk analysis is not available from search results. Navigate to the folder first.');
-  }, [selectedResults]);
-
   const handleTransferSubmit = useCallback(
     (dialog: TransferDialogState, destinationValue: string, conflictPolicy: ConflictPolicy) => {
       if (!dialog) return;
@@ -536,7 +529,6 @@ export function SearchResultsView({
         onArchive={handleArchive}
         onExtract={handleExtract}
         onChecksum={handleChecksum}
-        onAnalyze={handleAnalyze}
         onQuickShare={handleQuickShare}
         onShare={handleShare}
         onDelete={handleDelete}

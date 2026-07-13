@@ -21,7 +21,6 @@ type C = {
   canMove: boolean;
   canPaste: boolean;
   canDelete: boolean;
-  canAnalyze: boolean;
 };
 
 export type SearchResultsOverlaysProps = {
@@ -63,7 +62,6 @@ export type SearchResultsOverlaysProps = {
   onArchive: () => void;
   onExtract: () => void;
   onChecksum: () => void;
-  onAnalyze: () => void;
   onQuickShare: () => void;
   onShare: () => void;
   onDelete: () => void;
@@ -104,7 +102,6 @@ export function SearchResultsOverlays({
   onArchive,
   onExtract,
   onChecksum,
-  onAnalyze,
   onQuickShare,
   onShare,
   onDelete,
@@ -131,7 +128,6 @@ export function SearchResultsOverlays({
           onPaste={() => {}}
           onQuickShare={onQuickShare}
           onShare={onShare}
-          onAnalyze={onAnalyze}
           onToggleFavorite={() => {}}
           onDelete={onDelete}
           onClose={onContextMenuClose}

@@ -162,6 +162,12 @@ func (s *Server) handleCreateJob(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+	case jobs.TypeDiskAnalyze, jobs.TypeDuplicateFind:
+		if _, err := s.guard.Resolve(req.SourcePath); err != nil {
+			writeError(w, err)
+			return
+		}
+
 	default:
 		source, err := s.guard.Resolve(req.SourcePath)
 		if err != nil {
@@ -396,4 +402,62 @@ func (s *Server) handleResolveConflicts(w http.ResponseWriter, r *http.Request) 
 	} else {
 		writeJSON(w, http.StatusOK, map[string]any{"status": "resolved", "resumed": false, "remainingConflicts": remaining})
 	}
+}
+
+func (s *Server) handleDiskUsageResults(w http.ResponseWriter, r *http.Request) {
+	jobID := chi.URLParam(r, "id")
+	parentPath := r.URL.Query().Get("parent")
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	if offset < 0 {
+		offset = 0
+	}
+
+	results, err := s.jobs.ListDiskUsageResults(r.Context(), jobID, parentPath, limit, offset)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"results": results})
+}
+
+func (s *Server) handleDiskUsageSummary(w http.ResponseWriter, r *http.Request) {
+	jobID := chi.URLParam(r, "id")
+	summary, err := s.jobs.GetDiskUsageSummary(r.Context(), jobID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, summary)
+}
+
+func (s *Server) handleDuplicateResults(w http.ResponseWriter, r *http.Request) {
+	jobID := chi.URLParam(r, "id")
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if limit <= 0 || limit > 500 {
+		limit = 200
+	}
+	offset, _ := strconv.Atoi(r.URL.Query().Get("offset"))
+	if offset < 0 {
+		offset = 0
+	}
+	results, err := s.jobs.ListDuplicateResults(r.Context(), jobID, limit, offset)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"results": results})
+}
+
+func (s *Server) handleDuplicateSummary(w http.ResponseWriter, r *http.Request) {
+	jobID := chi.URLParam(r, "id")
+	summary, err := s.jobs.GetDuplicateSummary(r.Context(), jobID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, summary)
 }

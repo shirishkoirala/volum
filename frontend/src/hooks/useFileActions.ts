@@ -8,7 +8,6 @@ export function useFileActions() {
   const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [previewEntry, setPreviewEntry] = useState<FileEntry | null>(null);
   const [infoEntry, setInfoEntry] = useState<FileEntry | null>(null);
-  const [analyzePath, setAnalyzePath] = useState<string | null>(null);
   const [batchRenameOpen, setBatchRenameOpen] = useState(false);
   const [fileClipboard, setFileClipboard] = useState<ClipboardState>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -23,8 +22,6 @@ export function useFileActions() {
     setPreviewEntry,
     infoEntry,
     setInfoEntry,
-    analyzePath,
-    setAnalyzePath,
     batchRenameOpen,
     setBatchRenameOpen,
     fileClipboard,

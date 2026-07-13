@@ -5,14 +5,16 @@ import "time"
 type Type string
 
 const (
-	TypeCopy     Type = "copy"
-	TypeMove     Type = "move"
-	TypeTrash    Type = "trash"
-	TypeRestore  Type = "restore"
-	TypeUpload   Type = "upload"
-	TypeExtract  Type = "extract"
-	TypeArchive  Type = "archive"
-	TypeChecksum Type = "checksum"
+	TypeCopy          Type = "copy"
+	TypeMove          Type = "move"
+	TypeTrash         Type = "trash"
+	TypeRestore       Type = "restore"
+	TypeUpload        Type = "upload"
+	TypeExtract       Type = "extract"
+	TypeArchive       Type = "archive"
+	TypeChecksum      Type = "checksum"
+	TypeDiskAnalyze   Type = "disk_analyze"
+	TypeDuplicateFind Type = "duplicate_find"
 )
 
 type Status string

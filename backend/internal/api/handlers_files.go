@@ -298,20 +298,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"results": results})
 }
 
-func (s *Server) handleAnalyzeDiskUsage(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Query().Get("path")
-	if path == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "path is required"})
-		return
-	}
-	node, err := s.files.AnalyzeDiskUsage(path)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, node)
-}
-
 func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {
 	path, info, err := s.files.DownloadPath(r.URL.Query().Get("path"))
 	if err != nil {

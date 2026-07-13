@@ -32,7 +32,6 @@ interface FileCommandDeps {
   setPreviewEntry: React.Dispatch<React.SetStateAction<FileEntry | null>>;
   setInfoEntry: React.Dispatch<React.SetStateAction<FileEntry | null>>;
   setBatchRenameOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setAnalyzePath: React.Dispatch<React.SetStateAction<string | null>>;
   fileClipboard: ClipboardState;
   setFileClipboard: React.Dispatch<React.SetStateAction<ClipboardState>>;
   setConfirmDialog: React.Dispatch<React.SetStateAction<ConfirmDialogState>>;
@@ -90,7 +89,6 @@ export function useFileCommands(deps: FileCommandDeps) {
     setPreviewEntry,
     setInfoEntry,
     setBatchRenameOpen,
-    setAnalyzePath,
     fileClipboard,
     setFileClipboard,
     setConfirmDialog,
@@ -275,16 +273,14 @@ export function useFileCommands(deps: FileCommandDeps) {
     contextMenu,
   });
 
-  const { handleCreateArchive, handleExtractArchive, handleAnalyze, handleCreateChecksum } =
-    useArchiveCommands({
-      currentPath,
-      folderSuggestions,
-      selectedEntries,
-      setContextMenu,
-      setTextInputDialog,
-      setAnalyzePath,
-      runAction,
-    });
+  const { handleCreateArchive, handleExtractArchive, handleCreateChecksum } = useArchiveCommands({
+    currentPath,
+    folderSuggestions,
+    selectedEntries,
+    setContextMenu,
+    setTextInputDialog,
+    runAction,
+  });
 
   // ── Trash context menu handler ────────────────────────
 
@@ -373,7 +369,6 @@ export function useFileCommands(deps: FileCommandDeps) {
     ...transferCommands,
     handleCreateArchive,
     handleExtractArchive,
-    handleAnalyze,
     handleCreateChecksum,
     handleUploadFiles,
     handleFileAreaKeyDown,

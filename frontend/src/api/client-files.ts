@@ -90,13 +90,40 @@ export type SearchResponse = {
   results: SearchResult[] | null;
 };
 
-export type DiskUsageNode = {
-  name: string;
+export type DiskUsageResult = {
+  jobId: string;
   path: string;
-  size: number;
+  parentPath: string;
+  name: string;
   isDir: boolean;
-  percentage: number;
-  children: DiskUsageNode[];
+  sizeBytes: number;
+  fileCount: number;
+  dirCount: number;
+};
+
+export type DuplicateFileEntry = {
+  jobId: string;
+  groupId: number;
+  path: string;
+  sizeBytes: number;
+  checksum: string;
+  modifiedAt?: string;
+};
+
+export type DuplicateSummary = {
+  jobId: string;
+  groupCount: number;
+  fileCount: number;
+  reclaimableBytes: number;
+  skippedCount: number;
+};
+
+export type DiskUsageSummary = {
+  jobId: string;
+  totalBytes: number;
+  fileCount: number;
+  directoryCount: number;
+  skippedCount: number;
 };
 
 export type StatusResponse = {
@@ -194,9 +221,33 @@ export function rawUrl(path: string) {
   return apiUrl(`/api/files/raw?${params.toString()}`);
 }
 
-export function analyzeDiskUsage(path: string) {
-  const params = new URLSearchParams({ path });
-  return request<DiskUsageNode>(`/api/files/analyze?${params.toString()}`);
+export function getDiskUsageResults(jobId: string, parentPath: string, limit = 200, offset = 0) {
+  const params = new URLSearchParams({
+    parent: parentPath,
+    limit: String(limit),
+    offset: String(offset),
+  });
+  return request<{ results: DiskUsageResult[] }>(
+    `/api/jobs/${jobId}/disk-usage?${params.toString()}`,
+  );
+}
+
+export function getDiskUsageSummary(jobId: string) {
+  return request<DiskUsageSummary>(`/api/jobs/${jobId}/disk-usage/summary`);
+}
+
+export function getDuplicateResults(jobId: string, limit = 200, offset = 0) {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  return request<{ results: DuplicateFileEntry[] }>(
+    `/api/jobs/${jobId}/duplicates?${params.toString()}`,
+  );
+}
+
+export function getDuplicateSummary(jobId: string) {
+  return request<DuplicateSummary>(`/api/jobs/${jobId}/duplicates/summary`);
 }
 
 export function searchFiles(query: string, limit = 50) {
