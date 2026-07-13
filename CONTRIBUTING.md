@@ -7,8 +7,7 @@ permissions, authentication, and existing data.
 ## Before You Start
 
 - Check the [roadmap](docs/roadmap.md) for current priorities.
-- Check the
-  [contributor experience roadmap](docs/contributor-experience-roadmap.md) for
+- Check the contributor experience roadmap for
   planned repository and onboarding improvements.
 - Search existing issues and pull requests before starting overlapping work.
 - For a large feature, security-sensitive change, schema change, or new
@@ -322,5 +321,5 @@ Keep `README.md` focused on the product and first run. Put contributor workflow
 and code conventions here. Put deployment details in `docs/reverse-proxy.md`,
 release operations in `docs/release.md`, and planned product work in
 `docs/roadmap.md`. Track onboarding and repository-maintenance improvements in
-`docs/contributor-experience-roadmap.md`. Keep runtime boundaries and common
+the contributor experience. Keep runtime boundaries and common
 change paths in `docs/architecture.md` and `docs/change-guides/`.

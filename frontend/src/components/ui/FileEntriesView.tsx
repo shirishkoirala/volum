@@ -9,7 +9,6 @@ import {
 } from 'react';
 import { FileItem } from './FileItem';
 import type { FileEntry } from '../../api/client';
-import { isPreviewableFile, openFileExternally } from '../../utils/preview';
 import type { RenameState } from '../../types';
 import { useIncrementalEntries } from '../../hooks/useIncrementalEntries';
 type ViewMode = 'list' | 'grid';
@@ -66,11 +65,7 @@ function handleFileClick(
     onNavigate(entry.path);
     return;
   }
-  if (isPreviewableFile(entry.name)) {
-    onPreview(entry);
-  } else {
-    openFileExternally(entry.path);
-  }
+  onPreview(entry);
 }
 
 export function FileEntriesView({

@@ -110,7 +110,7 @@ All application and Compose variables are listed in the
 
 Development and contribution notes live in [CONTRIBUTING.md](CONTRIBUTING.md).
 Planned onboarding and repository improvements are tracked in the
-[contributor experience roadmap](docs/contributor-experience-roadmap.md).
+the contributor experience.
 The [architecture overview](docs/architecture.md) explains request, path,
 upload, job, SSE, and database flows.
 

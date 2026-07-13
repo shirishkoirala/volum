@@ -5,6 +5,23 @@ import { login } from '../api/client';
 import type { Session } from '../api/client';
 import styles from './LoginScreen.module.css';
 
+type SavedUser = { username: string; avatarDataUrl?: string };
+
+function loadSavedUser(): SavedUser | null {
+  try {
+    const raw = localStorage.getItem('volum_last_user');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.username !== 'string' || !parsed.username) return null;
+    return {
+      username: parsed.username,
+      avatarDataUrl: typeof parsed.avatarDataUrl === 'string' ? parsed.avatarDataUrl : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
 type LoginScreenProps = {
   onLoggedIn: (session: Session) => void;
   onToggleTheme: () => void;
@@ -12,7 +29,8 @@ type LoginScreenProps = {
 };
 
 export function LoginScreen({ onLoggedIn, onToggleTheme, theme }: LoginScreenProps) {
-  const [username, setUsername] = useState(() => localStorage.getItem('volum_last_user') ?? '');
+  const [savedUser] = useState(loadSavedUser);
+  const [username, setUsername] = useState(savedUser?.username ?? '');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +53,17 @@ export function LoginScreen({ onLoggedIn, onToggleTheme, theme }: LoginScreenPro
       </div>
       <ThemeToggle theme={theme} onClick={onToggleTheme} className={styles.themeToggle} size={17} />
       <form className={styles.loginPanel} onSubmit={handleSubmit}>
+        <div className={styles.profileTile}>
+          {savedUser?.avatarDataUrl ? (
+            <img
+              className={styles.profileImage}
+              src={savedUser.avatarDataUrl}
+              alt={`Profile for ${savedUser.username}`}
+            />
+          ) : (
+            <Icon name="avatar-default" size={30} />
+          )}
+        </div>
         <div className={styles.loginHeading}>
           <h1>Sign in to Volum</h1>
           <p>Access your files and services.</p>
