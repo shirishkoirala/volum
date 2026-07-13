@@ -47,5 +47,3 @@ func TestDirSizeCacheNoTTL(t *testing.T) {
 		t.Fatalf("expected 512, got %d", size)
 	}
 }
-
-

@@ -29,12 +29,14 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (session?.authenticated && session.username) localStorage.setItem('volum_last_user', session.username);
+    if (session?.authenticated && session.username)
+      localStorage.setItem('volum_last_user', session.username);
   }, [session]);
 
   const handleLoggedIn = (nextSession: Session) => setSession(nextSession);
   const handleLogout = () => {
-    if (session?.authenticated && session.username) localStorage.setItem('volum_last_user', session.username);
+    if (session?.authenticated && session.username)
+      localStorage.setItem('volum_last_user', session.username);
     void logout()
       .then(setSession)
       .catch(() => setSession(null));

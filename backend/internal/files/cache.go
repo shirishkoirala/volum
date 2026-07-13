@@ -41,5 +41,3 @@ func (c *DirSizeCache) Set(publicPath string, size int64) {
 	defer c.mu.Unlock()
 	c.data[publicPath] = dirSizeEntry{size: size, computedAt: time.Now()}
 }
-
-

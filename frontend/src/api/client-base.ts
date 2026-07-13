@@ -29,4 +29,3 @@ export async function request<T>(url: string, options?: RequestInit): Promise<T>
 
   return response.json() as Promise<T>;
 }
-

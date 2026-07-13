@@ -664,7 +664,12 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           onChecksum={fileCommands.handleCreateChecksum}
           onPaste={fileCommands.handlePaste}
           onQuickShare={fileCommands.handleQuickShare}
-          onShare={() => dialogs.setShareDialogPath({ path: fileActions.contextMenu!.entry.path, name: fileActions.contextMenu!.entry.name })}
+          onShare={() =>
+            dialogs.setShareDialogPath({
+              path: fileActions.contextMenu!.entry.path,
+              name: fileActions.contextMenu!.entry.name,
+            })
+          }
           onAnalyze={fileCommands.handleAnalyze}
           onToggleFavorite={() => {
             const entry = fileActions.contextMenu!.entry;
@@ -734,7 +739,12 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           entry={fileActions.previewEntry}
           onClose={() => fileActions.setPreviewEntry(null)}
           onDownload={() => fileCommands.handleDownload(fileActions.previewEntry!)}
-          onShare={() => dialogs.setShareDialogPath({ path: fileActions.previewEntry!.path, name: fileActions.previewEntry!.name })}
+          onShare={() =>
+            dialogs.setShareDialogPath({
+              path: fileActions.previewEntry!.path,
+              name: fileActions.previewEntry!.name,
+            })
+          }
           onPrevious={
             previousPreviewEntry ? () => setPreviewTarget(previousPreviewEntry) : undefined
           }
@@ -744,7 +754,13 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           positionLabel={previewPositionLabel}
         />
       )}
-      {fileActions.infoEntry && <InfoPanel entry={fileActions.infoEntry} onClose={() => fileActions.setInfoEntry(null)} onRefresh={refresh} />}
+      {fileActions.infoEntry && (
+        <InfoPanel
+          entry={fileActions.infoEntry}
+          onClose={() => fileActions.setInfoEntry(null)}
+          onRefresh={refresh}
+        />
+      )}
       {fileActions.batchRenameOpen && (
         <BatchRenameModal
           entries={selection.selectedEntries}
@@ -755,8 +771,18 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           }}
         />
       )}
-      {dialogs.confirmDialog && <ConfirmDialog dialog={dialogs.confirmDialog} onClose={() => dialogs.setConfirmDialog(null)} />}
-      {dialogs.textInputDialog && <TextInputDialog dialog={dialogs.textInputDialog} onClose={() => dialogs.setTextInputDialog(null)} />}
+      {dialogs.confirmDialog && (
+        <ConfirmDialog
+          dialog={dialogs.confirmDialog}
+          onClose={() => dialogs.setConfirmDialog(null)}
+        />
+      )}
+      {dialogs.textInputDialog && (
+        <TextInputDialog
+          dialog={dialogs.textInputDialog}
+          onClose={() => dialogs.setTextInputDialog(null)}
+        />
+      )}
       {dialogs.transferDialog && (
         <TransferDialog
           dialog={dialogs.transferDialog}
@@ -772,9 +798,16 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           onClose={() => dialogs.setShareDialogPath(null)}
         />
       )}
-      {fileActions.shortcutsOpen && <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />}
+      {fileActions.shortcutsOpen && (
+        <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />
+      )}
       {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
-      {fileActions.analyzePath && <DiskUsageAnalyzer path={fileActions.analyzePath} onClose={() => fileActions.setAnalyzePath(null)} />}
+      {fileActions.analyzePath && (
+        <DiskUsageAnalyzer
+          path={fileActions.analyzePath}
+          onClose={() => fileActions.setAnalyzePath(null)}
+        />
+      )}
     </>
   );
 });

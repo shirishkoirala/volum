@@ -253,5 +253,3 @@ func (s *Server) uploadPart(ctx context.Context, targetPublic, targetDir string,
 	}
 	return job, nil
 }
-
-
