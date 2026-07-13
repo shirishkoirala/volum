@@ -42,30 +42,4 @@ func (c *DirSizeCache) Set(publicPath string, size int64) {
 	c.data[publicPath] = dirSizeEntry{size: size, computedAt: time.Now()}
 }
 
-func (c *DirSizeCache) GetMap(publicPaths []string) map[string]int64 {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	now := time.Now()
-	out := make(map[string]int64, len(publicPaths))
-	for _, p := range publicPaths {
-		e, ok := c.data[p]
-		if ok && (c.ttl <= 0 || now.Sub(e.computedAt) <= c.ttl) {
-			out[p] = e.size
-		}
-	}
-	return out
-}
 
-func (c *DirSizeCache) PurgeExpired() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.ttl <= 0 {
-		return
-	}
-	cutoff := time.Now().Add(-c.ttl)
-	for k, e := range c.data {
-		if e.computedAt.Before(cutoff) {
-			delete(c.data, k)
-		}
-	}
-}
