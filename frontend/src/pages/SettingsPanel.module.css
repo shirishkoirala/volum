@@ -8,16 +8,27 @@
   width: 100%;
 }
 
-.settingsFilter {
+.settingsSearch {
+  align-items: center;
   -webkit-backdrop-filter: var(--glass-backdrop);
   backdrop-filter: var(--glass-backdrop);
   background: var(--glass-control-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  display: flex;
+  gap: var(--space-xs);
+  padding: 0 var(--space-sm);
+}
+
+.settingsFilter {
+  background: transparent;
+  border: 0;
+  flex: 1;
   font-size: var(--font-size-sm);
-  padding: var(--space-sm) var(--space-md);
-  width: 100%;
-  transition: border-color var(--transition-fast);
+  min-width: 0;
+  outline: 0;
+  padding: var(--space-sm) 0;
 }
 
 .settingsFilter::placeholder {
@@ -458,25 +469,31 @@
 
 @media (max-width: 760px) {
   .settingsNav {
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex: 0 0 auto;
     gap: var(--space-xs);
-    overflow-x: auto;
+    overflow: hidden;
     padding: var(--space-sm);
   }
 
-  .settingsFilter {
+  .settingsSearch {
     width: 100%;
   }
 
   .settingsNavList {
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
   }
 
   .settingsNavItem {
+    justify-content: center;
     min-height: 44px;
-    padding: 0 var(--space-sm);
+    padding: 0;
+    width: 44px;
+  }
+
+  .settingsNavLabel {
+    display: none;
   }
 
   .settingsSection {

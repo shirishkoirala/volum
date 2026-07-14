@@ -1,8 +1,38 @@
 .tabs {
   display: flex;
-  gap: var(--space-xs);
+  flex-direction: column;
+  gap: var(--space-xxs);
+  padding: var(--space-sm);
+  width: 100%;
 }
 
+.tab {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-md);
+  min-height: 36px;
+  padding: 0 var(--space-md);
+  text-align: left;
+  width: 100%;
+}
+
+.tab:hover {
+  background: var(--glass-hover-bg);
+  color: var(--color-text);
+}
+
+.tabActive {
+  background: var(--glass-selected-bg);
+  color: var(--color-brand-text);
+  font-weight: 600;
+}
+
+.tab:focus-visible,
 .rootBtn:focus-visible,
 .scanBtn:focus-visible,
 .secondaryBtn:focus-visible,
@@ -180,6 +210,17 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .tabs {
+    flex-direction: row;
+  }
+
+  .tab {
+    justify-content: center;
+    min-height: 44px;
+  }
 }
 
 .errorBanner {

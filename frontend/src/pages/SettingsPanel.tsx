@@ -148,13 +148,17 @@ export function SettingsPanel({
 
   const sidebarNav = (
     <nav className={styles.settingsNav} aria-label="Settings categories">
-      <input
-        type="text"
-        className={styles.settingsFilter}
-        placeholder="Search settings..."
-        value={filterQuery}
-        onChange={(e) => setFilterQuery(e.target.value)}
-      />
+      <div className={styles.settingsSearch}>
+        <Icon name="edit-find" size={16} />
+        <input
+          type="search"
+          className={styles.settingsFilter}
+          placeholder="Search settings..."
+          aria-label="Search settings"
+          value={filterQuery}
+          onChange={(e) => setFilterQuery(e.target.value)}
+        />
+      </div>
       <ul className={styles.settingsNavList}>
         {(filterQuery.trim() ? filteredCategories : CATEGORIES).map((cat) => (
           <li key={cat.id}>
@@ -165,9 +169,11 @@ export function SettingsPanel({
                 setFilterQuery('');
               }}
               aria-current={activeCategory === cat.id ? 'true' : undefined}
+              aria-label={cat.label}
+              title={cat.label}
             >
               <Icon name={cat.icon} size={16} />
-              {cat.label}
+              <span className={styles.settingsNavLabel}>{cat.label}</span>
             </button>
           </li>
         ))}

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, FileIcon, FolderIcon } from '../components/ui/Icon';
-import { IconButton } from '../components/ui/shared';
 import { AppPanel } from '../components/layout/AppPanel';
 import {
   cancelJob,
@@ -420,30 +419,29 @@ export function StorageAnalyzerView({
   return (
     <AppPanel
       as="main"
+      layout="split"
       padding="none"
       scroll={false}
-      header={
+      sidebar={
         <div className={styles.tabs} role="tablist" aria-label="Storage analysis mode">
-          <IconButton
-            active={section === 'disk-usage'}
+          <button
+            className={`${styles.tab}${section === 'disk-usage' ? ` ${styles.tabActive}` : ''}`}
             onClick={() => setSection('disk-usage')}
             role="tab"
             aria-selected={section === 'disk-usage'}
-            aria-label="Disk usage"
-            title="Disk usage"
           >
             <Icon name="drive-harddisk" size={18} />
-          </IconButton>
-          <IconButton
-            active={section === 'duplicates'}
+            <span>Disk Usage</span>
+          </button>
+          <button
+            className={`${styles.tab}${section === 'duplicates' ? ` ${styles.tabActive}` : ''}`}
             onClick={() => setSection('duplicates')}
             role="tab"
             aria-selected={section === 'duplicates'}
-            aria-label="Duplicates"
-            title="Duplicates"
           >
             <Icon name="edit-copy" size={18} />
-          </IconButton>
+            <span>Duplicates</span>
+          </button>
         </div>
       }
     >
