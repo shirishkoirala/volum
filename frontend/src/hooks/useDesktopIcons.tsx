@@ -181,7 +181,7 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
     items.push({
       id: 'storage-analyzer',
       type: 'storage-analyzer',
-      label: 'Storage Analyzer',
+      label: 'Space',
       ariaLabel: 'Open Storage Analyzer',
       onClick: onOpenStorageAnalyzer,
       icon: (

@@ -93,7 +93,7 @@ export function useNavigation(
       },
       {
         id: 'storage-analyzer',
-        label: 'Storage',
+        label: 'Space',
         icon: storageAnalyzerIconUrl(),
         active: activeView === 'storage-analyzer',
       },
