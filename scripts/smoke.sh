@@ -45,7 +45,7 @@ docker compose -f "${COMPOSE}" up --build -d 2>&1 | tail -1
 BASE="http://localhost:${PORT}"
 
 # Wait for the service to be ready
-for i in $(seq 1 30); do
+for _ in $(seq 1 30); do
   if curl -sf "${BASE}/healthz" > /dev/null 2>&1; then
     break
   fi
