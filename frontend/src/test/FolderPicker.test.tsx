@@ -84,11 +84,16 @@ describe('FolderPicker', () => {
     expect(onSelect).toHaveBeenCalledWith('/storage');
   });
 
-  it('calls onSelect when a folder item is clicked', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ entries: mockSubdirs }),
-    });
+  it('navigates before choosing a folder', async () => {
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ entries: mockSubdirs }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ entries: [] }),
+      });
 
     const onSelect = vi.fn();
     const user = userEvent.setup();
@@ -99,6 +104,10 @@ describe('FolderPicker', () => {
     });
 
     await user.click(screen.getByText('Documents'));
+    await waitFor(() => expect(screen.getByText('/storage/Documents')).toBeInTheDocument());
+    expect(onSelect).not.toHaveBeenCalled();
+
+    await user.click(screen.getByText('Choose'));
     expect(onSelect).toHaveBeenCalledWith('/storage/Documents');
   });
 

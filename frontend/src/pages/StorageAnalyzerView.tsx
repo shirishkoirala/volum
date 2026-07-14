@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, FileIcon, FolderIcon } from '../components/ui/Icon';
 import { AppPanel } from '../components/layout/AppPanel';
+import { FolderPicker } from '../components/input/FolderPicker';
 import {
   cancelJob,
   createJob,
@@ -121,16 +122,20 @@ function PathPicker({
   loading: boolean;
 }) {
   const [customPath, setCustomPath] = useState('/storage');
+  const [pickerOpen, setPickerOpen] = useState(false);
   return (
     <div className={styles.picker}>
       <h3 className={styles.pickerTitle}>Scan a directory</h3>
+      <p className={styles.pickerDescription}>Choose a root or enter a folder path to analyze.</p>
       <div className={styles.pickerRoots}>
         {roots.map((r) => (
           <button
             key={r.path}
-            className={styles.rootBtn}
-            onClick={() => onStartScan(r.path)}
+            className={`${styles.rootBtn}${customPath === r.path ? ` ${styles.rootBtnSelected}` : ''}`}
+            onClick={() => setCustomPath(r.path)}
             disabled={loading}
+            type="button"
+            aria-pressed={customPath === r.path}
           >
             <FolderIcon size={20} />
             <span>{r.label || r.path}</span>
@@ -138,21 +143,46 @@ function PathPicker({
         ))}
       </div>
       <div className={styles.pickerCustom}>
-        <input
-          className={styles.pickerInput}
-          value={customPath}
-          onChange={(e) => setCustomPath(e.target.value)}
-          placeholder="Enter path..."
-        />
+        <div className={styles.pathField}>
+          <input
+            className={styles.pickerInput}
+            value={customPath}
+            onChange={(e) => setCustomPath(e.target.value)}
+            placeholder="Enter path..."
+          />
+          <button
+            className={styles.browseBtn}
+            onClick={() => setPickerOpen((open) => !open)}
+            title="Choose folder"
+            aria-label="Choose folder"
+            type="button"
+          >
+            <Icon name="folder" size={16} />
+          </button>
+        </div>
         <button
           className={styles.scanBtn}
           onClick={() => onStartScan(customPath)}
           disabled={loading || !customPath}
+          type="button"
         >
           {loading ? <Icon name="view-refresh" size={16} /> : <Icon name="edit-find" size={16} />}
           <span>Scan</span>
         </button>
       </div>
+      {pickerOpen && (
+        <div className={styles.pickerBrowser}>
+          <FolderPicker
+            initialPath={customPath}
+            title="Select folder to scan"
+            onSelect={(path) => {
+              setCustomPath(path);
+              setPickerOpen(false);
+            }}
+            onClose={() => setPickerOpen(false)}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -500,9 +530,11 @@ export function StorageAnalyzerView({
                     className={styles.secondaryBtn}
                     onClick={() => scanPath && void startScan(scanPath)}
                   >
+                    <Icon name="view-refresh" size={16} />
                     Rescan
                   </button>
                   <button className={styles.secondaryBtn} onClick={resetDiskScan}>
+                    <Icon name="folder" size={16} />
                     Scan another folder
                   </button>
                 </div>
@@ -582,6 +614,7 @@ export function StorageAnalyzerView({
             <div className={styles.status}>
               <span>Scan cancelled.</span>
               <button className={styles.secondaryBtn} onClick={resetDiskScan}>
+                <Icon name="folder" size={16} />
                 Scan another folder
               </button>
             </div>
@@ -641,9 +674,11 @@ export function StorageAnalyzerView({
                     className={styles.secondaryBtn}
                     onClick={() => dupPath && void startDupScan(dupPath)}
                   >
+                    <Icon name="view-refresh" size={16} />
                     Rescan
                   </button>
                   <button className={styles.secondaryBtn} onClick={resetDuplicateScan}>
+                    <Icon name="folder" size={16} />
                     Scan another folder
                   </button>
                 </div>
@@ -749,6 +784,7 @@ export function StorageAnalyzerView({
                 compact
               >
                 <button className={styles.secondaryBtn} onClick={resetDuplicateScan}>
+                  <Icon name="folder" size={16} />
                   Scan another folder
                 </button>
               </EmptyState>
@@ -768,6 +804,7 @@ export function StorageAnalyzerView({
             <div className={styles.status}>
               <span>Duplicate scan cancelled.</span>
               <button className={styles.secondaryBtn} onClick={resetDuplicateScan}>
+                <Icon name="folder" size={16} />
                 Scan another folder
               </button>
             </div>
