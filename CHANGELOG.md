@@ -5,13 +5,30 @@ Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
+## v0.2.0 - 2026-07-14
+
 ### Added
+- Storage Analyzer app with disk-usage scanning and duplicate finding through
+  persistent background jobs
+- Paginated large-folder browsing with incremental rendering and defensive
+  preview size limits
+- Search results page with file actions and folder analysis
+- Per-file conflict resolution and checksum-based identical-file skipping
+- Service health checks, live status events, and optional browser notifications
+- Desktop wallpaper settings, pinned folder shortcuts, and a top-bar calendar
 - Route-level middleware audit tests covering ~80 routes across public, auth,
   and admin groups
 - Dependabot configuration for GitHub Actions, npm, Go modules, and Docker
 - READMEs for `frontend/src/contexts/` and `tools/visual/` directories
 
 ### Changed
+- Unified the desktop, mobile, and windowed app layouts with shared frosted
+  surfaces, navigation, hover states, and light-theme contrast
+- Reorganized frontend components by role and reduced `App.tsx` to a thin
+  routing shell
+- Split large backend handlers, workers, stores, and frontend API modules into
+  focused files
+- Improved job labels, action icons, storage navigation, and folder selection
 - Split `handlers_upload.go` (698 lines) into `upload_common.go`,
   `upload_multipart.go`, and `upload_chunk.go`
 - Split `worker.go` (776 lines) into `worker.go`, `transfer.go`, and
@@ -26,11 +43,16 @@ Changelog](https://keepachangelog.com/).
 - Extracted `useTrashCommands`, `useTransferCommands`, `useDesktopIcons` hooks
 
 ### Fixed
+- Preserved the signed-out user's avatar and username across page refreshes
+- Made trash jobs retry-safe and restored folder analysis from search results
+- Hardened uploads, origin validation, and cleanup of partial failures
+- Fixed mobile views rendering alongside windowed apps and aligned responsive
+  app gutters and headers
 - Upload filenames with leading/trailing spaces are now trimmed before storage
 - Documentation audit: fixed stale references to removed files (`server_test.go`,
   `handlers_upload.go`, `visual-audit.mjs`) and stale file sizes across all docs
 
-### Changed
+### Documentation
 - Updated docs to reference `make smoke-proxy`, `make visual-audit` instead of
   raw script paths
 - Updated change guides to reference domain-specific `client-*.ts` files instead
