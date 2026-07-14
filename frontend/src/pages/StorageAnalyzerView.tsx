@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, FileIcon, FolderIcon } from '../components/ui/Icon';
+import { IconButton } from '../components/ui/shared';
 import { AppPanel } from '../components/layout/AppPanel';
 import {
   cancelJob,
@@ -423,22 +424,26 @@ export function StorageAnalyzerView({
       scroll={false}
       header={
         <div className={styles.tabs} role="tablist" aria-label="Storage analysis mode">
-          <button
-            className={`${styles.tab} ${section === 'disk-usage' ? styles.tabActive : ''}`}
+          <IconButton
+            active={section === 'disk-usage'}
             onClick={() => setSection('disk-usage')}
             role="tab"
             aria-selected={section === 'disk-usage'}
+            aria-label="Disk usage"
+            title="Disk usage"
           >
-            Disk Usage
-          </button>
-          <button
-            className={`${styles.tab} ${section === 'duplicates' ? styles.tabActive : ''}`}
+            <Icon name="drive-harddisk" size={18} />
+          </IconButton>
+          <IconButton
+            active={section === 'duplicates'}
             onClick={() => setSection('duplicates')}
             role="tab"
             aria-selected={section === 'duplicates'}
+            aria-label="Duplicates"
+            title="Duplicates"
           >
-            Duplicates
-          </button>
+            <Icon name="edit-copy" size={18} />
+          </IconButton>
         </div>
       }
     >

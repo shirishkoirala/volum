@@ -3,28 +3,6 @@
   gap: var(--space-xs);
 }
 
-.tab {
-  padding: var(--space-xs) var(--space-md);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-}
-
-.tab:hover {
-  color: var(--color-text);
-  background: var(--color-surface-hover);
-}
-
-.tabActive {
-  color: var(--color-text);
-  background: var(--color-surface);
-  border-color: var(--color-border);
-}
-
-.tab:focus-visible,
 .rootBtn:focus-visible,
 .scanBtn:focus-visible,
 .secondaryBtn:focus-visible,

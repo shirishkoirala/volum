@@ -5,7 +5,7 @@ import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from '../components/ui/ProgressBar';
-import { Button, StatusBadge } from '../components/ui/shared';
+import { Button, IconButton, StatusBadge } from '../components/ui/shared';
 import { formatBytes, formatDuration, formatGridDate } from '../utils/format';
 import { useJobs } from '../hooks/useJobs';
 import { useToasts } from '../hooks/useToasts';
@@ -201,14 +201,18 @@ export function JobsPage({ session, sessionLoading }: JobsPageProps) {
     jobs.length > 0 ? (
       <div className={styles.jobToolbar}>
         {hasFailed && (
-          <Button size="compact" onClick={handleClearFailed}>
-            Clear failed
-          </Button>
+          <IconButton onClick={handleClearFailed} aria-label="Clear failed" title="Clear failed">
+            <Icon name="dialog-warning" size={18} />
+          </IconButton>
         )}
         {hasCompleted && (
-          <Button size="compact" onClick={handleClearCompleted}>
-            Clear completed
-          </Button>
+          <IconButton
+            onClick={handleClearCompleted}
+            aria-label="Clear completed"
+            title="Clear completed"
+          >
+            <Icon name="window-close" size={18} />
+          </IconButton>
         )}
       </div>
     ) : null;
