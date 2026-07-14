@@ -52,6 +52,7 @@
 }
 
 .body {
+  background: var(--app-surface-body-bg);
   color: var(--color-text);
   display: flex;
   flex-direction: column;

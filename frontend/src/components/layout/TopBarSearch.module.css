@@ -149,8 +149,8 @@
 
 @media (max-width: 760px) {
   .searchButton {
-    height: 44px;
-    width: 44px;
+    height: 36px;
+    width: 36px;
   }
 
   .searchBox {

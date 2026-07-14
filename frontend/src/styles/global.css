@@ -105,27 +105,6 @@ body,
   overflow: hidden;
 }
 
-.glassPanel.mobileAppPanel {
-  background:
-    linear-gradient(
-      180deg,
-      var(--app-surface-header-bg) 0,
-      var(--app-surface-header-bg) 44px,
-      var(--app-surface-body-bg) 44px,
-      var(--app-surface-body-bg) 100%
-    ),
-    var(--app-surface-bg);
-}
-
-@media (max-width: 760px) {
-  .mobileAppPanel {
-    border-color: color-mix(in srgb, var(--app-surface-border) 82%, white 18%);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, white 24%, transparent);
-    outline: 1px solid color-mix(in srgb, white 10%, transparent);
-    outline-offset: -2px;
-  }
-}
-
 /* Buttons use an external keyboard ring; form controls use their own border. */
 button:focus-visible {
   outline: 2px solid var(--color-brand);

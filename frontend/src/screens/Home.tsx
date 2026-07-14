@@ -457,9 +457,16 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     } else if (!isMobile && previousMobileRef.current && analyzerTransferredToMobileRef.current) {
       nav.setShowingStorageAnalyzer(false);
       analyzerTransferredToMobileRef.current = false;
+    } else if (
+      !isMobile &&
+      previousMobileRef.current &&
+      focusedWindow?.winType === 'drives' &&
+      nav.activeView === 'drives'
+    ) {
+      navActions.resetToDesktopView();
     }
     previousMobileRef.current = isMobile;
-  }, [focusedWindow?.winType, isMobile, nav]);
+  }, [focusedWindow?.winType, isMobile, nav, navActions]);
 
   const focusedCommands = focusedWindow
     ? (commandsMap[focusedWindow.id] ?? {})
@@ -584,7 +591,10 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
               shellStatusVisible={showStatusBar}
             />
 
-            <section className={styles.workspace} onClick={selection.handleWorkspaceClick}>
+            <section
+              className={`${styles.workspace}${isMobile && nav.activeView !== 'desktop' ? ` ${styles.mobileAppWorkspace}` : ''}`}
+              onClick={selection.handleWorkspaceClick}
+            >
               {nav.activeView === 'desktop' && (
                 <DesktopView
                   trashEntries={browser.trashEntries}

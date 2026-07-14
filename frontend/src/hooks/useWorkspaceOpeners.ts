@@ -76,6 +76,7 @@ export function useWorkspaceOpeners({
       return;
     }
 
+    navActions.resetToDesktopView();
     wm.toggleWindow('drives', {
       title: 'Drives',
       icon: multidiskIconUrl(),
@@ -84,7 +85,7 @@ export function useWorkspaceOpeners({
       width: STANDARD_WINDOW_W,
       height: STANDARD_WINDOW_H,
     });
-  }, [isMobile, nav, wm]);
+  }, [isMobile, nav, navActions, wm]);
 
   const openTrash = useCallback(() => {
     if (isMobile) {
