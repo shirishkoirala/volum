@@ -14,6 +14,7 @@ import {
   Clipboard,
   Copy,
   Download,
+  Eraser,
   Eye,
   EyeOff,
   FilePlus2,
@@ -75,6 +76,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'edit-cut': Scissors,
   'edit-delete': Trash2,
   'edit-download': Download,
+  'edit-clear': Eraser,
   'edit-find': Search,
   'edit-paste': Clipboard,
   'edit-rename': Pencil,
@@ -123,6 +125,10 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'job-extract': FileInput,
   'job-upload': Upload,
   'job-checksum': ListChecks,
+  'job-trash': Trash2,
+  'job-restore': RotateCcw,
+  'job-disk_analyze': HardDrive,
+  'job-duplicate_find': Copy,
 };
 
 export function Icon({ name, size = 22, className }: IconProps) {

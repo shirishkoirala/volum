@@ -7,6 +7,7 @@ import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { Button, IconButton, StatusBadge } from '../components/ui/shared';
 import { formatBytes, formatDuration, formatGridDate } from '../utils/format';
+import { makeJobLabel } from '../utils/jobs';
 import { useJobs } from '../hooks/useJobs';
 import { useToasts } from '../hooks/useToasts';
 import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
@@ -68,7 +69,7 @@ function JobItem({
       <div className={styles.jobTitleRow}>
         <span className={styles.jobTitleLabel}>
           <Icon name={`job-${job.type}`} size={15} />
-          <strong>{job.type}</strong>
+          <strong>{makeJobLabel(job.type, '')}</strong>
         </span>
         <StatusBadge variant={jobVariant(job.status)}>{job.status}</StatusBadge>
       </div>
@@ -211,7 +212,7 @@ export function JobsPage({ session, sessionLoading }: JobsPageProps) {
             aria-label="Clear completed"
             title="Clear completed"
           >
-            <Icon name="window-close" size={18} />
+            <Icon name="edit-clear" size={18} />
           </IconButton>
         )}
       </div>

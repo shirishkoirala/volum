@@ -82,7 +82,7 @@
 }
 
 .rootBtn:hover:not(:disabled) {
-  background: var(--color-surface-hover);
+  background: var(--glass-hover-bg);
   border-color: var(--color-brand);
 }
 
@@ -193,7 +193,7 @@
 }
 
 .secondaryBtn:hover {
-  background: var(--color-surface-hover);
+  background: var(--glass-hover-bg);
 }
 
 .currentItem {
@@ -326,7 +326,7 @@
 }
 
 .loadRootBtn:hover:not(:disabled) {
-  background: var(--color-surface-hover);
+  background: var(--glass-hover-bg);
 }
 
 .loadRootBtn:disabled {
@@ -348,7 +348,7 @@
 }
 
 .dirRow:hover {
-  background: var(--color-surface-hover);
+  background: var(--glass-hover-bg);
 }
 
 .chevron {
@@ -451,7 +451,7 @@
 }
 
 .dupFile:hover {
-  background: var(--color-surface-hover);
+  background: var(--glass-hover-bg);
 }
 
 .dupCheck {

@@ -38,7 +38,7 @@
   width: 28px;
 }
 
-.closeBtn:hover {
+.controlBtn.closeBtn:hover {
   background: var(--color-danger);
   color: var(--color-on-accent);
 }

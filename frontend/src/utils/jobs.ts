@@ -5,7 +5,13 @@
 import type { Job } from '../api/client';
 
 export function makeJobLabel(type: string, action: string): string {
-  return `${type.charAt(0).toUpperCase() + type.slice(1)} ${action}`;
+  const name =
+    type === 'duplicate_find'
+      ? 'Duplicate Finder'
+      : type === 'disk_analyze'
+        ? 'Disk Analyzer'
+        : type.charAt(0).toUpperCase() + type.slice(1);
+  return `${name} ${action}`.trim();
 }
 
 export function isActiveTransferJob(job: Job): boolean {

@@ -116,7 +116,7 @@
 }
 
 .resultRow:hover {
-  background: var(--app-surface-control-hover-bg);
+  background: var(--glass-hover-bg);
 }
 
 .resultRow.selected {
