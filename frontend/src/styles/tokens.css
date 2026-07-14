@@ -8,10 +8,10 @@
   --color-text-secondary: #4a5568;
   --color-text-muted: #5f6b7a;
   --color-text-tertiary: #a0aec0;
-  --color-border: #e8edf3;
-  --color-border-light: #eef2f6;
-  --color-border-subtle: #f3f6fa;
-  --color-border-row: #f0f4f8;
+  --color-border: #cbd5e1;
+  --color-border-light: #dbe2ea;
+  --color-border-subtle: #e2e8f0;
+  --color-border-row: #e2e8f0;
   --color-brand: #3b82f6;
   --color-brand-bg: #eff6ff;
   --color-brand-text: #1e40af;
@@ -35,7 +35,7 @@
   --color-code-text: #dce3e8;
   --color-overlay: rgb(0 0 0 / 50%);
   --color-badge: #eef3f5;
-  --color-shadow: rgb(0 0 0 / 6%);
+  --color-shadow: rgb(0 0 0 / 12%);
   /* Typography */
   --font-size-2xs: 10px;
   --font-size-xs: 11px;
@@ -86,10 +86,10 @@
   /* Glass */
   --glass-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
   --glass-menu-bg: color-mix(in srgb, var(--color-surface) 78%, transparent);
-  --glass-control-bg: color-mix(in srgb, var(--color-surface) 62%, transparent);
+  --glass-control-bg: color-mix(in srgb, var(--color-bg) 76%, transparent);
   --glass-hover-bg: color-mix(in srgb, var(--color-hover) 78%, transparent);
   --glass-selected-bg: color-mix(in srgb, var(--color-brand-bg) 72%, transparent);
-  --glass-border: color-mix(in srgb, var(--color-border) 48%, transparent);
+  --glass-border: color-mix(in srgb, var(--color-border) 70%, transparent);
   --glass-backdrop: blur(6px) saturate(110%);
   --app-surface-bg: var(--glass-bg);
   --app-surface-header-bg: var(--glass-bg);
@@ -97,8 +97,8 @@
   --app-surface-control-bg: var(--glass-control-bg);
   --app-surface-control-hover-bg: var(--glass-hover-bg);
   --app-surface-control-selected-bg: var(--glass-selected-bg);
-  --app-surface-border: color-mix(in srgb, var(--color-border) 42%, transparent);
-  --app-surface-divider: color-mix(in srgb, var(--color-border-subtle) 48%, transparent);
+  --app-surface-border: color-mix(in srgb, var(--color-border) 70%, transparent);
+  --app-surface-divider: color-mix(in srgb, var(--color-border-subtle) 75%, transparent);
   --app-surface-shadow: 0 8px 28px color-mix(in srgb, var(--color-shadow) 74%, transparent);
   --app-surface-shadow-active: 0 18px 48px color-mix(in srgb, var(--color-shadow) 130%, transparent);
   --app-surface-shadow-inactive: 0 4px 18px color-mix(in srgb, var(--color-shadow) 54%, transparent);
@@ -128,7 +128,7 @@
   :root {
     --glass-bg: color-mix(in srgb, var(--color-surface) 58%, transparent);
     --glass-menu-bg: color-mix(in srgb, var(--color-surface) 88%, transparent);
-    --glass-control-bg: color-mix(in srgb, var(--color-surface) 74%, transparent);
+    --glass-control-bg: color-mix(in srgb, var(--color-bg) 82%, transparent);
     --glass-hover-bg: color-mix(in srgb, var(--color-hover) 88%, transparent);
     --glass-selected-bg: color-mix(in srgb, var(--color-brand-bg) 82%, transparent);
     --glass-border: color-mix(in srgb, var(--color-border) 78%, transparent);
