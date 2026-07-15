@@ -545,6 +545,12 @@
   text-align: right;
 }
 
+.dupPending {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
 .bulkBar {
   display: flex;
   align-items: center;

@@ -49,6 +49,7 @@ func (w *Worker) processDiskAnalyze(ctx context.Context, job jobs.Job) error {
 	}
 
 	accum := make(map[string]*dirAccum) // keyed by internal path
+	var fileResults []jobs.DiskUsageResult
 	var skipped int64
 	var totalFiles, totalDirs int64
 	lastUpdate := time.Now()
@@ -123,6 +124,13 @@ func (w *Worker) processDiskAnalyze(ctx context.Context, job jobs.Job) error {
 			pa.sizeBytes += info.Size()
 			pa.fileCount++
 			totalFiles++
+			fileResults = append(fileResults, jobs.DiskUsageResult{
+				JobID:      job.ID,
+				Path:       publicPath,
+				ParentPath: parentPublic,
+				Name:       name,
+				SizeBytes:  info.Size(),
+			})
 		}
 
 		_ = w.store.UpdateJobProgress(ctx, job.ID, 0, totalFiles+totalDirs, name)
@@ -176,6 +184,7 @@ func (w *Worker) processDiskAnalyze(ctx context.Context, job jobs.Job) error {
 			DirCount:   kv.accum.dirCount,
 		})
 	}
+	results = append(results, fileResults...)
 
 	if err := w.store.ClearDiskUsageResults(ctx, job.ID); err != nil {
 		return err

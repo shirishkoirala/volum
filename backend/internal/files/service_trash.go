@@ -118,15 +118,15 @@ func (s *Service) ListTrash() ([]TrashEntry, error) {
 }
 
 func (s *Service) RestoreTrash(id string) (Entry, error) {
-	return s.restoreTrash(id, false)
+	return s.restoreTrash(id)
 }
 
 // RestoreTrashRetry resumes a worker-owned restore after an interrupted copy.
 func (s *Service) RestoreTrashRetry(id string) (Entry, error) {
-	return s.restoreTrash(id, true)
+	return s.restoreTrash(id)
 }
 
-func (s *Service) restoreTrash(id string, retry bool) (Entry, error) {
+func (s *Service) restoreTrash(id string) (Entry, error) {
 	entry, metaPath, err := s.trashEntryByID(id)
 	if err != nil {
 		return Entry{}, err
@@ -138,32 +138,60 @@ func (s *Service) restoreTrash(id string, retry bool) (Entry, error) {
 	if _, ok := s.guard.RootFor(originalPath); !ok {
 		return Entry{}, security.ErrOutsideRoots
 	}
+	tempPath := filepath.Join(filepath.Dir(originalPath), ".volum-tmp", "restore-"+id)
+	trashExists := pathExists(entry.TrashPath)
+	tempExists := pathExists(tempPath)
 	if _, err := os.Stat(originalPath); err == nil {
-		if !retry {
+		if trashExists || tempExists {
 			return Entry{}, ErrDestinationExists
 		}
-		if _, trashErr := os.Stat(entry.TrashPath); errors.Is(trashErr, os.ErrNotExist) {
-			if err := s.guard.Remove(metaPath); err != nil {
-				return Entry{}, err
-			}
-			return s.entryFromPath(originalPath)
-		}
-		if err := s.guard.RemoveAll(originalPath); err != nil {
+		if err := s.guard.Remove(metaPath); err != nil {
 			return Entry{}, err
 		}
+		return s.entryFromPath(originalPath)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return Entry{}, err
 	}
 	if err := s.guard.MkdirAll(filepath.Dir(originalPath), 0o755); err != nil {
 		return Entry{}, err
 	}
-	if err := s.moveAcrossFS(entry.TrashPath, originalPath); err != nil {
-		return Entry{}, err
+	if tempExists && !trashExists {
+		if err := s.guard.RenameNoReplace(tempPath, originalPath); err != nil {
+			return Entry{}, err
+		}
+	} else {
+		if tempExists {
+			if err := s.guard.RemoveAll(tempPath); err != nil {
+				return Entry{}, err
+			}
+		}
+		if err := s.guard.RenameNoReplace(entry.TrashPath, originalPath); err != nil {
+			if !errors.Is(err, syscall.EXDEV) {
+				return Entry{}, err
+			}
+			if err := s.guard.MkdirAll(filepath.Dir(tempPath), 0o755); err != nil {
+				return Entry{}, err
+			}
+			if err := s.copyPath(entry.TrashPath, tempPath); err != nil {
+				return Entry{}, err
+			}
+			if err := s.guard.RemoveAll(entry.TrashPath); err != nil {
+				return Entry{}, err
+			}
+			if err := s.guard.RenameNoReplace(tempPath, originalPath); err != nil {
+				return Entry{}, err
+			}
+		}
 	}
 	if err := s.guard.Remove(metaPath); err != nil {
 		return Entry{}, err
 	}
 	return s.entryFromPath(originalPath)
+}
+
+func pathExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 func (s *Service) DeleteTrash(id string) error {

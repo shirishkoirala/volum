@@ -211,6 +211,7 @@ export function StorageAnalyzerView({
   const [dupLoading, setDupLoading] = useState(false);
   const [dupError, setDupError] = useState<string | null>(null);
   const [dupSelected, setDupSelected] = useState<Set<string>>(new Set());
+  const [pendingDupTrash, setPendingDupTrash] = useState<Map<string, string>>(new Map());
   const [dupTrashing, setDupTrashing] = useState(false);
   const [confirmTrash, setConfirmTrash] = useState(false);
 
@@ -223,6 +224,7 @@ export function StorageAnalyzerView({
     if (!dupJobId) return null;
     return jobs.find((j) => j.id === dupJobId) || null;
   }, [jobs, dupJobId]);
+  const dupJobStatus = dupJob?.status;
 
   const isScanActive =
     currentJob && (currentJob.status === 'queued' || currentJob.status === 'running');
@@ -327,11 +329,35 @@ export function StorageAnalyzerView({
   }, [isScanDone, currentJobId, scanPath, loadSummary, loadChildren]);
 
   useEffect(() => {
-    if (!dupJob) return;
-    if (dupJob.status === 'completed' || dupJob.status === 'failed') {
-      loadDupResults();
+    if (dupJobStatus === 'completed' || dupJobStatus === 'failed') {
+      void loadDupResults();
     }
-  }, [dupJob, loadDupResults]);
+  }, [dupJobStatus, loadDupResults]);
+
+  useEffect(() => {
+    if (pendingDupTrash.size === 0) return;
+    const completedPaths: string[] = [];
+    const failedPaths: string[] = [];
+    for (const [path, jobId] of pendingDupTrash) {
+      const job = jobs.find((candidate) => candidate.id === jobId);
+      if (job?.status === 'completed') completedPaths.push(path);
+      if (job?.status === 'failed' || job?.status === 'cancelled') failedPaths.push(path);
+    }
+    if (completedPaths.length === 0 && failedPaths.length === 0) return;
+    if (completedPaths.length > 0) {
+      const completed = new Set(completedPaths);
+      setDupResults((prev) => prev.filter((result) => !completed.has(result.path)));
+    }
+    if (failedPaths.length > 0) {
+      setDupError(`Failed to trash ${failedPaths.length} file(s).`);
+    }
+    const finished = new Set([...completedPaths, ...failedPaths]);
+    setPendingDupTrash((prev) => {
+      const next = new Map(prev);
+      for (const path of finished) next.delete(path);
+      return next;
+    });
+  }, [jobs, pendingDupTrash]);
 
   const rootResults = treeData.get('') || treeData.get(scanPath || '');
 
@@ -371,27 +397,41 @@ export function StorageAnalyzerView({
     [treeData, loadChildren],
   );
 
-  const handleSelectDup = useCallback((path: string) => {
-    setDupSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
-      }
-      return next;
-    });
-  }, []);
+  const handleSelectDup = useCallback(
+    (path: string) => {
+      if (pendingDupTrash.has(path)) return;
+      setDupSelected((prev) => {
+        const next = new Set(prev);
+        if (next.has(path)) {
+          next.delete(path);
+        } else {
+          next.add(path);
+        }
+        return next;
+      });
+    },
+    [pendingDupTrash],
+  );
 
   const handleTrashSelected = useCallback(async () => {
     if (dupSelected.size === 0) return;
     setDupTrashing(true);
     try {
-      await Promise.all(
-        Array.from(dupSelected).map((p) => deletePath(p, p.split('/').pop() || '')),
+      const paths = Array.from(dupSelected);
+      const results = await Promise.allSettled(
+        paths.map(
+          async (path) => [path, (await deletePath(path, path.split('/').pop() || '')).id] as const,
+        ),
       );
-      setDupResults((prev) => prev.filter((r) => !dupSelected.has(r.path)));
-      setDupSelected(new Set());
+      const queued = results.flatMap((result) =>
+        result.status === 'fulfilled' ? [result.value] : [],
+      );
+      const failed = paths.filter((_, index) => results[index]?.status === 'rejected');
+      if (queued.length > 0) {
+        setPendingDupTrash((prev) => new Map([...prev, ...queued]));
+      }
+      setDupSelected(new Set(failed));
+      if (failed.length > 0) setDupError(`Failed to queue ${failed.length} file(s) for Trash.`);
     } catch {
       setDupError('Failed to trash some files');
     } finally {
@@ -425,6 +465,7 @@ export function StorageAnalyzerView({
     setDupResults([]);
     setDupSummary(null);
     setDupSelected(new Set());
+    setPendingDupTrash(new Map());
     setDupError(null);
   }, []);
 
@@ -738,37 +779,44 @@ export function StorageAnalyzerView({
                           {files.length} copies &middot; {formatBytes(first.sizeBytes)} each
                         </span>
                       </div>
-                      {files.map((f) => (
-                        <div key={f.path} className={styles.dupFile}>
-                          <label className={styles.dupCheck}>
-                            <input
-                              type="checkbox"
-                              aria-label={`Select ${f.path}`}
-                              checked={dupSelected.has(f.path)}
-                              onChange={() => handleSelectDup(f.path)}
+                      {files.map((f) => {
+                        const pending = pendingDupTrash.has(f.path);
+                        return (
+                          <div key={f.path} className={styles.dupFile}>
+                            <label className={styles.dupCheck}>
+                              <input
+                                type="checkbox"
+                                aria-label={`Select ${f.path}`}
+                                checked={dupSelected.has(f.path)}
+                                disabled={pending}
+                                onChange={() => handleSelectDup(f.path)}
+                              />
+                            </label>
+                            <FileIcon
+                              entry={{
+                                name: f.path.split('/').pop() || '',
+                                type: 'file',
+                                path: f.path,
+                                size: f.sizeBytes,
+                                modifiedAt: f.modifiedAt || '',
+                                permissions: '',
+                                owner: '',
+                                group: '',
+                                hidden: false,
+                              }}
+                              size={18}
                             />
-                          </label>
-                          <FileIcon
-                            entry={{
-                              name: f.path.split('/').pop() || '',
-                              type: 'file',
-                              path: f.path,
-                              size: f.sizeBytes,
-                              modifiedAt: f.modifiedAt || '',
-                              permissions: '',
-                              owner: '',
-                              group: '',
-                              hidden: false,
-                            }}
-                            size={18}
-                          />
-                          <span className={styles.dupName}>{f.path.split('/').pop()}</span>
-                          <span className={styles.dupPath}>{f.path}</span>
-                          {f.modifiedAt && (
-                            <span className={styles.dupDate}>{formatGridDate(f.modifiedAt)}</span>
-                          )}
-                        </div>
-                      ))}
+                            <span className={styles.dupName}>{f.path.split('/').pop()}</span>
+                            <span className={styles.dupPath}>{f.path}</span>
+                            {f.modifiedAt && (
+                              <span className={styles.dupDate}>{formatGridDate(f.modifiedAt)}</span>
+                            )}
+                            {pending && (
+                              <span className={styles.dupPending}>Moving to Trash...</span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}

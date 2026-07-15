@@ -69,6 +69,19 @@ func TestDiskAnalyzeIncludesNestedFilesInRootTotal(t *testing.T) {
 	if summary.TotalBytes != 8 || summary.FileCount != 2 || summary.DirectoryCount != 1 {
 		t.Fatalf("unexpected summary: %#v", summary)
 	}
+	results, err := store.ListDiskUsageResults(ctx, job.ID, root, 100, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var directFileFound bool
+	for _, result := range results {
+		if result.Path == filepath.Join(root, "direct.bin") && !result.IsDir && result.SizeBytes == 3 {
+			directFileFound = true
+		}
+	}
+	if !directFileFound {
+		t.Fatalf("direct file missing from disk usage results: %#v", results)
+	}
 }
 
 func TestTrashAndRestoreRunAsPersistentJobs(t *testing.T) {

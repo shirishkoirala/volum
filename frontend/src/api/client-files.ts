@@ -193,7 +193,7 @@ export function chmodPath(path: string, mode: string) {
 }
 
 export function deletePath(path: string, confirmName: string) {
-  return request('/api/files', {
+  return request<Job>('/api/files', {
     method: 'DELETE',
     body: JSON.stringify({ path, confirmName }),
   });
