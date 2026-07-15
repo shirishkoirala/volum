@@ -54,7 +54,7 @@ export function useJobs(
 
     const events = new EventSource(apiUrl('/api/jobs/events'));
     events.addEventListener('jobs', (event) => {
-      let nextJobs: Job[] = [];
+      let nextJobs: Job[];
       try {
         const response = JSON.parse((event as MessageEvent).data) as { jobs: Job[] | null };
         nextJobs = response.jobs ?? [];
