@@ -3,7 +3,7 @@ WORKDIR /app/backend
 RUN apk add --no-cache binutils gcc musl-dev
 COPY backend/go.mod backend/go.sum ./
 RUN go mod download
-RUN CGO_ENABLED=0 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.3.1
+RUN CGO_ENABLED=0 go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
 COPY backend ./
 
 FROM backend-toolchain AS backend-base
