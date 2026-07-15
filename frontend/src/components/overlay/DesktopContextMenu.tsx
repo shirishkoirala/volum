@@ -1,6 +1,6 @@
 import { Icon } from '../ui/Icon';
 import { ContextMenuShell } from './ContextMenuShell';
-import type { DesktopIconItem } from '../../pages/DesktopView';
+import type { DesktopIconItem } from '../../hooks/useDesktopIcons';
 import styles from './ContextMenu.module.css';
 
 interface DesktopContextMenuProps {

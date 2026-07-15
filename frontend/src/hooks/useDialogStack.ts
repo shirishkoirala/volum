@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import type {
-  ConfirmDialogState,
-  TextInputDialogState,
-  TransferDialogState,
-} from '../components/overlay/Dialogs';
+import type { ConfirmDialogState } from '../components/overlay/ConfirmDialog';
+import type { TextInputDialogState } from '../components/overlay/TextInputDialog';
+import type { TransferDialogState } from '../components/overlay/TransferDialog';
 
 export function useDialogStack() {
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);

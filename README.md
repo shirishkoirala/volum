@@ -2,116 +2,151 @@
   <img src="frontend/public/volum_logo_full.png" alt="Volum" width="360">
 </p>
 
-# Volum - Your Server Files, Organized
+# Volum
+
+Volum is a self-hosted, desktop-style file manager for home servers and Docker
+hosts. Browse files, manage drives and Trash, share files, and inspect storage
+from a familiar browser workspace.
+
+Copy, move, upload, archive, extract, checksum, trash, restore, disk analysis,
+and duplicate scans run as persistent server jobs. Closing the browser does not
+stop the operation.
 
 <p align="center">
-  A self-hosted desktop-style file manager for home servers and Docker hosts.
+  <img src="docs/screenshots/desktop.png" alt="Volum desktop workspace">
 </p>
 
-<p align="center">
-  <a href="LICENSE">License</a> |
-  <a href="docs/roadmap.md">Roadmap</a> |
-  <a href="docs/reverse-proxy.md">Reverse Proxy</a> |
-  <a href="docs/release.md">Release</a> |
-  <a href="CONTRIBUTION.md">Contributing</a>
-</p>
+## Quick Start
 
-<p align="center">
-  <img src="docs/screenshots/desktop.png" alt="Volum desktop">
-</p>
-
-## Why Volum?
-
-Volum is built for people who keep important files on their own server and want
-a clean browser UI that still behaves like a real file manager.
-
-Long-running work such as copy, move, upload, archive, extract, checksum, trash,
-and restore runs on the server through persistent jobs. The browser can close
-without losing the operation.
-
-## Features
-
-- **Desktop workspace** - Files, Drives, Trash, Transfers, Settings, and pinned
-  folder shortcuts in a familiar desktop surface.
-- **Reliable file operations** - background jobs with progress, cancel, retry,
-  pause, resume, and conflict handling.
-- **Safe storage behavior** - root-guarded paths, verified uploads, trash
-  restore, and copy-verify-delete moves.
-- **Preview and search** - image, media, PDF, and text previews with safe size
-  limits; search across roots and act on results.
-- **Sharing** - expiring share links with optional password and download limits.
-- **Homelab friendly** - Docker deployment, auth, reverse proxy support, dark
-  mode, mobile touch support, keyboard shortcuts, and service shortcuts.
-
-## Getting Started
-
-Clone the repo and create a server environment file:
+You only need Docker.
 
 ```sh
-git clone https://github.com/shirishkoirala/volum
+mkdir -p volum/data volum/storage
+cd volum
+
+docker run -d \
+  --name volum \
+  --restart unless-stopped \
+  -p 127.0.0.1:8090:8090 \
+  -v "$PWD/data:/data" \
+  -v "$PWD/storage:/storage" \
+  -e VOLUM_ROOTS=/storage \
+  -e VOLUM_DB=/data/volum.db \
+  -e VOLUM_AUTH_REQUIRED=false \
+  -e VOLUM_ALLOW_INSECURE_AUTH_DISABLED=true \
+  ghcr.io/shirishkoirala/volum:latest
+```
+
+Open [http://localhost:8090](http://localhost:8090).
+
+The quick-start stack:
+
+- stores files in `./storage`
+- stores the SQLite database in `./data`
+- binds only to localhost
+- disables authentication for local evaluation
+
+Stop it with:
+
+```sh
+docker stop volum
+docker rm volum
+```
+
+> The quick start is for local evaluation. Use the authenticated server setup
+> before exposing Volum to a LAN, reverse proxy, or the internet.
+
+## Server Setup
+
+Start with the authenticated server configuration:
+
+```sh
+git clone https://github.com/shirishkoirala/volum.git
 cd volum
 cp .env.server.example .env
-sed -i.bak "s|^VOLUM_SESSION_SECRET=.*|VOLUM_SESSION_SECRET=$(openssl rand -base64 32)|" .env
+openssl rand -base64 32
 ```
 
-Edit `.env` for your storage roots, database path, public URL, authentication,
-and runtime user. For released images, set the compose service image to:
-
-```yaml
-image: ghcr.io/shirishkoirala/volum:latest
-```
-
-Then start the server compose stack:
+Paste the generated value into `VOLUM_SESSION_SECRET` in `.env`, review the
+storage mount and allowed hosts, then start Volum:
 
 ```sh
 docker compose -f docker-compose.server.yml up --build -d
 ```
 
-Common production values:
+Open [http://localhost:8090](http://localhost:8090). On first run, create the
+admin account using `VOLUM_BOOTSTRAP_TOKEN`. If that variable is empty, Volum
+generates a token file beside the database and logs its path.
 
-```env
-VOLUM_AUTH_REQUIRED=true
-VOLUM_SESSION_SECRET=replace-with-a-long-random-secret
-VOLUM_ROOTS=/mnt/storage,/mnt/media,/opt/docker
-VOLUM_DB=/data/volum.db
-VOLUM_PUBLIC_URL=https://volum.example.com
-VOLUM_HOST_PATH=./storage
-VOLUM_BIND_ADDRESS=127.0.0.1
-```
+Keep `VOLUM_HOST_PATH=./storage` until broader host access is genuinely needed.
+For a reverse proxy or remote access, also configure `VOLUM_PUBLIC_URL` and
+`VOLUM_ALLOWED_HOSTS`.
 
-When auth is enabled, create the first admin account from the setup screen using
-`VOLUM_BOOTSTRAP_TOKEN`, or the generated token written to
-`volum-initial-setup-token` beside the configured database. The server log
-prints the token file path, not the token value.
-Authentication is required by default when `VOLUM_AUTH_REQUIRED` is unset.
-Disabling it requires `VOLUM_AUTH_REQUIRED=false` and the explicit local-only
-opt-in `VOLUM_ALLOW_INSECURE_AUTH_DISABLED=true`.
+See the [configuration reference](docs/configuration.md) and
+[reverse-proxy guide](docs/reverse-proxy.md) before production deployment.
 
-## Deployment
+## Development Start
 
-Volum is meant for trusted private infrastructure: a home server, NAS-style
-Docker host, or private lab network. Prefer Tailscale, WireGuard, or a reverse
-proxy with auth enabled.
-
-Full host filesystem access is explicit. Use it only on a trusted,
-access-controlled machine:
+The supported development environment runs entirely through Docker; Go and
+Node.js are optional on the host.
 
 ```sh
-VOLUM_HOST_PATH=/ VOLUM_UID=0 VOLUM_GID=0 docker compose -f docker-compose.server.yml up --build -d
+git clone https://github.com/shirishkoirala/volum.git
+cd volum
+make setup
+make dev
 ```
 
-Reverse proxy examples are in [docs/reverse-proxy.md](docs/reverse-proxy.md).
-Release and Docker image publishing notes are in [docs/release.md](docs/release.md).
+Open [http://localhost:8342](http://localhost:8342). The API is available at
+[http://localhost:8090](http://localhost:8090), and frontend changes reload
+automatically.
 
-## Development
+Use disposable test files under `storage/`. Authentication is enabled in the
+development stack, so follow the first-run setup screen when starting with an
+empty database.
 
-Development and contribution notes live in [CONTRIBUTION.md](CONTRIBUTION.md).
+Useful commands:
 
-Preferred dev server:
+| Command              | Purpose                                      |
+| -------------------- | -------------------------------------------- |
+| `make help`          | List supported workflows                     |
+| `make dev-detached`  | Start development services in the background |
+| `make check`         | Run required frontend and backend checks     |
+| `make test-frontend` | Run the frontend test suite                  |
+| `make test-backend`  | Run backend tests through Docker             |
+| `make build`         | Build the production image                   |
+| `make smoke`         | Run the authenticated smoke test             |
+| `make smoke-proxy`   | Test uploads through a reverse proxy         |
+| `make stop`          | Stop the development stack                   |
 
-```sh
-docker compose -f docker-compose.dev.yml up --build
-```
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for repository structure, conventions,
+and focused change guides.
+
+## What You Can Do
+
+- Browse large folders with incremental loading, grid and list views, search,
+  previews, favorites, and keyboard shortcuts.
+- Run reliable copy, move, upload, archive, extract, checksum, Trash, and restore
+  operations with progress, retry, pause, resume, and conflict handling.
+- Analyze disk usage down to individual files and find exact duplicate content.
+- Create expiring share links with optional passwords and download limits.
+- Manage drives, desktop shortcuts, wallpapers, services, notifications, users,
+  and database maintenance.
+- Use the responsive desktop on touch devices and narrow screens.
+
+<p align="center">
+  <img src="docs/screenshots/storage-analyzer.png" alt="Volum Storage Analyzer">
+</p>
+
+## Documentation
+
+- [Configuration](docs/configuration.md)
+- [Reverse proxy](docs/reverse-proxy.md)
+- [Architecture](docs/architecture.md)
+- [Roadmap](docs/roadmap.md)
+- [Release process](docs/release.md)
+- [Support](SUPPORT.md)
+- [Security](SECURITY.md)
 
 ## License
 

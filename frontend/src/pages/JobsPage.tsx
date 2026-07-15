@@ -5,8 +5,9 @@ import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from '../components/ui/ProgressBar';
-import { Button, StatusBadge } from '../components/ui/shared';
+import { Button, IconButton, StatusBadge } from '../components/ui/shared';
 import { formatBytes, formatDuration, formatGridDate } from '../utils/format';
+import { makeJobLabel } from '../utils/jobs';
 import { useJobs } from '../hooks/useJobs';
 import { useToasts } from '../hooks/useToasts';
 import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
@@ -51,6 +52,9 @@ function JobItem({
   const needsResolve = job.status === 'needs_attention';
   const showLiveStats = job.status === 'running';
   const hasKnownTotal = job.totalBytes > 0;
+  const byteProgress = hasKnownTotal
+    ? `${formatBytes(job.processedBytes)} / ${formatBytes(job.totalBytes)}`
+    : formatBytes(job.processedBytes);
 
   return (
     <article
@@ -65,7 +69,7 @@ function JobItem({
       <div className={styles.jobTitleRow}>
         <span className={styles.jobTitleLabel}>
           <Icon name={`job-${job.type}`} size={15} />
-          <strong>{job.type}</strong>
+          <strong>{makeJobLabel(job.type, '')}</strong>
         </span>
         <StatusBadge variant={jobVariant(job.status)}>{job.status}</StatusBadge>
       </div>
@@ -76,21 +80,13 @@ function JobItem({
             {job.processedItems} / {job.totalItems} files
           </span>
         )}
-        <span>
-          {hasKnownTotal
-            ? `${formatBytes(job.processedBytes)} / ${formatBytes(job.totalBytes)}`
-            : `${formatBytes(job.processedBytes)} uploaded`}
-        </span>
-        <span className={!showLiveStats ? styles.mutedPlaceholder : undefined}>
-          {showLiveStats && job.speedBytesPerSecond
-            ? `${formatBytes(job.speedBytesPerSecond)}/s`
-            : '\u2014/s'}
-        </span>
-        <span className={!showLiveStats ? styles.mutedPlaceholder : undefined}>
-          {showLiveStats && job.etaSeconds !== undefined
-            ? `${formatDuration(job.etaSeconds)} left`
-            : '\u2014 left'}
-        </span>
+        <span>{byteProgress}</span>
+        {showLiveStats && job.speedBytesPerSecond ? (
+          <span>{formatBytes(job.speedBytesPerSecond)}/s</span>
+        ) : null}
+        {showLiveStats && job.etaSeconds !== undefined ? (
+          <span>{formatDuration(job.etaSeconds)} left</span>
+        ) : null}
       </div>
       <div className={styles.jobFooter}>
         <span className={styles.jobTimestamp}>Created {formatGridDate(job.createdAt)}</span>
@@ -206,14 +202,18 @@ export function JobsPage({ session, sessionLoading }: JobsPageProps) {
     jobs.length > 0 ? (
       <div className={styles.jobToolbar}>
         {hasFailed && (
-          <Button size="compact" onClick={handleClearFailed}>
-            Clear failed
-          </Button>
+          <IconButton onClick={handleClearFailed} aria-label="Clear failed" title="Clear failed">
+            <Icon name="dialog-warning" size={18} />
+          </IconButton>
         )}
         {hasCompleted && (
-          <Button size="compact" onClick={handleClearCompleted}>
-            Clear completed
-          </Button>
+          <IconButton
+            onClick={handleClearCompleted}
+            aria-label="Clear completed"
+            title="Clear completed"
+          >
+            <Icon name="edit-clear" size={18} />
+          </IconButton>
         )}
       </div>
     ) : null;

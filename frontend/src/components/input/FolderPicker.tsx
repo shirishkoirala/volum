@@ -10,10 +10,12 @@ export function FolderPicker({
   initialPath,
   onSelect,
   onClose,
+  title = 'Select destination',
 }: {
   initialPath: string;
   onSelect: (path: string) => void;
   onClose: () => void;
+  title?: string;
 }) {
   const [currentDir, setCurrentDir] = useState(initialPath);
   const [subdirs, setSubdirs] = useState<string[]>([]);
@@ -75,7 +77,7 @@ export function FolderPicker({
   return (
     <div className={styles.folderPicker}>
       <div className={styles.folderPickerHeader}>
-        <span className={styles.folderPickerTitle}>Select destination</span>
+        <span className={styles.folderPickerTitle}>{title}</span>
         <div className={styles.folderPickerNav}>
           <IconButton
             className={styles.folderPickerNavButton}
@@ -157,10 +159,7 @@ export function FolderPicker({
                 key={dir}
                 type="button"
                 className={styles.folderPickerItem}
-                onClick={() => {
-                  navigateTo(dir);
-                  onSelect(dir);
-                }}
+                onClick={() => navigateTo(dir)}
                 title={dir}
               >
                 <Icon name="folder-new" size={18} />

@@ -3,6 +3,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { useFileBrowser } from '../hooks/useFileBrowser';
 import type { Session, FileEntry } from '../api/client';
 import * as api from '../api/client';
+import { buildDirectoryEntry, buildFileEntry, buildRootEntry, buildSession } from './fixtures';
 
 vi.mock('../api/client', () => ({
   getRoots: vi.fn(),
@@ -12,43 +13,33 @@ vi.mock('../api/client', () => ({
   searchFiles: vi.fn(),
 }));
 
-const fakeSession: Session = { authEnabled: true, authenticated: true, role: 'admin' };
-const readonlySession: Session = { authEnabled: true, authenticated: true, role: 'readonly' };
+const fakeSession: Session = buildSession();
+const readonlySession: Session = buildSession({ role: 'readonly' });
 
 function makeFile(overrides: Partial<FileEntry> = {}): FileEntry {
-  return {
-    name: 'file.txt',
+  return buildFileEntry({
     path: '/root/file.txt',
-    type: 'file',
     size: 100,
-    modifiedAt: '2026-06-10T10:00:00Z',
     permissions: 'rw-r--r--',
     owner: 'admin',
     group: 'users',
-    hidden: false,
     ...overrides,
-  };
+  });
 }
 
 function makeDir(overrides: Partial<FileEntry> = {}): FileEntry {
-  return makeFile({ name: 'folder', path: '/root/folder', type: 'directory', ...overrides });
+  return buildDirectoryEntry({
+    path: '/root/folder',
+    owner: 'admin',
+    group: 'users',
+    ...overrides,
+  });
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
   (api.getRoots as ReturnType<typeof vi.fn>).mockResolvedValue({
-    roots: [
-      {
-        path: '/root',
-        label: 'Root',
-        available: true,
-        discovered: false,
-        totalBytes: 0,
-        freeBytes: 0,
-        usedBytes: 0,
-        isHome: false,
-      },
-    ],
+    roots: [buildRootEntry({ path: '/root', label: 'Root' })],
   });
   (api.getDevices as ReturnType<typeof vi.fn>).mockResolvedValue({ devices: [] });
   (api.getFiles as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -64,35 +55,42 @@ beforeEach(() => {
 
 describe('useFileBrowser', () => {
   it('loads roots on mount', async () => {
-    renderHook(() =>
+    const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: fakeSession }),
     );
     await waitFor(() => {
       expect(api.getRoots).toHaveBeenCalledOnce();
+      expect(result.current.roots).toHaveLength(1);
     });
   });
 
   it('loads devices on mount', async () => {
-    renderHook(() =>
+    (api.getDevices as ReturnType<typeof vi.fn>).mockResolvedValue({
+      devices: [{ name: 'sda', size: '1 TB', type: 'disk', rotational: false }],
+    });
+    const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: fakeSession }),
     );
     await waitFor(() => {
       expect(api.getDevices).toHaveBeenCalledOnce();
+      expect(result.current.devices).toHaveLength(1);
     });
   });
 
-  it('returns canWrite=true for admin', () => {
+  it('returns canWrite=true for admin', async () => {
     const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: fakeSession }),
     );
     expect(result.current.canWrite).toBe(true);
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
-  it('returns canWrite=false for readonly', () => {
+  it('returns canWrite=false for readonly', async () => {
     const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: readonlySession }),
     );
     expect(result.current.canWrite).toBe(false);
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
   it('loads files for the current path', async () => {
@@ -176,7 +174,7 @@ describe('useFileBrowser', () => {
     expect(result.current.filteredEntries[0]?.name).toBe('readme.md');
   });
 
-  it('returns directories first in filtered entries', async () => {
+  it('preserves server ordering in filtered entries', async () => {
     const entries = [makeFile({ name: 'z_file.txt' }), makeDir({ name: 'a_folder' })];
     (api.getFiles as ReturnType<typeof vi.fn>).mockResolvedValue({
       entries,
@@ -192,17 +190,32 @@ describe('useFileBrowser', () => {
     await waitFor(() => {
       expect(result.current.entries).toHaveLength(2);
     });
-    expect(result.current.filteredEntries[0]?.type).toBe('directory');
-    expect(result.current.filteredEntries[0]?.name).toBe('a_folder');
-    expect(result.current.filteredEntries[1]?.type).toBe('file');
+    expect(result.current.filteredEntries).toHaveLength(2);
+    expect(result.current.filteredEntries[0]?.name).toBe('z_file.txt');
+    expect(result.current.filteredEntries[1]?.name).toBe('a_folder');
   });
 
   it('loads trash entries on mount', async () => {
-    renderHook(() =>
+    (api.getTrash as ReturnType<typeof vi.fn>).mockResolvedValue({
+      entries: [
+        {
+          id: 'trash-1',
+          name: 'deleted.txt',
+          originalPath: '/root/deleted.txt',
+          trashPath: '/root/.trash/deleted.txt',
+          type: 'file',
+          size: 10,
+          deletedAt: '2026-06-10T10:00:00Z',
+          rootPath: '/root',
+        },
+      ],
+    });
+    const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: fakeSession }),
     );
     await waitFor(() => {
       expect(api.getTrash).toHaveBeenCalledOnce();
+      expect(result.current.trashEntries).toHaveLength(1);
     });
   });
 
@@ -233,7 +246,7 @@ describe('useFileBrowser', () => {
     });
   });
 
-  it('clears search results for short queries', () => {
+  it('clears search results for short queries', async () => {
     const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '/root', showHidden: false, session: fakeSession }),
     );
@@ -241,6 +254,7 @@ describe('useFileBrowser', () => {
       result.current.handleGlobalSearch('f');
     });
     expect(result.current.searchResults).toBeNull();
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
   it('creates breadcrumbs from current path', async () => {
@@ -252,6 +266,7 @@ describe('useFileBrowser', () => {
       { label: 'folder', path: '/root/folder' },
       { label: 'sub', path: '/root/folder/sub' },
     ]);
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
   it('returns root breadcrumb for root path', async () => {
@@ -259,13 +274,15 @@ describe('useFileBrowser', () => {
       useFileBrowser({ currentPath: '/', showHidden: false, session: fakeSession }),
     );
     expect(result.current.breadcrumbs).toEqual([{ label: '/', path: '/' }]);
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
-  it('returns empty breadcrumbs for empty path', () => {
+  it('returns empty breadcrumbs for empty path', async () => {
     const { result } = renderHook(() =>
       useFileBrowser({ currentPath: '', showHidden: false, session: fakeSession }),
     );
     expect(result.current.breadcrumbs).toEqual([]);
+    await waitFor(() => expect(result.current.roots).toHaveLength(1));
   });
 
   it('refresh triggers file reload', async () => {
@@ -282,6 +299,7 @@ describe('useFileBrowser', () => {
     );
     await waitFor(() => {
       expect(api.getFiles).toHaveBeenCalledTimes(1);
+      expect(result.current.loading).toBe(false);
     });
 
     act(() => {

@@ -1,85 +1,30 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useWindowManager, type WindowState } from '../../contexts/WindowManager';
 import { useIsMobile } from '../../hooks/useIsMobile';
-import { Icon } from '../ui/Icon';
+import { WindowTitleBar } from './WindowTitleBar';
+import {
+  getSnapTarget,
+  getSnapRect,
+  TOPBAR_H,
+  TASKBAR_H,
+  MIN_EDGE_DISTANCE,
+  MIN_WINDOW_W,
+  MIN_WINDOW_H,
+  type ResizeDir,
+  type WindowRect,
+} from '../../utils/window';
 import styles from './WindowFrame.module.css';
 
-type ResizeDir = 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
-type SnapTarget =
-  'maximize' | 'left' | 'right' | 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
-
-type WindowRect = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-// Height of shell chrome that maximized windows stay between
-const TOPBAR_H = 44;
-const TASKBAR_H = 56;
-const SNAP_THRESHOLD = 24;
-const MIN_EDGE_DISTANCE = 80;
-const MIN_WINDOW_W = 300;
-const MIN_WINDOW_H = 200;
-
-function getWorkArea() {
-  return {
-    x: 0,
-    y: TOPBAR_H,
-    width: window.innerWidth,
-    height: Math.max(MIN_WINDOW_H, window.innerHeight - TOPBAR_H - TASKBAR_H),
-  };
-}
-
-function getSnapTarget(clientX: number, clientY: number): SnapTarget | null {
-  const area = getWorkArea();
-  const nearLeft = clientX <= SNAP_THRESHOLD;
-  const nearRight = clientX >= area.width - SNAP_THRESHOLD;
-  const nearTop = clientY <= area.y + SNAP_THRESHOLD;
-  const nearBottom = clientY >= area.y + area.height - SNAP_THRESHOLD;
-
-  if (nearLeft && nearTop) return 'topLeft';
-  if (nearRight && nearTop) return 'topRight';
-  if (nearLeft && nearBottom) return 'bottomLeft';
-  if (nearRight && nearBottom) return 'bottomRight';
-  if (nearTop) return 'maximize';
-  if (nearLeft) return 'left';
-  if (nearRight) return 'right';
-  return null;
-}
-
-function getSnapRect(target: SnapTarget): WindowRect {
-  const area = getWorkArea();
-  const halfW = Math.round(area.width / 2);
-  const halfH = Math.round(area.height / 2);
-
-  switch (target) {
-    case 'maximize':
-      return area;
-    case 'left':
-      return { x: area.x, y: area.y, width: halfW, height: area.height };
-    case 'right':
-      return { x: halfW, y: area.y, width: area.width - halfW, height: area.height };
-    case 'topLeft':
-      return { x: area.x, y: area.y, width: halfW, height: halfH };
-    case 'topRight':
-      return { x: halfW, y: area.y, width: area.width - halfW, height: halfH };
-    case 'bottomLeft':
-      return { x: area.x, y: area.y + halfH, width: halfW, height: area.height - halfH };
-    case 'bottomRight':
-      return {
-        x: halfW,
-        y: area.y + halfH,
-        width: area.width - halfW,
-        height: area.height - halfH,
-      };
-  }
-}
-
 export function WindowFrame({ win, children }: { win: WindowState; children?: React.ReactNode }) {
-  const { focusWindow, closeWindow, toggleMinimize, toggleMaximize, updatePosition, updateSize } =
-    useWindowManager();
+  const {
+    windows,
+    focusWindow,
+    closeWindow,
+    toggleMinimize,
+    toggleMaximize,
+    updatePosition,
+    updateSize,
+  } = useWindowManager();
   const prevRectRef = useRef<WindowRect | null>(null);
   const [snapPreview, setSnapPreview] = useState<WindowRect | null>(null);
   const isMobile = useIsMobile();
@@ -87,6 +32,11 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
   const zIndex = win.zIndex;
   const isMaximized = win.maximized;
   const isMinimized = win.minimized;
+  const focusedWindowId = useMemo(() => {
+    const visible = windows.filter((w) => !w.minimized);
+    return visible.length > 0 ? visible.reduce((a, b) => (a.zIndex > b.zIndex ? a : b)).id : null;
+  }, [windows]);
+  const isFocused = focusedWindowId === win.id;
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -302,53 +252,20 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
         />
       )}
       <div
-        className={`${styles.windowFrame} appSurface`}
+        className={`${styles.windowFrame} appSurface ${isFocused ? 'isFocused' : 'isUnfocused'}`}
         style={style}
         onMouseDown={() => focusWindow(win.id)}
       >
-        <div
-          className={`${styles.titleBar} appSurfaceHeader`}
+        <WindowTitleBar
+          title={win.title}
+          isMaximized={isMaximized}
+          isMobile={isMobile}
+          onMinimize={() => toggleMinimize(win.id)}
+          onMaximizeClick={handleMaximizeClick}
+          onClose={() => closeWindow(win.id)}
           onMouseDown={handleMouseDown}
           onDoubleClick={handleTitleDoubleClick}
-        >
-          <span className={styles.titleText}>{win.title}</span>
-          <div className={styles.controls}>
-            {!isMobile && (
-              <>
-                <button
-                  className={`${styles.controlBtn} appSurfaceControl`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleMinimize(win.id);
-                  }}
-                  aria-label="Minimize"
-                >
-                  <Icon name="window-minimize" size={14} />
-                </button>
-                <button
-                  className={`${styles.controlBtn} appSurfaceControl`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMaximizeClick();
-                  }}
-                  aria-label={isMaximized ? 'Restore' : 'Maximize'}
-                >
-                  <Icon name={isMaximized ? 'window-restore' : 'window-maximize'} size={14} />
-                </button>
-              </>
-            )}
-            <button
-              className={`${styles.controlBtn} ${styles.closeBtn} appSurfaceControl`}
-              onClick={(e) => {
-                e.stopPropagation();
-                closeWindow(win.id);
-              }}
-              aria-label="Close"
-            >
-              <Icon name="window-close" size={14} />
-            </button>
-          </div>
-        </div>
+        />
         <div className={`${styles.content} appSurfaceBody`}>{children}</div>
         {!isMaximized && !isMobile && (
           <>

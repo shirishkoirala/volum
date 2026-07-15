@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useJobs } from '../hooks/useJobs';
-import type { Job, Session } from '../api/client';
 import * as api from '../api/client';
+import { buildJob, buildSession } from './fixtures';
 
 vi.mock('../api/client', () => ({
   getJobs: vi.fn(),
@@ -35,24 +35,7 @@ function mockEventSource() {
   return es;
 }
 
-const fakeSession: Session = { authEnabled: true, authenticated: true };
-
-const makeJob = (overrides: Partial<Job> = {}): Job => ({
-  id: '1',
-  type: 'copy',
-  sourcePath: '/src',
-  destinationPath: '/dst',
-  status: 'completed',
-  totalBytes: 1000,
-  processedBytes: 1000,
-  totalItems: 1,
-  processedItems: 1,
-  conflictPolicy: 'ask',
-  verifyMode: 'none',
-  createdAt: '2026-06-10T10:00:00Z',
-  updatedAt: '2026-06-10T10:01:00Z',
-  ...overrides,
-});
+const fakeSession = buildSession();
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -70,7 +53,7 @@ describe('useJobs', () => {
     const showToast = vi.fn();
     mockEventSource();
 
-    (api.getJobs as ReturnType<typeof vi.fn>).mockResolvedValue({ jobs: [makeJob()] });
+    (api.getJobs as ReturnType<typeof vi.fn>).mockResolvedValue({ jobs: [buildJob({ id: '1' })] });
 
     renderHook(() =>
       useJobs(setJobs, {
@@ -328,7 +311,7 @@ describe('useJobs', () => {
 
     es.dispatchEvent(
       'jobs',
-      JSON.stringify({ jobs: [{ ...makeJob(), id: '2', status: 'completed', type: 'copy' }] }),
+      JSON.stringify({ jobs: [buildJob({ id: '2', status: 'completed', type: 'copy' })] }),
     );
 
     await waitFor(() => {
@@ -355,7 +338,7 @@ describe('useJobs', () => {
 
     es.dispatchEvent(
       'jobs',
-      JSON.stringify({ jobs: [{ ...makeJob(), id: '2', status: 'completed', type: 'checksum' }] }),
+      JSON.stringify({ jobs: [buildJob({ id: '2', status: 'completed', type: 'checksum' })] }),
     );
 
     expect(onRefresh).not.toHaveBeenCalled();

@@ -116,7 +116,6 @@ export function useSelection({
     selectedEntries.length === 1 &&
     selectedEntries[0]?.type === 'file' &&
     isArchiveFile(selectedEntries[0]?.name ?? '');
-  const canAnalyze = selectedEntries.length === 1 && selectedEntries[0]?.type === 'directory';
   const canChecksum = canWrite && selectedEntries.length === 1;
   const canPaste = canWrite; // clipboard check external
 
@@ -141,7 +140,6 @@ export function useSelection({
     canArchive,
     canExtract,
     canChecksum,
-    canAnalyze,
     canPaste,
     handleSelectAll,
     handleInvertSelection,

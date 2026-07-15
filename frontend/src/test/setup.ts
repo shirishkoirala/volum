@@ -1,10 +1,29 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
+
+let originalConsoleError: typeof console.error;
+
+beforeEach(() => {
+  originalConsoleError = console.error;
+  console.error = (...args: unknown[]) => {
+    const hasActWarning = args.some(
+      (arg) => typeof arg === 'string' && arg.includes('not wrapped in act'),
+    );
+    if (hasActWarning) {
+      throw new Error(`React state update escaped act(): ${args.join(' ')}`);
+    }
+    originalConsoleError(...args);
+  };
+});
 
 afterEach(() => {
-  cleanup();
-  vi.clearAllMocks();
+  try {
+    cleanup();
+  } finally {
+    console.error = originalConsoleError;
+    vi.clearAllMocks();
+  }
 });
 
 if (typeof globalThis.ResizeObserver === 'undefined') {

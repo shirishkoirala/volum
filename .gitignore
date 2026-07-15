@@ -27,6 +27,7 @@ frontend/dist
 frontend/node_modules
 frontend/.vite
 frontend/coverage
+tools/visual/node_modules/
 
 # Logs
 *.log

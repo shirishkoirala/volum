@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/volum-app/volum/backend/internal/sqlutil"
 )
 
 func (s *Store) ListItems(ctx context.Context, jobID string) ([]Item, error) {
@@ -32,11 +33,7 @@ func (s *Store) ListItems(ctx context.Context, jobID string) ([]Item, error) {
 	return items, rows.Err()
 }
 
-type itemScanner interface {
-	Scan(dest ...any) error
-}
-
-func scanItem(row itemScanner) (Item, error) {
+func scanItem(row sqlutil.Scanner) (Item, error) {
 	var item Item
 	var temp, errMsg, checksum, conflictResolution sql.NullString
 	if err := row.Scan(

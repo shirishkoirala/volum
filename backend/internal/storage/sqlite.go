@@ -39,12 +39,6 @@ func migrate(db *sql.DB) error {
 	if _, err := db.Exec(initialSchema); err != nil {
 		return fmt.Errorf("apply initial schema: %w", err)
 	}
-	if err := addColumnIfMissing(db, "jobs", "scheduled_at", "DATETIME"); err != nil {
-		return err
-	}
-	if err := addColumnIfMissing(db, "jobs", "next_job_id", "TEXT"); err != nil {
-		return err
-	}
 	_, _ = db.Exec(`
 		CREATE TABLE IF NOT EXISTS shares (
 			id TEXT PRIMARY KEY,
@@ -120,6 +114,39 @@ func migrate(db *sql.DB) error {
 	if err := addColumnIfMissing(db, "job_items", "conflict_resolution", "TEXT"); err != nil {
 		return err
 	}
+	if err := addColumnIfMissing(db, "jobs", "scheduled_at", "DATETIME"); err != nil {
+		return err
+	}
+	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_jobs_claim ON jobs(status, type, scheduled_at, created_at)`); err != nil {
+		return fmt.Errorf("create job claim index: %w", err)
+	}
+
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS disk_usage_results (
+			job_id TEXT NOT NULL,
+			path TEXT NOT NULL,
+			parent_path TEXT,
+			name TEXT NOT NULL,
+			is_dir INTEGER NOT NULL DEFAULT 0,
+			size_bytes INTEGER NOT NULL DEFAULT 0,
+			file_count INTEGER NOT NULL DEFAULT 0,
+			dir_count INTEGER NOT NULL DEFAULT 0,
+			FOREIGN KEY(job_id) REFERENCES jobs(id) ON DELETE CASCADE
+		)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_disk_usage_job ON disk_usage_results(job_id, parent_path)`)
+
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS duplicate_results (
+			job_id TEXT NOT NULL,
+			group_id INTEGER NOT NULL,
+			path TEXT NOT NULL,
+			size_bytes INTEGER NOT NULL DEFAULT 0,
+			checksum TEXT NOT NULL,
+			modified_at DATETIME,
+			FOREIGN KEY(job_id) REFERENCES jobs(id) ON DELETE CASCADE
+		)`)
+	_, _ = db.Exec(`CREATE INDEX IF NOT EXISTS idx_duplicate_job ON duplicate_results(job_id, group_id)`)
+
 	return nil
 }
 
@@ -146,12 +173,11 @@ CREATE TABLE IF NOT EXISTS jobs (
     error_message TEXT,
     conflict_policy TEXT DEFAULT 'ask',
     verify_mode TEXT DEFAULT 'size',
-    scheduled_at DATETIME,
-    next_job_id TEXT,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     started_at DATETIME,
-    completed_at DATETIME
+    completed_at DATETIME,
+    scheduled_at DATETIME
 );
 
 CREATE TABLE IF NOT EXISTS job_items (

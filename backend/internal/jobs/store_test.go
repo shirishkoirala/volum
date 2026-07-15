@@ -5,6 +5,7 @@ import (
 	"errors"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/volum-app/volum/backend/internal/storage"
 )
@@ -59,6 +60,29 @@ func TestListJobs(t *testing.T) {
 	}
 	if len(jobs) != 2 {
 		t.Fatalf("expected 2 jobs, got %d", len(jobs))
+	}
+}
+
+func TestListVersionChangesWhenJobsAreDeleted(t *testing.T) {
+	store, ctx := setupStore(t)
+	job := createTestJob(t, store, ctx, TypeCopy)
+	if err := store.CompleteJob(ctx, job.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	before, err := store.ListVersion(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.ClearCompleted(ctx); err != nil {
+		t.Fatal(err)
+	}
+	after, err := store.ListVersion(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if before == after {
+		t.Fatal("expected job list version to change after deletion")
 	}
 }
 
@@ -311,21 +335,28 @@ func TestClaimNextChecksumJob(t *testing.T) {
 	}
 }
 
-func TestJobChaining(t *testing.T) {
+func TestClaimNextJobSkipsFutureScheduledJobs(t *testing.T) {
 	store, ctx := setupStore(t)
-	first := createTestJob(t, store, ctx, TypeCopy)
-	second := createTestJob(t, store, ctx, TypeArchive)
-
-	if err := store.SetNextJob(ctx, first.ID, second.ID); err != nil {
-		t.Fatal(err)
-	}
-	if err := store.CompleteJob(ctx, first.ID); err != nil {
+	future := createTestJob(t, store, ctx, TypeCopy)
+	ready := createTestJob(t, store, ctx, TypeCopy)
+	if _, err := store.db.ExecContext(ctx, `UPDATE jobs SET scheduled_at = ? WHERE id = ?`, time.Now().Add(time.Hour), future.ID); err != nil {
 		t.Fatal(err)
 	}
 
-	got, _ := store.Get(ctx, second.ID)
-	if got.Status != StatusQueued {
-		t.Fatalf("expected second job queued via chaining, got %s", got.Status)
+	claimed, ok, err := store.ClaimNextTransferJob(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok || claimed.ID != ready.ID {
+		t.Fatalf("expected ready job to be claimed, got ok=%v job=%+v", ok, claimed)
+	}
+
+	_, ok, err = store.ClaimNextTransferJob(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ok {
+		t.Fatal("expected future scheduled job to stay queued")
 	}
 }
 

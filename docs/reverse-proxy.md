@@ -91,6 +91,11 @@ Chunked uploads send 1 MB chunks sequentially. For large files (100+ MB), tune y
 To verify chunked uploads through a subpath reverse proxy, run:
 
 ```bash
+make smoke-proxy
+```
+
+Or run the underlying script directly:
+```bash
 ./scripts/smoke-reverse-proxy-upload.sh
 ```
 

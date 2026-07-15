@@ -5,7 +5,7 @@ import { Dialog } from './Dialog';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import { getShares, deleteShare, shareUrl, type Share } from '../../api/client';
-import { ConfirmDialog } from './Dialogs';
+import { ConfirmDialog } from './ConfirmDialog';
 import { Skeleton } from '../ui/Skeleton';
 import { useAsyncData } from '../../hooks/useAsyncData';
 import styles from './ShareManager.module.css';

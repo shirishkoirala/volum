@@ -1,0 +1,55 @@
+.titleBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 var(--space-sm);
+  cursor: default;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.titleText {
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.controls {
+  display: flex;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.controlBtn {
+  align-items: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  font-size: var(--font-size-base);
+  height: 28px;
+  justify-content: center;
+  transition: background var(--transition-fast);
+  width: 28px;
+}
+
+.controlBtn.closeBtn:hover {
+  background: var(--color-danger);
+  color: var(--color-on-accent);
+}
+
+@media (max-width: 760px) {
+  .titleBar {
+    height: 44px;
+    padding: 0 var(--space-md);
+  }
+
+  .titleText {
+    font-size: var(--font-size-lg);
+  }
+}

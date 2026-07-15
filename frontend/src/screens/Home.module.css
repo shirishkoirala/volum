@@ -90,6 +90,14 @@
   z-index: var(--z-floating);
 }
 
+@media (max-width: 760px) {
+  .mobileAppWorkspace {
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    backdrop-filter: var(--glass-backdrop);
+    background: var(--app-surface-body-bg);
+  }
+}
+
 .uploadProgress {
   -webkit-backdrop-filter: var(--glass-backdrop);
   backdrop-filter: var(--glass-backdrop);

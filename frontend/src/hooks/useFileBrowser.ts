@@ -130,13 +130,8 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
 
   const filteredEntries = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const filtered = needle
-      ? entries.filter((e) => e.name.toLowerCase().includes(needle))
-      : entries;
-    return [...filtered].sort((a, b) => {
-      if (a.type !== b.type) return a.type === 'directory' ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    });
+    if (!needle) return entries;
+    return entries.filter((e) => e.name.toLowerCase().includes(needle));
   }, [entries, query]);
 
   const sortedTrashEntries = useMemo(() => {

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/volum-app/volum/backend/internal/jobs"
 )
 
 func (s *Server) handleTrash(w http.ResponseWriter, r *http.Request) {
@@ -17,16 +18,12 @@ func (s *Server) handleTrash(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleRestoreTrash(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	entry, err := s.files.RestoreTrash(id)
+	job, err := s.jobs.Create(r.Context(), jobs.CreateRequest{Type: jobs.TypeRestore, SourcePath: id})
 	if err != nil {
 		writeError(w, err)
 		return
 	}
-	if err := s.jobs.CreateAuditLog(r.Context(), "restore", entry.Path, "restored from trash"); err != nil {
-		writeError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, entry)
+	writeJSON(w, http.StatusAccepted, job)
 }
 
 func (s *Server) handleDeleteTrash(w http.ResponseWriter, r *http.Request) {

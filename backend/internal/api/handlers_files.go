@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/volum-app/volum/backend/internal/files"
+	"github.com/volum-app/volum/backend/internal/jobs"
 )
 
 // Unsafe content types that should never render inline in the Volum origin.
@@ -18,7 +19,6 @@ var unsafeInlineExts = map[string]bool{
 	".html":  true,
 	".htm":   true,
 	".shtml": true,
-	".svg":   true,
 	".xml":   true,
 	".xsl":   true,
 	".xslt":  true,
@@ -207,16 +207,12 @@ func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	entry, err := s.files.Trash(req.Path)
+	job, err := s.jobs.Create(r.Context(), jobs.CreateRequest{Type: jobs.TypeTrash, SourcePath: req.Path})
 	if err != nil {
 		writeError(w, err)
 		return
 	}
-	if err := s.jobs.CreateAuditLog(r.Context(), "trash", req.Path, "moved to trash "+entry.ID); err != nil {
-		writeError(w, err)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
+	writeJSON(w, http.StatusAccepted, job)
 }
 
 func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
@@ -300,20 +296,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"results": results})
-}
-
-func (s *Server) handleAnalyzeDiskUsage(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Query().Get("path")
-	if path == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "path is required"})
-		return
-	}
-	node, err := s.files.AnalyzeDiskUsage(path)
-	if err != nil {
-		writeError(w, err)
-		return
-	}
-	writeJSON(w, http.StatusOK, node)
 }
 
 func (s *Server) handleRaw(w http.ResponseWriter, r *http.Request) {

@@ -29,7 +29,10 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm run format:check
       - run: npm run lint
-      - run: npm run test
+      - run: npm run test:ci
+      - name: Coverage (informational)
+        run: npm run test:coverage
+        continue-on-error: true
       - run: npm run build
 
   backend:
@@ -51,5 +54,47 @@ jobs:
           working-directory: backend
       - run: go vet ./...
       - run: go test ./...
+      - name: Coverage (informational)
+        run: go test -coverprofile=coverage.out -covermode=atomic ./...
+        continue-on-error: true
       - run: go build ./cmd/volum
       - run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+          shellcheck scripts/*.sh frontend/scripts/*.sh
+      - name: Verify CONTRIBUTING.md commands match Makefile
+        run: |
+          for cmd in $(grep -oP '`make \K[a-z-]+' CONTRIBUTING.md | sort -u); do
+            if ! grep -q "^$cmd:" Makefile; then
+              echo "ERROR: CONTRIBUTING.md references 'make $cmd' but Makefile has no '$cmd' target"
+              exit 1
+            fi
+          done
+          echo "All CONTRIBUTING.md make targets exist in Makefile"
+      - name: Lychee link check
+        if: github.event_name == 'schedule'
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --verbose --no-progress --exclude 'localhost|127\.0\.0\.1'
+            './**/*.md' './**/*.html' '!./frontend/node_modules' '!./.git'
+          fail: false
+
+  smoke:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Basic smoke test
+        run: ./scripts/smoke.sh 8091
+        timeout-minutes: 10
+      - name: Reverse-proxy upload smoke test
+        run: ./scripts/smoke-reverse-proxy-upload.sh 18092
+        timeout-minutes: 10

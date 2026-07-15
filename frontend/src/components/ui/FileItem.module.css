@@ -3,8 +3,6 @@
   cursor: pointer;
   transition:
     background var(--transition-fast),
-    margin var(--transition-fast),
-    width var(--transition-fast),
     border-color var(--transition-fast),
     border-radius var(--transition-fast);
   user-select: none;
@@ -44,25 +42,23 @@
   background: var(--glass-hover-bg);
   border-color: var(--glass-border);
   border-radius: var(--radius-md);
-  margin: 2px 6px;
-  width: calc(100% - 12px);
 }
 
 .fileRowList.selected {
   background: var(--glass-selected-bg);
-  outline: 2px solid var(--color-brand);
+  outline: var(--selection-ring-width) solid var(--color-brand);
   outline-offset: -2px;
 }
 
 .fileRowList.dragOver {
   background: var(--glass-selected-bg) !important;
   border-color: var(--color-brand) !important;
-  box-shadow: inset 0 0 0 2px var(--color-brand);
+  box-shadow: inset 0 0 0 var(--selection-ring-width) var(--color-brand);
   outline: none;
 }
 
 .fileRowList:focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: var(--selection-ring-width) solid var(--color-brand);
   outline-offset: -2px;
 }
 
@@ -114,7 +110,7 @@
 .fileRowGrid.dragOver {
   background: var(--glass-selected-bg) !important;
   border-color: var(--color-brand) !important;
-  box-shadow: inset 0 0 0 2px var(--color-brand);
+  box-shadow: inset 0 0 0 var(--selection-ring-width) var(--color-brand);
 }
 
 .fileRowGrid > span:not(.fileName):not(.fileMeta):not(.iconWrap) {
@@ -216,6 +212,10 @@
   .fileRowGrid {
     min-height: 126px;
     padding: 4px;
+  }
+
+  .fileDate {
+    display: none;
   }
 
   .listType,

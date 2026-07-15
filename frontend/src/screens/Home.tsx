@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SortField, SortDirection } from '../types';
 import type { FileEntry, Session } from '../api/client';
-import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
-import { ShareDialog } from '../components/overlay/ShareDialog';
-import { ShareManager } from '../components/overlay/ShareManager';
-import { ServiceFormModal } from '../components/overlay/ServiceFormModal';
-import { PreviewModal } from '../components/overlay/PreviewModal';
+import { HomeOverlays } from '../components/overlay/HomeOverlays';
 import { SettingsPanel } from '../pages/SettingsPanel';
 import { TopBar } from '../components/layout/TopBar';
 import { Dock } from '../components/layout/Dock';
@@ -16,10 +12,11 @@ import { DrivesView } from '../pages/DrivesView';
 import { TrashView } from '../pages/TrashView';
 import { SearchResultsView } from '../pages/SearchResultsView';
 import { JobsPage } from '../pages/JobsPage';
+import { StorageAnalyzerView } from '../pages/StorageAnalyzerView';
 import { ToastViewport } from '../components/overlay/Toast';
 import { WindowHost } from '../components/window/WindowHost';
 import { DesktopContextMenu } from '../components/overlay/DesktopContextMenu';
-import type { DesktopIconItem } from '../pages/DesktopView';
+import type { DesktopIconItem } from '../hooks/useDesktopIcons';
 import type { ServiceHealthResult } from '../utils/services';
 import { useServiceShortcuts } from '../hooks/useServiceShortcuts';
 import { useJobs } from '../hooks/useJobs';
@@ -48,7 +45,6 @@ import { Taskbar } from '../components/layout/Taskbar';
 import { PreviewWindow } from '../components/window/PreviewWindow';
 import { ServiceWindow } from '../components/window/ServiceWindow';
 import { fileTypeIconUrl } from '../api/icons';
-import { openFileExternally } from '../utils/preview';
 import { defaultRootPath as getDefaultRootPath } from '../utils/roots';
 import styles from './Home.module.css';
 
@@ -204,6 +200,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
               onAddFavorite={addFavorite}
               onRemoveFavorite={removeFavorite}
               onPreview={workspaceOpeners.openPreview}
+              onOpenStorageAnalyzer={workspaceOpeners.openStorageAnalyzer}
             />
           );
         case 'trash':
@@ -212,6 +209,15 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
           return <DrivesView onBackToDesktop={() => wm.closeWindow(win.id)} />;
         case 'jobs':
           return <JobsPage session={session} sessionLoading={false} />;
+        case 'storage-analyzer':
+          return (
+            <StorageAnalyzerView
+              key={win.params.path as string | undefined}
+              roots={browser.roots}
+              jobs={browser.jobs}
+              preselectedPath={win.params.path as string | undefined}
+            />
+          );
         case 'settings':
           return (
             <SettingsPanel
@@ -287,8 +293,11 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       dialogs,
       fileActions,
       defaultRootPath,
+      browser.roots,
+      browser.jobs,
       wm,
       workspaceOpeners.openPreview,
+      workspaceOpeners.openStorageAnalyzer,
       services,
       serviceHealth,
       desktopActions,
@@ -318,7 +327,6 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     setPreviewEntry: fileActions.setPreviewEntry,
     setInfoEntry: fileActions.setInfoEntry,
     setBatchRenameOpen: fileActions.setBatchRenameOpen,
-    setAnalyzePath: fileActions.setAnalyzePath,
     fileClipboard: fileActions.fileClipboard,
     setFileClipboard: fileActions.setFileClipboard,
     setConfirmDialog: dialogs.setConfirmDialog,
@@ -391,6 +399,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       else if (id === 'jobs') workspaceOpeners.openJobs();
       else if (id === 'settings') workspaceOpeners.openSettings();
       else if (id === 'drives') workspaceOpeners.openDrives();
+      else if (id === 'storage-analyzer') workspaceOpeners.openStorageAnalyzer();
       else if (id === 'desktop') workspaceOpeners.openDesktop();
       else desktopActions.handleDockActivate(id);
     },
@@ -438,6 +447,26 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     if (visibleWindows.length === 0) return null;
     return visibleWindows.reduce((a, b) => (a.zIndex > b.zIndex ? a : b));
   }, [wm.windows]);
+
+  const previousMobileRef = useRef(isMobile);
+  const analyzerTransferredToMobileRef = useRef(false);
+  useEffect(() => {
+    if (isMobile && !previousMobileRef.current && focusedWindow?.winType === 'storage-analyzer') {
+      nav.setShowingStorageAnalyzer(true);
+      analyzerTransferredToMobileRef.current = true;
+    } else if (!isMobile && previousMobileRef.current && analyzerTransferredToMobileRef.current) {
+      nav.setShowingStorageAnalyzer(false);
+      analyzerTransferredToMobileRef.current = false;
+    } else if (
+      !isMobile &&
+      previousMobileRef.current &&
+      focusedWindow?.winType === 'drives' &&
+      nav.activeView === 'drives'
+    ) {
+      navActions.resetToDesktopView();
+    }
+    previousMobileRef.current = isMobile;
+  }, [focusedWindow?.winType, isMobile, nav, navActions]);
 
   const focusedCommands = focusedWindow
     ? (commandsMap[focusedWindow.id] ?? {})
@@ -562,7 +591,10 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
               shellStatusVisible={showStatusBar}
             />
 
-            <section className={styles.workspace} onClick={selection.handleWorkspaceClick}>
+            <section
+              className={`${styles.workspace}${isMobile && nav.activeView !== 'desktop' ? ` ${styles.mobileAppWorkspace}` : ''}`}
+              onClick={selection.handleWorkspaceClick}
+            >
               {nav.activeView === 'desktop' && (
                 <DesktopView
                   trashEntries={browser.trashEntries}
@@ -576,6 +608,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                   onOpenSettings={workspaceOpeners.openSettings}
                   onOpenJobs={workspaceOpeners.openJobs}
                   onOpenFiles={() => workspaceOpeners.openFiles()}
+                  onOpenStorageAnalyzer={workspaceOpeners.openStorageAnalyzer}
                   onOpenService={workspaceOpeners.openService}
                   onShowMyPC={workspaceOpeners.openDrives}
                   onItemContextMenu={handleDesktopItemContextMenu}
@@ -606,6 +639,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                   onAddFavorite={addFavorite}
                   onRemoveFavorite={removeFavorite}
                   onPreview={workspaceOpeners.openPreview}
+                  onOpenStorageAnalyzer={workspaceOpeners.openStorageAnalyzer}
                   onShowAllSearchResults={(query) => {
                     nav.setSearchQuery(query);
                     nav.setShowingSearch(true);
@@ -613,6 +647,9 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                 />
               )}
               {nav.activeView === 'jobs' && <JobsPage session={session} sessionLoading={false} />}
+              {nav.activeView === 'storage-analyzer' && (
+                <StorageAnalyzerView roots={browser.roots} jobs={browser.jobs} />
+              )}
               {nav.activeView === 'settings' && (
                 <SettingsPanel
                   onOpenShares={() => {
@@ -686,53 +723,29 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     </>
   );
 
-  // ── Overlay rendering ────────────────────────────────────
-
   return (
     <>
       {shell}
-      {dialogs.shareDialogPath && (
-        <ShareDialog
-          path={dialogs.shareDialogPath.path}
-          name={dialogs.shareDialogPath.name}
-          onClose={() => dialogs.setShareDialogPath(null)}
-        />
-      )}
-      {fileActions.previewEntry && (
-        <PreviewModal
-          entry={fileActions.previewEntry}
-          onClose={() => fileActions.setPreviewEntry(null)}
-          onDownload={() => openFileExternally(fileActions.previewEntry!.path)}
-          onShare={() =>
-            dialogs.setShareDialogPath({
-              path: fileActions.previewEntry!.path,
-              name: fileActions.previewEntry!.name,
-            })
-          }
-          onPrevious={
-            previousPreviewEntry
-              ? () => fileActions.setPreviewEntry(previousPreviewEntry)
-              : undefined
-          }
-          onNext={
-            nextPreviewEntry ? () => fileActions.setPreviewEntry(nextPreviewEntry) : undefined
-          }
-          previousDisabled={!previousPreviewEntry}
-          nextDisabled={!nextPreviewEntry}
-          positionLabel={previewPositionLabel}
-        />
-      )}
-      {fileActions.shortcutsOpen && (
-        <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />
-      )}
-      {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
-      {menus.serviceFormData && (
-        <ServiceFormModal
-          initial={menus.serviceFormData.initial}
-          onSave={desktopActions.handleSaveService}
-          onClose={() => menus.setServiceFormData(null)}
-        />
-      )}
+      <HomeOverlays
+        shareDialogPath={dialogs.shareDialogPath}
+        onShareDialogClose={() => dialogs.setShareDialogPath(null)}
+        previewEntry={fileActions.previewEntry}
+        onPreviewClose={() => fileActions.setPreviewEntry(null)}
+        onPreviewShare={(entry) =>
+          dialogs.setShareDialogPath({ path: entry.path, name: entry.name })
+        }
+        setPreviewEntry={fileActions.setPreviewEntry}
+        previousPreviewEntry={previousPreviewEntry}
+        nextPreviewEntry={nextPreviewEntry}
+        previewPositionLabel={previewPositionLabel}
+        shortcutsOpen={fileActions.shortcutsOpen}
+        onShortcutsClose={() => fileActions.setShortcutsOpen(false)}
+        sharesOpen={dialogs.sharesOpen}
+        onSharesClose={() => dialogs.setSharesOpen(false)}
+        serviceFormData={menus.serviceFormData}
+        onServiceFormClose={() => menus.setServiceFormData(null)}
+        onSaveService={desktopActions.handleSaveService}
+      />
     </>
   );
 }

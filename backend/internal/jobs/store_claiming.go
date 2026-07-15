@@ -89,3 +89,7 @@ func (s *Store) ClaimNextArchiveJob(ctx context.Context) (Job, bool, error) {
 func (s *Store) ClaimNextChecksumJob(ctx context.Context) (Job, bool, error) {
 	return s.claimNextJob(ctx, TypeChecksum)
 }
+
+func (s *Store) ClaimNextTrashJob(ctx context.Context) (Job, bool, error) {
+	return s.claimNextJob(ctx, TypeTrash, TypeRestore)
+}

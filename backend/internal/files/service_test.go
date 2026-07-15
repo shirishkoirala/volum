@@ -1,6 +1,7 @@
 package files
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -281,6 +282,38 @@ func TestTrashAndRestore(t *testing.T) {
 	}
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("expected restored file to exist: %v", err)
+	}
+}
+
+func TestRestoreTrashRetryPreservesExistingDestination(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "note.txt")
+	if err := os.WriteFile(path, []byte("trashed"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	guard, err := security.NewRootGuard([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := NewService(guard, testCache())
+	trashEntry, err := service.Trash(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("unrelated"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := service.RestoreTrashRetry(trashEntry.ID); !errors.Is(err, ErrDestinationExists) {
+		t.Fatalf("expected destination conflict, got %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "unrelated" {
+		t.Fatalf("existing destination was overwritten: %q", data)
 	}
 }
 

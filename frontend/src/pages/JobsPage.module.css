@@ -93,10 +93,6 @@
   margin-top: var(--space-xs);
 }
 
-.mutedPlaceholder {
-  color: var(--color-text-muted);
-}
-
 .pagination {
   align-items: center;
   display: flex;
@@ -133,5 +129,10 @@
 
   .jobMeta {
     gap: var(--space-xs) var(--space-sm);
+  }
+
+  .jobToolbar :global(button),
+  .jobActions :global(button) {
+    min-height: 44px;
   }
 }

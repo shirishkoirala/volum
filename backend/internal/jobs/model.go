@@ -5,13 +5,16 @@ import "time"
 type Type string
 
 const (
-	TypeCopy     Type = "copy"
-	TypeMove     Type = "move"
-	TypeDelete   Type = "delete"
-	TypeUpload   Type = "upload"
-	TypeExtract  Type = "extract"
-	TypeArchive  Type = "archive"
-	TypeChecksum Type = "checksum"
+	TypeCopy          Type = "copy"
+	TypeMove          Type = "move"
+	TypeTrash         Type = "trash"
+	TypeRestore       Type = "restore"
+	TypeUpload        Type = "upload"
+	TypeExtract       Type = "extract"
+	TypeArchive       Type = "archive"
+	TypeChecksum      Type = "checksum"
+	TypeDiskAnalyze   Type = "disk_analyze"
+	TypeDuplicateFind Type = "duplicate_find"
 )
 
 type Status string
@@ -43,8 +46,6 @@ type Job struct {
 	ErrorMessage    *string    `json:"errorMessage,omitempty"`
 	ConflictPolicy  string     `json:"conflictPolicy"`
 	VerifyMode      string     `json:"verifyMode"`
-	ScheduledAt     *time.Time `json:"scheduledAt,omitempty"`
-	NextJobID       *string    `json:"nextJobId,omitempty"`
 	CreatedAt       time.Time  `json:"createdAt"`
 	UpdatedAt       time.Time  `json:"updatedAt"`
 	StartedAt       *time.Time `json:"startedAt,omitempty"`
@@ -68,13 +69,11 @@ type Item struct {
 }
 
 type CreateRequest struct {
-	Type            Type       `json:"type"`
-	SourcePath      string     `json:"sourcePath"`
-	DestinationPath string     `json:"destinationPath"`
-	ConflictPolicy  string     `json:"conflictPolicy"`
-	VerifyMode      string     `json:"verifyMode"`
-	ScheduledAt     *time.Time `json:"scheduledAt,omitempty"`
-	NextJobID       *string    `json:"nextJobId,omitempty"`
+	Type            Type   `json:"type"`
+	SourcePath      string `json:"sourcePath"`
+	DestinationPath string `json:"destinationPath"`
+	ConflictPolicy  string `json:"conflictPolicy"`
+	VerifyMode      string `json:"verifyMode"`
 }
 
 type AuditLog struct {

@@ -15,22 +15,23 @@ import { AppPanel } from '../components/layout/AppPanel';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Notice } from '../components/ui/shared';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
-import { FileGridView } from '../components/ui/FileGridView';
-import { FileListView } from '../components/ui/FileListView';
-import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
-import { PreviewModal } from '../components/overlay/PreviewModal';
-import { InfoPanel } from '../components/overlay/InfoPanel';
-import { BatchRenameModal } from '../components/overlay/BatchRenameModal';
-import { ShareDialog } from '../components/overlay/ShareDialog';
-import { ShareManager } from '../components/overlay/ShareManager';
-import { DiskUsageAnalyzer } from '../components/overlay/DiskUsageAnalyzer';
-import { ConfirmDialog, TextInputDialog, TransferDialog } from '../components/overlay/Dialogs';
+import { FileEntriesView } from '../components/ui/FileEntriesView';
+import { Skeleton } from '../components/ui/Skeleton';
+import { folderIconUrl } from '../api/icons';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
 import { FilesEmptyMenu } from '../components/overlay/FilesEmptyMenu';
+import { PreviewModal } from '../components/overlay/PreviewModal';
+import { InfoPanel } from '../components/overlay/InfoPanel';
+import { BatchRenameModal } from '../components/overlay/BatchRenameModal';
+import { ConfirmDialog } from '../components/overlay/ConfirmDialog';
+import { TextInputDialog } from '../components/overlay/TextInputDialog';
+import { TransferDialog } from '../components/overlay/TransferDialog';
+import { ShareDialog } from '../components/overlay/ShareDialog';
+import { ShareManager } from '../components/overlay/ShareManager';
+import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
 import { ProgressBar } from '../components/ui/ProgressBar';
-import { Skeleton } from '../components/ui/Skeleton';
-import { folderIconUrl } from '../api/icons';
+import { formatBytes } from '../utils/format';
 import { useWindowId, useCommandsContext } from '../contexts/WindowCommands';
 import type { FileEntry, Session } from '../api/client';
 import { isPreviewableFile } from '../utils/preview';
@@ -50,7 +51,6 @@ import { useNavStack } from '../hooks/useNavStack';
 import { usePreviewNavigation } from '../hooks/usePreviewNavigation';
 import { useShellContext } from '../contexts/ShellContext';
 import type { UploadProgress } from '../utils/upload';
-import { formatBytes } from '../utils/format';
 import styles from './FilesView.module.css';
 
 type FilesViewProps = {
@@ -63,6 +63,7 @@ type FilesViewProps = {
   onRemoveFavorite: (path: string) => void;
   onPreview?: (entry: FileEntry, entries?: FileEntry[]) => void;
   onShowAllSearchResults?: (query: string) => void;
+  onOpenStorageAnalyzer: (path: string) => void;
 };
 
 export type FilesViewHandle = {
@@ -93,6 +94,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     onRemoveFavorite,
     onPreview,
     onShowAllSearchResults,
+    onOpenStorageAnalyzer,
   },
   ref,
 ) {
@@ -202,7 +204,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     setPreviewEntry: setPreviewTarget,
     setInfoEntry: fileActions.setInfoEntry,
     setBatchRenameOpen: fileActions.setBatchRenameOpen,
-    setAnalyzePath: fileActions.setAnalyzePath,
     fileClipboard: fileActions.fileClipboard,
     setFileClipboard: fileActions.setFileClipboard,
     setConfirmDialog: dialogs.setConfirmDialog,
@@ -478,100 +479,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     fileCommands.commitRename(entry);
   }
 
-  function renderEntries() {
-    const incrementalResetKey = `${effectivePath}:${viewPref.showHidden}:${browser.query}:${viewPref.viewMode}`;
-
-    if (viewPref.viewMode === 'grid') {
-      return (
-        <FileGridView
-          filteredEntries={browser.filteredEntries}
-          selectedPaths={selection.selectedPaths}
-          onContextMenu={handleContextMenuEvent}
-          onEmptyContextMenu={handleFilesEmptyContextMenu}
-          canWrite={browser.canWrite}
-          onFileDragStart={dragDrop.handleFileDragStart}
-          onFolderDragOver={dragDrop.handleFolderDragOver}
-          onFolderDragLeave={dragDrop.handleFolderDragLeave}
-          onDropOnFolder={dragDrop.handleDropOnFolder}
-          dragOverPath={dragDrop.dragOverPath}
-          favorites={favorites}
-          renameState={fileActions.renaming}
-          renameInputRef={fileCommands.renameInputRef as RefObject<HTMLInputElement | null>}
-          onSubmitRename={commitRename}
-          onCancelRename={fileCommands.cancelRename}
-          onRenameChange={(value) =>
-            fileActions.setRenaming({ path: fileActions.renaming?.path ?? '', value })
-          }
-          fileGridRef={fileGridRef as RefObject<HTMLDivElement | null>}
-          rubberBandStyle={rubberBandStyle}
-          fileClick={selection.handleFileClick}
-          onFileAreaDragOver={dragDrop.handleFileAreaDragOver}
-          onFileAreaDragLeave={dragDrop.handleFileAreaDragLeave}
-          onFileAreaDrop={dragDrop.handleFileAreaDrop}
-          onFileAreaMouseDown={handleFileAreaMouseDown}
-          onFileAreaKeyDown={handleFileAreaKeyDown}
-          draggingUpload={dragDrop.draggingUpload}
-          totalEntries={totalEntries}
-          loadingMore={browser.loadingMore}
-          onLoadMoreEntries={localFilterActive ? undefined : browser.loadMoreEntries}
-          onVisibleCountChange={handleVisibleCountChange}
-          resetKey={incrementalResetKey}
-          onEntryTouchStart={handleEntryTouchStart}
-          onEntryTouchMove={handleEntryTouchMove}
-          onEntryTouchEnd={handleEntryTouchEnd}
-          onNavigate={handleNavigate}
-          onPreview={(entry) => {
-            if (isPreviewableFile(entry.name)) showPreviewEntry(entry);
-            else fileCommands.handleDownload(entry);
-          }}
-        />
-      );
-    }
-    return (
-      <FileListView
-        filteredEntries={browser.filteredEntries}
-        selectedPaths={selection.selectedPaths}
-        onContextMenu={handleContextMenuEvent}
-        onEmptyContextMenu={handleFilesEmptyContextMenu}
-        canWrite={browser.canWrite}
-        onFileDragStart={dragDrop.handleFileDragStart}
-        onFolderDragOver={dragDrop.handleFolderDragOver}
-        onFolderDragLeave={dragDrop.handleFolderDragLeave}
-        onDropOnFolder={dragDrop.handleDropOnFolder}
-        dragOverPath={dragDrop.dragOverPath}
-        favorites={favorites}
-        renameState={fileActions.renaming}
-        renameInputRef={fileCommands.renameInputRef as RefObject<HTMLInputElement | null>}
-        onSubmitRename={commitRename}
-        onCancelRename={fileCommands.cancelRename}
-        onRenameChange={(value) =>
-          fileActions.setRenaming({ path: fileActions.renaming?.path ?? '', value })
-        }
-        fileGridRef={fileGridRef as RefObject<HTMLDivElement | null>}
-        rubberBandStyle={rubberBandStyle}
-        fileClick={selection.handleFileClick}
-        onFileAreaDragOver={dragDrop.handleFileAreaDragOver}
-        onFileAreaDragLeave={dragDrop.handleFileAreaDragLeave}
-        onFileAreaDrop={dragDrop.handleFileAreaDrop}
-        onFileAreaMouseDown={handleFileAreaMouseDown}
-        onFileAreaKeyDown={handleFileAreaKeyDown}
-        draggingUpload={dragDrop.draggingUpload}
-        totalEntries={totalEntries}
-        loadingMore={browser.loadingMore}
-        onLoadMoreEntries={localFilterActive ? undefined : browser.loadMoreEntries}
-        onVisibleCountChange={handleVisibleCountChange}
-        resetKey={incrementalResetKey}
-        onEntryTouchStart={handleEntryTouchStart}
-        onEntryTouchMove={handleEntryTouchMove}
-        onEntryTouchEnd={handleEntryTouchEnd}
-        onNavigate={handleNavigate}
-        onPreview={(entry) => {
-          if (isPreviewableFile(entry.name)) showPreviewEntry(entry);
-          else fileCommands.handleDownload(entry);
-        }}
-      />
-    );
-  }
+  const incrementalResetKey = `${effectivePath}:${viewPref.showHidden}:${browser.query}:${viewPref.viewMode}`;
 
   return (
     <>
@@ -675,7 +583,49 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
                 />
               </div>
             ) : (
-              renderEntries()
+              <FileEntriesView
+                viewMode={viewPref.viewMode}
+                filteredEntries={browser.filteredEntries}
+                selectedPaths={selection.selectedPaths}
+                onContextMenu={handleContextMenuEvent}
+                onEmptyContextMenu={handleFilesEmptyContextMenu}
+                canWrite={browser.canWrite}
+                onFileDragStart={dragDrop.handleFileDragStart}
+                onFolderDragOver={dragDrop.handleFolderDragOver}
+                onFolderDragLeave={dragDrop.handleFolderDragLeave}
+                onDropOnFolder={dragDrop.handleDropOnFolder}
+                dragOverPath={dragDrop.dragOverPath}
+                favorites={favorites}
+                renameState={fileActions.renaming}
+                renameInputRef={fileCommands.renameInputRef as RefObject<HTMLInputElement | null>}
+                onSubmitRename={commitRename}
+                onCancelRename={fileCommands.cancelRename}
+                onRenameChange={(value) =>
+                  fileActions.setRenaming({ path: fileActions.renaming?.path ?? '', value })
+                }
+                fileGridRef={fileGridRef as RefObject<HTMLDivElement | null>}
+                rubberBandStyle={rubberBandStyle}
+                fileClick={selection.handleFileClick}
+                onFileAreaDragOver={dragDrop.handleFileAreaDragOver}
+                onFileAreaDragLeave={dragDrop.handleFileAreaDragLeave}
+                onFileAreaDrop={dragDrop.handleFileAreaDrop}
+                onFileAreaMouseDown={handleFileAreaMouseDown}
+                onFileAreaKeyDown={handleFileAreaKeyDown}
+                draggingUpload={dragDrop.draggingUpload}
+                totalEntries={totalEntries}
+                loadingMore={browser.loadingMore}
+                onLoadMoreEntries={localFilterActive ? undefined : browser.loadMoreEntries}
+                onVisibleCountChange={handleVisibleCountChange}
+                resetKey={incrementalResetKey}
+                onEntryTouchStart={handleEntryTouchStart}
+                onEntryTouchMove={handleEntryTouchMove}
+                onEntryTouchEnd={handleEntryTouchEnd}
+                onNavigate={handleNavigate}
+                onPreview={(entry) => {
+                  if (isPreviewableFile(entry.name)) showPreviewEntry(entry);
+                  else fileCommands.handleDownload(entry);
+                }}
+              />
             )}
           </div>
         </AppPanel>
@@ -698,7 +648,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
             canMove: selection.canMove,
             canPaste: selection.canPaste,
             canDelete: selection.canDelete,
-            canAnalyze: selection.canAnalyze,
           }}
           isFavorited={selectedEntryIsFavorited}
           selectedCount={selection.selectedEntries.length}
@@ -714,17 +663,22 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           onChecksum={fileCommands.handleCreateChecksum}
           onPaste={fileCommands.handlePaste}
           onQuickShare={fileCommands.handleQuickShare}
-          onShare={() => {
-            const e = fileActions.contextMenu!.entry;
-            if (e) dialogs.setShareDialogPath({ path: e.path, name: e.name });
-          }}
-          onAnalyze={fileCommands.handleAnalyze}
+          onShare={() =>
+            dialogs.setShareDialogPath({
+              path: fileActions.contextMenu!.entry.path,
+              name: fileActions.contextMenu!.entry.name,
+            })
+          }
+          onAnalyze={
+            fileActions.contextMenu.entry.type === 'directory' &&
+            selection.selectedEntries.length === 1
+              ? () => onOpenStorageAnalyzer(fileActions.contextMenu!.entry.path)
+              : undefined
+          }
           onToggleFavorite={() => {
-            const e = fileActions.contextMenu!.entry;
-            if (e) {
-              if (favorites.includes(e.path)) onRemoveFavorite(e.path);
-              else onAddFavorite(e.path);
-            }
+            const entry = fileActions.contextMenu!.entry;
+            if (favorites.includes(entry.path)) onRemoveFavorite(entry.path);
+            else onAddFavorite(entry.path);
           }}
           onDelete={fileCommands.handleDelete}
           onClose={() => fileActions.setContextMenu(null)}
@@ -852,12 +806,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />
       )}
       {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
-      {fileActions.analyzePath && (
-        <DiskUsageAnalyzer
-          path={fileActions.analyzePath}
-          onClose={() => fileActions.setAnalyzePath(null)}
-        />
-      )}
     </>
   );
 });

@@ -19,7 +19,6 @@ var ErrInvalidConflictPolicy = errors.New("conflict policy must be ask, skip, ov
 const jobColumns = `id, type, status, source_path, destination_path,
 	total_bytes, processed_bytes, total_items, processed_items,
 	current_item, error_message, conflict_policy, verify_mode,
-	scheduled_at, next_job_id,
 	created_at, updated_at, started_at, completed_at`
 
 func NewStore(db *sql.DB) *Store {
@@ -56,9 +55,9 @@ func (s *Store) Create(ctx context.Context, req CreateRequest) (Job, error) {
 	_, err := s.db.ExecContext(ctx, `
 		INSERT INTO jobs (
 			id, type, status, source_path, destination_path,
-			conflict_policy, verify_mode, scheduled_at, next_job_id, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-	`, job.ID, job.Type, job.Status, job.SourcePath, job.DestinationPath, job.ConflictPolicy, job.VerifyMode, job.ScheduledAt, job.NextJobID, job.CreatedAt, job.UpdatedAt)
+			conflict_policy, verify_mode, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, job.ID, job.Type, job.Status, job.SourcePath, job.DestinationPath, job.ConflictPolicy, job.VerifyMode, job.CreatedAt, job.UpdatedAt)
 	if err != nil {
 		return Job{}, err
 	}
@@ -87,6 +86,20 @@ func (s *Store) List(ctx context.Context, limit, offset int) ([]Job, error) {
 		out = append(out, job)
 	}
 	return out, rows.Err()
+}
+
+type ListVersion struct {
+	Count         int64
+	LatestUpdated string
+}
+
+func (s *Store) ListVersion(ctx context.Context) (ListVersion, error) {
+	var version ListVersion
+	err := s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*), COALESCE(MAX(updated_at), '1970-01-01T00:00:00Z')
+		FROM jobs
+	`).Scan(&version.Count, &version.LatestUpdated)
+	return version, err
 }
 
 func (s *Store) Get(ctx context.Context, id string) (Job, error) {
@@ -179,36 +192,6 @@ func (s *Store) CompleteJob(ctx context.Context, jobID string) error {
 		SET status = ?, current_item = NULL, error_message = NULL, updated_at = ?, completed_at = ?
 		WHERE id = ?
 	`, StatusCompleted, now, now, jobID)
-	if err != nil {
-		return err
-	}
-
-	// job chaining: queue the next job when this one completes
-	var nextJobID sql.NullString
-	if err := s.db.QueryRowContext(ctx, `SELECT next_job_id FROM jobs WHERE id = ?`, jobID).Scan(&nextJobID); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-	if nextJobID.Valid && nextJobID.String != "" {
-		_, _ = s.db.ExecContext(ctx, `
-			UPDATE jobs
-			SET status = ?, updated_at = ?, started_at = NULL, completed_at = NULL,
-				error_message = NULL, processed_bytes = 0, processed_items = 0
-			WHERE id = ? AND status = ?
-		`, StatusQueued, now, nextJobID.String, StatusQueued)
-	}
-	return nil
-}
-
-func (s *Store) SetNextJob(ctx context.Context, jobID, nextJobID string) error {
-	now := now()
-	_, err := s.db.ExecContext(ctx, `
-		UPDATE jobs
-		SET next_job_id = ?, updated_at = ?
-		WHERE id = ?
-	`, nextJobID, now, jobID)
 	return err
 }
 
@@ -222,9 +205,17 @@ func (s *Store) FailJob(ctx context.Context, jobID string, cause error) error {
 	return err
 }
 
-func (s *Store) IsCancelled(ctx context.Context, jobID string) (bool, error) {
+func (s *Store) GetJobStatus(ctx context.Context, jobID string) (Status, error) {
 	var status Status
 	err := s.db.QueryRowContext(ctx, `SELECT status FROM jobs WHERE id = ?`, jobID).Scan(&status)
+	if err != nil {
+		return "", err
+	}
+	return status, nil
+}
+
+func (s *Store) IsCancelled(ctx context.Context, jobID string) (bool, error) {
+	status, err := s.GetJobStatus(ctx, jobID)
 	if err != nil {
 		return false, err
 	}
@@ -232,8 +223,7 @@ func (s *Store) IsCancelled(ctx context.Context, jobID string) (bool, error) {
 }
 
 func (s *Store) IsPaused(ctx context.Context, jobID string) (bool, error) {
-	var status Status
-	err := s.db.QueryRowContext(ctx, `SELECT status FROM jobs WHERE id = ?`, jobID).Scan(&status)
+	status, err := s.GetJobStatus(ctx, jobID)
 	if err != nil {
 		return false, err
 	}
@@ -380,8 +370,8 @@ func (s *Store) MarkInterruptedRunningJobs(ctx context.Context) error {
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, current_item = NULL, error_message = ?, updated_at = ?, started_at = NULL
-		WHERE status = ? AND type IN (?, ?)
-	`, StatusQueued, "server restarted; job will resume from validated partial files", now, StatusRunning, TypeCopy, TypeMove); err != nil {
+		WHERE status = ? AND type IN (?, ?, ?, ?)
+	`, StatusQueued, "server restarted; job will resume", now, StatusRunning, TypeCopy, TypeMove, TypeTrash, TypeRestore); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `
@@ -389,16 +379,16 @@ func (s *Store) MarkInterruptedRunningJobs(ctx context.Context) error {
 		SET status = ?, updated_at = ?
 		WHERE status = ? AND job_id IN (
 			SELECT id FROM jobs
-			WHERE status = ? AND type IN (?, ?)
+			WHERE status = ? AND type IN (?, ?, ?, ?)
 		)
-	`, StatusQueued, now, StatusRunning, StatusQueued, TypeCopy, TypeMove); err != nil {
+	`, StatusQueued, now, StatusRunning, StatusQueued, TypeCopy, TypeMove, TypeTrash, TypeRestore); err != nil {
 		return err
 	}
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE jobs
 		SET status = ?, error_message = ?, updated_at = ?, completed_at = ?
-		WHERE status = ? AND type NOT IN (?, ?)
-	`, StatusFailed, "server stopped before job completed; resume validation is not implemented yet", now, now, StatusRunning, TypeCopy, TypeMove); err != nil {
+		WHERE status = ? AND type NOT IN (?, ?, ?, ?)
+	`, StatusFailed, "server stopped before job completed; resume validation is not implemented yet", now, now, StatusRunning, TypeCopy, TypeMove, TypeTrash, TypeRestore); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -406,13 +396,12 @@ func (s *Store) MarkInterruptedRunningJobs(ctx context.Context) error {
 
 func scanJob(row sqlutil.Scanner) (Job, error) {
 	var job Job
-	var source, destination, current, message, nextID sql.NullString
-	var started, completed, scheduled sql.NullTime
+	var source, destination, current, message sql.NullString
+	var started, completed sql.NullTime
 	if err := row.Scan(
 		&job.ID, &job.Type, &job.Status, &source, &destination,
 		&job.TotalBytes, &job.ProcessedBytes, &job.TotalItems, &job.ProcessedItems,
 		&current, &message, &job.ConflictPolicy, &job.VerifyMode,
-		&scheduled, &nextID,
 		&job.CreatedAt, &job.UpdatedAt, &started, &completed,
 	); err != nil {
 		return Job{}, err
@@ -421,10 +410,6 @@ func scanJob(row sqlutil.Scanner) (Job, error) {
 	job.DestinationPath = nullString(destination)
 	job.CurrentItem = nullString(current)
 	job.ErrorMessage = nullString(message)
-	job.NextJobID = nullString(nextID)
-	if scheduled.Valid {
-		job.ScheduledAt = &scheduled.Time
-	}
 	if started.Valid {
 		job.StartedAt = &started.Time
 	}

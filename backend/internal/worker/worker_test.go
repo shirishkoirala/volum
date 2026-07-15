@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"database/sql"
 	"errors"
 	"io"
 	"log/slog"
@@ -20,6 +21,11 @@ import (
 )
 
 func setupWorker(t *testing.T, root string) (*Worker, *jobs.Store, context.Context) {
+	w, store, ctx, _ := setupWorkerWithDB(t, root)
+	return w, store, ctx
+}
+
+func setupWorkerWithDB(t *testing.T, root string) (*Worker, *jobs.Store, context.Context, *sql.DB) {
 	t.Helper()
 	ctx := context.Background()
 	db, err := storage.Open(filepath.Join(t.TempDir(), "volum.db"))
@@ -33,7 +39,122 @@ func setupWorker(t *testing.T, root string) (*Worker, *jobs.Store, context.Conte
 		t.Fatal(err)
 	}
 	w := New(store, guard, slog.New(slog.NewTextHandler(io.Discard, nil)))
-	return w, store, ctx
+	return w, store, ctx, db
+}
+
+func TestDiskAnalyzeIncludesNestedFilesInRootTotal(t *testing.T) {
+	root := t.TempDir()
+	nested := filepath.Join(root, "nested")
+	if err := os.Mkdir(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "direct.bin"), make([]byte, 3), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(nested, "child.bin"), make([]byte, 5), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	w, store, ctx := setupWorker(t, root)
+	job, err := store.Create(ctx, jobs.CreateRequest{Type: jobs.TypeDiskAnalyze, SourcePath: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.runOnce(ctx)
+
+	summary, err := store.GetDiskUsageSummary(ctx, job.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if summary.TotalBytes != 8 || summary.FileCount != 2 || summary.DirectoryCount != 1 {
+		t.Fatalf("unexpected summary: %#v", summary)
+	}
+	results, err := store.ListDiskUsageResults(ctx, job.ID, root, 100, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var directFileFound bool
+	for _, result := range results {
+		if result.Path == filepath.Join(root, "direct.bin") && !result.IsDir && result.SizeBytes == 3 {
+			directFileFound = true
+		}
+	}
+	if !directFileFound {
+		t.Fatalf("direct file missing from disk usage results: %#v", results)
+	}
+}
+
+func TestTrashAndRestoreRunAsPersistentJobs(t *testing.T) {
+	root := t.TempDir()
+	w, store, ctx := setupWorker(t, root)
+	path := filepath.Join(root, "large-folder")
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(path, "file.txt"), []byte("persistent"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	trashJob, err := store.Create(ctx, jobs.CreateRequest{Type: jobs.TypeTrash, SourcePath: path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.runOnce(ctx)
+	got, err := store.Get(ctx, trashJob.ID)
+	if err != nil || got.Status != jobs.StatusCompleted {
+		t.Fatalf("trash job did not complete: %#v, %v", got, err)
+	}
+	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("source still exists after trash: %v", err)
+	}
+
+	restoreJob, err := store.Create(ctx, jobs.CreateRequest{Type: jobs.TypeRestore, SourcePath: trashJob.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.runOnce(ctx)
+	got, err = store.Get(ctx, restoreJob.ID)
+	if err != nil || got.Status != jobs.StatusCompleted {
+		t.Fatalf("restore job did not complete: %#v, %v", got, err)
+	}
+	if data, err := os.ReadFile(filepath.Join(path, "file.txt")); err != nil || string(data) != "persistent" {
+		t.Fatalf("restored content mismatch: %q, %v", data, err)
+	}
+}
+
+func TestTrashAndRestoreCompleteWithoutAuditLog(t *testing.T) {
+	root := t.TempDir()
+	w, store, ctx, db := setupWorkerWithDB(t, root)
+	path := filepath.Join(root, "file.txt")
+	if err := os.WriteFile(path, []byte("persistent"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.ExecContext(ctx, `DROP TABLE audit_logs`); err != nil {
+		t.Fatal(err)
+	}
+
+	trashJob, err := store.Create(ctx, jobs.CreateRequest{Type: jobs.TypeTrash, SourcePath: path})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.runOnce(ctx)
+	got, err := store.Get(ctx, trashJob.ID)
+	if err != nil || got.Status != jobs.StatusCompleted {
+		t.Fatalf("trash job did not complete without audit log: %#v, %v", got, err)
+	}
+
+	restoreJob, err := store.Create(ctx, jobs.CreateRequest{Type: jobs.TypeRestore, SourcePath: trashJob.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.runOnce(ctx)
+	got, err = store.Get(ctx, restoreJob.ID)
+	if err != nil || got.Status != jobs.StatusCompleted {
+		t.Fatalf("restore job did not complete without audit log: %#v, %v", got, err)
+	}
+	if data, err := os.ReadFile(path); err != nil || string(data) != "persistent" {
+		t.Fatalf("restored content mismatch: %q, %v", data, err)
+	}
 }
 
 func TestProcessTransferResumesPartialFile(t *testing.T) {

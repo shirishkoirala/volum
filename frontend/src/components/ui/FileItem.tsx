@@ -204,12 +204,14 @@ export function FileItem({
           }}
         />
       ) : (
-        <span className={styles.fileName}>{entry.name}</span>
+        <span className={styles.fileName} title={entry.name}>
+          {entry.name}
+        </span>
       )}
       {viewMode === 'grid' && (
         <span className={styles.fileMeta}>
           {formatBytes(entry.size)}
-          <span>{formatGridDate(entry.modifiedAt)}</span>
+          <span className={styles.fileDate}>{formatGridDate(entry.modifiedAt)}</span>
         </span>
       )}
       {viewMode === 'list' && (

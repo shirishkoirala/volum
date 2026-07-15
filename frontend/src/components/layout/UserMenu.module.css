@@ -1,0 +1,127 @@
+.userArea {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.userButton {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-compact);
+  box-shadow: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: flex;
+  height: 30px;
+  justify-content: center;
+  padding: 0;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+  width: 30px;
+}
+
+.userButton:hover {
+  background: var(--app-surface-control-hover-bg);
+  color: var(--color-text);
+}
+
+.userAvatar {
+  border-radius: 50%;
+  height: 24px;
+  object-fit: cover;
+  width: 24px;
+}
+
+.userDropdown {
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  backdrop-filter: var(--glass-backdrop);
+  background: var(--glass-menu-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-menu);
+  min-width: 180px;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: var(--z-chrome-dropdown);
+}
+
+.dropdownHeader {
+  align-items: center;
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+}
+
+.dropdownAvatar,
+.dropdownAvatarFallback {
+  align-items: center;
+  background: var(--glass-control-bg);
+  border-radius: 50%;
+  display: flex;
+  flex: 0 0 34px;
+  height: 34px;
+  justify-content: center;
+  object-fit: cover;
+  width: 34px;
+}
+
+.dropdownIdentity {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dropdownUsername {
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+}
+
+.dropdownRole {
+  background: var(--app-surface-control-selected-bg);
+  border-radius: var(--radius-pill);
+  color: var(--color-brand);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 1px var(--space-sm);
+  text-transform: capitalize;
+}
+
+.dropdownDivider {
+  border-top: 1px solid var(--color-border-light);
+  margin: 0 var(--space-xs);
+}
+
+.dropdownItem {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  font-size: var(--font-size-sm);
+  gap: var(--space-sm);
+  min-height: 34px;
+  padding: 0 var(--space-md);
+  text-align: left;
+  transition: background var(--transition-fast);
+  width: 100%;
+}
+
+.dropdownItem:hover {
+  background: var(--app-surface-control-hover-bg);
+}
+
+@media (max-width: 760px) {
+  .userButton {
+    height: 36px;
+    width: 36px;
+  }
+
+  .dropdownItem {
+    min-height: 44px;
+  }
+}

@@ -1,6 +1,6 @@
 # Release Checklist
 
-Volum releases are published from semantic version tags such as `v0.1.0`.
+Volum releases are published from semantic version tags such as `v0.2.0`.
 
 ## Cost
 
@@ -27,10 +27,14 @@ or bill the repository owner when billing is enabled.
 3. Run the reverse-proxy upload smoke:
 
    ```sh
-   ./scripts/smoke-reverse-proxy-upload.sh
+   make smoke-proxy
    ```
 
-4. Update `CHANGELOG.md`.
+4. Update `CHANGELOG.md` with changes since the last release. Contributors are
+   encouraged to label their pull requests with `changelog/fix`, `changelog/feat`,
+   `changelog/breaking`, or `changelog/infra` to help identify which changes
+   belong in the changelog and under which section. The maintainer curates the
+   changelog during release preparation; contributors do not edit it.
 5. Confirm `README.md` deployment instructions match the published image.
 
 ## Publish
@@ -38,14 +42,14 @@ or bill the repository owner when billing is enabled.
 Create and push a release tag:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 The release workflow publishes:
 
-- `ghcr.io/shirishkoirala/volum:0.1.0`
-- `ghcr.io/shirishkoirala/volum:0.1`
+- `ghcr.io/shirishkoirala/volum:0.2.0`
+- `ghcr.io/shirishkoirala/volum:0.2`
 - `ghcr.io/shirishkoirala/volum:latest`
 
 It also creates a GitHub release using `CHANGELOG.md` as the release notes.
@@ -56,8 +60,8 @@ It also creates a GitHub release using `CHANGELOG.md` as the release notes.
 2. Pull and inspect the image:
 
    ```sh
-   docker pull ghcr.io/shirishkoirala/volum:0.1.0
-   docker inspect ghcr.io/shirishkoirala/volum:0.1.0
+   docker pull ghcr.io/shirishkoirala/volum:0.2.0
+   docker inspect ghcr.io/shirishkoirala/volum:0.2.0
    ```
 
 3. Run a clean container from the published image.

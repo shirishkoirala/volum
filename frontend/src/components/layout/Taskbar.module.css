@@ -19,8 +19,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: var(--size-touch-target);
+  height: var(--size-touch-target);
   border: none;
   background: transparent;
   color: var(--color-text-secondary);
@@ -57,7 +57,7 @@
 
 .launcher.focused::after {
   width: 16px;
-  height: 3px;
+  height: var(--selection-indicator-width);
   border-radius: var(--space-xxs);
   bottom: 1px;
 }
@@ -68,12 +68,12 @@
   border-radius: var(--radius-pill);
   color: var(--color-on-accent);
   display: flex;
-  font-size: 9px;
+  font-size: var(--font-size-2xs);
   font-weight: 700;
-  height: 16px;
+  height: var(--size-badge-sm);
   justify-content: center;
   line-height: 1;
-  min-width: 16px;
+  min-width: var(--size-badge-sm);
   padding: 0 var(--space-xs);
   position: absolute;
   right: 0;
@@ -99,14 +99,14 @@
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   min-width: 0;
   white-space: nowrap;
   position: relative;
   transition:
     background var(--transition-fast),
     color var(--transition-fast);
-  height: 44px;
+  height: var(--size-touch-target);
   border-radius: var(--radius-md);
 }
 

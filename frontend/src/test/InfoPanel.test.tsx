@@ -1,31 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { InfoPanel } from '../components/overlay/InfoPanel';
-import type { FileEntry } from '../api/client';
+import { buildDirectoryEntry, buildFileEntry } from './fixtures';
 
-const mockEntry: FileEntry = {
+const mockEntry = buildFileEntry({
   name: 'test.txt',
   path: '/storage/test.txt',
-  type: 'file',
-  size: 1024,
   modifiedAt: '2026-05-22T10:00:00Z',
-  permissions: '-rw-r--r--',
-  owner: '1000',
-  group: '1000',
-  hidden: false,
-};
+});
 
-const mockDir: FileEntry = {
+const mockDir = buildDirectoryEntry({
   name: 'Documents',
   path: '/storage/Documents',
-  type: 'directory',
   size: 4096,
   modifiedAt: '2026-05-22T10:00:00Z',
   permissions: '-rwxr-xr-x',
-  owner: '1000',
-  group: '1000',
-  hidden: false,
-};
+});
 
 describe('InfoPanel', () => {
   it('renders file name and type', () => {

@@ -1,7 +1,8 @@
-import { Children, useEffect, useMemo, useRef, useState } from 'react';
+import { Children, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Icon } from '../ui/Icon';
 import { IconButton, RotatedIcon } from '../ui/shared';
+import { BreadcrumbNav } from './BreadcrumbNav';
 import styles from './BreadcrumbBar.module.css';
 
 export type Crumb = {
@@ -32,14 +33,10 @@ export function BreadcrumbBar({
   flush = false,
   children,
 }: BreadcrumbBarProps) {
-  const navRef = useRef<HTMLDivElement>(null);
-  const overflowRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
   const rightOverflowRef = useRef<HTMLDivElement>(null);
   const locationInputRef = useRef<HTMLInputElement>(null);
-  const [overflowCount, setOverflowCount] = useState(0);
-  const [showOverflow, setShowOverflow] = useState(false);
   const [toolbarOverflowIdx, setToolbarOverflowIdx] = useState(-1);
   const [showToolbarOverflow, setShowToolbarOverflow] = useState(false);
   const [locationValue, setLocationValue] = useState('');
@@ -61,57 +58,17 @@ export function BreadcrumbBar({
     }
   }, [crumbs, locationMode]);
 
-  useEffect(() => {
-    if (!showOverflow) return;
-    const handler = (e: MouseEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent) {
-        if (e.key === 'Escape') setShowOverflow(false);
-        return;
-      }
-      if (overflowRef.current && !overflowRef.current.contains(e.target as Node)) {
-        setShowOverflow(false);
-      }
-    };
-    document.addEventListener('keydown', handler);
-    document.addEventListener('mousedown', handler);
-    return () => {
-      document.removeEventListener('keydown', handler);
-      document.removeEventListener('mousedown', handler);
-    };
-  }, [showOverflow]);
-
-  useEffect(() => {
-    const el = navRef.current;
-    if (!el) return;
-    const check = () => {
-      const available = el.clientWidth;
-      let totalWidth = 0;
-      let count = 0;
-      const children = Array.from(el.children);
-      for (let i = 0; i < children.length; i++) {
-        totalWidth += (children[i] as HTMLElement).offsetWidth || 0;
-        if (totalWidth > available && i > 0) {
-          count = children.length - i;
-          break;
-        }
-      }
-      setOverflowCount(count);
-    };
-    check();
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [crumbs]);
+  const closeToolbarOverflow = useCallback(() => setShowToolbarOverflow(false), []);
 
   useEffect(() => {
     if (!showToolbarOverflow) return;
     const handler = (e: MouseEvent | KeyboardEvent) => {
       if (e instanceof KeyboardEvent) {
-        if (e.key === 'Escape') setShowToolbarOverflow(false);
+        if (e.key === 'Escape') closeToolbarOverflow();
         return;
       }
       if (rightOverflowRef.current && !rightOverflowRef.current.contains(e.target as Node)) {
-        setShowToolbarOverflow(false);
+        closeToolbarOverflow();
       }
     };
     document.addEventListener('keydown', handler);
@@ -120,9 +77,8 @@ export function BreadcrumbBar({
       document.removeEventListener('keydown', handler);
       document.removeEventListener('mousedown', handler);
     };
-  }, [showToolbarOverflow]);
+  }, [showToolbarOverflow, closeToolbarOverflow]);
 
-  // Measure toolbar items using a hidden measure container
   useEffect(() => {
     const rightEl = rightRef.current;
     const measureEl = measureRef.current;
@@ -149,7 +105,6 @@ export function BreadcrumbBar({
       setToolbarOverflowIdx(overflowIdx);
     };
 
-    // Flush layout before first measure
     requestAnimationFrame(check);
     const ro = new ResizeObserver(check);
     ro.observe(rightEl);
@@ -160,11 +115,6 @@ export function BreadcrumbBar({
     toolbarOverflowIdx > 0 ? childrenArray.slice(0, toolbarOverflowIdx) : childrenArray;
 
   const hiddenToolbarItems = toolbarOverflowIdx > 0 ? childrenArray.slice(toolbarOverflowIdx) : [];
-
-  const overflowCrumbs =
-    overflowCount > 0 ? crumbs.slice(1, -overflowCount - 1 > 0 ? -overflowCount : undefined) : [];
-
-  const visibleCrumbs = overflowCount > 0 ? [crumbs[0]!, crumbs[crumbs.length - 1]!] : crumbs;
 
   const handleLocationKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -216,91 +166,7 @@ export function BreadcrumbBar({
             <Icon name="go-up" size={18} />
           </IconButton>
         )}
-        <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
-          <div ref={navRef} className={styles.breadcrumbsInner}>
-            {visibleCrumbs.map((crumb, rawIndex) => {
-              const index = overflowCount > 0 ? (rawIndex === 0 ? 0 : crumbs.length - 1) : rawIndex;
-              const isLast = index === crumbs.length - 1;
-              return (
-                <span key={crumb.path ?? index} className={styles.crumbRow}>
-                  {index > 0 && <Icon name="go-next" size={16} />}
-                  {isLast ? (
-                    <span className={styles.current}>{crumb.label}</span>
-                  ) : crumb.path ? (
-                    <button
-                      type="button"
-                      onClick={() => onNavigate(crumb.path!)}
-                      className={styles.crumbBtn}
-                    >
-                      {crumb.label}
-                    </button>
-                  ) : (
-                    <span className={styles.current}>{crumb.label}</span>
-                  )}
-                </span>
-              );
-            })}
-            {overflowCount > 1 && (
-              <span className={styles.crumbRow}>
-                <Icon name="go-next" size={16} />
-                <span
-                  className={styles.overflowDots}
-                  onClick={() => setShowOverflow(!showOverflow)}
-                >
-                  <span className={styles.overflowBtn}>···</span>
-                </span>
-                {showOverflow && (
-                  <div ref={overflowRef} className={styles.overflowMenu}>
-                    {overflowCrumbs.map((crumb) => (
-                      <button
-                        key={crumb.path}
-                        type="button"
-                        className={styles.overflowItem}
-                        onClick={() => {
-                          setShowOverflow(false);
-                          if (crumb.path) onNavigate(crumb.path);
-                        }}
-                      >
-                        {crumb.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </span>
-            )}
-            {overflowCount === 1 && (
-              <span className={styles.crumbRow}>
-                <Icon name="go-next" size={16} />
-                {(() => {
-                  const overflowCrumb = crumbs[crumbs.length - 2];
-                  if (!overflowCrumb) return null;
-                  return (
-                    <span
-                      className={styles.overflowDots}
-                      onClick={() => setShowOverflow(!showOverflow)}
-                    >
-                      <span className={styles.overflowBtn}>···</span>
-                      {showOverflow && (
-                        <div ref={overflowRef} className={styles.overflowMenu}>
-                          <button
-                            type="button"
-                            className={styles.overflowItem}
-                            onClick={() => {
-                              setShowOverflow(false);
-                              if (overflowCrumb.path) onNavigate(overflowCrumb.path);
-                            }}
-                          >
-                            {overflowCrumb.label}
-                          </button>
-                        </div>
-                      )}
-                    </span>
-                  );
-                })()}
-              </span>
-            )}
-          </div>
-        </nav>
+        <BreadcrumbNav crumbs={crumbs} onNavigate={onNavigate} />
       </div>
       {hasToolbar && (
         <div className={styles.right} ref={rightRef}>
@@ -324,7 +190,6 @@ export function BreadcrumbBar({
           )}
         </div>
       )}
-      {/* Hidden measure container — always has all items for accurate sizing */}
       <div ref={measureRef} className={styles.measureContainer} aria-hidden="true">
         {childrenArray}
       </div>

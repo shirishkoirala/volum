@@ -17,8 +17,7 @@
     background var(--transition-fast),
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
-    color var(--transition-fast),
-    margin var(--transition-fast);
+    color var(--transition-fast);
   user-select: none;
   touch-action: manipulation;
   width: 100%;
@@ -29,8 +28,6 @@
   backdrop-filter: var(--glass-backdrop);
   background: var(--glass-hover-bg);
   border-color: var(--glass-border);
-  margin: 2px;
-  width: calc(100% - 4px);
 }
 
 .tile.selected {
@@ -47,11 +44,11 @@
 .tile.dragOver {
   background: var(--glass-selected-bg) !important;
   border-color: var(--color-brand) !important;
-  box-shadow: inset 0 0 0 2px var(--color-brand);
+  box-shadow: inset 0 0 0 var(--selection-ring-width) var(--color-brand);
 }
 
 .tile:focus-visible {
-  outline: 2px solid var(--color-brand);
+  outline: var(--selection-ring-width) solid var(--color-brand);
   outline-offset: -2px;
 }
 
@@ -90,5 +87,9 @@
   .tile {
     min-height: 126px;
     padding: 4px;
+  }
+
+  .meta span + span {
+    display: none;
   }
 }

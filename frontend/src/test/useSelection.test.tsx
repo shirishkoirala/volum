@@ -55,7 +55,6 @@ describe('useSelection', () => {
     expect(result.current.canPreview).toBe(false);
     expect(result.current.canArchive).toBe(false);
     expect(result.current.canExtract).toBe(false);
-    expect(result.current.canAnalyze).toBe(false);
     expect(result.current.canChecksum).toBe(false);
   });
 
@@ -220,7 +219,7 @@ describe('useSelection', () => {
     expect(result.current.selectedPaths).toEqual([]);
   });
 
-  it('selecting a directory sets canAnalyze true', () => {
+  it('selecting a directory sets canInfo true', () => {
     const entries = [makeFile('images', 'directory')];
     const { result } = renderHook(() =>
       useSelection({
@@ -243,7 +242,7 @@ describe('useSelection', () => {
       );
     });
 
-    expect(result.current.canAnalyze).toBe(true);
+    expect(result.current.canInfo).toBe(true);
     expect(result.current.canPreview).toBe(false);
   });
 

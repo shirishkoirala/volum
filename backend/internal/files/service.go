@@ -85,14 +85,6 @@ func NewService(guard *security.RootGuard, cache *DirSizeCache) *Service {
 	return &Service{guard: guard, cache: cache}
 }
 
-func (s *Service) Cache() *DirSizeCache {
-	return s.cache
-}
-
-func (s *Service) Roots() []string {
-	return s.guard.Roots()
-}
-
 func (s *Service) RootUsage() []Root {
 	roots := s.guard.RootEntries()
 	usage := make([]Root, 0, len(roots))
@@ -366,26 +358,6 @@ func parseMode(mode string) (os.FileMode, error) {
 }
 
 func (s *Service) DownloadPath(path string) (string, os.FileInfo, error) {
-	resolved, err := s.guard.Resolve(path)
-	if err != nil {
-		return "", nil, err
-	}
-
-	info, err := os.Lstat(resolved)
-	if err != nil {
-		return "", nil, err
-	}
-	if info.Mode()&os.ModeSymlink != 0 {
-		return "", nil, ErrSymlinkRead
-	}
-	if info.IsDir() {
-		return "", nil, ErrDirectoryDownload
-	}
-
-	return resolved, info, nil
-}
-
-func (s *Service) ThumbnailPath(path string) (string, os.FileInfo, error) {
 	resolved, err := s.guard.Resolve(path)
 	if err != nil {
 		return "", nil, err

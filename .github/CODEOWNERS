@@ -1,0 +1,15 @@
+# Default ownership
+* @shirishkoirala
+
+# Security-sensitive backend areas
+/backend/internal/api/ @shirishkoirala
+/backend/internal/auth/ @shirishkoirala
+/backend/internal/security/ @shirishkoirala
+/backend/internal/storage/ @shirishkoirala
+/backend/internal/worker/ @shirishkoirala
+
+# Delivery and project policy
+/.github/ @shirishkoirala
+/Dockerfile @shirishkoirala
+/docker-compose*.yml @shirishkoirala
+/SECURITY.md @shirishkoirala

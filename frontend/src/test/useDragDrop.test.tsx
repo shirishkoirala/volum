@@ -1,19 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDragDrop } from '../hooks/useDragDrop';
-import type { FileEntry } from '../api/client';
+import { buildFileEntry } from './fixtures';
 
-const entry: FileEntry = {
+const entry = buildFileEntry({
   name: 'test.txt',
   path: '/src/test.txt',
-  type: 'file',
   size: 100,
   modifiedAt: '',
   permissions: '',
   owner: '',
   group: '',
-  hidden: false,
-};
+});
 
 function mockDataTransfer(overrides: Record<string, unknown> = {}): DataTransfer {
   return {

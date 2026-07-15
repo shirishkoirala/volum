@@ -1,6 +1,6 @@
 import { DragEvent, useCallback, useRef, useState } from 'react';
 import type { FileEntry } from '../api/client';
-import type { TransferDialogState } from '../components/overlay/Dialogs';
+import type { TransferDialogState } from '../components/overlay/TransferDialog';
 
 export function useDragDrop(
   canWrite: boolean,

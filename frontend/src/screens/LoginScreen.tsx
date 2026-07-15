@@ -3,9 +3,24 @@ import { Icon } from '../components/ui/Icon';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
 import { login } from '../api/client';
 import type { Session } from '../api/client';
-import { BRAND_ICON_URL } from '../utils/brand';
-import { loadLastUser } from '../utils/lastUser';
 import styles from './LoginScreen.module.css';
+
+type SavedUser = { username: string; avatarDataUrl?: string };
+
+function loadSavedUser(): SavedUser | null {
+  try {
+    const raw = localStorage.getItem('volum_last_user');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.username !== 'string' || !parsed.username) return null;
+    return {
+      username: parsed.username,
+      avatarDataUrl: typeof parsed.avatarDataUrl === 'string' ? parsed.avatarDataUrl : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
 
 type LoginScreenProps = {
   onLoggedIn: (session: Session) => void;
@@ -14,8 +29,8 @@ type LoginScreenProps = {
 };
 
 export function LoginScreen({ onLoggedIn, onToggleTheme, theme }: LoginScreenProps) {
-  const [lastUser] = useState(loadLastUser);
-  const [username, setUsername] = useState(lastUser?.username ?? '');
+  const [savedUser] = useState(loadSavedUser);
+  const [username, setUsername] = useState(savedUser?.username ?? '');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,17 +48,17 @@ export function LoginScreen({ onLoggedIn, onToggleTheme, theme }: LoginScreenPro
   return (
     <main className={styles.authShell}>
       <div className={styles.brandHeader} aria-label="Volum Desktop">
-        <img src={BRAND_ICON_URL} alt="" />
+        <img src="/volum_logo.svg" alt="" />
         <span>Volum</span>
       </div>
       <ThemeToggle theme={theme} onClick={onToggleTheme} className={styles.themeToggle} size={17} />
       <form className={styles.loginPanel} onSubmit={handleSubmit}>
         <div className={styles.profileTile}>
-          {lastUser?.avatarDataUrl ? (
+          {savedUser?.avatarDataUrl ? (
             <img
               className={styles.profileImage}
-              src={lastUser.avatarDataUrl}
-              alt={`Profile for ${lastUser.username}`}
+              src={savedUser.avatarDataUrl}
+              alt={`Profile for ${savedUser.username}`}
             />
           ) : (
             <Icon name="avatar-default" size={30} />

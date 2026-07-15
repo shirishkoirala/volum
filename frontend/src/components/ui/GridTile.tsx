@@ -71,7 +71,9 @@ export function GridTile({
       {...dataAttrs}
     >
       <div className={styles.iconSlot}>{icon}</div>
-      <span className={styles.name}>{name}</span>
+      <span className={styles.name} title={typeof name === 'string' ? name : undefined}>
+        {name}
+      </span>
       {metadata && <span className={styles.meta}>{metadata}</span>}
     </div>
   );

@@ -6,9 +6,11 @@ import {
   preferencesIconUrl,
   trashIconUrl,
   desktopDockIconUrl,
+  storageAnalyzerIconUrl,
 } from '../api/icons';
 import { countActiveTransfers } from '../utils/jobs';
-export type ActiveView = 'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives' | 'search';
+export type ActiveView =
+  'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives' | 'search' | 'storage-analyzer';
 
 export function useNavigation(
   devices: BlockDevice[],
@@ -24,6 +26,7 @@ export function useNavigation(
   const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
   const [showingSearch, setShowingSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showingStorageAnalyzer, setShowingStorageAnalyzer] = useState(false);
 
   const topBarTitle = useMemo(() => {
     if (showingMyPC && selectedDriveName) {
@@ -32,6 +35,7 @@ export function useNavigation(
     }
     if (showingMyPC) return 'Drives';
     if (showingSearch) return 'Search';
+    if (showingStorageAnalyzer) return 'Storage Analyzer';
     if (showingTrash) return 'Trash';
     if (showingSettings) return 'Settings';
     if (showingJobs) return 'Transfers';
@@ -45,6 +49,7 @@ export function useNavigation(
     showingTrash,
     showingSettings,
     showingJobs,
+    showingStorageAnalyzer,
     currentPath,
   ]);
 
@@ -52,11 +57,20 @@ export function useNavigation(
     if (showingSearch) return 'search';
     if (showingSettings) return 'settings';
     if (showingJobs) return 'jobs';
+    if (showingStorageAnalyzer) return 'storage-analyzer';
     if (showingTrash) return 'trash';
     if (currentPath) return 'files';
     if (showingMyPC) return 'drives';
     return 'desktop';
-  }, [currentPath, showingSearch, showingTrash, showingSettings, showingJobs, showingMyPC]);
+  }, [
+    currentPath,
+    showingSearch,
+    showingTrash,
+    showingSettings,
+    showingJobs,
+    showingMyPC,
+    showingStorageAnalyzer,
+  ]);
 
   const activeJobCount = useMemo(() => countActiveTransfers(jobs), [jobs]);
   const transferBadgeCount = activeJobCount + pendingTransferCount;
@@ -76,6 +90,12 @@ export function useNavigation(
         icon: trashIconUrl(trashCount > 0),
         badge: trashCount > 0 ? trashCount : undefined,
         active: activeView === 'trash',
+      },
+      {
+        id: 'storage-analyzer',
+        label: 'Space',
+        icon: storageAnalyzerIconUrl(),
+        active: activeView === 'storage-analyzer',
       },
       {
         id: 'jobs',
@@ -109,6 +129,8 @@ export function useNavigation(
     setShowingSearch,
     searchQuery,
     setSearchQuery,
+    showingStorageAnalyzer,
+    setShowingStorageAnalyzer,
     topBarTitle,
     activeView,
     activeJobCount,

@@ -1,5 +1,9 @@
 # Release Process
 
+> This document has overlapping content with the
+> [release checklist](docs/release.md). Prefer `docs/release.md` for the
+> current release procedure — this file is retained for reference.
+
 ## Versioning
 
 Volum follows [SemVer](https://semver.org/) (vMAJOR.MINOR.PATCH). Pre-release tags use `-alpha.N`, `-beta.N`.

@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { WindowManagerContext, type WindowState } from './WindowManager';
-import { STANDARD_WINDOW_W, STANDARD_WINDOW_H } from '../utils/window';
+import { STANDARD_WINDOW_W, STANDARD_WINDOW_H, getCenteredWindowPos } from '../utils/window';
 
 let nextZIndex = 100;
 const MAX_Z_INDEX = 9990;
@@ -133,8 +133,9 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
       const id = `${windowType}-${count}`;
       const ci = cascadeIndex.current;
       cascadeIndex.current = ci + 1;
-      const x = 60 + (ci % 6) * WINDOW_OFFSET;
-      const y = 40 + (ci % 6) * WINDOW_OFFSET;
+      const center = getCenteredWindowPos(STANDARD_WINDOW_W, STANDARD_WINDOW_H);
+      const x = center.x + (ci % 6) * WINDOW_OFFSET;
+      const y = center.y + (ci % 6) * WINDOW_OFFSET;
       const z = nextZ();
       setWindows((prev) => [
         ...prev,

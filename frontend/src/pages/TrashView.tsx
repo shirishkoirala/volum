@@ -77,7 +77,7 @@ export function TrashView() {
     (entry: TrashEntry) => {
       restoreTrash(entry.id)
         .then(() => {
-          toast.showToastObj({ title: 'Restored', variant: 'success' });
+          toast.showToastObj({ title: 'Restore queued', variant: 'success' });
           loadTrash();
         })
         .catch((err) =>
@@ -130,7 +130,7 @@ export function TrashView() {
     const ids = Array.from(selectedTrashIds);
     Promise.all(ids.map((id) => restoreTrash(id)))
       .then(() => {
-        toast.showToastObj({ title: 'Restored', variant: 'success' });
+        toast.showToastObj({ title: 'Restore queued', variant: 'success' });
         setSelectedTrashIds(new Set());
         loadTrash();
       })
@@ -202,8 +202,9 @@ export function TrashView() {
 
   return (
     <>
-      {trashError && <ErrorBanner message={trashError} onRetry={loadTrash} />}
-      {trashEntries.length === 0 ? (
+      {trashError ? (
+        <ErrorBanner message={trashError} onRetry={loadTrash} />
+      ) : trashEntries.length === 0 ? (
         <div className={`${styles.emptyWrapper} glassPanel mobileAppPanel`}>
           <EmptyState icon={trashIconUrl(false)} title="Trash is empty" />
         </div>

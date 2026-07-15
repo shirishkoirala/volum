@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import type { ViewMode } from '../../utils/view';
+type ViewMode = 'list' | 'grid';
 import type { SortField, SortDirection } from '../../types';
+import { buildFileItems, buildEditItems, buildViewItems, buildGoItems } from './menuItems';
+import type { MenuItem } from './menuItems';
 import styles from './AppMenuBar.module.css';
 
 export type AppMenuHandlers = {
@@ -42,14 +44,6 @@ type AppMenuBarProps = {
 };
 
 type MenuId = 'file' | 'edit' | 'view' | 'go';
-
-type MenuItem = {
-  label: string;
-  icon?: string;
-  disabled?: boolean;
-  danger?: boolean;
-  onClick: () => void;
-};
 
 const MENUS: { id: MenuId; label: string }[] = [
   { id: 'file', label: 'File' },
@@ -114,169 +108,32 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
     }
   };
 
-  const focusMenuItem = (_items: MenuItem[], idx: number) => {
+  const focusMenuItem = useCallback((_items: MenuItem[], idx: number) => {
     const el = menuRef.current?.querySelector(`[data-menu-index="${idx}"]`) as HTMLElement | null;
     el?.focus();
-  };
+  }, []);
 
   const menus = windowType === 'trash' ? MENUS.filter((menu) => menu.id !== 'view') : MENUS;
 
-  const handleItemClick = (onClick: () => void) => {
+  const handleItemClick = useCallback((onClick: () => void) => {
     onClick();
     setOpenMenu(null);
-  };
+  }, []);
 
-  const fileItems: MenuItem[] =
-    windowType === 'trash'
-      ? [
-          {
-            label: 'Restore',
-            icon: 'edit-undo',
-            disabled: handlers.selectedCount === 0,
-            onClick: () => handlers.onRestore?.(),
-          },
-          {
-            label: 'Delete Forever',
-            icon: 'edit-delete',
-            disabled: handlers.selectedCount === 0,
-            danger: true,
-            onClick: () => handlers.onDeleteForever?.(),
-          },
-          { label: '---', disabled: true, onClick: () => {} },
-          {
-            label: 'Empty Trash',
-            icon: 'edit-clear',
-            danger: true,
-            onClick: () => handlers.onEmptyTrash?.(),
-          },
-          { label: '---', disabled: true, onClick: () => {} },
-          {
-            label: 'Close',
-            icon: 'window-close',
-            onClick: handlers.onClose ?? handlers.onGoDesktop,
-          },
-        ]
-      : [
-          {
-            label: 'New Folder',
-            icon: 'folder-new',
-            disabled: !handlers.canWrite,
-            onClick: handlers.onCreateFolder,
-          },
-          {
-            label: 'Upload',
-            icon: 'document-import',
-            disabled: !handlers.canUpload,
-            onClick: handlers.onUpload,
-          },
-          { label: '---', disabled: true, onClick: () => {} },
-          {
-            label: 'Close',
-            icon: 'window-close',
-            onClick: handlers.onClose ?? handlers.onGoDesktop,
-          },
-        ];
+  const fileItems = useMemo(() => buildFileItems(handlers, windowType), [handlers, windowType]);
+  const editItems = useMemo(() => buildEditItems(handlers, windowType), [handlers, windowType]);
+  const viewItems = useMemo(() => buildViewItems(handlers), [handlers]);
+  const goItems = useMemo(() => buildGoItems(handlers, windowType), [handlers, windowType]);
 
-  const editItems: MenuItem[] =
-    windowType === 'trash'
-      ? [
-          { label: 'Select All', icon: 'selection-select-all', onClick: handlers.onSelectAll },
-          {
-            label: 'Invert Selection',
-            icon: 'selection-invert',
-            onClick: handlers.onInvertSelection,
-          },
-        ]
-      : [
-          {
-            label: 'Cut',
-            icon: 'edit-cut',
-            disabled: !handlers.canWrite || handlers.selectedCount === 0,
-            onClick: handlers.onCut,
-          },
-          {
-            label: 'Copy',
-            icon: 'edit-copy',
-            disabled: handlers.selectedCount === 0,
-            onClick: handlers.onCopy,
-          },
-          {
-            label: 'Paste',
-            icon: 'edit-paste',
-            disabled: !handlers.canWrite,
-            onClick: handlers.onPaste,
-          },
-          { label: '---', disabled: true, onClick: () => {} },
-          { label: 'Select All', icon: 'selection-select-all', onClick: handlers.onSelectAll },
-          {
-            label: 'Invert Selection',
-            icon: 'selection-invert',
-            onClick: handlers.onInvertSelection,
-          },
-          { label: '---', disabled: true, onClick: () => {} },
-          {
-            label: 'Rename',
-            icon: 'edit-rename',
-            disabled: !handlers.canWrite || handlers.selectedCount === 0,
-            onClick: handlers.onRename,
-          },
-          {
-            label: 'Delete',
-            icon: 'edit-delete',
-            disabled: !handlers.canWrite || handlers.selectedCount === 0,
-            danger: true,
-            onClick: handlers.onDelete,
-          },
-        ];
-
-  const viewItems: MenuItem[] = [
-    {
-      label: `Grid${handlers.viewMode === 'grid' ? ' ✓' : ''}`,
-      icon: 'view-grid',
-      onClick: () => handlers.onSetViewMode('grid'),
-    },
-    {
-      label: `List${handlers.viewMode === 'list' ? ' ✓' : ''}`,
-      icon: 'view-list-tree',
-      onClick: () => handlers.onSetViewMode('list'),
-    },
-    { label: '---', disabled: true, onClick: () => {} },
-    {
-      label: `${handlers.showHidden ? 'Hide' : 'Show'} Hidden Files`,
-      icon: 'view-hidden',
-      onClick: handlers.onToggleHidden,
-    },
-    { label: '---', disabled: true, onClick: () => {} },
-    { label: 'Sort by Name', icon: 'sort-desc', onClick: () => handlers.onSortChange('name:asc') },
-    { label: 'Sort by Size', icon: 'sort-desc', onClick: () => handlers.onSortChange('size:desc') },
-    { label: 'Sort by Type', icon: 'sort-desc', onClick: () => handlers.onSortChange('type:asc') },
-    {
-      label: 'Sort by Date',
-      icon: 'sort-desc',
-      onClick: () => handlers.onSortChange('modifiedAt:desc'),
-    },
-  ];
-
-  const goItems: MenuItem[] = [
-    { label: 'Desktop', icon: 'go-home', onClick: handlers.onGoDesktop },
-    { label: 'Files', icon: 'folder', onClick: handlers.onGoFiles },
-    { label: 'Trash', icon: 'edit-delete', onClick: handlers.onGoTrash },
-    { label: 'Transfers', icon: 'document-properties', onClick: handlers.onGoJobs },
-    { label: 'Settings', icon: 'preferences-system', onClick: handlers.onGoSettings },
-    ...(windowType === 'trash'
-      ? []
-      : ([
-          { label: '---', disabled: true, onClick: () => {} },
-          { label: 'Go to Location...', icon: 'go-jump', onClick: handlers.onToggleLocation },
-        ] satisfies MenuItem[])),
-  ];
-
-  const menuItems: Record<MenuId, MenuItem[]> = {
-    file: fileItems,
-    edit: editItems,
-    view: viewItems,
-    go: goItems,
-  };
+  const menuItems: Record<MenuId, MenuItem[]> = useMemo(
+    () => ({
+      file: fileItems,
+      edit: editItems,
+      view: viewItems,
+      go: goItems,
+    }),
+    [fileItems, editItems, viewItems, goItems],
+  );
 
   return (
     <div className={styles.menuBar} ref={menuBarRef} role="menubar">

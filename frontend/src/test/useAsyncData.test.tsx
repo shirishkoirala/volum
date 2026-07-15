@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useAsyncData } from '../hooks/useAsyncData';
 
 describe('useAsyncData', () => {
@@ -25,7 +25,7 @@ describe('useAsyncData', () => {
     const { result } = renderHook(() => useAsyncData(fetcher));
     await waitFor(() => expect(result.current.data).toBe('data'));
     fetcher.mockResolvedValue('updated');
-    result.current.refresh();
+    act(() => result.current.refresh());
     await waitFor(() => expect(result.current.data).toBe('updated'));
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
@@ -49,7 +49,7 @@ describe('useAsyncData', () => {
     await waitFor(() => expect(result.current.data).toBe('first'));
     fetcher = second;
     rerender();
-    result.current.refresh();
+    act(() => result.current.refresh());
 
     await waitFor(() => expect(result.current.data).toBe('second'));
     expect(first).toHaveBeenCalledTimes(1);

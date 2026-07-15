@@ -142,13 +142,6 @@ func (hc *HealthChecker) GetCachedResults() map[string]ServiceHealthResult {
 	return results
 }
 
-func (hc *HealthChecker) GetCachedResult(serviceID string) (ServiceHealthResult, bool) {
-	hc.mu.RLock()
-	defer hc.mu.RUnlock()
-	r, ok := hc.cache[serviceID]
-	return r, ok
-}
-
 func (hc *HealthChecker) checkAll(ctx context.Context) {
 	services, err := hc.store.ListServices(ctx)
 	if err != nil {

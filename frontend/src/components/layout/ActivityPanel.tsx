@@ -1,4 +1,5 @@
 import { type Job } from '../../api/client';
+import { makeJobLabel } from '../../utils/jobs';
 import { Icon } from '../ui/Icon';
 import styles from './ActivityPanel.module.css';
 
@@ -26,6 +27,10 @@ function jobIcon(job: Job) {
     default:
       return 'emblem-system';
   }
+}
+
+function jobTitle(job: Job) {
+  return `${makeJobLabel(job.type, '').trim()}${job.currentItem ? ` — ${job.currentItem}` : ''}`;
 }
 
 type GroupedJobs = {
@@ -80,22 +85,7 @@ export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
             <div key={job.id} className={styles.item}>
               <Icon name={jobIcon(job)} size={14} />
               <div className={styles.itemInfo}>
-                <span className={styles.itemName}>
-                  {job.type === 'upload'
-                    ? 'Upload'
-                    : job.type === 'copy'
-                      ? 'Copy'
-                      : job.type === 'move'
-                        ? 'Move'
-                        : job.type === 'archive'
-                          ? 'Archive'
-                          : job.type === 'extract'
-                            ? 'Extract'
-                            : job.type === 'checksum'
-                              ? 'Checksum'
-                              : 'Transfer'}
-                  {job.currentItem ? ` — ${job.currentItem}` : ''}
-                </span>
+                <span className={styles.itemName}>{jobTitle(job)}</span>
                 <span className={styles.itemStatus}>
                   {job.status === 'needs_attention' ? 'Needs attention' : job.status}
                 </span>
@@ -117,22 +107,7 @@ export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
             <div key={job.id} className={styles.item}>
               <Icon name={jobIcon(job)} size={14} />
               <div className={styles.itemInfo}>
-                <span className={styles.itemName}>
-                  {job.type === 'upload'
-                    ? 'Upload'
-                    : job.type === 'copy'
-                      ? 'Copy'
-                      : job.type === 'move'
-                        ? 'Move'
-                        : job.type === 'archive'
-                          ? 'Archive'
-                          : job.type === 'extract'
-                            ? 'Extract'
-                            : job.type === 'checksum'
-                              ? 'Checksum'
-                              : 'Transfer'}
-                  {job.currentItem ? ` — ${job.currentItem}` : ''}
-                </span>
+                <span className={styles.itemName}>{jobTitle(job)}</span>
                 {job.errorMessage && <span className={styles.itemError}>{job.errorMessage}</span>}
               </div>
             </div>
@@ -147,22 +122,7 @@ export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
             <div key={job.id} className={styles.item}>
               <Icon name={jobIcon(job)} size={14} />
               <div className={styles.itemInfo}>
-                <span className={styles.itemName}>
-                  {job.type === 'upload'
-                    ? 'Upload'
-                    : job.type === 'copy'
-                      ? 'Copy'
-                      : job.type === 'move'
-                        ? 'Move'
-                        : job.type === 'archive'
-                          ? 'Archive'
-                          : job.type === 'extract'
-                            ? 'Extract'
-                            : job.type === 'checksum'
-                              ? 'Checksum'
-                              : 'Transfer'}
-                  {job.currentItem ? ` — ${job.currentItem}` : ''}
-                </span>
+                <span className={styles.itemName}>{jobTitle(job)}</span>
               </div>
             </div>
           ))}

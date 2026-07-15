@@ -1,12 +1,23 @@
 import { useEffect, useState } from 'react';
-import { getSession, logout, Session } from './api/client';
+import { getSession, logout, profileAvatarUrl, Session } from './api/client';
 import { LoginScreen } from './screens/LoginScreen';
 import { SetupScreen } from './screens/SetupScreen';
 import { Home } from './screens/Home';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { WindowManagerProvider } from './contexts/WindowManagerProvider';
-import { saveLastUser } from './utils/lastUser';
 import styles from './App.module.css';
+
+async function getProfileAvatarData(): Promise<string> {
+  const response = await fetch(profileAvatarUrl(), { credentials: 'include' });
+  if (!response.ok) throw new Error('Profile image unavailable');
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error('Could not cache profile image'));
+    reader.readAsDataURL(blob);
+  });
+}
 
 export function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -30,16 +41,30 @@ export function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (session?.authenticated && session.username) void saveLastUser(session);
+    if (session?.authenticated && session.username)
+      localStorage.setItem('volum_last_user', JSON.stringify({ username: session.username }));
   }, [session]);
 
   const handleLoggedIn = (nextSession: Session) => setSession(nextSession);
-  const handleLogout = () => {
-    const cacheUser = session?.authenticated ? saveLastUser(session) : Promise.resolve();
-    void cacheUser
-      .then(logout)
-      .then(setSession)
-      .catch(() => setSession(null));
+  const handleLogout = async () => {
+    if (session?.authenticated && session.username) {
+      const savedUser: { username: string; avatarDataUrl?: string } = {
+        username: session.username,
+      };
+      if (session.hasAvatar) {
+        try {
+          savedUser.avatarDataUrl = await getProfileAvatarData();
+        } catch {
+          /* empty */
+        }
+      }
+      localStorage.setItem('volum_last_user', JSON.stringify(savedUser));
+    }
+    try {
+      setSession(await logout());
+    } catch {
+      setSession(null);
+    }
   };
 
   if (loading) {

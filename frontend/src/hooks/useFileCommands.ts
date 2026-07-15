@@ -1,29 +1,18 @@
 import { KeyboardEvent, useRef } from 'react';
-import type { FileEntry, TrashEntry, ConflictPolicy } from '../api/client';
-import {
-  createFile,
-  createFolder,
-  createJob,
-  deleteTrash,
-  deletePath,
-  getTrash,
-  renamePath,
-  restoreTrash,
-  createShare,
-  shareUrl,
-} from '../api/client';
+import { createFile, createFolder, renamePath, deletePath, getTrash } from '../api/client';
+import type { FileEntry, TrashEntry } from '../api/client';
 import type { UploadProgress } from '../utils/upload';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
 import { joinPath } from '../utils/path';
 import type { RenameState, ContextMenuState } from '../types';
-import type {
-  ConfirmDialogState,
-  TextInputDialogState,
-  TransferDialogState,
-} from '../components/overlay/Dialogs';
+import type { ConfirmDialogState } from '../components/overlay/ConfirmDialog';
+import type { TextInputDialogState } from '../components/overlay/TextInputDialog';
+import type { TransferDialogState } from '../components/overlay/TransferDialog';
 import type { Toast } from '../components/overlay/Toast';
 import { useArchiveCommands } from './useArchiveCommands';
 import { useUploadCommands } from './useUploadCommands';
+import { useTrashCommands } from './useTrashCommands';
+import { useTransferCommands } from './useTransferCommands';
 import type { ClipboardState } from './types';
 
 interface FileCommandDeps {
@@ -43,7 +32,6 @@ interface FileCommandDeps {
   setPreviewEntry: React.Dispatch<React.SetStateAction<FileEntry | null>>;
   setInfoEntry: React.Dispatch<React.SetStateAction<FileEntry | null>>;
   setBatchRenameOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setAnalyzePath: React.Dispatch<React.SetStateAction<string | null>>;
   fileClipboard: ClipboardState;
   setFileClipboard: React.Dispatch<React.SetStateAction<ClipboardState>>;
   setConfirmDialog: React.Dispatch<React.SetStateAction<ConfirmDialogState>>;
@@ -101,7 +89,6 @@ export function useFileCommands(deps: FileCommandDeps) {
     setPreviewEntry,
     setInfoEntry,
     setBatchRenameOpen,
-    setAnalyzePath,
     fileClipboard,
     setFileClipboard,
     setConfirmDialog,
@@ -214,53 +201,19 @@ export function useFileCommands(deps: FileCommandDeps) {
           for (const entry of entriesToDelete) await deletePath(entry.path, entry.name);
           const response = await getTrash();
           setTrashEntries(response.entries ?? []);
-        }, 'Moved to trash');
+        }, 'Queued for trash');
       },
     });
   };
 
   // ── Trash ─────────────────────────────────────────────
 
-  const handleRestoreTrash = (entry: TrashEntry) => {
-    void runAction(async () => {
-      await restoreTrash(entry.id);
-      const r = await getTrash();
-      setTrashEntries(r.entries ?? []);
-    });
-    showToastObj(
-      {
-        title: 'Item restored',
-        message: entry.originalPath,
-        variant: 'success',
-        action: {
-          label: 'Undo',
-          onClick: () => {
-            void deletePath(entry.originalPath, entry.name);
-            getTrash().then((r) => setTrashEntries(r.entries ?? []));
-            showToastObj({ title: 'Restore undone', variant: 'success' });
-          },
-        },
-      },
-      8000,
-    );
-  };
-
-  const handleDeleteTrash = (entry: TrashEntry) => {
-    setTrashContextMenu(null);
-    setConfirmDialog({
-      title: 'Delete Permanently',
-      message: `Permanently delete "${entry.name}"? This cannot be undone.`,
-      confirmLabel: 'Delete Permanently',
-      danger: true,
-      onConfirm: () => {
-        void runAction(async () => {
-          await deleteTrash(entry.id);
-          const r = await getTrash();
-          setTrashEntries(r.entries ?? []);
-        }, 'Item deleted permanently');
-      },
-    });
-  };
+  const { handleRestoreTrash, handleDeleteTrash } = useTrashCommands({
+    runAction,
+    setTrashEntries,
+    setTrashContextMenu,
+    setConfirmDialog,
+  });
 
   // ── Preview / Info / Download / Batch ─────────────────
 
@@ -307,106 +260,27 @@ export function useFileCommands(deps: FileCommandDeps) {
 
   // ── Transfer / Clipboard ──────────────────────────────
 
-  const handleCopy = () => {
-    if (selectedEntries.length === 0) return;
-    setContextMenu(null);
-    setTransferDialog({
-      mode: 'copy',
-      entries: [...selectedEntries],
-      initialDestination: currentPath,
-    });
-  };
+  const transferCommands = useTransferCommands({
+    runAction,
+    selectedEntries,
+    setContextMenu,
+    setTransferDialog,
+    currentPath,
+    canWrite,
+    setFileClipboard,
+    fileClipboard,
+    showToastObj,
+    contextMenu,
+  });
 
-  const handleMove = () => {
-    if (selectedEntries.length === 0) return;
-    setContextMenu(null);
-    setTransferDialog({
-      mode: 'move',
-      entries: [...selectedEntries],
-      initialDestination: currentPath,
-    });
-  };
-
-  const setClipboardFromSelection = (mode: 'copy' | 'move') => {
-    if (!canWrite || selectedEntries.length === 0) return;
-    const entriesToStore = [...selectedEntries];
-    setFileClipboard({ mode, entries: entriesToStore });
-    showToastObj({
-      title: mode === 'copy' ? 'Copied to clipboard' : 'Cut to clipboard',
-      message: `${entriesToStore.length} item${entriesToStore.length === 1 ? '' : 's'}`,
-      variant: 'success',
-    });
-  };
-
-  const handlePaste = () => {
-    if (!fileClipboard || !canWrite) return;
-    setContextMenu(null);
-    setTransferDialog({
-      mode: fileClipboard.mode,
-      entries: [...fileClipboard.entries],
-      initialDestination: currentPath,
-    });
-  };
-
-  const handleQuickShare = async () => {
-    const entry = contextMenu?.entry;
-    if (!entry) return;
-    setContextMenu(null);
-    try {
-      const share = await createShare({ path: entry.path });
-      await navigator.clipboard.writeText(shareUrl(share.token));
-      showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
-    } catch (err) {
-      showToastObj({
-        title: 'Quick share failed',
-        message: err instanceof Error ? err.message : undefined,
-        variant: 'error',
-      });
-    }
-  };
-
-  const handleTransferSubmit = (
-    dialog: TransferDialogState,
-    destinationValue: string,
-    conflictPolicy: ConflictPolicy,
-  ) => {
-    if (!dialog) return;
-    const destinations = destinationValue
-      .split('|')
-      .map((s) => s.trim().replace(/\/+$/, ''))
-      .filter(Boolean);
-    if (destinations.length === 0) return;
-    setTransferDialog(null);
-    void runAction(
-      async () => {
-        for (const entry of dialog.entries) {
-          for (const dest of destinations) {
-            const targetPath = joinPath(dest, entry.name);
-            await createJob({
-              type: dialog.mode === 'copy' ? 'copy' : 'move',
-              sourcePath: entry.path,
-              destinationPath: targetPath,
-              conflictPolicy,
-              verifyMode: 'size',
-            });
-          }
-        }
-        if (dialog.mode === 'move') setFileClipboard(null);
-      },
-      dialog.mode === 'copy' ? 'Copy transfer started' : 'Move transfer started',
-    );
-  };
-
-  const { handleCreateArchive, handleExtractArchive, handleAnalyze, handleCreateChecksum } =
-    useArchiveCommands({
-      currentPath,
-      folderSuggestions,
-      selectedEntries,
-      setContextMenu,
-      setTextInputDialog,
-      setAnalyzePath,
-      runAction,
-    });
+  const { handleCreateArchive, handleExtractArchive, handleCreateChecksum } = useArchiveCommands({
+    currentPath,
+    folderSuggestions,
+    selectedEntries,
+    setContextMenu,
+    setTextInputDialog,
+    runAction,
+  });
 
   // ── Trash context menu handler ────────────────────────
 
@@ -437,17 +311,17 @@ export function useFileCommands(deps: FileCommandDeps) {
     } // handled via handleSelectAll
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'c') {
       event.preventDefault();
-      setClipboardFromSelection('copy');
+      transferCommands.setClipboardFromSelection('copy');
       return;
     }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'x') {
       event.preventDefault();
-      setClipboardFromSelection('move');
+      transferCommands.setClipboardFromSelection('move');
       return;
     }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'v') {
       event.preventDefault();
-      handlePaste();
+      transferCommands.handlePaste();
       return;
     }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'i') {
@@ -492,15 +366,9 @@ export function useFileCommands(deps: FileCommandDeps) {
     handleDownload,
     handleShowInfo,
     handleBatchRename,
-    handleCopy,
-    handleMove,
-    setClipboardFromSelection,
-    handlePaste,
-    handleQuickShare,
-    handleTransferSubmit,
+    ...transferCommands,
     handleCreateArchive,
     handleExtractArchive,
-    handleAnalyze,
     handleCreateChecksum,
     handleUploadFiles,
     handleFileAreaKeyDown,
