@@ -29,11 +29,13 @@ afterEach(() => {
 if (typeof globalThis.ResizeObserver === 'undefined') {
   vi.stubGlobal(
     'ResizeObserver',
-    vi.fn(() => ({
-      observe: vi.fn(),
-      unobserve: vi.fn(),
-      disconnect: vi.fn(),
-    })),
+    vi.fn(function () {
+      return {
+        observe: vi.fn(),
+        unobserve: vi.fn(),
+        disconnect: vi.fn(),
+      };
+    }),
   );
 }
 
