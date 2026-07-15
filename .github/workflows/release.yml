@@ -24,9 +24,9 @@ jobs:
     name: Verify release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: 'npm'
@@ -42,7 +42,7 @@ jobs:
           npm run test:ci
           npm run build
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.23'
           cache-dependency-path: backend/go.sum
@@ -52,7 +52,7 @@ jobs:
         run: go mod download
 
       - name: Backend lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.3.1
           working-directory: backend
@@ -71,7 +71,7 @@ jobs:
     needs: verify
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Resolve version
         id: version
