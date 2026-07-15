@@ -10,11 +10,34 @@ Make storage investigation reliable for large folders and roots:
 - Both scans continue on the server if the browser closes.
 - Neither feature deletes or modifies files during scanning.
 
-## Current State
+## Implementation Status
 
-The existing Disk Space Analyzer uses `GET /api/files/analyze` and scans synchronously in the request. It stops after depth 4, keeps at most 50 children per directory, silently skips unreadable paths, and cannot be cancelled or resumed after the browser closes.
+The first release is implemented for v0.2.0:
 
-Checksum jobs already provide persistent server-side hashing, progress, cancellation, pause, and SSE updates. Duplicate Finder should reuse the checksum reader and job infrastructure, not create a second hashing system.
+- `disk_analyze` and `duplicate_find` run as persistent server jobs and survive
+  browser closure or reconnection.
+- Disk Usage persists both recursive directory totals and individual file rows,
+  allowing large files directly inside a scanned folder to be identified.
+- Duplicate cleanup queues the existing Trash jobs. Selected rows remain visible
+  as pending until those jobs complete; failed or cancelled rows stay available
+  for another attempt.
+- Restore jobs use a Volum-owned staging path for interrupted cross-filesystem
+  copies and never delete an unrelated file or directory recreated at the
+  original destination.
+- Results remain attached to their jobs until normal job pruning removes them.
+
+The remaining items below describe the original design and possible follow-up
+work. Features explicitly listed as out of scope remain deferred.
+
+## Historical Baseline
+
+Before v0.2.0, Disk Space Analyzer used `GET /api/files/analyze` and scanned
+synchronously in the request. It stopped after depth 4, kept at most 50 children
+per directory, silently skipped unreadable paths, and ended when the browser
+request closed.
+
+The persistent job and checksum infrastructure provided the foundation for the
+implemented analyzer jobs and their SSE progress updates.
 
 ## Product Scope
 
@@ -62,27 +85,27 @@ Keep job summaries in the existing jobs table and add dedicated result tables. A
 
 `disk_usage_results`:
 
-| Column | Purpose |
-| --- | --- |
-| `job_id` | Owning job |
-| `path` | Public RootGuard path |
-| `parent_path` | Public parent path |
-| `name` | Display name |
-| `is_dir` | Directory or file |
-| `size_bytes` | Recursive size for directories; file size for files |
-| `file_count` | Recursive file count |
-| `dir_count` | Recursive directory count |
+| Column        | Purpose                                             |
+| ------------- | --------------------------------------------------- |
+| `job_id`      | Owning job                                          |
+| `path`        | Public RootGuard path                               |
+| `parent_path` | Public parent path                                  |
+| `name`        | Display name                                        |
+| `is_dir`      | Directory or file                                   |
+| `size_bytes`  | Recursive size for directories; file size for files |
+| `file_count`  | Recursive file count                                |
+| `dir_count`   | Recursive directory count                           |
 
 `duplicate_results`:
 
-| Column | Purpose |
-| --- | --- |
-| `job_id` | Owning job |
-| `group_id` | Stable group identifier within the job |
-| `path` | Public RootGuard path |
-| `size_bytes` | File size |
-| `checksum` | Confirming SHA-256 digest |
-| `modified_at` | Display and user decision support |
+| Column        | Purpose                                |
+| ------------- | -------------------------------------- |
+| `job_id`      | Owning job                             |
+| `group_id`    | Stable group identifier within the job |
+| `path`        | Public RootGuard path                  |
+| `size_bytes`  | File size                              |
+| `checksum`    | Confirming SHA-256 digest              |
+| `modified_at` | Display and user decision support      |
 
 Use foreign keys with `ON DELETE CASCADE` so pruning a job also removes its scan results.
 
@@ -169,7 +192,10 @@ Show:
 - Per-file selection with one copy protected by default.
 - **Move selected to Trash** with an explicit confirmation showing file count and bytes.
 
-After cleanup completes, refresh or rerun the duplicate scan. Do not mutate scan results optimistically because filesystem jobs can partially fail.
+Track each queued Trash job through the existing jobs stream. Remove a duplicate
+row only after its Trash job completes; keep failed or cancelled rows available
+for retry. A full rescan remains available when users want refreshed group and
+reclaimable-space totals.
 
 ### Browser Reconnection
 

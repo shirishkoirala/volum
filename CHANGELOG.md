@@ -8,6 +8,7 @@ Changelog](https://keepachangelog.com/).
 ## v0.2.0 - 2026-07-14
 
 ### Added
+
 - Storage Analyzer app with disk-usage scanning and duplicate finding through
   persistent background jobs
 - Paginated large-folder browsing with incremental rendering and defensive
@@ -22,6 +23,7 @@ Changelog](https://keepachangelog.com/).
 - READMEs for `frontend/src/contexts/` and `tools/visual/` directories
 
 ### Changed
+
 - Unified the desktop, mobile, and windowed app layouts with shared frosted
   surfaces, navigation, hover states, and light-theme contrast
 - Reorganized frontend components by role and reduced `App.tsx` to a thin
@@ -43,8 +45,15 @@ Changelog](https://keepachangelog.com/).
 - Extracted `useTrashCommands`, `useTransferCommands`, `useDesktopIcons` hooks
 
 ### Fixed
+
 - Preserved the signed-out user's avatar and username across page refreshes
-- Made trash jobs retry-safe and restored folder analysis from search results
+- Made trash and restore jobs retry-safe without overwriting a destination that
+  was recreated while a restore waited to run
+- Persisted file-level Disk Usage results so large files appear alongside
+  directory totals
+- Kept duplicate results visible until their queued Trash jobs complete, while
+  preserving failed or cancelled items for retry
+- Restored folder analysis from search results
 - Hardened uploads, origin validation, and cleanup of partial failures
 - Fixed mobile views rendering alongside windowed apps and aligned responsive
   app gutters and headers
@@ -53,6 +62,7 @@ Changelog](https://keepachangelog.com/).
   `handlers_upload.go`, `visual-audit.mjs`) and stale file sizes across all docs
 
 ### Documentation
+
 - Updated docs to reference `make smoke-proxy`, `make visual-audit` instead of
   raw script paths
 - Updated change guides to reference domain-specific `client-*.ts` files instead
@@ -61,6 +71,7 @@ Changelog](https://keepachangelog.com/).
 - Removed `storage/deadcode.md` (leftover from unrelated project)
 
 ### Infrastructure
+
 - Coverage reporting (vitest + Go, CI informational, baseline recorded)
 - Smoke tests in scheduled CI (basic + reverse-proxy upload)
 - ShellCheck and lychee link checker (CI + Makefile)
