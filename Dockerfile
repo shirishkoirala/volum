@@ -1,4 +1,4 @@
-FROM golang:1.23-alpine AS backend-toolchain
+FROM golang:1.26-alpine AS backend-toolchain
 WORKDIR /app/backend
 RUN apk add --no-cache binutils gcc musl-dev
 COPY backend/go.mod backend/go.sum ./
@@ -12,7 +12,7 @@ RUN if [ "${RUN_BACKEND_CHECKS}" = "true" ]; then golangci-lint run --timeout=20
 RUN if [ "${RUN_BACKEND_CHECKS}" = "true" ]; then go vet ./...; fi
 RUN if [ "${RUN_BACKEND_CHECKS}" = "true" ]; then go test ./...; fi
 
-FROM node:22-alpine AS frontend
+FROM node:26-alpine AS frontend
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
@@ -31,7 +31,7 @@ RUN go build \
 	-ldflags="-X github.com/volum-app/volum/backend/internal/version.Version=${VERSION} -X github.com/volum-app/volum/backend/internal/version.BuildTime=${BUILD_TIME}" \
 	-o /out/volum ./cmd/volum
 
-FROM alpine:3.20
+FROM alpine:3.24
 RUN apk add --no-cache ca-certificates util-linux
 WORKDIR /app
 COPY --from=backend /out/volum /app/volum
