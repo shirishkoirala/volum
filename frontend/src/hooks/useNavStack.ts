@@ -14,6 +14,7 @@ interface NavStackOptions {
     setShowingMyPC: (v: boolean) => void;
     setSelectedDriveName: (v: string | null) => void;
     setShowingSearch?: (v: boolean) => void;
+    setShowingStorageAnalyzer?: (v: boolean) => void;
   };
   browser: {
     refresh: () => void;
@@ -44,6 +45,7 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
       nav?.setShowingSettings(false);
       nav?.setShowingJobs(false);
       nav?.setShowingSearch?.(false);
+      nav?.setShowingStorageAnalyzer?.(false);
       browser.setSearchOpen(false);
       browser.setSearchResults(null);
       browser.setQuery('');
@@ -59,6 +61,7 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
     nav?.setShowingSettings(false);
     nav?.setShowingJobs(false);
     nav?.setShowingSearch?.(false);
+    nav?.setShowingStorageAnalyzer?.(false);
     nav?.setShowingMyPC(false);
     nav?.setSelectedDriveName(null);
   }, [viewPref, nav]);

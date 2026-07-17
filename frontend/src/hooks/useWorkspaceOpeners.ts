@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { FileEntry } from '../api/client';
+import type { FileEntry, Job } from '../api/client';
 import {
   fileTypeIconUrl,
   filesIconUrl,
@@ -18,7 +18,11 @@ type WorkspaceNav = {
   setShowingSettings: (value: boolean) => void;
   setShowingJobs: (value: boolean) => void;
   setShowingMyPC: (value: boolean) => void;
+  setShowingSearch: (value: boolean) => void;
   setShowingStorageAnalyzer: (value: boolean) => void;
+  setStorageAnalyzerJobId: (value: string | null) => void;
+  setStorageAnalyzerPath: (value: string | null) => void;
+  setStorageAnalyzerSection: (value: 'disk-usage' | 'duplicates') => void;
   setSelectedDriveName: (value: string | null) => void;
 };
 
@@ -70,6 +74,8 @@ export function useWorkspaceOpeners({
   const openDrives = useCallback(() => {
     if (isMobile) {
       nav.setShowingMyPC(true);
+      nav.setShowingSearch(false);
+      nav.setShowingStorageAnalyzer(false);
       nav.setShowingTrash(false);
       nav.setShowingSettings(false);
       nav.setShowingJobs(false);
@@ -90,6 +96,8 @@ export function useWorkspaceOpeners({
   const openTrash = useCallback(() => {
     if (isMobile) {
       nav.setShowingTrash(true);
+      nav.setShowingSearch(false);
+      nav.setShowingStorageAnalyzer(false);
       nav.setShowingSettings(false);
       nav.setShowingJobs(false);
       nav.setShowingMyPC(false);
@@ -110,6 +118,8 @@ export function useWorkspaceOpeners({
   const openJobs = useCallback(() => {
     if (isMobile) {
       nav.setShowingJobs(true);
+      nav.setShowingSearch(false);
+      nav.setShowingStorageAnalyzer(false);
       nav.setShowingTrash(false);
       nav.setShowingSettings(false);
       nav.setShowingMyPC(false);
@@ -128,10 +138,15 @@ export function useWorkspaceOpeners({
   }, [isMobile, nav, wm]);
 
   const openStorageAnalyzer = useCallback(
-    (path?: string) => {
+    (path?: string, job?: Job) => {
       const selectedPath = typeof path === 'string' ? path : undefined;
+      const section = job?.type === 'duplicate_find' ? 'duplicates' : 'disk-usage';
       if (isMobile) {
         nav.setShowingStorageAnalyzer(true);
+        nav.setShowingSearch(false);
+        nav.setStorageAnalyzerJobId(job?.id ?? null);
+        nav.setStorageAnalyzerPath(selectedPath ?? null);
+        nav.setStorageAnalyzerSection(section);
         nav.setShowingSettings(false);
         nav.setShowingTrash(false);
         nav.setShowingJobs(false);
@@ -144,7 +159,10 @@ export function useWorkspaceOpeners({
         title: 'Storage Analyzer',
         icon: storageAnalyzerIconUrl(),
         winType: 'storage-analyzer',
-        params: selectedPath ? { path: selectedPath } : {},
+        params: {
+          ...(selectedPath ? { path: selectedPath } : {}),
+          ...(job ? { jobId: job.id, section } : {}),
+        },
         width: STANDARD_WINDOW_W,
         height: STANDARD_WINDOW_H,
       });
@@ -155,6 +173,8 @@ export function useWorkspaceOpeners({
   const openSettings = useCallback(() => {
     if (isMobile) {
       nav.setShowingSettings(true);
+      nav.setShowingSearch(false);
+      nav.setShowingStorageAnalyzer(false);
       nav.setShowingTrash(false);
       nav.setShowingJobs(false);
       nav.setShowingMyPC(false);

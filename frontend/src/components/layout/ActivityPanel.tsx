@@ -11,22 +11,7 @@ export type ActivityPanelProps = {
 const RECENT_COUNT = 5;
 
 function jobIcon(job: Job) {
-  switch (job.type) {
-    case 'copy':
-      return 'edit-copy';
-    case 'move':
-      return 'document-open-recent';
-    case 'upload':
-      return 'document-import';
-    case 'archive':
-      return 'application-x-archive';
-    case 'extract':
-      return 'archive-extract';
-    case 'checksum':
-      return 'dialog-password';
-    default:
-      return 'emblem-system';
-  }
+  return `job-${job.type}`;
 }
 
 function jobTitle(job: Job) {

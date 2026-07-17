@@ -10,6 +10,8 @@ import {
   getDuplicateResults,
   getDuplicateSummary,
   deletePath,
+  pauseJob,
+  resumeJob,
 } from '../api/client';
 import { ConfirmDialog } from '../components/overlay/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -31,6 +33,7 @@ interface StorageAnalyzerViewProps {
   jobs: Job[];
   preselectedPath?: string;
   preselectedSection?: Section;
+  preselectedJobId?: string;
 }
 
 type TreeNode = DiskUsageResult & {
@@ -187,11 +190,67 @@ function PathPicker({
   );
 }
 
+function ScanHistory({
+  jobs,
+  currentJobId,
+  onOpen,
+}: {
+  jobs: Job[];
+  currentJobId: string | null;
+  onOpen: (job: Job) => void;
+}) {
+  if (jobs.length === 0) return null;
+
+  return (
+    <section className={styles.history} aria-labelledby="scan-history-title">
+      <div className={styles.historyHeader}>
+        <div>
+          <h3 id="scan-history-title" className={styles.historyTitle}>
+            Previous scans
+          </h3>
+          <p className={styles.historyDescription}>Open a saved scan without scanning again.</p>
+        </div>
+        <span className={styles.historyCount}>{jobs.length}</span>
+      </div>
+      <div className={styles.historyList}>
+        {jobs.map((job) => (
+          <article className={styles.historyItem} key={job.id}>
+            <Icon name={`job-${job.type}`} size={18} />
+            <div className={styles.historyDetails}>
+              <span className={styles.historyPath}>{job.sourcePath || 'Unknown path'}</span>
+              <span className={styles.historyMeta}>
+                {formatGridDate(job.createdAt)} · {job.processedItems.toLocaleString()} items
+              </span>
+            </div>
+            <span className={styles.historyStatus} data-status={job.status}>
+              {job.status.replace('_', ' ')}
+            </span>
+            <button
+              className={styles.secondaryBtn}
+              onClick={() => onOpen(job)}
+              disabled={currentJobId === job.id}
+              type="button"
+            >
+              <Icon name="document-open" size={16} />
+              {currentJobId === job.id
+                ? 'Open'
+                : job.status === 'completed'
+                  ? 'View results'
+                  : 'Open scan'}
+            </button>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function StorageAnalyzerView({
   roots,
   jobs,
   preselectedPath,
   preselectedSection,
+  preselectedJobId,
 }: StorageAnalyzerViewProps) {
   const [section, setSection] = useState<Section>(preselectedSection || 'disk-usage');
   const [scanPath, setScanPath] = useState<string | null>(preselectedPath || null);
@@ -214,6 +273,42 @@ export function StorageAnalyzerView({
   const [pendingDupTrash, setPendingDupTrash] = useState<Map<string, string>>(new Map());
   const [dupTrashing, setDupTrashing] = useState(false);
   const [confirmTrash, setConfirmTrash] = useState(false);
+  const openedPreselectedJobId = useRef<string | null>(null);
+
+  const diskJobs = useMemo(() => jobs.filter((job) => job.type === 'disk_analyze'), [jobs]);
+  const duplicateJobs = useMemo(() => jobs.filter((job) => job.type === 'duplicate_find'), [jobs]);
+
+  const openStoredJob = useCallback((job: Job) => {
+    if (!job.sourcePath) return;
+    if (job.type === 'disk_analyze') {
+      setSection('disk-usage');
+      setScanPath(job.sourcePath);
+      setCurrentJobId(job.id);
+      setTreeData(new Map());
+      setExpandedPaths(new Set());
+      setSummary(null);
+      setError(null);
+      return;
+    }
+    if (job.type === 'duplicate_find') {
+      setSection('duplicates');
+      setDupPath(job.sourcePath);
+      setDupJobId(job.id);
+      setDupResults([]);
+      setDupSummary(null);
+      setDupSelected(new Set());
+      setPendingDupTrash(new Map());
+      setDupError(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!preselectedJobId || openedPreselectedJobId.current === preselectedJobId) return;
+    const job = jobs.find((candidate) => candidate.id === preselectedJobId);
+    if (!job) return;
+    openedPreselectedJobId.current = preselectedJobId;
+    openStoredJob(job);
+  }, [jobs, openStoredJob, preselectedJobId]);
 
   const currentJob = useMemo(() => {
     if (!currentJobId) return null;
@@ -227,7 +322,10 @@ export function StorageAnalyzerView({
   const dupJobStatus = dupJob?.status;
 
   const isScanActive =
-    currentJob && (currentJob.status === 'queued' || currentJob.status === 'running');
+    currentJob &&
+    (currentJob.status === 'queued' ||
+      currentJob.status === 'running' ||
+      currentJob.status === 'paused');
   const isScanDone =
     currentJob &&
     (currentJob.status === 'completed' ||
@@ -479,6 +577,19 @@ export function StorageAnalyzerView({
     }
   }, []);
 
+  const changeScanState = useCallback(
+    async (jobId: string, action: 'pause' | 'resume', duplicate = false) => {
+      try {
+        await (action === 'pause' ? pauseJob(jobId) : resumeJob(jobId));
+      } catch (err) {
+        const message = err instanceof Error ? err.message : `Failed to ${action} scan`;
+        if (duplicate) setDupError(message);
+        else setError(message);
+      }
+    },
+    [],
+  );
+
   const retry = useCallback(() => {
     if (scanPath) startScan(scanPath);
   }, [scanPath, startScan]);
@@ -519,7 +630,10 @@ export function StorageAnalyzerView({
       {section === 'disk-usage' && (
         <div className={styles.body}>
           {!scanPath && !currentJobId && (
-            <PathPicker roots={roots} onStartScan={startScan} loading={loading} />
+            <>
+              <PathPicker roots={roots} onStartScan={startScan} loading={loading} />
+              <ScanHistory jobs={diskJobs} currentJobId={currentJobId} onOpen={openStoredJob} />
+            </>
           )}
 
           {scanPath && !currentJobId && loading && (
@@ -541,12 +655,33 @@ export function StorageAnalyzerView({
 
           {scanPath && currentJob && isScanActive && (
             <div className={styles.scanStatus}>
-              <Icon name="view-refresh" size={20} />
-              <span>Scanning {scanPath}...</span>
+              <Icon
+                name={currentJob.status === 'paused' ? 'media-playback-pause' : 'view-refresh'}
+                size={20}
+              />
+              <span>
+                {currentJob.status === 'paused' ? `Paused ${scanPath}` : `Scanning ${scanPath}...`}
+              </span>
               {currentJob.currentItem && (
                 <span className={styles.currentItem}>{currentJob.currentItem}</span>
               )}
               <span className={styles.processedCount}>{currentJob.processedItems} items found</span>
+              {currentJob.status === 'running' && (
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={() => void changeScanState(currentJob.id, 'pause')}
+                >
+                  Pause
+                </button>
+              )}
+              {currentJob.status === 'paused' && (
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={() => void changeScanState(currentJob.id, 'resume')}
+                >
+                  Resume
+                </button>
+              )}
               <button
                 className={styles.secondaryBtn}
                 onClick={() => void cancelCurrentScan(currentJob.id)}
@@ -666,7 +801,10 @@ export function StorageAnalyzerView({
       {section === 'duplicates' && (
         <div className={styles.body}>
           {!dupJobId && !dupPath && (
-            <PathPicker roots={roots} onStartScan={startDupScan} loading={dupLoading} />
+            <>
+              <PathPicker roots={roots} onStartScan={startDupScan} loading={dupLoading} />
+              <ScanHistory jobs={duplicateJobs} currentJobId={dupJobId} onOpen={openStoredJob} />
+            </>
           )}
 
           {dupPath && !dupJobId && dupLoading && (
@@ -686,22 +824,48 @@ export function StorageAnalyzerView({
             </div>
           )}
 
-          {dupJob && (dupJob.status === 'queued' || dupJob.status === 'running') && (
-            <div className={styles.scanStatus}>
-              <Icon name="view-refresh" size={20} />
-              <span>Scanning for duplicates in {dupPath}...</span>
-              {dupJob.currentItem && (
-                <span className={styles.currentItem}>{dupJob.currentItem}</span>
-              )}
-              <span className={styles.processedCount}>{dupJob.processedItems} files scanned</span>
-              <button
-                className={styles.secondaryBtn}
-                onClick={() => void cancelCurrentScan(dupJob.id, true)}
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          {dupJob &&
+            (dupJob.status === 'queued' ||
+              dupJob.status === 'running' ||
+              dupJob.status === 'paused') && (
+              <div className={styles.scanStatus}>
+                <Icon
+                  name={dupJob.status === 'paused' ? 'media-playback-pause' : 'view-refresh'}
+                  size={20}
+                />
+                <span>
+                  {dupJob.status === 'paused'
+                    ? `Paused duplicate scan in ${dupPath}`
+                    : `Scanning for duplicates in ${dupPath}...`}
+                </span>
+                {dupJob.currentItem && (
+                  <span className={styles.currentItem}>{dupJob.currentItem}</span>
+                )}
+                <span className={styles.processedCount}>{dupJob.processedItems} files scanned</span>
+                {dupJob.status === 'running' && (
+                  <button
+                    className={styles.secondaryBtn}
+                    onClick={() => void changeScanState(dupJob.id, 'pause', true)}
+                  >
+                    Pause
+                  </button>
+                )}
+                {dupJob.status === 'paused' && (
+                  <button
+                    className={styles.secondaryBtn}
+                    onClick={() => void changeScanState(dupJob.id, 'resume', true)}
+                  >
+                    Resume
+                  </button>
+                )}
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={() => void cancelCurrentScan(dupJob.id, true)}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
 
           {dupSummary && dupResults.length > 0 && (
             <>

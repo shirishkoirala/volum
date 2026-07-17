@@ -7,6 +7,7 @@ import {
   ArrowUpDown,
   Bookmark,
   ChevronRight,
+  ChevronDown,
   ChevronUp,
   CheckSquare,
   CircleStop,
@@ -54,7 +55,6 @@ import {
   Usb,
   X,
   HardDrive,
-  ArrowDown,
   type LucideIcon,
 } from 'lucide-react';
 import { IconImg } from './shared';
@@ -84,7 +84,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   'go-next': ChevronRight,
   'go-previous': ChevronRight,
   'go-up': ChevronUp,
-  'go-down': ArrowDown,
+  'go-down': ChevronDown,
   'selection-invert': ListX,
   'selection-select-all': CheckSquare,
   'media-playback-pause': Pause,

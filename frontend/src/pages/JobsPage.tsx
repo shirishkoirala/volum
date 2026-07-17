@@ -32,6 +32,7 @@ function JobItem({
   onResume,
   onRetry,
   onResolve,
+  onOpenAnalyzer,
 }: {
   job: Job;
   onCancel: (id: string, type: string) => void;
@@ -39,6 +40,7 @@ function JobItem({
   onResume: (id: string, type: string) => void;
   onRetry: (id: string, type: string) => void;
   onResolve: (id: string) => void;
+  onOpenAnalyzer?: (job: Job) => void;
 }) {
   const progress = job.totalBytes > 0 ? Math.round((job.processedBytes / job.totalBytes) * 100) : 0;
   const canCancel =
@@ -50,6 +52,7 @@ function JobItem({
   const canResume = job.status === 'paused';
   const canRetry = job.status === 'failed' || job.status === 'cancelled';
   const needsResolve = job.status === 'needs_attention';
+  const isAnalyzer = job.type === 'disk_analyze' || job.type === 'duplicate_find';
   const showLiveStats = job.status === 'running';
   const hasKnownTotal = job.totalBytes > 0;
   const byteProgress = hasKnownTotal
@@ -102,8 +105,19 @@ function JobItem({
           <Icon name="dialog-warning" size={14} /> {job.errorMessage}
         </p>
       )}
-      {(canPause || canResume || canCancel || canRetry || needsResolve) && (
+      {(canPause ||
+        canResume ||
+        canCancel ||
+        canRetry ||
+        needsResolve ||
+        (isAnalyzer && onOpenAnalyzer)) && (
         <div className={styles.jobActions}>
+          {isAnalyzer && onOpenAnalyzer && (
+            <Button size="compact" variant="primary" onClick={() => onOpenAnalyzer(job)}>
+              <Icon name="document-open" size={15} />
+              {job.status === 'completed' ? 'View results' : 'Open scan'}
+            </Button>
+          )}
           {needsResolve && (
             <Button size="compact" variant="primary" onClick={() => onResolve(job.id)}>
               <Icon name="dialog-warning" size={15} />
@@ -143,6 +157,7 @@ function JobItem({
 type JobsPageProps = {
   session: Session | null;
   sessionLoading: boolean;
+  onOpenAnalyzer?: (job: Job) => void;
 };
 
 function handleJobListKeyDown(e: React.KeyboardEvent) {
@@ -156,7 +171,7 @@ function handleJobListKeyDown(e: React.KeyboardEvent) {
   }
 }
 
-export function JobsPage({ session, sessionLoading }: JobsPageProps) {
+export function JobsPage({ session, sessionLoading, onOpenAnalyzer }: JobsPageProps) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobsEmptyMenu, setJobsEmptyMenu] = useState<{ x: number; y: number } | null>(null);
   const [conflictDialogJobId, setConflictDialogJobId] = useState<string | null>(null);
@@ -270,6 +285,7 @@ export function JobsPage({ session, sessionLoading }: JobsPageProps) {
                 onResume={handleResumeJob}
                 onRetry={handleRetryJob}
                 onResolve={setConflictDialogJobId}
+                onOpenAnalyzer={onOpenAnalyzer}
               />
             ))}
           </>

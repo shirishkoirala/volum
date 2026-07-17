@@ -12,6 +12,8 @@ const api = vi.hoisted(() => ({
   getDiskUsageSummary: vi.fn(),
   getDuplicateResults: vi.fn(),
   getDuplicateSummary: vi.fn(),
+  pauseJob: vi.fn(),
+  resumeJob: vi.fn(),
 }));
 
 vi.mock('../api/client', () => api);
@@ -37,6 +39,15 @@ const trashJob = {
   status: 'queued',
 } satisfies Job;
 
+const diskJob = {
+  ...scanJob,
+  id: 'disk-1',
+  type: 'disk_analyze',
+  sourcePath: '/storage/media',
+  createdAt: '2026-07-17T01:00:00Z',
+  updatedAt: '2026-07-17T02:00:00Z',
+} satisfies Job;
+
 describe('StorageAnalyzerView duplicate cleanup', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -56,6 +67,40 @@ describe('StorageAnalyzerView duplicate cleanup', () => {
       reclaimableBytes: 10,
       skippedCount: 0,
     });
+    api.getDiskUsageResults.mockResolvedValue({
+      results: [
+        {
+          jobId: diskJob.id,
+          path: '/storage/media/video.mp4',
+          parentPath: '/storage/media',
+          name: 'video.mp4',
+          isDir: false,
+          sizeBytes: 1024,
+          fileCount: 1,
+          dirCount: 0,
+        },
+      ],
+    });
+    api.getDiskUsageSummary.mockResolvedValue({
+      jobId: diskJob.id,
+      totalBytes: 1024,
+      fileCount: 1,
+      directoryCount: 0,
+      skippedCount: 0,
+    });
+  });
+
+  it('opens saved disk usage results from scan history', async () => {
+    const user = userEvent.setup();
+    render(<StorageAnalyzerView roots={[]} jobs={[diskJob]} />);
+
+    expect(screen.getByText('Previous scans')).toBeInTheDocument();
+    expect(screen.getByText('/storage/media')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'View results' }));
+
+    await waitFor(() => expect(api.getDiskUsageSummary).toHaveBeenCalledWith(diskJob.id));
+    expect(await screen.findByText('video.mp4')).toBeInTheDocument();
+    expect(screen.getAllByText('1.0 KB')).toHaveLength(2);
   });
 
   it('keeps a duplicate visible until its trash job completes', async () => {

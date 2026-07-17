@@ -27,6 +27,11 @@ export function useNavigation(
   const [showingSearch, setShowingSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showingStorageAnalyzer, setShowingStorageAnalyzer] = useState(false);
+  const [storageAnalyzerJobId, setStorageAnalyzerJobId] = useState<string | null>(null);
+  const [storageAnalyzerPath, setStorageAnalyzerPath] = useState<string | null>(null);
+  const [storageAnalyzerSection, setStorageAnalyzerSection] = useState<'disk-usage' | 'duplicates'>(
+    'disk-usage',
+  );
 
   const topBarTitle = useMemo(() => {
     if (showingMyPC && selectedDriveName) {
@@ -131,6 +136,12 @@ export function useNavigation(
     setSearchQuery,
     showingStorageAnalyzer,
     setShowingStorageAnalyzer,
+    storageAnalyzerJobId,
+    setStorageAnalyzerJobId,
+    storageAnalyzerPath,
+    setStorageAnalyzerPath,
+    storageAnalyzerSection,
+    setStorageAnalyzerSection,
     topBarTitle,
     activeView,
     activeJobCount,

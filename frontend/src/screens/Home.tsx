@@ -131,6 +131,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     trashCount: browser.trashEntries.length,
     wm,
   });
+  const { openStorageAnalyzer } = workspaceOpeners;
 
   // Health polling for UI state updates. Notifications are handled by SSE in useJobs.
   useEffect(() => {
@@ -200,7 +201,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
               onAddFavorite={addFavorite}
               onRemoveFavorite={removeFavorite}
               onPreview={workspaceOpeners.openPreview}
-              onOpenStorageAnalyzer={workspaceOpeners.openStorageAnalyzer}
+              onOpenStorageAnalyzer={openStorageAnalyzer}
             />
           );
         case 'trash':
@@ -208,14 +209,22 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
         case 'drives':
           return <DrivesView onBackToDesktop={() => wm.closeWindow(win.id)} />;
         case 'jobs':
-          return <JobsPage session={session} sessionLoading={false} />;
+          return (
+            <JobsPage
+              session={session}
+              sessionLoading={false}
+              onOpenAnalyzer={(job) => openStorageAnalyzer(undefined, job)}
+            />
+          );
         case 'storage-analyzer':
           return (
             <StorageAnalyzerView
-              key={win.params.path as string | undefined}
+              key={`${String(win.params.path ?? '')}:${String(win.params.jobId ?? '')}`}
               roots={browser.roots}
               jobs={browser.jobs}
               preselectedPath={win.params.path as string | undefined}
+              preselectedJobId={win.params.jobId as string | undefined}
+              preselectedSection={win.params.section as 'disk-usage' | 'duplicates' | undefined}
             />
           );
         case 'settings':
@@ -297,7 +306,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       browser.jobs,
       wm,
       workspaceOpeners.openPreview,
-      workspaceOpeners.openStorageAnalyzer,
+      openStorageAnalyzer,
       services,
       serviceHealth,
       desktopActions,
@@ -646,9 +655,22 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                   }}
                 />
               )}
-              {nav.activeView === 'jobs' && <JobsPage session={session} sessionLoading={false} />}
+              {nav.activeView === 'jobs' && (
+                <JobsPage
+                  session={session}
+                  sessionLoading={false}
+                  onOpenAnalyzer={(job) => openStorageAnalyzer(undefined, job)}
+                />
+              )}
               {nav.activeView === 'storage-analyzer' && (
-                <StorageAnalyzerView roots={browser.roots} jobs={browser.jobs} />
+                <StorageAnalyzerView
+                  key={`${nav.storageAnalyzerPath ?? ''}:${nav.storageAnalyzerJobId ?? ''}`}
+                  roots={browser.roots}
+                  jobs={browser.jobs}
+                  preselectedPath={nav.storageAnalyzerPath ?? undefined}
+                  preselectedJobId={nav.storageAnalyzerJobId ?? undefined}
+                  preselectedSection={nav.storageAnalyzerSection}
+                />
               )}
               {nav.activeView === 'settings' && (
                 <SettingsPanel
