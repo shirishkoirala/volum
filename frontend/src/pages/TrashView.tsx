@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FolderIcon, FileIcon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
@@ -11,7 +11,7 @@ import { useToasts } from '../hooks/useToasts';
 import { GRID_ICON_SIZE, GridTile } from '../components/ui/GridTile';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
 import { TrashEmptyMenu } from '../components/overlay/TrashEmptyMenu';
-import { useWindowId, useCommandsContext } from '../contexts/WindowCommands';
+import { useWindowId, useCommandsContext, type WindowCommands } from '../contexts/WindowCommands';
 import styles from './TrashView.module.css';
 
 export function TrashView() {
@@ -170,31 +170,41 @@ export function TrashView() {
       );
   }, [trashEntries, toast, loadTrash]);
 
-  // Register window commands when inside a window
-  useEffect(() => {
-    if (!windowId) return;
-    registerCommands(windowId, {
-      onSelectAll: handleSelectAllTrash,
-      onInvertSelection: handleInvertSelectionTrash,
-      onRestore: handleRestoreSelected,
-      onDeleteForever: handleDeleteSelected,
-      onEmptyTrash: handleEmptyTrash,
-      canWrite: true,
-      canUpload: false,
-      selectedCount: selectedTrashIds.size,
-    });
-    return () => unregisterCommands(windowId);
-  }, [
-    windowId,
+  const selectedCount = selectedTrashIds.size;
+  const commandSourcesRef = useRef({
     handleSelectAllTrash,
     handleInvertSelectionTrash,
     handleRestoreSelected,
     handleDeleteSelected,
     handleEmptyTrash,
-    selectedTrashIds.size,
-    registerCommands,
-    unregisterCommands,
-  ]);
+  });
+  commandSourcesRef.current = {
+    handleSelectAllTrash,
+    handleInvertSelectionTrash,
+    handleRestoreSelected,
+    handleDeleteSelected,
+    handleEmptyTrash,
+  };
+  const windowCommands = useMemo<WindowCommands>(
+    () => ({
+      onSelectAll: () => commandSourcesRef.current.handleSelectAllTrash(),
+      onInvertSelection: () => commandSourcesRef.current.handleInvertSelectionTrash(),
+      onRestore: () => commandSourcesRef.current.handleRestoreSelected(),
+      onDeleteForever: () => commandSourcesRef.current.handleDeleteSelected(),
+      onEmptyTrash: () => commandSourcesRef.current.handleEmptyTrash(),
+      canWrite: true,
+      canUpload: false,
+      selectedCount,
+    }),
+    [selectedCount],
+  );
+
+  // Register window commands when inside a window
+  useEffect(() => {
+    if (!windowId) return;
+    registerCommands(windowId, windowCommands);
+    return () => unregisterCommands(windowId);
+  }, [windowId, windowCommands, registerCommands, unregisterCommands]);
 
   const sortedTrashEntries = useMemo(() => {
     return [...trashEntries].sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));

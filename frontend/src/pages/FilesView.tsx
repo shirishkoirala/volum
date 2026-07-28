@@ -32,7 +32,7 @@ import { ShareManager } from '../components/overlay/ShareManager';
 import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { formatBytes } from '../utils/format';
-import { useWindowId, useCommandsContext } from '../contexts/WindowCommands';
+import { useWindowId, useCommandsContext, type WindowCommands } from '../contexts/WindowCommands';
 import type { Session } from '../api/client-auth';
 import type { FileEntry } from '../api/client-files';
 import { isPreviewableFile } from '../utils/preview';
@@ -377,6 +377,26 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   }, []);
 
   const canUpload = browser.canWrite && Boolean(effectivePath);
+  const selectedCount = selection.selectedPaths.length;
+  const commandSourcesRef = useRef({ fileCommands, selection });
+  commandSourcesRef.current = { fileCommands, selection };
+  const windowCommands = useMemo<WindowCommands>(
+    () => ({
+      onCreateFolder: () => commandSourcesRef.current.fileCommands.handleCreateFolder(),
+      onUpload: openUploadPicker,
+      onCut: () => commandSourcesRef.current.fileCommands.setClipboardFromSelection('move'),
+      onCopy: () => commandSourcesRef.current.fileCommands.setClipboardFromSelection('copy'),
+      onPaste: () => commandSourcesRef.current.fileCommands.handlePaste(),
+      onSelectAll: () => commandSourcesRef.current.selection.handleSelectAll(),
+      onInvertSelection: () => commandSourcesRef.current.selection.handleInvertSelection(),
+      onRename: () => commandSourcesRef.current.fileCommands.handleRename(),
+      onDelete: () => commandSourcesRef.current.fileCommands.handleDelete(),
+      canWrite: browser.canWrite,
+      canUpload,
+      selectedCount,
+    }),
+    [browser.canWrite, canUpload, openUploadPicker, selectedCount],
+  );
 
   useImperativeHandle(ref, () => ({
     handleSelectAll: selection.handleSelectAll,
@@ -398,31 +418,9 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   // Register window commands when inside a window
   useEffect(() => {
     if (!windowId) return;
-    registerCommands(windowId, {
-      onCreateFolder: fileCommands.handleCreateFolder,
-      onUpload: openUploadPicker,
-      onCut: () => fileCommands.setClipboardFromSelection('move'),
-      onCopy: () => fileCommands.setClipboardFromSelection('copy'),
-      onPaste: fileCommands.handlePaste,
-      onSelectAll: selection.handleSelectAll,
-      onInvertSelection: selection.handleInvertSelection,
-      onRename: fileCommands.handleRename,
-      onDelete: fileCommands.handleDelete,
-      canWrite: browser.canWrite,
-      canUpload,
-      selectedCount: selection.selectedPaths.length,
-    });
+    registerCommands(windowId, windowCommands);
     return () => unregisterCommands(windowId);
-  }, [
-    windowId,
-    fileCommands,
-    openUploadPicker,
-    selection,
-    browser.canWrite,
-    canUpload,
-    registerCommands,
-    unregisterCommands,
-  ]);
+  }, [windowId, windowCommands, registerCommands, unregisterCommands]);
 
   const selectedEntryIsFavorited = fileActions.contextMenu?.entry
     ? favorites.includes(fileActions.contextMenu.entry.path)
