@@ -31,7 +31,9 @@ function mockEventSource() {
   if (typeof globalThis.EventSource === 'undefined') {
     (globalThis as unknown as Record<string, unknown>).EventSource = vi.fn();
   }
-  vi.spyOn(globalThis, 'EventSource').mockImplementation(() => es as unknown as EventSource);
+  vi.spyOn(globalThis, 'EventSource').mockImplementation(function () {
+    return es as unknown as EventSource;
+  });
   return es;
 }
 

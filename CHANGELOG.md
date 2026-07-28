@@ -5,7 +5,7 @@ Changelog](https://keepachangelog.com/).
 
 ## Unreleased
 
-## v0.2.0 - 2026-07-14
+## v0.2.0 - 2026-07-15
 
 ### Added
 

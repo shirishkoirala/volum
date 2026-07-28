@@ -37,7 +37,7 @@ describe('detectFavicon', () => {
     let callCount = 0;
     vi.stubGlobal(
       'Image',
-      vi.fn().mockImplementation(() => {
+      vi.fn().mockImplementation(function () {
         const img = {
           onload: null as unknown as () => void,
           onerror: null as unknown as () => void,
@@ -61,7 +61,7 @@ describe('detectFavicon', () => {
   it('returns null when all candidates fail', async () => {
     vi.stubGlobal(
       'Image',
-      vi.fn().mockImplementation(() => {
+      vi.fn().mockImplementation(function () {
         const img = {
           onload: null as unknown as () => void,
           onerror: null as unknown as () => void,
@@ -81,7 +81,7 @@ describe('detectFavicon', () => {
     const candidates: string[] = [];
     vi.stubGlobal(
       'Image',
-      vi.fn().mockImplementation(() => {
+      vi.fn().mockImplementation(function () {
         const img = {
           onload: null as unknown as () => void,
           onerror: null as unknown as () => void,
