@@ -176,7 +176,6 @@ func (s *Server) routes() {
 			r.Delete("/shares/{id}", s.handleDeleteShare)
 			r.Post("/db/vacuum", s.handleVacuum)
 			r.Post("/db/prune-jobs", s.handlePruneJobs)
-			r.Post("/db/prune-audit-logs", s.handlePruneAuditLogs)
 			r.Get("/users", s.handleListUsers)
 			r.Post("/users", s.handleCreateUser)
 			r.Delete("/users/{id}", s.handleDeleteUser)

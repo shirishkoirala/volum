@@ -2,8 +2,6 @@ package worker
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -360,19 +358,17 @@ func (w *Worker) processDuplicateFind(ctx context.Context, job jobs.Job) error {
 		// Hash 64KB prefix to filter obviously different files
 		prefixGroups := make(map[string][]fileCandidate)
 		for _, f := range stable {
-			h := sha256.New()
 			fh, err := os.Open(f.path)
 			if err != nil {
 				skipped++
 				continue
 			}
-			_, err = io.CopyN(h, fh, prefixBytes)
+			key, err := hashReader(io.LimitReader(fh, prefixBytes), "sha256")
 			fh.Close()
-			if err != nil && err != io.EOF {
+			if err != nil {
 				skipped++
 				continue
 			}
-			key := hex.EncodeToString(h.Sum(nil))
 			prefixGroups[key] = append(prefixGroups[key], f)
 		}
 
@@ -383,7 +379,7 @@ func (w *Worker) processDuplicateFind(ctx context.Context, job jobs.Job) error {
 			// Full SHA-256 for prefix-matched candidates
 			fullGroups := make(map[string][]fileCandidate)
 			for _, f := range pg {
-				hash, err := fileSHA256Simple(f.path)
+				hash, err := hashFile(f.path, "sha256")
 				if err != nil {
 					skipped++
 					continue
@@ -432,19 +428,6 @@ func stableFile(path string, origSize int64, origMod string) bool {
 		return false
 	}
 	return info.ModTime().UTC().Format(time.RFC3339) == origMod
-}
-
-func fileSHA256Simple(path string) (string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	h := sha256.New()
-	if _, err := io.Copy(h, f); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 func depth(path string) int {

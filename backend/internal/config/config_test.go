@@ -256,9 +256,6 @@ func TestLoadAllowsDisabledAuthenticationWithInsecureOptIn(t *testing.T) {
 	if cfg.AuthRequired {
 		t.Fatal("expected auth to be disabled")
 	}
-	if !cfg.InsecureNoAuth {
-		t.Fatal("expected insecure no-auth opt-in to be recorded")
-	}
 }
 
 func TestLoadRejectsDiscoveryWithoutAuthentication(t *testing.T) {

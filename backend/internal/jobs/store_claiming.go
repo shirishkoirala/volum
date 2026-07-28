@@ -19,7 +19,6 @@ func (s *Store) claimNextJob(ctx context.Context, types ...Type) (Job, bool, err
 		SELECT ` + jobColumns + `
 		FROM jobs
 		WHERE status = ? AND type IN (?` + repeatParams(len(types)-1) + `)
-			AND (scheduled_at IS NULL OR scheduled_at <= ?)
 		ORDER BY created_at ASC
 		LIMIT 1`
 
@@ -27,7 +26,6 @@ func (s *Store) claimNextJob(ctx context.Context, types ...Type) (Job, bool, err
 	for _, t := range types {
 		args = append(args, t)
 	}
-	args = append(args, now())
 
 	row := tx.QueryRowContext(ctx, query, args...)
 	job, err := scanJob(row)

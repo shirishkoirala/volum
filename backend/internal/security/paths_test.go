@@ -14,8 +14,8 @@ func TestNewRootGuard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(g.Roots()) != 2 {
-		t.Fatalf("expected 2 roots, got %d", len(g.Roots()))
+	if len(g.RootEntries()) != 2 {
+		t.Fatalf("expected 2 roots, got %d", len(g.RootEntries()))
 	}
 }
 

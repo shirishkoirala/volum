@@ -66,9 +66,6 @@ func (w *Worker) processArchive(ctx context.Context, job jobs.Job) (string, erro
 	if err := w.store.UpdateJobProgress(ctx, job.ID, info.Size(), 1, *job.SourcePath); err != nil {
 		return "", err
 	}
-	if err := w.store.CreateAuditLog(ctx, "archive", w.publicPath(archivePath), "created archive from "+*job.SourcePath); err != nil {
-		return "", err
-	}
 	if err := w.store.CompleteJob(ctx, job.ID); err != nil {
 		return "", err
 	}
@@ -99,15 +96,9 @@ func (w *Worker) processExtract(ctx context.Context, job jobs.Job) (result strin
 		return "", err
 	}
 	defer func() {
-		if resultErr == nil {
-			return
+		if resultErr != nil {
+			_ = w.guard.RemoveAll(dest)
 		}
-		_ = w.guard.RemoveAll(dest)
-		action := "extract_failed"
-		if errors.Is(resultErr, errExtractLimit) {
-			action = "extract_rejected"
-		}
-		_ = w.store.CreateAuditLog(ctx, action, w.publicPath(dest), resultErr.Error())
 	}()
 	format := ArchiveFormat(source)
 	switch format {
@@ -125,9 +116,6 @@ func (w *Worker) processExtract(ctx context.Context, job jobs.Job) (result strin
 		}
 	default:
 		return "", fmt.Errorf("unsupported archive format: %s (supported: .zip, .tar, .tar.gz, .tgz)", format)
-	}
-	if err := w.store.CreateAuditLog(ctx, "extract", w.publicPath(dest), "extracted from "+*job.SourcePath); err != nil {
-		return "", err
 	}
 	if err := w.store.CompleteJob(ctx, job.ID); err != nil {
 		return "", err

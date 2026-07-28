@@ -181,7 +181,7 @@ func TestInitialSetupRequiresToken(t *testing.T) {
 	desktopStore := desktop.NewStore(db)
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	server := New(
-		files.NewService(guard, files.NewDirSizeCache(0)),
+		files.NewService(guard),
 		jobStore,
 		guard,
 		authService,

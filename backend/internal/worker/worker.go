@@ -18,7 +18,7 @@ type Worker struct {
 }
 
 func New(store *jobs.Store, guard *security.RootGuard, log *slog.Logger) *Worker {
-	return &Worker{store: store, guard: guard, files: files.NewService(guard, files.NewDirSizeCache(5*time.Minute)), log: log}
+	return &Worker{store: store, guard: guard, files: files.NewService(guard), log: log}
 }
 
 func (w *Worker) Recover(ctx context.Context) error {
@@ -55,18 +55,7 @@ func (w *Worker) runOnce(ctx context.Context) {
 		return
 	}
 
-	job, ok, err = w.store.ClaimNextTransferJob(ctx)
-	if err != nil {
-		w.log.Error("claim transfer job failed", "error", err)
-		return
-	}
-	if ok {
-		if err := w.processTransfer(ctx, job); err != nil {
-			w.log.Error("transfer job failed", "job_id", job.ID, "error", err)
-			if failErr := w.store.FailJob(ctx, job.ID, err); failErr != nil {
-				w.log.Error("mark transfer job failed", "job_id", job.ID, "error", failErr)
-			}
-		}
+	if w.claimAndRun(ctx, "transfer", w.store.ClaimNextTransferJob, w.processTransfer) {
 		return
 	}
 
@@ -92,48 +81,36 @@ func (w *Worker) runOnce(ctx context.Context) {
 		return
 	}
 
-	job, ok, err = w.store.ClaimNextChecksumJob(ctx)
-	if err != nil {
-		w.log.Error("claim checksum job failed", "error", err)
-		return
-	}
-	if ok {
-		if err := w.processChecksum(ctx, job); err != nil {
-			w.log.Error("checksum job failed", "job_id", job.ID, "error", err)
-			if failErr := w.store.FailJob(ctx, job.ID, err); failErr != nil {
-				w.log.Error("mark checksum job failed", "job_id", job.ID, "error", failErr)
-			}
-		}
+	if w.claimAndRun(ctx, "checksum", w.store.ClaimNextChecksumJob, w.processChecksum) {
 		return
 	}
 
-	job, ok, err = w.store.ClaimNextAnalyzeJob(ctx)
-	if err != nil {
-		w.log.Error("claim analyze job failed", "error", err)
-		return
-	}
-	if ok {
-		if err := w.processDiskAnalyze(ctx, job); err != nil {
-			w.log.Error("analyze job failed", "job_id", job.ID, "error", err)
-			if failErr := w.store.FailJob(ctx, job.ID, err); failErr != nil {
-				w.log.Error("mark analyze job failed", "job_id", job.ID, "error", failErr)
-			}
-		}
+	if w.claimAndRun(ctx, "analyze", w.store.ClaimNextAnalyzeJob, w.processDiskAnalyze) {
 		return
 	}
 
-	job, ok, err = w.store.ClaimNextDuplicateJob(ctx)
+	w.claimAndRun(ctx, "duplicate", w.store.ClaimNextDuplicateJob, w.processDuplicateFind)
+}
+
+func (w *Worker) claimAndRun(
+	ctx context.Context,
+	name string,
+	claim func(context.Context) (jobs.Job, bool, error),
+	run func(context.Context, jobs.Job) error,
+) bool {
+	job, ok, err := claim(ctx)
 	if err != nil {
-		w.log.Error("claim duplicate job failed", "error", err)
-		return
+		w.log.Error("claim "+name+" job failed", "error", err)
+		return true
 	}
 	if !ok {
-		return
+		return false
 	}
-	if err := w.processDuplicateFind(ctx, job); err != nil {
-		w.log.Error("duplicate job failed", "job_id", job.ID, "error", err)
+	if err := run(ctx, job); err != nil {
+		w.log.Error(name+" job failed", "job_id", job.ID, "error", err)
 		if failErr := w.store.FailJob(ctx, job.ID, err); failErr != nil {
-			w.log.Error("mark duplicate job failed", "job_id", job.ID, "error", failErr)
+			w.log.Error("mark "+name+" job failed", "job_id", job.ID, "error", failErr)
 		}
 	}
+	return true
 }

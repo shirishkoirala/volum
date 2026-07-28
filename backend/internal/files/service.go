@@ -78,11 +78,10 @@ var (
 
 type Service struct {
 	guard *security.RootGuard
-	cache *DirSizeCache
 }
 
-func NewService(guard *security.RootGuard, cache *DirSizeCache) *Service {
-	return &Service{guard: guard, cache: cache}
+func NewService(guard *security.RootGuard) *Service {
+	return &Service{guard: guard}
 }
 
 func (s *Service) RootUsage() []Root {
@@ -99,14 +98,6 @@ func (s *Service) RootUsage() []Root {
 		usage = append(usage, item)
 	}
 	return usage
-}
-
-func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
-	listing, err := s.ListPage(path, showHidden, ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return listing.Entries, nil
 }
 
 func (s *Service) ListPage(path string, showHidden bool, opts ListOptions) (Listing, error) {
@@ -172,22 +163,11 @@ func (s *Service) ListPage(path string, showHidden bool, opts ListOptions) (List
 			continue
 		}
 
-		var size int64
-		if info.IsDir() {
-			if cached, ok := s.cache.Get(publicPath); ok {
-				size = cached
-			} else {
-				size = immediateDirSize(itemPath, info)
-			}
-		} else {
-			size = info.Size()
-		}
-
 		entries = append(entries, Entry{
 			Name:        name,
 			Path:        publicPath,
 			Type:        entryType,
-			Size:        size,
+			Size:        immediateDirSize(itemPath, info),
 			ModifiedAt:  info.ModTime(),
 			Permissions: info.Mode().Perm().String(),
 			Owner:       ownerName(info),
@@ -307,11 +287,6 @@ func (s *Service) Rename(path, newName string) (Entry, error) {
 		return Entry{}, err
 	}
 	return s.entryFromPath(target)
-}
-
-func (s *Service) Delete(path string) error {
-	_, err := s.Trash(path)
-	return err
 }
 
 func (s *Service) Chmod(path, mode string) (Entry, error) {

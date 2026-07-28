@@ -130,7 +130,7 @@ func (s *Store) ListUsers(ctx context.Context) ([]UserRecord, error) {
 	defer rows.Close()
 	var users []UserRecord
 	for rows.Next() {
-		u, err := scanUserFromRows(rows)
+		u, err := scanUser(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -263,21 +263,12 @@ func (s *Store) VerifyPassword(record *UserRecord, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(record.PasswordHash), []byte(password)) == nil
 }
 
-func scanUser(row *sql.Row) (*UserRecord, error) {
+func scanUser(row sqlutil.Scanner) (*UserRecord, error) {
 	var u UserRecord
 	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.SessionVersion, &u.HasAvatar)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
-	if err != nil {
-		return nil, err
-	}
-	return &u, nil
-}
-
-func scanUserFromRows(row sqlutil.Scanner) (*UserRecord, error) {
-	var u UserRecord
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.SessionVersion, &u.HasAvatar)
 	if err != nil {
 		return nil, err
 	}

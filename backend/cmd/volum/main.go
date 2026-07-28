@@ -96,8 +96,7 @@ func run(log *slog.Logger) error {
 	}
 	go backgroundWorker.Start(ctx)
 
-	dirSizeCache := files.NewDirSizeCache(5 * time.Minute)
-	filesService := files.NewService(guard, dirSizeCache)
+	filesService := files.NewService(guard)
 	shareStore := shares.NewStore(db)
 	desktopStore := desktop.NewStore(db)
 	healthChecker := desktop.NewHealthChecker(desktopStore, log)
