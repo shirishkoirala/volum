@@ -161,11 +161,6 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
     [removeService, toast],
   );
 
-  const handleBackToDesktop = useCallback(() => {
-    nav.setActiveView('desktop');
-    nav.setSelectedDriveName(null);
-  }, [nav]);
-
   const handleDesktopNavigateToTrash = useCallback(() => {
     viewPref.setCurrentPath('');
     nav.setActiveView('trash');
@@ -216,7 +211,6 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
     handleOpenServiceForm,
     handleSaveService,
     handleRemoveService,
-    handleBackToDesktop,
     handleDesktopNavigateToTrash,
     handleDockActivate,
     handleRefreshDesktop,

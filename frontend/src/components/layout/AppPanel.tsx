@@ -4,6 +4,12 @@ import styles from './AppPanel.module.css';
 type AppPanelElement = 'div' | 'main' | 'section';
 type AppPanelPadding = 'none' | 'compact' | 'normal';
 
+const paddingClasses: Record<AppPanelPadding, string | undefined> = {
+  none: styles.paddingNone,
+  compact: styles.paddingCompact,
+  normal: styles.paddingNormal,
+};
+
 type AppPanelProps = {
   as?: AppPanelElement;
   children: ReactNode;
@@ -38,7 +44,7 @@ export function AppPanel({
   const Element = as;
   const bodyClasses = joinClasses(
     styles.body,
-    styles[`padding-${padding}`],
+    paddingClasses[padding],
     scroll ? styles.scroll : styles.static,
     bodyClassName,
     bodyProps?.className,

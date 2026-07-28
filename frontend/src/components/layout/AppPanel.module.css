@@ -62,15 +62,15 @@
   overflow: hidden;
 }
 
-.padding-normal {
+.paddingNormal {
   padding: var(--space-lg);
 }
 
-.padding-compact {
+.paddingCompact {
   padding: var(--space-md);
 }
 
-.padding-none {
+.paddingNone {
   padding: 0;
 }
 
@@ -95,8 +95,8 @@
     width: 100%;
   }
 
-  .padding-normal,
-  .padding-compact {
+  .paddingNormal,
+  .paddingCompact {
     padding: var(--space-md) var(--space-md) var(--space-xl);
   }
 }
