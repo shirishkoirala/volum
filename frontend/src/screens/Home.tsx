@@ -22,7 +22,7 @@ import type { ServiceHealthResult } from '../utils/services';
 import { useServiceShortcuts } from '../hooks/useServiceShortcuts';
 import { useJobs } from '../hooks/useJobs';
 import { useViewPreferences } from '../hooks/useViewPreferences';
-import { useNavigation } from '../hooks/useNavigation';
+import { useNavigation, type ActiveView } from '../hooks/useNavigation';
 import { useFavorites } from '../hooks/useFavorites';
 import { useFileActions } from '../hooks/useFileActions';
 import { useDialogStack } from '../hooks/useDialogStack';
@@ -402,14 +402,14 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   }, [wm.windows]);
 
   const previousMobileRef = useRef(isMobile);
-  const analyzerTransferredToMobileRef = useRef(false);
+  const analyzerTransferredToMobileRef = useRef<ActiveView | null>(null);
   useEffect(() => {
     if (isMobile && !previousMobileRef.current && focusedWindow?.winType === 'storage-analyzer') {
+      analyzerTransferredToMobileRef.current = nav.activeView;
       nav.setActiveView('storage-analyzer');
-      analyzerTransferredToMobileRef.current = true;
     } else if (!isMobile && previousMobileRef.current && analyzerTransferredToMobileRef.current) {
-      nav.setActiveView(viewPref.currentPath ? 'files' : 'desktop');
-      analyzerTransferredToMobileRef.current = false;
+      nav.setActiveView(analyzerTransferredToMobileRef.current);
+      analyzerTransferredToMobileRef.current = null;
     } else if (
       !isMobile &&
       previousMobileRef.current &&
@@ -419,7 +419,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       navActions.resetToDesktopView();
     }
     previousMobileRef.current = isMobile;
-  }, [focusedWindow?.winType, isMobile, nav, navActions, viewPref.currentPath]);
+  }, [focusedWindow?.winType, isMobile, nav, navActions]);
 
   const focusedCommands = focusedWindow
     ? (commandsMap[focusedWindow.id] ?? {})
