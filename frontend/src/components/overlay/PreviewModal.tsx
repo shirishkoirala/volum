@@ -5,8 +5,8 @@ import {
   isTextExtension,
   isVideoExtension,
 } from '../../utils/fileTypes';
-import { downloadUrl, rawUrl } from '../../api/client';
-import type { FileEntry } from '../../api/client';
+import { downloadUrl, rawUrl } from '../../api/client-files';
+import type { FileEntry } from '../../api/client-files';
 import { previewBlockedReason } from '../../utils/preview';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/shared';

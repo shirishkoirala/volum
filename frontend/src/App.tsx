@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getSession, logout, profileAvatarUrl, Session } from './api/client';
+import { getSession, logout, profileAvatarUrl, type Session } from './api/client-auth';
 import { LoginScreen } from './screens/LoginScreen';
 import { SetupScreen } from './screens/SetupScreen';
 import { Home } from './screens/Home';

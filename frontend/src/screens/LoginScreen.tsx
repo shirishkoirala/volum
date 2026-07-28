@@ -1,8 +1,8 @@
 import { FormEvent, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
 import { ThemeToggle } from '../components/ui/ThemeToggle';
-import { login } from '../api/client';
-import type { Session } from '../api/client';
+import { login } from '../api/client-auth';
+import type { Session } from '../api/client-auth';
 import styles from './LoginScreen.module.css';
 
 type SavedUser = { username: string; avatarDataUrl?: string };

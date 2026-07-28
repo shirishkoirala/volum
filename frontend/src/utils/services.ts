@@ -1,4 +1,4 @@
-import type { ServiceHealthInfo, ServiceInfo } from '../api/client';
+import type { ServiceHealthInfo, ServiceInfo } from '../api/client-services';
 
 export type ServiceShortcut = Omit<ServiceInfo, 'position' | 'iconUrl' | 'healthUrl'> & {
   iconUrl?: string;
@@ -6,8 +6,6 @@ export type ServiceShortcut = Omit<ServiceInfo, 'position' | 'iconUrl' | 'health
 };
 
 export type ServiceHealthResult = ServiceHealthInfo;
-
-export type ServiceHealthStatus = 'healthy' | 'unhealthy';
 
 export function validUrl(str: string): boolean {
   try {

@@ -7,7 +7,7 @@ import {
   updateService as apiUpdateService,
   deleteService,
   reorderServices as apiReorderServices,
-} from '../api/client';
+} from '../api/client-services';
 import type { ServiceHealthResult, ServiceShortcut } from '../utils/services';
 
 export function useServiceShortcuts() {

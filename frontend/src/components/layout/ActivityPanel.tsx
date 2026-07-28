@@ -1,4 +1,4 @@
-import { type Job } from '../../api/client';
+import type { Job } from '../../api/client-jobs';
 import { makeJobLabel } from '../../utils/jobs';
 import { Icon } from '../ui/Icon';
 import styles from './ActivityPanel.module.css';

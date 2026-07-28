@@ -2,7 +2,7 @@ import { RefObject } from 'react';
 import { Icon, FileIcon } from './Icon';
 import { IconButton } from './shared';
 
-import type { SearchResult } from '../../api/client';
+import type { SearchResult } from '../../api/client-files';
 import styles from './FileSearchBar.module.css';
 
 type FileSearchBarProps = {

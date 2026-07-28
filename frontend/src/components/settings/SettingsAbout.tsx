@@ -1,4 +1,4 @@
-import type { StatusResponse } from '../../api/client';
+import type { StatusResponse } from '../../api/client-files';
 import styles from '../../pages/SettingsPanel.module.css';
 
 type SettingsAboutProps = {

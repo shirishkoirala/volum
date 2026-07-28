@@ -1,4 +1,4 @@
-import type { FileEntry } from '../../api/client';
+import type { FileEntry } from '../../api/client-files';
 import { openFileExternally } from '../../utils/preview';
 import { PreviewContent } from '../overlay/PreviewModal';
 

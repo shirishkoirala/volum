@@ -44,12 +44,6 @@
   text-transform: capitalize;
 }
 
-.jobStatus {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  text-transform: capitalize;
-}
-
 .jobMeta {
   color: var(--color-text-secondary);
   display: flex;

@@ -10,18 +10,17 @@ import { isPreviewableFile, openFileExternally } from '../utils/preview';
 import { joinPath } from '../utils/path';
 import { formatBytes, formatGridDate } from '../utils/format';
 import { isArchiveFile } from '../utils/archive';
+import { shareUrl } from '../api/client-base';
+import type { Session } from '../api/client-auth';
 import {
   searchFiles,
-  createShare,
-  createJob,
   deletePath,
   renamePath,
-  shareUrl,
   type SearchResult,
   type FileEntry,
-  type Session,
-  type ConflictPolicy,
-} from '../api/client';
+} from '../api/client-files';
+import { createJob, type ConflictPolicy } from '../api/client-jobs';
+import { createShare } from '../api/client-shares';
 import type { ConfirmDialogState } from '../components/overlay/ConfirmDialog';
 import type { TextInputDialogState } from '../components/overlay/TextInputDialog';
 import type { TransferDialogState } from '../components/overlay/TransferDialog';

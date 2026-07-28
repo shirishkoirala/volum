@@ -88,11 +88,6 @@
   border-bottom: 1px solid var(--app-surface-divider);
 }
 
-.errorBanner {
-  margin: var(--space-sm) var(--space-md) 0;
-  flex-shrink: 0;
-}
-
 .resultsArea {
   flex: 1;
   overflow-y: auto;

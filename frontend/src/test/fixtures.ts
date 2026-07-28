@@ -1,4 +1,7 @@
-import type { BlockDevice, FileEntry, Job, RootEntry, ServiceInfo, Session } from '../api/client';
+import type { Session } from '../api/client-auth';
+import type { BlockDevice, FileEntry, RootEntry } from '../api/client-files';
+import type { Job } from '../api/client-jobs';
+import type { ServiceInfo } from '../api/client-services';
 
 export function buildFileEntry(overrides: Partial<FileEntry> = {}): FileEntry {
   return {

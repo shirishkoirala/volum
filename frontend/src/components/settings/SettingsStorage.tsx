@@ -1,7 +1,7 @@
 import { Icon } from '../ui/Icon';
 import { ProgressBar } from '../ui/ProgressBar';
 import { formatBytes } from '../../utils/format';
-import type { RootEntry } from '../../api/client';
+import type { RootEntry } from '../../api/client-files';
 import styles from '../../pages/SettingsPanel.module.css';
 
 type SettingsStorageProps = {

@@ -1,16 +1,17 @@
 import { useCallback } from 'react';
-import { getTrash, deleteTrash } from '../api/client';
+import { getTrash, deleteTrash } from '../api/client-files';
+import type { RootEntry, TrashEntry } from '../api/client-files';
 import type { ServiceShortcut } from '../utils/services';
 import type { DesktopIconItem } from './useDesktopIcons';
 import { defaultRootPath } from '../utils/roots';
 
 interface DesktopActionsOptions {
   browser: {
-    trashEntries: import('../api/client').TrashEntry[];
-    setTrashEntries: React.Dispatch<React.SetStateAction<import('../api/client').TrashEntry[]>>;
+    trashEntries: TrashEntry[];
+    setTrashEntries: React.Dispatch<React.SetStateAction<TrashEntry[]>>;
     setError: (err: string | null) => void;
     loadDevices: () => void;
-    roots: import('../api/client').RootEntry[];
+    roots: RootEntry[];
   };
   dialogs: {
     setConfirmDialog: React.Dispatch<

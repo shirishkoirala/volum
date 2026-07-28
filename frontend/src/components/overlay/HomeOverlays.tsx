@@ -5,7 +5,7 @@ import { ShareDialog } from './ShareDialog';
 import { ShareManager } from './ShareManager';
 import { ServiceFormModal } from './ServiceFormModal';
 import { openFileExternally } from '../../utils/preview';
-import type { FileEntry } from '../../api/client';
+import type { FileEntry } from '../../api/client-files';
 import type { ServiceShortcut } from '../../utils/services';
 
 type HomeOverlaysProps = {

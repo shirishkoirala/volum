@@ -1,5 +1,8 @@
-import { createJob, createShare, shareUrl } from '../api/client';
-import type { FileEntry, ConflictPolicy } from '../api/client';
+import { shareUrl } from '../api/client-base';
+import { createJob } from '../api/client-jobs';
+import { createShare } from '../api/client-shares';
+import type { FileEntry } from '../api/client-files';
+import type { ConflictPolicy } from '../api/client-jobs';
 import { joinPath } from '../utils/path';
 import type { ClipboardState } from './types';
 

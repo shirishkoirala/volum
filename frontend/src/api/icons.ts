@@ -1,4 +1,4 @@
-import type { FileEntry } from '../api/client';
+import type { FileEntry } from '../api/client-files';
 
 import folderIcon from '../assets/places/folder.svg?url';
 import driveHarddisk from '../assets/drive-harddisk.svg?url';

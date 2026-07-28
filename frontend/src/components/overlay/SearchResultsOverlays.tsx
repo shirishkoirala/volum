@@ -6,7 +6,8 @@ import { ShareDialog } from './ShareDialog';
 import { InfoPanel } from './InfoPanel';
 import { PreviewModal } from './PreviewModal';
 import { openFileExternally } from '../../utils/preview';
-import type { FileEntry, ConflictPolicy } from '../../api/client';
+import type { FileEntry } from '../../api/client-files';
+import type { ConflictPolicy } from '../../api/client-jobs';
 
 type C = {
   canWrite: boolean;

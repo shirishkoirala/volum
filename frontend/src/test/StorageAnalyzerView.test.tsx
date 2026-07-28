@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { StorageAnalyzerView } from '../pages/StorageAnalyzerView';
-import type { Job } from '../api/client';
+import type { Job } from '../api/client-jobs';
 
 const api = vi.hoisted(() => ({
   cancelJob: vi.fn(),
@@ -14,7 +14,17 @@ const api = vi.hoisted(() => ({
   getDuplicateSummary: vi.fn(),
 }));
 
-vi.mock('../api/client', () => api);
+vi.mock('../api/client-files', () => ({
+  deletePath: api.deletePath,
+  getDiskUsageResults: api.getDiskUsageResults,
+  getDiskUsageSummary: api.getDiskUsageSummary,
+  getDuplicateResults: api.getDuplicateResults,
+  getDuplicateSummary: api.getDuplicateSummary,
+}));
+vi.mock('../api/client-jobs', () => ({
+  cancelJob: api.cancelJob,
+  createJob: api.createJob,
+}));
 
 const scanJob = {
   id: 'scan-1',

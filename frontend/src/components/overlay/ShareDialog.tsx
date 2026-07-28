@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
 import { Button, IconButton } from '../ui/shared';
 import { Dialog } from './Dialog';
-import { createShare, shareUrl as buildShareUrl, type Share } from '../../api/client';
+import { shareUrl as buildShareUrl } from '../../api/client-base';
+import { createShare, type Share } from '../../api/client-shares';
 import dStyles from './Dialogs.module.css';
 import uiStyles from '../ui/shared.module.css';
 

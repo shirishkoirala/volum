@@ -2,7 +2,7 @@
  * Shared job-related predicates and helpers.
  */
 
-import type { Job } from '../api/client';
+import type { Job } from '../api/client-jobs';
 
 export function makeJobLabel(type: string, action: string): string {
   const name =

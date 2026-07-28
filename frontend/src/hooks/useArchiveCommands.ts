@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
-import type { FileEntry } from '../api/client';
-import { createJob } from '../api/client';
+import type { FileEntry } from '../api/client-files';
+import { createJob } from '../api/client-jobs';
 import { archiveBaseName, archiveFileName, isArchiveFile } from '../utils/archive';
 import { joinPath, normalizeFolderPath } from '../utils/path';
 import type { TextInputDialogState } from '../components/overlay/TextInputDialog';

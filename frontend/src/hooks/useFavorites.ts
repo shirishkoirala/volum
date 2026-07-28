@@ -3,17 +3,15 @@ import {
   listFavorites,
   addFavorite as apiAddFavorite,
   removeFavorite as apiRemoveFavorite,
-} from '../api/client';
+} from '../api/client-services';
 
-export function useFavorites(currentPath: string, contextEntryPath?: string) {
+export function useFavorites() {
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     listFavorites()
       .then(setFavorites)
-      .catch(() => setFavorites([]))
-      .finally(() => setLoading(false));
+      .catch(() => setFavorites([]));
   }, []);
 
   const addFavorite = useCallback(
@@ -35,17 +33,9 @@ export function useFavorites(currentPath: string, contextEntryPath?: string) {
     });
   }, []);
 
-  const isFavorited = favorites.includes(currentPath);
-  const selectedEntryIsFavorited = contextEntryPath
-    ? favorites.includes(contextEntryPath)
-    : isFavorited;
-
   return {
     favorites,
-    loading,
     addFavorite,
     removeFavorite,
-    isFavorited,
-    selectedEntryIsFavorited,
   };
 }

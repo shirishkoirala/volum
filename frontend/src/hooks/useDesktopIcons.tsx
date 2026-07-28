@@ -9,7 +9,8 @@ import {
   filesIconUrl,
   storageAnalyzerIconUrl,
 } from '../api/icons';
-import type { TrashEntry, Job } from '../api/client';
+import type { TrashEntry } from '../api/client-files';
+import type { Job } from '../api/client-jobs';
 import { countActiveTransfers } from '../utils/jobs';
 import type { ServiceHealthResult, ServiceShortcut } from '../utils/services';
 import { useLongPress } from './useLongPress';

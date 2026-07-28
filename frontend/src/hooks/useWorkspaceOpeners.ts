@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { FileEntry } from '../api/client';
+import type { FileEntry } from '../api/client-files';
 import {
   fileTypeIconUrl,
   filesIconUrl,

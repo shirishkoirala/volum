@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import type { BlockDevice, Job } from '../api/client';
+import type { BlockDevice } from '../api/client-files';
+import type { Job } from '../api/client-jobs';
 import {
   filesIconUrl,
   jobsIconUrl,

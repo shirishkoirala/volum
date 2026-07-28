@@ -1,4 +1,4 @@
-import type { BlockDevice } from '../../api/client';
+import type { BlockDevice } from '../../api/client-files';
 import { DeviceIcon } from '../ui/Icon';
 import { ProgressBar } from '../ui/ProgressBar';
 import { formatBytes } from '../../utils/format';

@@ -1,6 +1,7 @@
 import { KeyboardEvent, useRef } from 'react';
-import { createFile, createFolder, renamePath, deletePath, getTrash } from '../api/client';
-import type { FileEntry, TrashEntry } from '../api/client';
+import { createFile, createFolder, renamePath, deletePath, getTrash } from '../api/client-files';
+import type { FileEntry, TrashEntry } from '../api/client-files';
+import type { Job } from '../api/client-jobs';
 import type { UploadProgress } from '../utils/upload';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
 import { joinPath } from '../utils/path';
@@ -22,7 +23,7 @@ interface FileCommandDeps {
   refresh: () => void;
   setError: (err: string | null) => void;
   setTrashEntries: React.Dispatch<React.SetStateAction<TrashEntry[]>>;
-  setJobs: React.Dispatch<React.SetStateAction<import('../api/client').Job[]>>;
+  setJobs: React.Dispatch<React.SetStateAction<Job[]>>;
   selectedEntries: FileEntry[];
   setSelectedPaths: React.Dispatch<React.SetStateAction<string[]>>;
   setLastSelectedPath: React.Dispatch<React.SetStateAction<string | null>>;

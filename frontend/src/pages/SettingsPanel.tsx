@@ -11,7 +11,8 @@ import { SettingsDesktop } from '../components/settings/SettingsDesktop';
 import { SettingsAdmin } from '../components/settings/SettingsAdmin';
 import { SettingsAbout } from '../components/settings/SettingsAbout';
 import { useAsyncData } from '../hooks/useAsyncData';
-import { getStatus, type Session } from '../api/client';
+import type { Session } from '../api/client-auth';
+import { getStatus } from '../api/client-files';
 import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
 import styles from './SettingsPanel.module.css';
 
@@ -181,9 +182,5 @@ export function SettingsPanel({
     </nav>
   );
 
-  return (
-    <AppPanel layout="split" sidebar={sidebarNav}>
-      {content}
-    </AppPanel>
-  );
+  return <AppPanel sidebar={sidebarNav}>{content}</AppPanel>;
 }

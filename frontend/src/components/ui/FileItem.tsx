@@ -1,8 +1,8 @@
 import { DragEvent, RefObject, useEffect, useRef, useState } from 'react';
 import { Icon, FileIcon, FolderIcon } from './Icon';
-import { rawUrl } from '../../api/client';
+import { rawUrl } from '../../api/client-files';
 import { canThumbnail } from '../../utils/preview';
-import type { FileEntry } from '../../api/client';
+import type { FileEntry } from '../../api/client-files';
 import { formatBytes, formatGridDate } from '../../utils/format';
 import type { RenameState } from '../../types';
 import { GRID_ICON_SIZE, LIST_ICON_SIZE } from './GridTile';

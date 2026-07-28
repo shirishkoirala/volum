@@ -3,8 +3,8 @@ import { Icon, FileIcon } from '../ui/Icon';
 import { Button, MutedText } from '../ui/shared';
 import { Dialog } from './Dialog';
 import { Select } from '../input/Select';
-import { batchRename } from '../../api/client';
-import type { FileEntry } from '../../api/client';
+import { batchRename } from '../../api/client-files';
+import type { FileEntry } from '../../api/client-files';
 import uiStyles from '../ui/shared.module.css';
 import styles from './BatchRename.module.css';
 

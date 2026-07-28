@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useJobs } from '../hooks/useJobs';
-import * as api from '../api/client';
+import * as api from '../api/client-jobs';
 import { buildJob, buildSession } from './fixtures';
 
-vi.mock('../api/client', () => ({
+vi.mock('../api/client-jobs', () => ({
   getJobs: vi.fn(),
   cancelJob: vi.fn(),
   retryJob: vi.fn(),

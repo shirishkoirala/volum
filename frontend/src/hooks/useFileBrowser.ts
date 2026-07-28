@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Session } from '../api/client-auth';
 import {
-  FileEntry,
-  Job,
-  BlockDevice,
-  RootEntry,
-  Session,
-  TrashEntry,
-  SearchResult,
   getDevices,
   getFiles,
   getRoots,
   getTrash,
   searchFiles,
-} from '../api/client';
+  type BlockDevice,
+  type FileEntry,
+  type RootEntry,
+  type SearchResult,
+  type TrashEntry,
+} from '../api/client-files';
+import type { Job } from '../api/client-jobs';
 import { uniquePaths } from '../utils/path';
 
 const FILE_PAGE_SIZE = 600;

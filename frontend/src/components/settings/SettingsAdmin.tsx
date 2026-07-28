@@ -3,17 +3,16 @@ import { Icon } from '../ui/Icon';
 import { Button, MutedText } from '../ui/shared';
 import { ErrorBanner } from '../ui/ErrorBanner';
 import {
-  dbVacuum,
-  pruneTable,
   listUsers,
   createUser,
   deleteUser,
   changePassword,
   changeRole,
   type Session,
-  type StatusResponse,
   type UserInfo,
-} from '../../api/client';
+} from '../../api/client-auth';
+import type { StatusResponse } from '../../api/client-files';
+import { dbVacuum, pruneJobs } from '../../api/client-services';
 import styles from '../../pages/SettingsPanel.module.css';
 
 type SettingsAdminProps = {
@@ -57,22 +56,8 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
     setMaintenanceMsg(null);
     setMaintenanceError(null);
     try {
-      const result = await pruneTable('jobs');
+      const result = await pruneJobs();
       setMaintenanceMsg(`Pruned ${result.removed} old transfer records.`);
-    } catch (err) {
-      setMaintenanceError(err instanceof Error ? err.message : 'Prune failed');
-    } finally {
-      setMaintenanceBusy(null);
-    }
-  };
-
-  const handlePruneAuditLogs = async () => {
-    setMaintenanceBusy('pruneAudit');
-    setMaintenanceMsg(null);
-    setMaintenanceError(null);
-    try {
-      const result = await pruneTable('audit-logs');
-      setMaintenanceMsg(`Pruned ${result.removed} old audit log entries.`);
     } catch (err) {
       setMaintenanceError(err instanceof Error ? err.message : 'Prune failed');
     } finally {
@@ -166,12 +151,6 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
               <Icon name="view-refresh" size={12} className={styles.spin} />
             )}
             Prune Old Transfers
-          </Button>
-          <Button size="compact" onClick={handlePruneAuditLogs} disabled={maintenanceBusy !== null}>
-            {maintenanceBusy === 'pruneAudit' && (
-              <Icon name="view-refresh" size={12} className={styles.spin} />
-            )}
-            Prune Audit Logs
           </Button>
         </div>
         {maintenanceMsg && <p className={styles.maintenanceMsg}>{maintenanceMsg}</p>}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import type { Job, JobStatus, Session } from '../api/client';
-import { getJobs } from '../api/client';
+import type { Session } from '../api/client-auth';
+import type { Job, JobStatus } from '../api/client-jobs';
+import { getJobs } from '../api/client-jobs';
 import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { jobsIconUrl } from '../api/icons';

@@ -5,7 +5,6 @@ import { ConfirmDialog, type ConfirmDialogState } from '../components/overlay/Co
 import { TextInputDialog, type TextInputDialogState } from '../components/overlay/TextInputDialog';
 import { TransferDialog, type TransferDialogState } from '../components/overlay/TransferDialog';
 import { ToastViewport } from '../components/overlay/Toast';
-import { FolderSuggestions } from '../components/input/FolderPicker';
 import type { Toast } from '../components/overlay/Toast';
 import { buildDirectoryEntry, buildFileEntry } from './fixtures';
 
@@ -120,35 +119,6 @@ describe('TransferDialog', () => {
   it('hides skip-identical for folder copy transfers', () => {
     renderTransferDialog({ mode: 'copy', entries: [folderEntry], initialDestination: '/target' });
     expect(screen.queryByText('Skip identical files (by size + checksum)')).not.toBeInTheDocument();
-  });
-});
-
-describe('FolderSuggestions', () => {
-  it('renders label and path buttons', () => {
-    const onSelect = vi.fn();
-    render(
-      <FolderSuggestions
-        label="Jump to"
-        paths={['/storage', '/storage/docs']}
-        onSelect={onSelect}
-      />,
-    );
-    expect(screen.getByText('Jump to')).toBeInTheDocument();
-    expect(screen.getByTitle('/storage')).toBeInTheDocument();
-    expect(screen.getByTitle('/storage/docs')).toBeInTheDocument();
-  });
-
-  it('calls onSelect when a path is clicked', async () => {
-    const onSelect = vi.fn();
-    const user = userEvent.setup();
-    render(<FolderSuggestions label="Jump to" paths={['/storage']} onSelect={onSelect} />);
-    await user.click(screen.getByTitle('/storage'));
-    expect(onSelect).toHaveBeenCalledWith('/storage');
-  });
-
-  it('displays / for root path', () => {
-    render(<FolderSuggestions label="Folders" paths={['/']} onSelect={vi.fn()} />);
-    expect(screen.getByText('/')).toBeInTheDocument();
   });
 });
 

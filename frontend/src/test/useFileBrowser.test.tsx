@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useFileBrowser } from '../hooks/useFileBrowser';
-import type { Session, FileEntry } from '../api/client';
-import * as api from '../api/client';
+import type { Session } from '../api/client-auth';
+import type { FileEntry } from '../api/client-files';
+import * as api from '../api/client-files';
 import { buildDirectoryEntry, buildFileEntry, buildRootEntry, buildSession } from './fixtures';
 
-vi.mock('../api/client', () => ({
+vi.mock('../api/client-files', () => ({
   getRoots: vi.fn(),
   getDevices: vi.fn(),
   getFiles: vi.fn(),

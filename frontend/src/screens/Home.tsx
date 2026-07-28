@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SortField, SortDirection } from '../types';
-import type { FileEntry, Session } from '../api/client';
+import type { Session } from '../api/client-auth';
+import type { FileEntry } from '../api/client-files';
 import { HomeOverlays } from '../components/overlay/HomeOverlays';
 import { SettingsPanel } from '../pages/SettingsPanel';
 import { TopBar } from '../components/layout/TopBar';
@@ -97,7 +98,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     viewPref.currentPath,
     pendingUploadCount,
   );
-  const { favorites, addFavorite, removeFavorite } = useFavorites(viewPref.currentPath);
+  const { favorites, addFavorite, removeFavorite } = useFavorites();
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
   const [previewEntries, setPreviewEntries] = useState<FileEntry[]>([]);

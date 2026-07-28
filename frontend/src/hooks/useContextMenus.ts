@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { TrashEntry } from '../api/client';
+import type { TrashEntry } from '../api/client-files';
 import type { DesktopIconItem } from './useDesktopIcons';
 import type { ServiceShortcut } from '../utils/services';
 

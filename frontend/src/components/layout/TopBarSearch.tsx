@@ -1,6 +1,6 @@
 import { RefObject } from 'react';
 import { Icon, FileIcon } from '../ui/Icon';
-import type { SearchResult } from '../../api/client';
+import type { SearchResult } from '../../api/client-files';
 import styles from './TopBarSearch.module.css';
 
 type TopBarSearchProps = {

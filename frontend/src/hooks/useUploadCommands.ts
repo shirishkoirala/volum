@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
-import type { Job } from '../api/client';
-import { getJobs } from '../api/client';
+import type { Job } from '../api/client-jobs';
+import { getJobs } from '../api/client-jobs';
 import {
   unsupportedUploadReason,
   uploadFilesWithResume,

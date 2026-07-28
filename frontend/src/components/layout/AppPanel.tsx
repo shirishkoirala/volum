@@ -2,7 +2,6 @@ import type { HTMLAttributes, ReactNode } from 'react';
 import styles from './AppPanel.module.css';
 
 type AppPanelElement = 'div' | 'main' | 'section';
-type AppPanelLayout = 'stack' | 'split';
 type AppPanelPadding = 'none' | 'compact' | 'normal';
 
 type AppPanelProps = {
@@ -13,7 +12,6 @@ type AppPanelProps = {
   bodyProps?: HTMLAttributes<HTMLDivElement>;
   footer?: ReactNode;
   header?: ReactNode;
-  layout?: AppPanelLayout;
   onContextMenu?: HTMLAttributes<HTMLElement>['onContextMenu'];
   padding?: AppPanelPadding;
   scroll?: boolean;
@@ -32,7 +30,6 @@ export function AppPanel({
   className,
   footer,
   header,
-  layout = 'stack',
   onContextMenu,
   padding = 'normal',
   scroll = true,
@@ -49,13 +46,7 @@ export function AppPanel({
 
   return (
     <Element
-      className={joinClasses(
-        styles.panel,
-        styles[layout],
-        'glassPanel',
-        'mobileAppPanel',
-        className,
-      )}
+      className={joinClasses(styles.panel, 'glassPanel', 'mobileAppPanel', className)}
       onContextMenu={onContextMenu}
     >
       {header ? <div className={styles.header}>{header}</div> : null}

@@ -1,4 +1,4 @@
-import type { FileEntry } from '../../api/client';
+import type { FileEntry } from '../../api/client-files';
 import {
   Activity as ActivityIcon,
   AlertTriangle,

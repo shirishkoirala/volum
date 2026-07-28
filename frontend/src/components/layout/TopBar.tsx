@@ -7,7 +7,9 @@ import { Calendar } from '../overlay/Calendar';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { IconButton } from '../ui/shared';
 import { Icon } from '../ui/Icon';
-import { type Session, type SearchResult, type Job } from '../../api/client';
+import type { Session } from '../../api/client-auth';
+import type { SearchResult } from '../../api/client-files';
+import type { Job } from '../../api/client-jobs';
 
 import { countActiveTransfers } from '../../utils/jobs';
 import styles from './TopBar.module.css';

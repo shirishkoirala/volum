@@ -3,24 +3,23 @@ import { Icon, FileIcon, FolderIcon } from '../components/ui/Icon';
 import { AppPanel } from '../components/layout/AppPanel';
 import { FolderPicker } from '../components/input/FolderPicker';
 import {
-  cancelJob,
-  createJob,
   getDiskUsageResults,
   getDiskUsageSummary,
   getDuplicateResults,
   getDuplicateSummary,
   deletePath,
-} from '../api/client';
+} from '../api/client-files';
+import { cancelJob, createJob } from '../api/client-jobs';
 import { ConfirmDialog } from '../components/overlay/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
 import type {
-  Job,
   DiskUsageResult,
   DiskUsageSummary,
   DuplicateFileEntry,
   DuplicateSummary,
   RootEntry,
-} from '../api/client';
+} from '../api/client-files';
+import type { Job } from '../api/client-jobs';
 import { formatBytes, formatGridDate } from '../utils/format';
 import styles from './StorageAnalyzerView.module.css';
 
@@ -490,7 +489,6 @@ export function StorageAnalyzerView({
   return (
     <AppPanel
       as="main"
-      layout="split"
       padding="none"
       scroll={false}
       sidebar={

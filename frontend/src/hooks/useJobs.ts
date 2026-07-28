@@ -9,10 +9,11 @@ import {
   clearCompletedJobs,
   clearFailedJobs,
   resolveJobConflicts,
-} from '../api/client';
+} from '../api/client-jobs';
 import { apiUrl } from '../api/baseUrl';
 import { makeJobLabel, refreshesFiles } from '../utils/jobs';
-import type { Job, Session } from '../api/client';
+import type { Session } from '../api/client-auth';
+import type { Job } from '../api/client-jobs';
 import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
 
 interface UseJobsOptions {

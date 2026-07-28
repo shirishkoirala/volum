@@ -1,17 +1,10 @@
 .panel {
   display: flex;
   flex: 1;
+  flex-direction: column;
   margin: var(--space-md);
   min-height: 0;
   overflow: hidden;
-}
-
-.stack {
-  flex-direction: column;
-}
-
-.split {
-  flex-direction: column;
 }
 
 .header,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getJobConflicts } from '../../api/client';
-import type { ConflictItem } from '../../api/client';
+import { getJobConflicts } from '../../api/client-jobs';
+import type { ConflictItem } from '../../api/client-jobs';
 import { Icon } from '../ui/Icon';
 import { Button } from '../ui/shared';
 import { Overlay } from '../ui/shared';

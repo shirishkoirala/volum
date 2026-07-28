@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
-import { setup } from '../api/client';
-import type { Session } from '../api/client';
+import { setup } from '../api/client-auth';
+import type { Session } from '../api/client-auth';
 
 import styles from './LoginScreen.module.css';
 

@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react';
-import { getTrash } from '../api/client';
+import { getTrash } from '../api/client-files';
+import type { SearchResult, TrashEntry } from '../api/client-files';
 
 interface NavStackOptions {
   viewPref: {
@@ -18,11 +19,9 @@ interface NavStackOptions {
   browser: {
     refresh: () => void;
     setSearchOpen: (v: boolean) => void;
-    setSearchResults: React.Dispatch<
-      React.SetStateAction<import('../api/client').SearchResult[] | null>
-    >;
+    setSearchResults: React.Dispatch<React.SetStateAction<SearchResult[] | null>>;
     setQuery: (v: string) => void;
-    setTrashEntries: React.Dispatch<React.SetStateAction<import('../api/client').TrashEntry[]>>;
+    setTrashEntries: React.Dispatch<React.SetStateAction<TrashEntry[]>>;
   };
 }
 

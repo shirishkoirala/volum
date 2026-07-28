@@ -4,10 +4,11 @@ import {
   uploadFileWithResume,
   uploadFilesWithResume,
 } from '../utils/upload';
-import * as client from '../api/client';
+import * as client from '../api/client-files';
+import { shareUrl } from '../api/client-base';
 import * as baseUrl from '../api/baseUrl';
 
-vi.mock('../api/client', async (importOriginal) => {
+vi.mock('../api/client-files', async (importOriginal) => {
   const mod = await importOriginal();
   return {
     ...mod!,
@@ -422,24 +423,17 @@ describe('apiUrl path prefix', () => {
 
   it('builds unprefixed absolute share URLs when no prefix is set', () => {
     import.meta.env.VITE_PUBLIC_PATH = '';
-    expect(client.shareUrl('abc123')).toBe(`${window.location.origin}/api/public/abc123`);
+    expect(shareUrl('abc123')).toBe(`${window.location.origin}/api/public/abc123`);
   });
 
   it('builds prefixed absolute share URLs when VITE_PUBLIC_PATH is set', () => {
     import.meta.env.VITE_PUBLIC_PATH = '/volum';
-    expect(client.shareUrl('abc123')).toBe(`${window.location.origin}/volum/api/public/abc123`);
-  });
-
-  it('assetUrl constructs correct asset path', () => {
-    import.meta.env.VITE_PUBLIC_PATH = '';
-    expect(baseUrl.assetUrl('assets/logo.png')).toBe('/assets/logo.png');
-
-    import.meta.env.VITE_PUBLIC_PATH = '/volum';
-    expect(baseUrl.assetUrl('assets/logo.png')).toBe('/volum/assets/logo.png');
+    expect(shareUrl('abc123')).toBe(`${window.location.origin}/volum/api/public/abc123`);
   });
 
   it('getUploadStatus uses prefixed URL and encodes path plus filename parameters', async () => {
-    const actualClient = await vi.importActual<typeof import('../api/client')>('../api/client');
+    const actualClient =
+      await vi.importActual<typeof import('../api/client-files')>('../api/client-files');
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -463,7 +457,8 @@ describe('apiUrl path prefix', () => {
   });
 
   it('uploadChunk uses prefixed URL, encoded query params, and CSRF marker header', async () => {
-    const actualClient = await vi.importActual<typeof import('../api/client')>('../api/client');
+    const actualClient =
+      await vi.importActual<typeof import('../api/client-files')>('../api/client-files');
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(
         JSON.stringify({

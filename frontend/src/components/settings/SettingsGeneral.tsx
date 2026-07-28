@@ -6,7 +6,7 @@ import {
   uploadProfileAvatar,
   deleteProfileAvatar,
   type Session,
-} from '../../api/client';
+} from '../../api/client-auth';
 import { useNotificationPreferences } from '../../hooks/useNotificationPreferences';
 import styles from '../../pages/SettingsPanel.module.css';
 

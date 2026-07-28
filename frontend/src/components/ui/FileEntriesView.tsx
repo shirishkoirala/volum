@@ -8,7 +8,7 @@ import {
   useMemo,
 } from 'react';
 import { FileItem } from './FileItem';
-import type { FileEntry } from '../../api/client';
+import type { FileEntry } from '../../api/client-files';
 import type { RenameState } from '../../types';
 import { useIncrementalEntries } from '../../hooks/useIncrementalEntries';
 type ViewMode = 'list' | 'grid';
