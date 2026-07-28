@@ -13,7 +13,7 @@ PACKAGE ?= ./...
 	check check-frontend check-backend test-frontend test-backend \
 	coverage coverage-frontend coverage-backend \
 	format-frontend lint-shell lint-markdown build smoke smoke-proxy \
-	setup-visual visual-capture visual-audit
+	setup-visual visual-capture
 
 help:
 	@printf '%s\n' \
@@ -52,8 +52,7 @@ help:
 		'' \
 		'Visual:' \
 		'  make setup-visual    Install Playwright + browsers in tools/visual' \
-		'  make visual-capture  Capture screenshots for docs (VOLUM_URL=...)' \
-		'  make visual-audit    Run visual audit (VOLUM_URL=...)'
+		'  make visual-capture  Capture screenshots for docs (VOLUM_URL=...)'
 
 setup:
 	@mkdir -p data storage
@@ -126,11 +125,8 @@ setup-visual:
 visual-capture:
 	NODE_PATH=tools/visual/node_modules VOLUM_URL="${VOLUM_URL}" node scripts/capture-screenshots.mjs
 
-visual-audit:
-	NODE_PATH=tools/visual/node_modules VOLUM_URL="${VOLUM_URL}" node scripts/visual-audit.mjs
-
 build:
-	docker compose build
+	docker build -t volum .
 
 smoke:
 	./scripts/smoke.sh

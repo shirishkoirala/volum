@@ -49,9 +49,7 @@
     'Geist Variable', Geist, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
   --font-brand: 'Geist Variable', Geist, ui-sans-serif, system-ui, sans-serif;
-  --font-mono:
-    'JetBrains Mono Variable', 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, ui-monospace,
-    monospace;
+  --font-mono: 'SF Mono', 'Cascadia Code', Consolas, ui-monospace, monospace;
   /* Opacity */
   --opacity-disabled: 0.58;
   --opacity-ghost: 0.3;
