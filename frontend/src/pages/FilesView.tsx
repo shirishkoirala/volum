@@ -116,7 +116,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const { register: registerCommands, unregister: unregisterCommands } = useCommandsContext();
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [visibleCounts, setVisibleCounts] = useState({ rendered: 0, total: 0 });
-  const setPendingUploadCount = useCallback(() => {}, []);
   const fileGridRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const uploadFileInputRef = useRef<HTMLInputElement>(null);
@@ -213,7 +212,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     setTrashContextMenu: menus.setTrashContextMenu,
     setFilesEmptyMenu: menus.setFilesEmptyMenu,
     setUploadProgress,
-    setPendingUploadCount,
     showToastObj: shell.showToastObj,
     contextMenu: fileActions.contextMenu,
     navigateTo: handleNavigate,
@@ -277,8 +275,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [browser, fileActions]);
 
-  const [menuStates, setMenuStates] = useState<Record<string, boolean>>({});
-
   const closeAllFilesMenus = useCallback(() => {
     fileActions.setContextMenu(null);
     menus.setTrashContextMenu(null);
@@ -288,10 +284,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     menus.setJobsEmptyMenu(null);
   }, [fileActions, menus]);
 
-  useClickOutsideMenus(menuStates, (updater) => {
-    setMenuStates(updater);
-    closeAllFilesMenus();
-  });
+  useClickOutsideMenus(closeAllFilesMenus);
 
   const handleContextMenuEvent = useCallback(
     (entry: FileEntry, event: MouseEvent<HTMLElement>) => {

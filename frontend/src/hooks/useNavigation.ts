@@ -18,63 +18,27 @@ export function useNavigation(
   jobs: Job[],
   trashCount: number,
   currentPath: string,
-  pendingTransferCount = 0,
 ) {
-  const [showingTrash, setShowingTrash] = useState(false);
-  const [showingSettings, setShowingSettings] = useState(false);
-  const [showingJobs, setShowingJobs] = useState(false);
-  const [showingMyPC, setShowingMyPC] = useState(false);
+  const [activeView, setActiveView] = useState<ActiveView>(currentPath ? 'files' : 'desktop');
   const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
-  const [showingSearch, setShowingSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showingStorageAnalyzer, setShowingStorageAnalyzer] = useState(false);
 
   const topBarTitle = useMemo(() => {
-    if (showingMyPC && selectedDriveName) {
+    if (activeView === 'drives' && selectedDriveName) {
       const d = devices.find((dd) => dd.name === selectedDriveName);
       return d?.model || selectedDriveName;
     }
-    if (showingMyPC) return 'Drives';
-    if (showingSearch) return 'Search';
-    if (showingStorageAnalyzer) return 'Storage Analyzer';
-    if (showingTrash) return 'Trash';
-    if (showingSettings) return 'Settings';
-    if (showingJobs) return 'Transfers';
-    if (currentPath) return 'Files';
+    if (activeView === 'drives') return 'Drives';
+    if (activeView === 'search') return 'Search';
+    if (activeView === 'storage-analyzer') return 'Storage Analyzer';
+    if (activeView === 'trash') return 'Trash';
+    if (activeView === 'settings') return 'Settings';
+    if (activeView === 'jobs') return 'Transfers';
+    if (activeView === 'files') return 'Files';
     return undefined;
-  }, [
-    showingMyPC,
-    selectedDriveName,
-    devices,
-    showingSearch,
-    showingTrash,
-    showingSettings,
-    showingJobs,
-    showingStorageAnalyzer,
-    currentPath,
-  ]);
-
-  const activeView = useMemo((): ActiveView => {
-    if (showingSearch) return 'search';
-    if (showingSettings) return 'settings';
-    if (showingJobs) return 'jobs';
-    if (showingStorageAnalyzer) return 'storage-analyzer';
-    if (showingTrash) return 'trash';
-    if (currentPath) return 'files';
-    if (showingMyPC) return 'drives';
-    return 'desktop';
-  }, [
-    currentPath,
-    showingSearch,
-    showingTrash,
-    showingSettings,
-    showingJobs,
-    showingMyPC,
-    showingStorageAnalyzer,
-  ]);
+  }, [activeView, selectedDriveName, devices]);
 
   const activeJobCount = useMemo(() => countActiveTransfers(jobs), [jobs]);
-  const transferBadgeCount = activeJobCount + pendingTransferCount;
 
   const dockItems = useMemo(
     () => [
@@ -102,7 +66,7 @@ export function useNavigation(
         id: 'jobs',
         label: 'Transfers',
         icon: jobsIconUrl(),
-        badge: transferBadgeCount > 0 ? transferBadgeCount : undefined,
+        badge: activeJobCount > 0 ? activeJobCount : undefined,
         active: activeView === 'jobs',
       },
       {
@@ -112,28 +76,17 @@ export function useNavigation(
         active: activeView === 'settings',
       },
     ],
-    [activeView, trashCount, transferBadgeCount],
+    [activeView, trashCount, activeJobCount],
   );
 
   return {
-    showingTrash,
-    setShowingTrash,
-    showingSettings,
-    setShowingSettings,
-    showingJobs,
-    setShowingJobs,
-    showingMyPC,
-    setShowingMyPC,
+    activeView,
+    setActiveView,
     selectedDriveName,
     setSelectedDriveName,
-    showingSearch,
-    setShowingSearch,
     searchQuery,
     setSearchQuery,
-    showingStorageAnalyzer,
-    setShowingStorageAnalyzer,
     topBarTitle,
-    activeView,
     activeJobCount,
     dockItems,
   };

@@ -7,7 +7,6 @@ import styles from './DesktopView.module.css';
 type DesktopViewProps = {
   trashEntries: TrashEntry[];
   jobs: Job[];
-  pendingTransferCount?: number;
   favorites: string[];
   services: ServiceShortcut[];
   serviceHealth: Record<string, ServiceHealthResult>;
@@ -25,7 +24,6 @@ type DesktopViewProps = {
 export function DesktopView({
   trashEntries,
   jobs,
-  pendingTransferCount = 0,
   favorites,
   services,
   serviceHealth,
@@ -54,7 +52,6 @@ export function DesktopView({
   } = useDesktopIcons({
     trashEntries,
     jobs,
-    pendingTransferCount,
     favorites,
     services,
     serviceHealth,

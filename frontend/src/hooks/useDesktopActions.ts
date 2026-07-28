@@ -4,6 +4,7 @@ import type { RootEntry, TrashEntry } from '../api/client-files';
 import type { ServiceShortcut } from '../utils/services';
 import type { DesktopIconItem } from './useDesktopIcons';
 import { defaultRootPath } from '../utils/roots';
+import type { ActiveView } from './useNavigation';
 
 interface DesktopActionsOptions {
   browser: {
@@ -25,10 +26,7 @@ interface DesktopActionsOptions {
     ) => void;
   };
   nav: {
-    setShowingTrash: (v: boolean) => void;
-    setShowingSettings: (v: boolean) => void;
-    setShowingJobs: (v: boolean) => void;
-    setShowingMyPC: (v: boolean) => void;
+    setActiveView: (view: ActiveView) => void;
     setSelectedDriveName: (v: string | null) => void;
   };
   viewPref: {
@@ -164,16 +162,13 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
   );
 
   const handleBackToDesktop = useCallback(() => {
-    nav.setShowingMyPC(false);
+    nav.setActiveView('desktop');
     nav.setSelectedDriveName(null);
   }, [nav]);
 
   const handleDesktopNavigateToTrash = useCallback(() => {
     viewPref.setCurrentPath('');
-    nav.setShowingTrash(true);
-    nav.setShowingSettings(false);
-    nav.setShowingJobs(false);
-    nav.setShowingMyPC(false);
+    nav.setActiveView('trash');
     selection.setSelectedPaths([]);
     nav.setSelectedDriveName(null);
   }, [viewPref, nav, selection]);
@@ -185,33 +180,23 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
           resetToDesktopView();
           break;
         case 'files':
-          nav.setShowingTrash(false);
-          nav.setShowingSettings(false);
-          nav.setShowingJobs(false);
-          nav.setShowingMyPC(false);
           nav.setSelectedDriveName(null);
           if (viewPref.currentPath === '') {
             navigateTo(defaultRootPath(browser.roots));
+          } else {
+            nav.setActiveView('files');
           }
           break;
         case 'trash':
           viewPref.setCurrentPath('');
-          nav.setShowingTrash(true);
-          nav.setShowingSettings(false);
-          nav.setShowingJobs(false);
+          nav.setActiveView('trash');
           break;
         case 'jobs':
-          nav.setShowingJobs(true);
-          nav.setShowingSettings(false);
-          nav.setShowingTrash(false);
-          nav.setShowingMyPC(false);
+          nav.setActiveView('jobs');
           nav.setSelectedDriveName(null);
           break;
         case 'settings':
-          nav.setShowingSettings(true);
-          nav.setShowingTrash(false);
-          nav.setShowingJobs(false);
-          nav.setShowingMyPC(false);
+          nav.setActiveView('settings');
           nav.setSelectedDriveName(null);
           break;
       }

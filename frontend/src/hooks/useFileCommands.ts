@@ -43,7 +43,6 @@ interface FileCommandDeps {
   >;
   setFilesEmptyMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
   setUploadProgress: React.Dispatch<React.SetStateAction<UploadProgress | null>>;
-  setPendingUploadCount: React.Dispatch<React.SetStateAction<number>>;
   showToastObj: (toast: Omit<Toast, 'id'>, timeout?: number) => void;
   contextMenu: ContextMenuState;
   navigateTo: (path: string) => void;
@@ -98,7 +97,6 @@ export function useFileCommands(deps: FileCommandDeps) {
     setTrashContextMenu,
     setFilesEmptyMenu,
     setUploadProgress,
-    setPendingUploadCount,
     showToastObj,
     contextMenu,
     navigateTo,
@@ -254,7 +252,6 @@ export function useFileCommands(deps: FileCommandDeps) {
     setError,
     setJobs,
     setUploadProgress,
-    setPendingUploadCount,
     showToastObj,
     runAction,
   });

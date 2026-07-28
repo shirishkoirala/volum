@@ -12,13 +12,10 @@ import {
 import type { WindowManagerType } from '../contexts/WindowManager';
 import type { ServiceShortcut } from '../utils/services';
 import { STANDARD_WINDOW_W, STANDARD_WINDOW_H } from '../utils/window';
+import type { ActiveView } from './useNavigation';
 
 type WorkspaceNav = {
-  setShowingTrash: (value: boolean) => void;
-  setShowingSettings: (value: boolean) => void;
-  setShowingJobs: (value: boolean) => void;
-  setShowingMyPC: (value: boolean) => void;
-  setShowingStorageAnalyzer: (value: boolean) => void;
+  setActiveView: (value: ActiveView) => void;
   setSelectedDriveName: (value: string | null) => void;
 };
 
@@ -69,10 +66,7 @@ export function useWorkspaceOpeners({
 
   const openDrives = useCallback(() => {
     if (isMobile) {
-      nav.setShowingMyPC(true);
-      nav.setShowingTrash(false);
-      nav.setShowingSettings(false);
-      nav.setShowingJobs(false);
+      nav.setActiveView('drives');
       return;
     }
 
@@ -89,10 +83,7 @@ export function useWorkspaceOpeners({
 
   const openTrash = useCallback(() => {
     if (isMobile) {
-      nav.setShowingTrash(true);
-      nav.setShowingSettings(false);
-      nav.setShowingJobs(false);
-      nav.setShowingMyPC(false);
+      nav.setActiveView('trash');
       nav.setSelectedDriveName(null);
       return;
     }
@@ -109,10 +100,7 @@ export function useWorkspaceOpeners({
 
   const openJobs = useCallback(() => {
     if (isMobile) {
-      nav.setShowingJobs(true);
-      nav.setShowingTrash(false);
-      nav.setShowingSettings(false);
-      nav.setShowingMyPC(false);
+      nav.setActiveView('jobs');
       nav.setSelectedDriveName(null);
       return;
     }
@@ -131,11 +119,7 @@ export function useWorkspaceOpeners({
     (path?: string) => {
       const selectedPath = typeof path === 'string' ? path : undefined;
       if (isMobile) {
-        nav.setShowingStorageAnalyzer(true);
-        nav.setShowingSettings(false);
-        nav.setShowingTrash(false);
-        nav.setShowingJobs(false);
-        nav.setShowingMyPC(false);
+        nav.setActiveView('storage-analyzer');
         nav.setSelectedDriveName(null);
         return;
       }
@@ -154,10 +138,7 @@ export function useWorkspaceOpeners({
 
   const openSettings = useCallback(() => {
     if (isMobile) {
-      nav.setShowingSettings(true);
-      nav.setShowingTrash(false);
-      nav.setShowingJobs(false);
-      nav.setShowingMyPC(false);
+      nav.setActiveView('settings');
       nav.setSelectedDriveName(null);
       return;
     }

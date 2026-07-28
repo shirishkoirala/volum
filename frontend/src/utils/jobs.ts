@@ -18,8 +18,8 @@ export function isActiveTransferJob(job: Job): boolean {
   return job.status === 'running' || job.status === 'queued' || job.status === 'paused';
 }
 
-export function countActiveTransfers(jobs: Job[], pendingTransferCount = 0): number {
-  return jobs.filter(isActiveTransferJob).length + pendingTransferCount;
+export function countActiveTransfers(jobs: Job[]): number {
+  return jobs.filter(isActiveTransferJob).length;
 }
 
 /**

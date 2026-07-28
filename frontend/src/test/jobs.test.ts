@@ -42,11 +42,7 @@ describe('countActiveTransfers', () => {
     expect(countActiveTransfers(jobs)).toBe(2);
   });
 
-  it('adds pendingTransferCount', () => {
-    expect(countActiveTransfers([buildJob({ status: 'running' })], 3)).toBe(4);
-  });
-
-  it('returns 0 for no active jobs and no pending', () => {
+  it('returns 0 for no active jobs', () => {
     expect(countActiveTransfers([buildJob({ status: 'completed' })])).toBe(0);
   });
 });

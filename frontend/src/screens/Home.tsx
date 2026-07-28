@@ -29,7 +29,6 @@ import { useDialogStack } from '../hooks/useDialogStack';
 import { useToasts } from '../hooks/useToasts';
 import { useFileBrowser } from '../hooks/useFileBrowser';
 import { useSelection } from '../hooks/useSelection';
-import { useFileCommands } from '../hooks/useFileCommands';
 import { useContextMenus } from '../hooks/useContextMenus';
 import { useNavStack } from '../hooks/useNavStack';
 import { useDesktopActions } from '../hooks/useDesktopActions';
@@ -89,14 +88,12 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     services,
     browserNotifications: notifPrefs.enabled,
   });
-  const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
   const nav = useNavigation(
     browser.devices,
     browser.jobs,
     browser.trashEntries.length,
     viewPref.currentPath,
-    pendingUploadCount,
   );
   const { favorites, addFavorite, removeFavorite } = useFavorites();
   const fileActions = useFileActions();
@@ -311,47 +308,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     previewEntries,
   );
 
-  const fileCommands = useFileCommands({
-    currentPath: viewPref.currentPath,
-    canWrite: browser.canWrite,
-    folderSuggestions: browser.folderSuggestions,
-    refresh: navActions.refresh,
-    setError: browser.setError,
-    setTrashEntries: browser.setTrashEntries,
-    setJobs: browser.setJobs,
-    selectedEntries: selection.selectedEntries,
-    setSelectedPaths: selection.setSelectedPaths,
-    setLastSelectedPath: selection.setLastSelectedPath,
-    renaming: fileActions.renaming,
-    setRenaming: fileActions.setRenaming,
-    setContextMenu: fileActions.setContextMenu,
-    setPreviewEntry: fileActions.setPreviewEntry,
-    setInfoEntry: fileActions.setInfoEntry,
-    setBatchRenameOpen: fileActions.setBatchRenameOpen,
-    fileClipboard: fileActions.fileClipboard,
-    setFileClipboard: fileActions.setFileClipboard,
-    setConfirmDialog: dialogs.setConfirmDialog,
-    setTextInputDialog: dialogs.setTextInputDialog,
-    setTransferDialog: dialogs.setTransferDialog,
-    setTrashContextMenu: menus.setTrashContextMenu,
-    setFilesEmptyMenu: menus.setFilesEmptyMenu,
-    setPendingUploadCount,
-    setUploadProgress: () => {},
-    showToastObj: toast.showToastObj,
-    contextMenu: fileActions.contextMenu,
-    navigateTo: navActions.navigateTo,
-    selectedTrashIds: selection.selectedTrashIds,
-    setSelectedTrashIds: selection.setSelectedTrashIds,
-    setLastSelectedTrashId: selection.setLastSelectedTrashId,
-    emptyMenuBlockedRef: menus.emptyMenuBlockedRef,
-  });
-
   // ── Effects ──────────────────────────────────────────────
-
-  useEffect(() => {
-    fileCommands.renameInputRef.current?.focus();
-    fileCommands.renameInputRef.current?.select();
-  }, [fileActions.renaming, fileCommands.renameInputRef]);
 
   useKeyboardShortcuts({
     '?': () => fileActions.setShortcutsOpen((p) => !p),
@@ -360,8 +317,6 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     },
   });
 
-  const [homeMenuStates, setHomeMenuStates] = useState<Record<string, boolean>>({});
-
   const closeAllHomeMenus = useCallback(() => {
     menus.setTrashContextMenu(null);
     menus.setDesktopContextMenu(null);
@@ -369,10 +324,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     menus.setJobsEmptyMenu(null);
   }, [menus]);
 
-  useClickOutsideMenus(homeMenuStates, (updater) => {
-    setHomeMenuStates(updater);
-    closeAllHomeMenus();
-  });
+  useClickOutsideMenus(closeAllHomeMenus);
 
   useEffect(() => {
     if (typeof Notification !== 'undefined' && Notification.permission === 'default')
@@ -453,10 +405,10 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   const analyzerTransferredToMobileRef = useRef(false);
   useEffect(() => {
     if (isMobile && !previousMobileRef.current && focusedWindow?.winType === 'storage-analyzer') {
-      nav.setShowingStorageAnalyzer(true);
+      nav.setActiveView('storage-analyzer');
       analyzerTransferredToMobileRef.current = true;
     } else if (!isMobile && previousMobileRef.current && analyzerTransferredToMobileRef.current) {
-      nav.setShowingStorageAnalyzer(false);
+      nav.setActiveView(viewPref.currentPath ? 'files' : 'desktop');
       analyzerTransferredToMobileRef.current = false;
     } else if (
       !isMobile &&
@@ -467,7 +419,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       navActions.resetToDesktopView();
     }
     previousMobileRef.current = isMobile;
-  }, [focusedWindow?.winType, isMobile, nav, navActions]);
+  }, [focusedWindow?.winType, isMobile, nav, navActions, viewPref.currentPath]);
 
   const focusedCommands = focusedWindow
     ? (commandsMap[focusedWindow.id] ?? {})
@@ -532,7 +484,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
               }}
               onShowAllSearchResults={(query) => {
                 nav.setSearchQuery(query);
-                nav.setShowingSearch(true);
+                nav.setActiveView('search');
                 browser.setSearchOpen(false);
               }}
               theme={theme}
@@ -581,7 +533,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                 canUpload: focusedCommands.canUpload ?? browser.canWrite,
                 selectedCount:
                   focusedCommands.selectedCount ??
-                  (nav.showingTrash
+                  (nav.activeView === 'trash'
                     ? selection.selectedTrashIds.length
                     : selection.selectedPaths.length),
               }}
@@ -600,7 +552,6 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                 <DesktopView
                   trashEntries={browser.trashEntries}
                   jobs={browser.jobs}
-                  pendingTransferCount={pendingUploadCount}
                   favorites={favorites}
                   services={services}
                   serviceHealth={serviceHealth}
@@ -623,7 +574,6 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                   session={session}
                   onNavigate={navActions.navigateTo}
                   onClose={() => {
-                    nav.setShowingSearch(false);
                     navActions.resetToDesktopView();
                   }}
                   onPreview={workspaceOpeners.openPreview}
@@ -643,7 +593,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                   onOpenStorageAnalyzer={workspaceOpeners.openStorageAnalyzer}
                   onShowAllSearchResults={(query) => {
                     nav.setSearchQuery(query);
-                    nav.setShowingSearch(true);
+                    nav.setActiveView('search');
                   }}
                 />
               )}
@@ -654,7 +604,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
               {nav.activeView === 'settings' && (
                 <SettingsPanel
                   onOpenShares={() => {
-                    nav.setShowingSettings(false);
+                    nav.setActiveView(viewPref.currentPath ? 'files' : 'desktop');
                     dialogs.setSharesOpen(true);
                   }}
                   theme={theme}

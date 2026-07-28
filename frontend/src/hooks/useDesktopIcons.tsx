@@ -38,7 +38,6 @@ type DesktopIconItem = {
 type UseDesktopIconsProps = {
   trashEntries: TrashEntry[];
   jobs: Job[];
-  pendingTransferCount: number;
   favorites: string[];
   services: ServiceShortcut[];
   serviceHealth: Record<string, ServiceHealthResult>;
@@ -79,7 +78,6 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
   const {
     trashEntries,
     jobs,
-    pendingTransferCount,
     favorites,
     services,
     serviceHealth,
@@ -94,7 +92,7 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
     onItemContextMenu,
   } = props;
 
-  const activeTransferCount = countActiveTransfers(jobs, pendingTransferCount);
+  const activeTransferCount = countActiveTransfers(jobs);
   const [iconOrder, setIconOrder] = useState<string[]>(loadOrder);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);

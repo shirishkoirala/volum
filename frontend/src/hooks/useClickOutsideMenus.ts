@@ -1,35 +1,12 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 
-export function useClickOutsideMenus(
-  menuStates: Record<string, boolean>,
-  setMenuStates: (updater: (prev: Record<string, boolean>) => Record<string, boolean>) => void,
-) {
-  const handleClick = useCallback(() => {
-    setMenuStates((prev) => {
-      const anyOpen = Object.values(prev).some(Boolean);
-      if (!anyOpen) return prev;
-      const next: Record<string, boolean> = {};
-      for (const key of Object.keys(prev)) next[key] = false;
-      return next;
-    });
-  }, [setMenuStates]);
-
-  const handleResize = useCallback(() => {
-    setMenuStates((prev) => {
-      const anyOpen = Object.values(prev).some(Boolean);
-      if (!anyOpen) return prev;
-      const next: Record<string, boolean> = {};
-      for (const key of Object.keys(prev)) next[key] = false;
-      return next;
-    });
-  }, [setMenuStates]);
-
+export function useClickOutsideMenus(closeMenus: () => void) {
   useEffect(() => {
-    document.addEventListener('click', handleClick);
-    window.addEventListener('resize', handleResize);
+    document.addEventListener('click', closeMenus);
+    window.addEventListener('resize', closeMenus);
     return () => {
-      document.removeEventListener('click', handleClick);
-      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('click', closeMenus);
+      window.removeEventListener('resize', closeMenus);
     };
-  }, [handleClick, handleResize]);
+  }, [closeMenus]);
 }
