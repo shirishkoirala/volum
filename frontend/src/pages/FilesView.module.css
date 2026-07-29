@@ -31,10 +31,6 @@
   width: 100%;
 }
 
-.errorBanner {
-  margin-bottom: var(--space-md);
-}
-
 .emptyDropZone {
   align-items: center;
   display: flex;
@@ -106,11 +102,6 @@
 @media (max-width: 760px) {
   .filesViewContainer {
     gap: var(--space-sm);
-  }
-
-  .errorBanner {
-    margin-bottom: var(--space-sm);
-    padding: var(--space-sm) var(--space-md);
   }
 
   .emptyDropZone {

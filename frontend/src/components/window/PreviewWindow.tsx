@@ -1,4 +1,5 @@
 import type { FileEntry } from '../../api/client-files';
+import { usePreviewNavigation } from '../../hooks/usePreviewNavigation';
 import { openFileExternally } from '../../utils/preview';
 import { PreviewContent } from '../overlay/PreviewModal';
 
@@ -15,14 +16,13 @@ export function PreviewWindow({
   onSelectEntry,
   onShare,
 }: PreviewWindowProps) {
-  const currentIndex = entries.findIndex((candidate) => candidate.path === entry.path);
-  const normalizedIndex = currentIndex >= 0 ? currentIndex : 0;
+  const { previewIndex, previewPositionLabel, previousPreviewEntry, nextPreviewEntry } =
+    usePreviewNavigation(entry, entries);
+  const normalizedIndex = previewIndex >= 0 ? previewIndex : 0;
   const selectEntry = onSelectEntry;
-  const canNavigate = entries.length > 1 && currentIndex >= 0 && selectEntry;
-  const previousEntry =
-    canNavigate && normalizedIndex > 0 ? entries[normalizedIndex - 1] : undefined;
-  const nextEntry =
-    canNavigate && normalizedIndex < entries.length - 1 ? entries[normalizedIndex + 1] : undefined;
+  const canNavigate = entries.length > 1 && previewIndex >= 0 && selectEntry;
+  const previousEntry = canNavigate ? previousPreviewEntry : undefined;
+  const nextEntry = canNavigate ? nextPreviewEntry : undefined;
 
   return (
     <PreviewContent
@@ -33,7 +33,11 @@ export function PreviewWindow({
       onNext={nextEntry && selectEntry ? () => selectEntry(nextEntry) : undefined}
       previousDisabled={!previousEntry}
       nextDisabled={!nextEntry}
-      positionLabel={entries.length > 1 ? `${normalizedIndex + 1} of ${entries.length}` : undefined}
+      positionLabel={
+        entries.length > 1
+          ? (previewPositionLabel ?? `${normalizedIndex + 1} of ${entries.length}`)
+          : undefined
+      }
     />
   );
 }

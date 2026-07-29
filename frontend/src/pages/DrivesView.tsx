@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DeviceIcon } from '../components/ui/Icon';
-import { Button, IconImg, Notice } from '../components/ui/shared';
+import { IconImg } from '../components/ui/shared';
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { AppPanel } from '../components/layout/AppPanel';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { DriveSection } from '../components/ui/DriveSection';
-import { driveIconUrl, warningIconUrl } from '../api/icons';
+import { driveIconUrl } from '../api/icons';
 import type { BlockDevice } from '../api/client-files';
 import { getDevices } from '../api/client-files';
 import { formatDeviceUsage } from '../utils/format';
@@ -128,15 +129,7 @@ export function DrivesView({ onBackToDesktop }: DrivesViewProps) {
         />
       }
     >
-      {deviceError && (
-        <Notice variant="error">
-          <IconImg src={warningIconUrl()} alt="" width={18} height={18} />
-          <span>{deviceError}</span>
-          <Button variant="danger" size="compact" onClick={loadDevices}>
-            Retry
-          </Button>
-        </Notice>
-      )}
+      {deviceError && <ErrorBanner message={deviceError} onRetry={loadDevices} />}
       <DriveSection title="Internal" drives={internalDrives} onSelectDrive={setSelectedDriveName} />
       <DriveSection title="External" drives={externalDrives} onSelectDrive={setSelectedDriveName} />
       {internalDrives.length === 0 && externalDrives.length === 0 && (

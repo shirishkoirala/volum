@@ -278,7 +278,6 @@ export function TrashView() {
                   </>
                 }
                 isSelected={isSelected}
-                isDragOver={false}
                 role="listitem"
                 tabIndex={idx === 0 ? 0 : -1}
                 data-trash-id={entry.id}
@@ -303,9 +302,7 @@ export function TrashView() {
         <TrashEmptyMenu
           x={trashEmptyMenu.x}
           y={trashEmptyMenu.y}
-          canPaste={false}
           onRefresh={handleRefresh}
-          onPaste={() => {}}
           onClose={() => setTrashEmptyMenu(null)}
         />
       )}

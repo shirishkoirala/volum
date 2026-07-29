@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SortField, SortDirection } from '../types';
 import type { Session } from '../api/client-auth';
 import type { FileEntry } from '../api/client-files';
-import { HomeOverlays } from '../components/overlay/HomeOverlays';
+import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
+import { PreviewModal } from '../components/overlay/PreviewModal';
+import { ShareDialog } from '../components/overlay/ShareDialog';
+import { ShareManager } from '../components/overlay/ShareManager';
+import { ServiceFormModal } from '../components/overlay/ServiceFormModal';
 import { SettingsPanel } from '../pages/SettingsPanel';
 import { TopBar } from '../components/layout/TopBar';
 import { Dock } from '../components/layout/Dock';
@@ -46,6 +50,7 @@ import { PreviewWindow } from '../components/window/PreviewWindow';
 import { ServiceWindow } from '../components/window/ServiceWindow';
 import { fileTypeIconUrl } from '../api/icons';
 import { defaultRootPath as getDefaultRootPath } from '../utils/roots';
+import { openFileExternally } from '../utils/preview';
 import styles from './Home.module.css';
 
 interface HomeProps {
@@ -89,12 +94,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     browserNotifications: notifPrefs.enabled,
   });
 
-  const nav = useNavigation(
-    browser.devices,
-    browser.jobs,
-    browser.trashEntries.length,
-    viewPref.currentPath,
-  );
+  const nav = useNavigation(browser.jobs, browser.trashEntries.length, viewPref.currentPath);
   const { favorites, addFavorite, removeFavorite } = useFavorites();
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
@@ -320,8 +320,6 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   const closeAllHomeMenus = useCallback(() => {
     menus.setTrashContextMenu(null);
     menus.setDesktopContextMenu(null);
-    menus.setTrashEmptyMenu(null);
-    menus.setJobsEmptyMenu(null);
   }, [menus]);
 
   useClickOutsideMenus(closeAllHomeMenus);
@@ -431,12 +429,10 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   // ── Shell context value ────────────────────────────────
   const shellContext = useMemo(
     () => ({
-      showToast: toast.showToast,
       showToastObj: toast.showToastObj,
       navigateTo: navActions.navigateTo,
-      refresh: browser.refresh,
     }),
-    [toast.showToast, toast.showToastObj, navActions.navigateTo, browser.refresh],
+    [toast.showToastObj, navActions.navigateTo],
   );
 
   // ── Shell JSX ────────────────────────────────────────────
@@ -677,26 +673,48 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   return (
     <>
       {shell}
-      <HomeOverlays
-        shareDialogPath={dialogs.shareDialogPath}
-        onShareDialogClose={() => dialogs.setShareDialogPath(null)}
-        previewEntry={fileActions.previewEntry}
-        onPreviewClose={() => fileActions.setPreviewEntry(null)}
-        onPreviewShare={(entry) =>
-          dialogs.setShareDialogPath({ path: entry.path, name: entry.name })
-        }
-        setPreviewEntry={fileActions.setPreviewEntry}
-        previousPreviewEntry={previousPreviewEntry}
-        nextPreviewEntry={nextPreviewEntry}
-        previewPositionLabel={previewPositionLabel}
-        shortcutsOpen={fileActions.shortcutsOpen}
-        onShortcutsClose={() => fileActions.setShortcutsOpen(false)}
-        sharesOpen={dialogs.sharesOpen}
-        onSharesClose={() => dialogs.setSharesOpen(false)}
-        serviceFormData={menus.serviceFormData}
-        onServiceFormClose={() => menus.setServiceFormData(null)}
-        onSaveService={desktopActions.handleSaveService}
-      />
+      {dialogs.shareDialogPath && (
+        <ShareDialog
+          path={dialogs.shareDialogPath.path}
+          name={dialogs.shareDialogPath.name}
+          onClose={() => dialogs.setShareDialogPath(null)}
+        />
+      )}
+      {fileActions.previewEntry && (
+        <PreviewModal
+          entry={fileActions.previewEntry}
+          onClose={() => fileActions.setPreviewEntry(null)}
+          onDownload={() => openFileExternally(fileActions.previewEntry!.path)}
+          onShare={() =>
+            dialogs.setShareDialogPath({
+              path: fileActions.previewEntry!.path,
+              name: fileActions.previewEntry!.name,
+            })
+          }
+          onPrevious={
+            previousPreviewEntry
+              ? () => fileActions.setPreviewEntry(previousPreviewEntry)
+              : undefined
+          }
+          onNext={
+            nextPreviewEntry ? () => fileActions.setPreviewEntry(nextPreviewEntry) : undefined
+          }
+          previousDisabled={!previousPreviewEntry}
+          nextDisabled={!nextPreviewEntry}
+          positionLabel={previewPositionLabel}
+        />
+      )}
+      {fileActions.shortcutsOpen && (
+        <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />
+      )}
+      {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
+      {menus.serviceFormData && (
+        <ServiceFormModal
+          initial={menus.serviceFormData.initial}
+          onSave={desktopActions.handleSaveService}
+          onClose={() => menus.setServiceFormData(null)}
+        />
+      )}
     </>
   );
 }

@@ -82,64 +82,10 @@ export function Button({
   );
 }
 
-type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  active?: boolean;
-  danger?: boolean;
-};
+type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
 
-export function IconButton({
-  active = false,
-  danger = false,
-  className,
-  type = 'button',
-  ...props
-}: IconButtonProps) {
-  return (
-    <button
-      className={cx(
-        styles.iconButton,
-        active && styles.iconButtonActive,
-        danger && styles.iconButtonDanger,
-        className,
-      )}
-      type={type}
-      {...props}
-    />
-  );
-}
-
-type NoticeProps = {
-  variant: 'error' | 'warning';
-  className?: string;
-  children: ReactNode;
-  onDismiss?: () => void;
-  dismissLabel?: string;
-};
-
-export function Notice({
-  variant,
-  className,
-  children,
-  onDismiss,
-  dismissLabel = 'Dismiss',
-}: NoticeProps) {
-  return (
-    <div
-      className={cx(styles.notice, variant === 'error' ? styles.error : styles.warning, className)}
-    >
-      <div className={styles.noticeContent}>{children}</div>
-      {onDismiss && (
-        <button
-          type="button"
-          className={styles.noticeDismiss}
-          onClick={onDismiss}
-          aria-label={dismissLabel}
-        >
-          <Icon name="window-close" size={14} />
-        </button>
-      )}
-    </div>
-  );
+export function IconButton({ className, type = 'button', ...props }: IconButtonProps) {
+  return <button className={cx(styles.iconButton, className)} type={type} {...props} />;
 }
 
 export function StatusBadge({

@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import type { BlockDevice } from '../api/client-files';
 import type { Job } from '../api/client-jobs';
 import {
   filesIconUrl,
@@ -13,21 +12,11 @@ import { countActiveTransfers } from '../utils/jobs';
 export type ActiveView =
   'desktop' | 'files' | 'trash' | 'settings' | 'jobs' | 'drives' | 'search' | 'storage-analyzer';
 
-export function useNavigation(
-  devices: BlockDevice[],
-  jobs: Job[],
-  trashCount: number,
-  currentPath: string,
-) {
+export function useNavigation(jobs: Job[], trashCount: number, currentPath: string) {
   const [activeView, setActiveView] = useState<ActiveView>(currentPath ? 'files' : 'desktop');
-  const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const topBarTitle = useMemo(() => {
-    if (activeView === 'drives' && selectedDriveName) {
-      const d = devices.find((dd) => dd.name === selectedDriveName);
-      return d?.model || selectedDriveName;
-    }
     if (activeView === 'drives') return 'Drives';
     if (activeView === 'search') return 'Search';
     if (activeView === 'storage-analyzer') return 'Storage Analyzer';
@@ -36,7 +25,7 @@ export function useNavigation(
     if (activeView === 'jobs') return 'Transfers';
     if (activeView === 'files') return 'Files';
     return undefined;
-  }, [activeView, selectedDriveName, devices]);
+  }, [activeView]);
 
   const activeJobCount = useMemo(() => countActiveTransfers(jobs), [jobs]);
 
@@ -82,8 +71,6 @@ export function useNavigation(
   return {
     activeView,
     setActiveView,
-    selectedDriveName,
-    setSelectedDriveName,
     searchQuery,
     setSearchQuery,
     topBarTitle,

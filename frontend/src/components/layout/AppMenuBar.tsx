@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
 type ViewMode = 'list' | 'grid';
 import type { SortField, SortDirection } from '../../types';
@@ -120,20 +120,12 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
     setOpenMenu(null);
   }, []);
 
-  const fileItems = useMemo(() => buildFileItems(handlers, windowType), [handlers, windowType]);
-  const editItems = useMemo(() => buildEditItems(handlers, windowType), [handlers, windowType]);
-  const viewItems = useMemo(() => buildViewItems(handlers), [handlers]);
-  const goItems = useMemo(() => buildGoItems(handlers, windowType), [handlers, windowType]);
-
-  const menuItems: Record<MenuId, MenuItem[]> = useMemo(
-    () => ({
-      file: fileItems,
-      edit: editItems,
-      view: viewItems,
-      go: goItems,
-    }),
-    [fileItems, editItems, viewItems, goItems],
-  );
+  const menuItems: Record<MenuId, MenuItem[]> = {
+    file: buildFileItems(handlers, windowType),
+    edit: buildEditItems(handlers, windowType),
+    view: buildViewItems(handlers),
+    go: buildGoItems(handlers, windowType),
+  };
 
   return (
     <div className={styles.menuBar} ref={menuBarRef} role="menubar">

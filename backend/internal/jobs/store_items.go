@@ -2,10 +2,10 @@ package jobs
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"errors"
 
-	"github.com/google/uuid"
 	"github.com/volum-app/volum/backend/internal/sqlutil"
 )
 
@@ -52,7 +52,7 @@ func scanItem(row sqlutil.Scanner) (Item, error) {
 
 func (s *Store) CreateItem(ctx context.Context, item Item) (Item, error) {
 	if item.ID == "" {
-		item.ID = uuid.NewString()
+		item.ID = rand.Text()
 	}
 	if item.Status == "" {
 		item.Status = StatusQueued

@@ -16,7 +16,6 @@ import type { ActiveView } from './useNavigation';
 
 type WorkspaceNav = {
   setActiveView: (value: ActiveView) => void;
-  setSelectedDriveName: (value: string | null) => void;
 };
 
 type WorkspaceNavActions = {
@@ -84,7 +83,6 @@ export function useWorkspaceOpeners({
   const openTrash = useCallback(() => {
     if (isMobile) {
       nav.setActiveView('trash');
-      nav.setSelectedDriveName(null);
       return;
     }
 
@@ -101,7 +99,6 @@ export function useWorkspaceOpeners({
   const openJobs = useCallback(() => {
     if (isMobile) {
       nav.setActiveView('jobs');
-      nav.setSelectedDriveName(null);
       return;
     }
 
@@ -120,7 +117,6 @@ export function useWorkspaceOpeners({
       const selectedPath = typeof path === 'string' ? path : undefined;
       if (isMobile) {
         nav.setActiveView('storage-analyzer');
-        nav.setSelectedDriveName(null);
         return;
       }
 
@@ -139,7 +135,6 @@ export function useWorkspaceOpeners({
   const openSettings = useCallback(() => {
     if (isMobile) {
       nav.setActiveView('settings');
-      nav.setSelectedDriveName(null);
       return;
     }
 

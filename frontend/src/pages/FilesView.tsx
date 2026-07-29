@@ -13,7 +13,7 @@ import {
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { AppPanel } from '../components/layout/AppPanel';
 import { EmptyState } from '../components/ui/EmptyState';
-import { Notice } from '../components/ui/shared';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
 import { FileEntriesView } from '../components/ui/FileEntriesView';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -280,8 +280,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     menus.setTrashContextMenu(null);
     menus.setDesktopContextMenu(null);
     menus.setFilesEmptyMenu(null);
-    menus.setTrashEmptyMenu(null);
-    menus.setJobsEmptyMenu(null);
   }, [fileActions, menus]);
 
   useClickOutsideMenus(closeAllFilesMenus);
@@ -550,13 +548,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           scroll={false}
         >
           {browser.error && (
-            <Notice
-              variant="error"
-              className={styles.errorBanner}
-              onDismiss={() => browser.setError(null)}
-            >
-              {browser.error}
-            </Notice>
+            <ErrorBanner message={browser.error} onDismiss={() => browser.setError(null)} />
           )}
           <div className={styles.fileFrame}>
             {browser.loading ? (

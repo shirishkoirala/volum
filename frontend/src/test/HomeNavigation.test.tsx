@@ -59,8 +59,6 @@ const state = vi.hoisted(() => ({
     setDesktopContextMenu: vi.fn(),
     setServiceFormData: vi.fn(),
     setTrashContextMenu: vi.fn(),
-    setTrashEmptyMenu: vi.fn(),
-    setJobsEmptyMenu: vi.fn(),
   },
   selection: {
     selectedPaths: [],
@@ -202,7 +200,6 @@ vi.mock('../pages/StorageAnalyzerView', () => ({
   StorageAnalyzerView: () => <div>Storage analyzer</div>,
 }));
 
-vi.mock('../components/overlay/HomeOverlays', () => ({ HomeOverlays: () => null }));
 vi.mock('../pages/SettingsPanel', () => ({ SettingsPanel: () => null }));
 vi.mock('../components/layout/Dock', () => ({ Dock: () => null }));
 vi.mock('../components/layout/StatusBar', () => ({ StatusBar: () => null }));

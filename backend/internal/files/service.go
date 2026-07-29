@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -320,14 +321,11 @@ func parseMode(mode string) (os.FileMode, error) {
 		return modeBits, nil
 	}
 	if len(mode) == 3 || len(mode) == 4 {
-		var modeBits os.FileMode
-		for _, ch := range mode {
-			if ch < '0' || ch > '7' {
-				return 0, fmt.Errorf("invalid octal mode: %s", mode)
-			}
-			modeBits = modeBits<<3 | os.FileMode(ch-'0')
+		modeBits, err := strconv.ParseUint(mode, 8, 32)
+		if err != nil {
+			return 0, fmt.Errorf("invalid octal mode: %s", mode)
 		}
-		return modeBits, nil
+		return os.FileMode(modeBits), nil
 	}
 	return 0, fmt.Errorf("mode must be a 9-character permission string (e.g. rwxr-xr-x) or 3-4 digit octal")
 }

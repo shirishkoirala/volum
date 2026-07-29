@@ -4,8 +4,5 @@
   "type": "module",
   "dependencies": {
     "playwright": "^1.52.0"
-  },
-  "scripts": {
-    "install-browsers": "npx playwright install chromium"
   }
 }

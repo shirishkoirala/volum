@@ -2,11 +2,11 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"errors"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/volum-app/volum/backend/internal/sqlutil"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -43,7 +43,7 @@ func (s *Store) CreateUser(ctx context.Context, username, password string, role 
 		return nil, err
 	}
 	now := now()
-	id := uuid.New().String()
+	id := rand.Text()
 	_, err = s.db.ExecContext(ctx,
 		`INSERT INTO users (id, username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
 		id, username, string(hash), string(role), now, now,
@@ -82,7 +82,7 @@ func (s *Store) CreateInitialAdmin(ctx context.Context, username, password strin
 
 	now := now()
 	record := &UserRecord{
-		ID:           uuid.New().String(),
+		ID:           rand.Text(),
 		Username:     username,
 		PasswordHash: string(hash),
 		Role:         RoleAdmin,

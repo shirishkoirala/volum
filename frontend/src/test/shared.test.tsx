@@ -6,7 +6,6 @@ import {
   PanelHeader,
   Button,
   IconButton,
-  Notice,
   StatusBadge,
   RotatedIcon,
   MutedText,
@@ -57,16 +56,6 @@ describe('IconButton', () => {
   it('renders children', () => {
     render(<IconButton aria-label="icon button">X</IconButton>);
     expect(screen.getByText('X')).toBeInTheDocument();
-  });
-
-  it('applies active class when active', () => {
-    const { container } = render(<IconButton active aria-label="active" />);
-    expect(container.querySelector('[class*="iconButtonActive"]')).toBeInTheDocument();
-  });
-
-  it('applies danger class when danger', () => {
-    const { container } = render(<IconButton danger aria-label="danger" />);
-    expect(container.querySelector('[class*="iconButtonDanger"]')).toBeInTheDocument();
   });
 });
 
@@ -128,23 +117,6 @@ describe('PanelHeader', () => {
       </PanelHeader>,
     );
     expect(screen.getByText('Action')).toBeInTheDocument();
-  });
-});
-
-describe('Notice', () => {
-  it('renders children', () => {
-    render(<Notice variant="error">Error message</Notice>);
-    expect(screen.getByText('Error message')).toBeInTheDocument();
-  });
-
-  it('applies error class for error variant', () => {
-    const { container } = render(<Notice variant="error">Error</Notice>);
-    expect(container.querySelector('[class*="error"]')).toBeInTheDocument();
-  });
-
-  it('applies warning class for warning variant', () => {
-    const { container } = render(<Notice variant="warning">Warning</Notice>);
-    expect(container.querySelector('[class*="warning"]')).toBeInTheDocument();
   });
 });
 

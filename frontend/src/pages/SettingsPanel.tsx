@@ -5,7 +5,7 @@ import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { Skeleton } from '../components/ui/Skeleton';
 import { AppPanel } from '../components/layout/AppPanel';
 import { SettingsGeneral } from '../components/settings/SettingsGeneral';
-import { SettingsServer } from '../components/settings/SettingsServer';
+import { ServerInfo } from '../components/ui/ServerInfo';
 import { SettingsStorage } from '../components/settings/SettingsStorage';
 import { SettingsDesktop } from '../components/settings/SettingsDesktop';
 import { SettingsAdmin } from '../components/settings/SettingsAdmin';
@@ -99,7 +99,9 @@ export function SettingsPanel({
           {(!filterQuery.trim()
             ? activeCategory === 'server'
             : filteredCategories.some((c) => c.id === 'server')) && (
-            <SettingsServer status={status} />
+            <div className={styles.settingsSection}>
+              <ServerInfo status={status} />
+            </div>
           )}
 
           {(!filterQuery.trim()

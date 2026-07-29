@@ -91,19 +91,19 @@ clean-test:
 check: check-frontend check-backend
 
 check-frontend:
-	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run typecheck && npm run format:check && npm run lint && npm run test:ci && npm run build'
+	$(FRONTEND_RUN) 'npm ci && npm run format:check && npm run lint && npm run test:ci && npm run build'
 
 check-backend:
 	docker build --target backend-base .
 
 test-frontend:
-	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run test:ci -- $(FRONTEND_TEST_FILTER)'
+	$(FRONTEND_RUN) 'npm ci && npm run test:ci -- $(FRONTEND_TEST_FILTER)'
 
 test-backend:
 	$(TEST_COMPOSE) run --rm --build backend-test go test $(BACKEND_TEST_FILTER) $(PACKAGE)
 
 coverage-frontend:
-	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run test:coverage'
+	$(FRONTEND_RUN) 'npm ci && npm run test:coverage'
 
 coverage-backend:
 	$(TEST_COMPOSE) run --rm --build backend-test go test -coverprofile=coverage.out -covermode=atomic $(BACKEND_TEST_FILTER) ./...
@@ -111,10 +111,10 @@ coverage-backend:
 coverage: coverage-frontend coverage-backend
 
 format-frontend:
-	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run format'
+	$(FRONTEND_RUN) 'npm ci && npm run format'
 
 lint-shell:
-	shellcheck scripts/*.sh frontend/scripts/*.sh
+	shellcheck scripts/*.sh
 
 lint-markdown:
 	@echo "Run lychee locally: lychee --verbose --no-progress './**/*.md' './**/*.html' '!./frontend/node_modules' '!./.git'"

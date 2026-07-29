@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/volum-app/volum/backend/internal/sqlutil"
 )
@@ -18,7 +19,7 @@ func (s *Store) claimNextJob(ctx context.Context, types ...Type) (Job, bool, err
 	query := `
 		SELECT ` + jobColumns + `
 		FROM jobs
-		WHERE status = ? AND type IN (?` + repeatParams(len(types)-1) + `)
+		WHERE status = ? AND type IN (?` + strings.Repeat(",?", max(0, len(types)-1)) + `)
 		ORDER BY created_at ASC
 		LIMIT 1`
 
@@ -59,21 +60,6 @@ func (s *Store) claimNextJob(ctx context.Context, types ...Type) (Job, bool, err
 	job.StartedAt = &now
 	job.UpdatedAt = now
 	return job, true, nil
-}
-
-func repeatParams(n int) string {
-	if n <= 0 {
-		return ""
-	}
-	b := make([]byte, n*2-1)
-	for i := range b {
-		if i%2 == 0 {
-			b[i] = '?'
-		} else {
-			b[i] = ','
-		}
-	}
-	return "," + string(b)
 }
 
 func (s *Store) ClaimNextTransferJob(ctx context.Context) (Job, bool, error) {

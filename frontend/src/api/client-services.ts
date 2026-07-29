@@ -41,13 +41,6 @@ export function removeFavorite(path: string) {
   });
 }
 
-export function reorderFavorites(paths: string[]) {
-  return request('/api/favorites/reorder', {
-    method: 'PUT',
-    body: JSON.stringify({ paths }),
-  });
-}
-
 export function listServices() {
   return request<ServiceInfo[]>('/api/services');
 }

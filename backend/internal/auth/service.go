@@ -144,8 +144,6 @@ func SecureEqual(left, right string) bool {
 type tokenClaims struct {
 	userID     string
 	role       Role
-	issuedAt   int64
-	expiresAt  int64
 	sessionVer int64
 }
 
@@ -188,8 +186,10 @@ func (s *Service) verify(value string) (tokenClaims, bool) {
 
 	userID := parts[0]
 	roleTyped := Role(parts[1])
-	iat, _ := strconv.ParseInt(parts[2], 10, 64)
-	exp, _ := strconv.ParseInt(parts[3], 10, 64)
+	exp, err := strconv.ParseInt(parts[3], 10, 64)
+	if err != nil {
+		return tokenClaims{}, false
+	}
 	sessionVer, _ := strconv.ParseInt(parts[4], 10, 64)
 
 	// Reject expired tokens.
@@ -204,8 +204,6 @@ func (s *Service) verify(value string) (tokenClaims, bool) {
 	return tokenClaims{
 		userID:     userID,
 		role:       roleTyped,
-		issuedAt:   iat,
-		expiresAt:  exp,
 		sessionVer: sessionVer,
 	}, true
 }

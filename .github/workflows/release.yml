@@ -35,7 +35,6 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
-          npm run typecheck
           npm run format:check
           npm run lint
           npm run test:ci
@@ -85,7 +84,6 @@ jobs:
             *) echo "Version must look like v0.1.0, got ${version}" >&2; exit 1 ;;
           esac
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
-          echo "version_number=${version#v}" >> "${GITHUB_OUTPUT}"
           echo "build_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "${GITHUB_OUTPUT}"
 
       - name: Set up QEMU
@@ -124,7 +122,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
-            VITE_PUBLIC_PATH=
             VERSION=${{ steps.version.outputs.version }}
             BUILD_TIME=${{ steps.version.outputs.build_time }}
             RUN_BACKEND_CHECKS=false

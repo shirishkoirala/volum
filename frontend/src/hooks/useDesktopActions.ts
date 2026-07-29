@@ -27,7 +27,6 @@ interface DesktopActionsOptions {
   };
   nav: {
     setActiveView: (view: ActiveView) => void;
-    setSelectedDriveName: (v: string | null) => void;
   };
   viewPref: {
     currentPath: string;
@@ -165,7 +164,6 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
     viewPref.setCurrentPath('');
     nav.setActiveView('trash');
     selection.setSelectedPaths([]);
-    nav.setSelectedDriveName(null);
   }, [viewPref, nav, selection]);
 
   const handleDockActivate = useCallback(
@@ -175,7 +173,6 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
           resetToDesktopView();
           break;
         case 'files':
-          nav.setSelectedDriveName(null);
           if (viewPref.currentPath === '') {
             navigateTo(defaultRootPath(browser.roots));
           } else {
@@ -188,11 +185,9 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
           break;
         case 'jobs':
           nav.setActiveView('jobs');
-          nav.setSelectedDriveName(null);
           break;
         case 'settings':
           nav.setActiveView('settings');
-          nav.setSelectedDriveName(null);
           break;
       }
     },

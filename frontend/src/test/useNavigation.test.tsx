@@ -23,7 +23,7 @@ describe('useNavigation', () => {
   it('routes mobile workspace openers through the active view and navigation stack', () => {
     const { result } = renderHook(() => {
       const [currentPath, setCurrentPath] = useState('');
-      const nav = useNavigation([], [], 0, currentPath);
+      const nav = useNavigation([], 0, currentPath);
       const navActions = useNavStack({
         viewPref: { currentPath, setCurrentPath, navigateToPath: setCurrentPath },
         nav,

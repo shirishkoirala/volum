@@ -11,7 +11,6 @@ interface NavStackOptions {
   };
   nav?: {
     setActiveView: (view: ActiveView) => void;
-    setSelectedDriveName: (v: string | null) => void;
   };
   browser: {
     refresh: () => void;
@@ -40,7 +39,6 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
       browser.setSearchOpen(false);
       browser.setSearchResults(null);
       browser.setQuery('');
-      nav?.setSelectedDriveName(null);
     },
     [viewPref, nav, browser],
   );
@@ -48,7 +46,6 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
   const resetToDesktopView = useCallback(() => {
     viewPref.setCurrentPath('');
     nav?.setActiveView('desktop');
-    nav?.setSelectedDriveName(null);
   }, [viewPref, nav]);
 
   const goBack = useCallback(() => {
@@ -58,7 +55,6 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
     } else {
       viewPref.navigateToPath(prev);
       nav?.setActiveView('files');
-      nav?.setSelectedDriveName(null);
     }
   }, [viewPref, nav, resetToDesktopView]);
 
