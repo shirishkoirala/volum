@@ -96,10 +96,7 @@ export function DrivesView({ onBackToDesktop }: DrivesViewProps) {
                 <small>{part.volumPath}</small>
                 <small>{formatDeviceUsage(part)}</small>
                 {part.totalBytes != null && part.totalBytes > 0 && (
-                  <ProgressBar
-                    value={(part.usedBytes! / part.totalBytes!) * 100}
-                    className={styles.drivePartitionMeter}
-                  />
+                  <ProgressBar value={(part.usedBytes! / part.totalBytes!) * 100} compact />
                 )}
               </span>
             </button>

@@ -5,7 +5,6 @@ import { Dialog } from './Dialog';
 import { Select } from '../input/Select';
 import { batchRename } from '../../api/client-files';
 import type { FileEntry } from '../../api/client-files';
-import uiStyles from '../ui/shared.module.css';
 import styles from './BatchRename.module.css';
 
 type PatternType = 'replace' | 'prefix' | 'suffix' | 'case';
@@ -104,16 +103,12 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
             <Button
               size="compact"
               variant="primary"
-              disabled={submitting || previews.every((p) => !p.changed)}
+              disabled={previews.every((p) => !p.changed)}
+              busy={submitting}
+              busyLabel="Renaming..."
               onClick={handleSubmit}
             >
-              {submitting ? (
-                <>
-                  <Icon name="view-refresh" size={15} className={uiStyles.spin} /> Renaming...
-                </>
-              ) : (
-                `Rename ${previews.filter((p) => p.changed).length} items`
-              )}
+              Rename {previews.filter((p) => p.changed).length} items
             </Button>
           </>
         )

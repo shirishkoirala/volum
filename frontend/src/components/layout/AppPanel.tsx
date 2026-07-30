@@ -52,7 +52,7 @@ export function AppPanel({
 
   return (
     <Element
-      className={joinClasses(styles.panel, 'glassPanel', 'mobileAppPanel', className)}
+      className={joinClasses(styles.panel, 'glassPanel', className)}
       onContextMenu={onContextMenu}
     >
       {header ? <div className={styles.header}>{header}</div> : null}

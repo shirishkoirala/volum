@@ -50,4 +50,9 @@ describe('ProgressBar', () => {
     const { container } = render(<ProgressBar value={50} className="my-class" />);
     expect(container.querySelector('[class*="track"].my-class')).toBeInTheDocument();
   });
+
+  it('applies compact meter styling', () => {
+    const { container } = render(<ProgressBar value={50} compact />);
+    expect(container.querySelector('[class*="compact"]')).toBeInTheDocument();
+  });
 });

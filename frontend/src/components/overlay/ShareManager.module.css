@@ -73,21 +73,11 @@
   width: 30px;
 }
 
-.copySuccess,
-.copyError {
-  font-size: var(--font-size-sm);
+.copyFeedback {
   margin: var(--space-sm) 0 0;
 }
 
-.copySuccess {
-  color: var(--color-success-text);
-}
-
-.copyError {
-  color: var(--color-danger-text);
-}
-
-.copyError code {
+.copyFeedback code {
   user-select: text;
   word-break: break-all;
 }

@@ -9,10 +9,10 @@ import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { Button, StatusBadge } from '../components/ui/shared';
 import { formatBytes, formatDuration, formatGridDate } from '../utils/format';
-import { makeJobLabel } from '../utils/jobs';
+import { isAnalysisJob, makeJobLabel } from '../utils/jobs';
 import { useJobs } from '../hooks/useJobs';
 import { useShellContext } from '../contexts/ShellContext';
-import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
+import { RefreshContextMenu } from '../components/overlay/RefreshContextMenu';
 import { ConflictDialog } from '../components/overlay/ConflictDialog';
 import { ConfirmDialog, type ConfirmDialogState } from '../components/overlay/ConfirmDialog';
 import { AppPanel } from '../components/layout/AppPanel';
@@ -47,7 +47,7 @@ function JobItem({
   onOpenAnalysis?: (job: Job) => void;
   canManage: boolean;
 }) {
-  const isAnalysis = job.type === 'disk_analyze' || job.type === 'duplicate_find';
+  const isAnalysis = isAnalysisJob(job);
   const progress =
     job.status === 'completed'
       ? 100
@@ -382,7 +382,7 @@ export function JobsPage({ session, sessionLoading, onOpenAnalysis }: JobsPagePr
         )}
       </AppPanel>
       {jobsEmptyMenu && (
-        <JobsEmptyMenu
+        <RefreshContextMenu
           x={jobsEmptyMenu.x}
           y={jobsEmptyMenu.y}
           onRefresh={() => {

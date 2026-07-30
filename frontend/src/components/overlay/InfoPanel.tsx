@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Icon, FileIcon } from '../ui/Icon';
+import { FileIcon } from '../ui/Icon';
 import { Button, MutedText } from '../ui/shared';
+import { InlineFeedback } from '../ui/InlineFeedback';
 import { Dialog } from './Dialog';
 import { chmodPath } from '../../api/client-files';
 import type { FileEntry } from '../../api/client-files';
 import { formatBytes } from '../../utils/format';
-import uiStyles from '../ui/shared.module.css';
 import styles from './InfoPanel.module.css';
 
 type InfoPanelProps = {
@@ -142,31 +142,19 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
       </div>
       <div className={styles.permPreview}>{permString}</div>
 
-      {error && (
-        <p className={styles.infoError} role="alert">
-          {error}
-        </p>
-      )}
-      {saved && (
-        <p className={styles.infoSaved} role="status">
-          Permissions updated
-        </p>
-      )}
+      {error && <InlineFeedback variant="error">{error}</InlineFeedback>}
+      {saved && <InlineFeedback variant="success">Permissions updated</InlineFeedback>}
 
       <div className={styles.infoActions}>
         <Button onClick={onClose}>Close</Button>
         <Button
           variant="primary"
-          disabled={changing || saved || permString === entry.permissions}
+          disabled={saved || permString === entry.permissions}
+          busy={changing}
+          busyLabel="Saving..."
           onClick={handleSave}
         >
-          {changing ? (
-            <>
-              <Icon name="view-refresh" size={15} className={uiStyles.spin} /> Saving...
-            </>
-          ) : (
-            'Apply Permissions'
-          )}
+          Apply Permissions
         </Button>
       </div>
     </Dialog>

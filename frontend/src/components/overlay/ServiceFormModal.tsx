@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Dialog } from './Dialog';
 import { Button } from '../ui/shared';
+import { Select } from '../input/Select';
 import type { ServiceShortcut } from '../../utils/services';
 import { validUrl, detectFavicon } from '../../utils/services';
 import dStyles from './Dialogs.module.css';
@@ -123,8 +124,14 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
           <Button size="compact" disabled={submitting} onClick={onClose}>
             Cancel
           </Button>
-          <Button size="compact" variant="primary" disabled={submitting} onClick={handleSubmit}>
-            {submitting ? 'Saving...' : initial ? 'Save' : 'Add'}
+          <Button
+            size="compact"
+            variant="primary"
+            busy={submitting}
+            busyLabel="Saving..."
+            onClick={handleSubmit}
+          >
+            {initial ? 'Save' : 'Add'}
           </Button>
         </>
       }
@@ -257,14 +264,14 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
       </label>
       <label className={dStyles.dialogField} htmlFor="service-open-mode">
         <span>Open in</span>
-        <select
+        <Select
           id="service-open-mode"
           value={openMode}
-          onChange={(e) => setOpenMode(e.target.value as 'embed' | 'tab')}
+          onChange={(value) => setOpenMode(value as 'embed' | 'tab')}
         >
           <option value="embed">Desktop window (embedded)</option>
           <option value="tab">New browser tab</option>
-        </select>
+        </Select>
       </label>
       {error && (
         <p className={dStyles.dialogError} role="alert">

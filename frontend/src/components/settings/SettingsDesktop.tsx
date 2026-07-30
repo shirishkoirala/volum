@@ -1,7 +1,9 @@
 import { useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
 import { Button, IconButton, MutedText } from '../ui/shared';
+import { InlineFeedback } from '../ui/InlineFeedback';
 import type { ServiceShortcut, ServiceHealthResult } from '../../utils/services';
+import { SettingsSection } from './SettingsSection';
 import styles from '../../pages/SettingsPanel.module.css';
 
 type SettingsDesktopProps = {
@@ -64,8 +66,7 @@ export function SettingsDesktop({
   return (
     <>
       {onAddService && (
-        <section className={styles.settingsSection}>
-          <h4>Services</h4>
+        <SettingsSection title="Services">
           {services && services.length > 0 ? (
             <div className={styles.serviceList}>
               {services.map((svc, idx) => (
@@ -145,9 +146,11 @@ export function SettingsDesktop({
                     <Button
                       size="compact"
                       disabled={busyServiceId !== null || reordering}
+                      busy={busyServiceId === svc.id}
+                      busyLabel="Removing..."
                       onClick={() => void handleRemove(svc.id)}
                     >
-                      {busyServiceId === svc.id ? 'Removing...' : 'Remove'}
+                      Remove
                     </Button>
                   </div>
                 </div>
@@ -159,9 +162,9 @@ export function SettingsDesktop({
             </MutedText>
           )}
           {actionError && (
-            <p className={styles.serviceActionError} role="alert">
+            <InlineFeedback variant="error" className={styles.inlineFeedback}>
               {actionError}
-            </p>
+            </InlineFeedback>
           )}
           <div className={styles.settingsActions}>
             <Button
@@ -172,7 +175,7 @@ export function SettingsDesktop({
               Add Service
             </Button>
           </div>
-        </section>
+        </SettingsSection>
       )}
     </>
   );

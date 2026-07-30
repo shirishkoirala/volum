@@ -152,71 +152,30 @@
   --color-success: #4ade80;
   --color-success-bg: #14261a;
   --color-success-text: #bbf7d0;
-  --color-on-accent: #ffffff;
   --color-hover: #22262f;
   --color-code-bg: #0d1117;
   --color-code-text: #c9d1d9;
   --color-overlay: rgb(0 0 0 / 70%);
   --color-badge: #22262f;
   --color-shadow: rgb(0 0 0 / 20%);
-  /* Typography */
-  --font-size-2xs: 10px;
-  --font-size-xs: 11px;
-  --font-size-sm: 12px;
-  --font-size-base: 13px;
-  --font-size-md: 14px;
-  --font-size-lg: 15px;
-  --font-size-title: 17px;
   /* Opacity */
   --opacity-disabled: 0.45;
-  --opacity-ghost: 0.3;
-  /* Spacing */
-  --space-xxs: 2px;
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-  --space-xl: 20px;
-  --space-2xl: 24px;
-  --space-3xl: 32px;
-  --size-touch-target: 44px;
-  --size-badge-sm: 16px;
-  --size-status-dot: 14px;
-  --selection-ring-width: 2px;
-  --selection-indicator-width: 3px;
-  /* Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-pill: 999px;
   /* Shadow */
-  --shadow-card: 0 1px 3px var(--color-shadow);
   --shadow-menu: 0 12px 28px rgb(0 0 0 / 50%);
   /* Glass */
-  --glass-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
   --glass-menu-bg: color-mix(in srgb, var(--color-surface) 74%, transparent);
   --glass-control-bg: color-mix(in srgb, var(--color-surface) 58%, transparent);
   --glass-hover-bg: color-mix(in srgb, var(--color-hover) 76%, transparent);
   --glass-selected-bg: color-mix(in srgb, var(--color-brand-bg) 68%, transparent);
   --glass-border: color-mix(in srgb, var(--color-border) 66%, transparent);
-  --glass-backdrop: blur(6px) saturate(110%);
-  --app-surface-bg: var(--glass-bg);
-  --app-surface-header-bg: var(--glass-bg);
-  --app-surface-body-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
-  --app-surface-control-hover-bg: var(--glass-hover-bg);
-  --app-surface-control-selected-bg: var(--glass-selected-bg);
   --app-surface-border: color-mix(in srgb, var(--color-border) 55%, transparent);
   --app-surface-divider: color-mix(in srgb, var(--color-border-subtle) 55%, transparent);
   --app-surface-shadow: 0 8px 32px color-mix(in srgb, var(--color-shadow) 80%, transparent);
   --app-surface-shadow-active: 0 18px 48px color-mix(in srgb, var(--color-shadow) 120%, transparent);
-  /* Animation */
-  --anim-skeleton: skeletonPulse 1.5s ease-in-out infinite;
-  --anim-spin: spin 1s linear infinite;
 }
 
 @media (max-width: 760px) {
   [data-theme='dark'] {
-    --font-size-2xs: 11px;
     --glass-bg: color-mix(in srgb, var(--color-surface) 60%, transparent);
     --glass-menu-bg: color-mix(in srgb, var(--color-surface) 86%, transparent);
     --glass-control-bg: color-mix(in srgb, var(--color-surface) 72%, transparent);

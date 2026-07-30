@@ -1,12 +1,16 @@
 import {
+  createContext,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
+  useContext,
+  type ButtonHTMLAttributes,
   type ReactNode,
   type KeyboardEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { Icon } from '../ui/Icon';
 import styles from './ContextMenu.module.css';
 
 interface ContextMenuShellProps {
@@ -19,6 +23,43 @@ interface ContextMenuShellProps {
 const VIEWPORT_GAP = 8;
 const FALLBACK_WIDTH = 200;
 const FALLBACK_HEIGHT = 300;
+const ContextMenuCloseContext = createContext<(() => void) | null>(null);
+
+interface ContextMenuItemProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'children' | 'onClick' | 'type'
+> {
+  icon: string;
+  onSelect: () => void;
+  danger?: boolean;
+  children: ReactNode;
+}
+
+export function ContextMenuItem({
+  icon,
+  onSelect,
+  danger = false,
+  className,
+  children,
+  ...buttonProps
+}: ContextMenuItemProps) {
+  const onClose = useContext(ContextMenuCloseContext);
+
+  return (
+    <button
+      {...buttonProps}
+      type="button"
+      className={[danger ? styles.danger : '', className].filter(Boolean).join(' ')}
+      onClick={() => {
+        onSelect();
+        onClose?.();
+      }}
+      role="menuitem"
+    >
+      <Icon name={icon} size={16} /> {children}
+    </button>
+  );
+}
 
 function clampCoordinate(value: number, size: number, viewportSize: number) {
   return Math.max(VIEWPORT_GAP, Math.min(value, viewportSize - size - VIEWPORT_GAP));
@@ -112,7 +153,7 @@ export function ContextMenuShell({ x, y, onClose, children }: ContextMenuShellPr
       role="menu"
       tabIndex={-1}
     >
-      {children}
+      <ContextMenuCloseContext value={onClose}>{children}</ContextMenuCloseContext>
     </div>,
     document.body,
   );

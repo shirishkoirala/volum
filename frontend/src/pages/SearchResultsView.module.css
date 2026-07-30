@@ -1,12 +1,3 @@
-.searchView {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  margin: var(--space-md);
-  min-height: 0;
-  overflow: hidden;
-}
-
 .searchHeader {
   background: var(--app-surface-header-bg);
   display: flex;
@@ -166,7 +157,6 @@
 
 @media (max-width: 760px) {
   .searchView {
-    margin: var(--space-sm);
     margin-bottom: 0;
   }
 

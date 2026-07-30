@@ -1,7 +1,5 @@
-import { Icon } from '../ui/Icon';
-import { ContextMenuShell } from './ContextMenuShell';
+import { ContextMenuItem, ContextMenuShell } from './ContextMenuShell';
 import type { MenuCapabilities } from '../../types/capabilities';
-import styles from './ContextMenu.module.css';
 
 interface FileContextMenuProps {
   x: number;
@@ -70,196 +68,82 @@ export function FileContextMenu({
   return (
     <ContextMenuShell x={x} y={y} onClose={onClose}>
       {canPreview && (
-        <button
-          type="button"
-          onClick={() => {
-            onPreview();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="view-preview" size={16} /> Preview
-        </button>
+        <ContextMenuItem icon="view-preview" onSelect={onPreview}>
+          Preview
+        </ContextMenuItem>
       )}
       {canInfo && (
-        <button
-          type="button"
-          onClick={() => {
-            onShowInfo();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="dialog-information" size={16} /> Info
-        </button>
+        <ContextMenuItem icon="dialog-information" onSelect={onShowInfo}>
+          Info
+        </ContextMenuItem>
       )}
       {canDownload && (
-        <button
-          type="button"
-          onClick={() => {
-            onDownload();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="edit-download" size={16} /> Download
-        </button>
+        <ContextMenuItem icon="edit-download" onSelect={onDownload}>
+          Download
+        </ContextMenuItem>
       )}
       {canWrite && canRename && (
-        <button
-          type="button"
-          onClick={() => {
-            onRename();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="edit-rename" size={16} /> Rename
-        </button>
+        <ContextMenuItem icon="edit-rename" onSelect={onRename}>
+          Rename
+        </ContextMenuItem>
       )}
       {canWrite && selectedCount > 1 && (
-        <button
-          type="button"
-          onClick={() => {
-            onBatchRename();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="edit-rename" size={16} /> Batch rename
-        </button>
+        <ContextMenuItem icon="edit-rename" onSelect={onBatchRename}>
+          Batch rename
+        </ContextMenuItem>
       )}
       {canWrite && canCopy && (
-        <button
-          type="button"
-          onClick={() => {
-            onCopy();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="edit-copy" size={16} /> Copy
-        </button>
+        <ContextMenuItem icon="edit-copy" onSelect={onCopy}>
+          Copy
+        </ContextMenuItem>
       )}
       {canWrite && canMove && (
-        <button
-          type="button"
-          onClick={() => {
-            onMove();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="edit-cut" size={16} /> Move
-        </button>
+        <ContextMenuItem icon="edit-cut" onSelect={onMove}>
+          Move
+        </ContextMenuItem>
       )}
       {canWrite && canArchive && (
-        <button
-          type="button"
-          onClick={() => {
-            onArchive();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="archive-create" size={16} /> Archive
-        </button>
+        <ContextMenuItem icon="archive-create" onSelect={onArchive}>
+          Archive
+        </ContextMenuItem>
       )}
       {canWrite && canExtract && (
-        <button
-          type="button"
-          onClick={() => {
-            onExtract();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="archive-extract" size={16} /> Extract
-        </button>
+        <ContextMenuItem icon="archive-extract" onSelect={onExtract}>
+          Extract
+        </ContextMenuItem>
       )}
       {canChecksum && (
-        <button
-          type="button"
-          onClick={() => {
-            onChecksum();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="view-refresh" size={16} /> Checksum
-        </button>
+        <ContextMenuItem icon="view-refresh" onSelect={onChecksum}>
+          Checksum
+        </ContextMenuItem>
       )}
       {canPaste && (
-        <button
-          type="button"
-          onClick={() => {
-            onPaste();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="edit-paste" size={16} /> Paste
-        </button>
+        <ContextMenuItem icon="edit-paste" onSelect={onPaste}>
+          Paste
+        </ContextMenuItem>
       )}
       {canWrite && (
-        <button
-          type="button"
-          onClick={() => {
-            onQuickShare();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="mail-send" size={16} /> Quick Share
-        </button>
+        <ContextMenuItem icon="mail-send" onSelect={onQuickShare}>
+          Quick Share
+        </ContextMenuItem>
       )}
       {canWrite && canInfo && (
-        <button
-          type="button"
-          onClick={() => {
-            onShare();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="mail-send" size={16} /> Share
-        </button>
+        <ContextMenuItem icon="mail-send" onSelect={onShare}>
+          Share
+        </ContextMenuItem>
       )}
       {canWrite && onAnalyze && (
-        <button
-          type="button"
-          onClick={() => {
-            onAnalyze();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="edit-find" size={16} /> Analyze folder
-        </button>
+        <ContextMenuItem icon="edit-find" onSelect={onAnalyze}>
+          Analyze folder
+        </ContextMenuItem>
       )}
-      <button
-        type="button"
-        onClick={() => {
-          onToggleFavorite();
-          onClose();
-        }}
-        role="menuitem"
-      >
-        <Icon name="bookmark-new" size={16} />{' '}
+      <ContextMenuItem icon="bookmark-new" onSelect={onToggleFavorite}>
         {isFavorited ? 'Remove from desktop' : 'Add to desktop'}
-      </button>
+      </ContextMenuItem>
       {canWrite && canDelete && (
-        <button
-          type="button"
-          className={styles.danger}
-          onClick={() => {
-            onDelete();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="edit-delete" size={16} /> Delete
-        </button>
+        <ContextMenuItem icon="edit-delete" onSelect={onDelete} danger>
+          Delete
+        </ContextMenuItem>
       )}
     </ContextMenuShell>
   );

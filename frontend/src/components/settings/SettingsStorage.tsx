@@ -2,6 +2,7 @@ import { Icon } from '../ui/Icon';
 import { ProgressBar } from '../ui/ProgressBar';
 import { formatBytes } from '../../utils/format';
 import type { RootEntry } from '../../api/client-files';
+import { SettingsSection } from './SettingsSection';
 import styles from '../../pages/SettingsPanel.module.css';
 
 type SettingsStorageProps = {
@@ -25,16 +26,19 @@ export function SettingsStorage({ roots }: SettingsStorageProps) {
   const hasUnavailableRoot = roots.some((r) => !r.available);
 
   return (
-    <section className={styles.settingsSection}>
-      <h4>
-        Roots
-        {hasUnavailableRoot ? (
-          <span className={styles.rootWarningBadge}>
-            <Icon name="dialog-warning" size={13} />
-            Some unavailable
-          </span>
-        ) : null}
-      </h4>
+    <SettingsSection
+      title={
+        <>
+          Roots
+          {hasUnavailableRoot ? (
+            <span className={styles.rootWarningBadge}>
+              <Icon name="dialog-warning" size={13} />
+              Some unavailable
+            </span>
+          ) : null}
+        </>
+      }
+    >
       <div className={styles.settingsRootList}>
         {roots.map((root) => (
           <div
@@ -59,6 +63,6 @@ export function SettingsStorage({ roots }: SettingsStorageProps) {
           </div>
         ))}
       </div>
-    </section>
+    </SettingsSection>
   );
 }

@@ -12,6 +12,8 @@ import {
 import { cancelJob, createJob } from '../api/client-jobs';
 import { ConfirmDialog } from '../components/overlay/ConfirmDialog';
 import { EmptyState } from '../components/ui/EmptyState';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
+import { Button } from '../components/ui/shared';
 import type {
   DiskUsageResult,
   DiskUsageSummary,
@@ -21,6 +23,7 @@ import type {
 } from '../api/client-files';
 import type { Job } from '../api/client-jobs';
 import { formatBytes, formatGridDate } from '../utils/format';
+import { isAnalysisJob } from '../utils/jobs';
 import styles from './StorageAnalyzerView.module.css';
 
 type Section = 'disk-usage' | 'duplicates';
@@ -167,15 +170,18 @@ function PathPicker({
             <Icon name="folder" size={16} />
           </button>
         </div>
-        <button
+        <Button
           className={styles.scanBtn}
+          size="compact"
+          variant="primary"
           onClick={() => onStartScan(customPath)}
-          disabled={loading || !customPath || !canStart}
-          type="button"
+          disabled={!customPath || !canStart}
+          busy={loading}
+          busyLabel="Scan"
         >
-          {loading ? <Icon name="view-refresh" size={16} /> : <Icon name="edit-find" size={16} />}
+          <Icon name="edit-find" size={16} />
           <span>Scan</span>
-        </button>
+        </Button>
       </div>
       {!canStart && (
         <p className={styles.readonlyNote}>Read-only access · scans cannot be started.</p>
@@ -230,7 +236,7 @@ function RecentAnalyses({
             className={styles.recentItem}
             onClick={() => onOpen(job)}
           >
-            <Icon name={job.type === 'disk_analyze' ? 'drive-harddisk' : 'edit-copy'} size={18} />
+            <Icon name={`job-${job.type}`} size={18} />
             <span className={styles.recentInfo}>
               <strong>{job.sourcePath || 'Unknown folder'}</strong>
               <span>
@@ -331,7 +337,7 @@ export function StorageAnalyzerView({
     const active = jobs
       .filter(
         (job) =>
-          (job.type === 'disk_analyze' || job.type === 'duplicate_find') &&
+          isAnalysisJob(job) &&
           (job.status === 'queued' || job.status === 'running' || job.status === 'paused'),
       )
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
@@ -742,15 +748,7 @@ export function StorageAnalyzerView({
             </div>
           )}
 
-          {error && (
-            <div className={styles.errorBanner} role="alert">
-              <Icon name="dialog-warning" size={16} />
-              <span>{error}</span>
-              <button className={styles.retryBtn} onClick={retry}>
-                Retry
-              </button>
-            </div>
-          )}
+          {error && <ErrorBanner message={error} onRetry={retry} />}
 
           {scanPath && currentJob && isScanActive && (
             <div className={styles.scanStatus}>
@@ -765,12 +763,9 @@ export function StorageAnalyzerView({
               )}
               <span className={styles.processedCount}>{currentJob.processedItems} items found</span>
               {canManage && (
-                <button
-                  className={styles.secondaryBtn}
-                  onClick={() => void cancelCurrentScan(currentJob.id)}
-                >
+                <Button size="compact" onClick={() => void cancelCurrentScan(currentJob.id)}>
                   Cancel
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -786,18 +781,18 @@ export function StorageAnalyzerView({
                   </span>
                 </div>
                 <div className={styles.scanActions}>
-                  <button
-                    className={styles.secondaryBtn}
+                  <Button
+                    size="compact"
                     onClick={() => scanPath && void startScan(scanPath)}
                     disabled={!canManage || loading || awaitingScanFeed}
                   >
                     <Icon name="view-refresh" size={16} />
                     Rescan
-                  </button>
-                  <button className={styles.secondaryBtn} onClick={resetDiskScan}>
+                  </Button>
+                  <Button size="compact" onClick={resetDiskScan}>
                     <Icon name="folder" size={16} />
                     Scan another folder
-                  </button>
+                  </Button>
                 </div>
               </div>
               <div className={styles.summary}>
@@ -863,26 +858,18 @@ export function StorageAnalyzerView({
           )}
 
           {isScanDone && currentJob?.status === 'failed' && (
-            <div className={styles.status}>
-              <Icon name="dialog-warning" size={18} />
-              <span>Scan failed: {currentJob.errorMessage}</span>
-              {canManage && (
-                <button
-                  className={styles.retryBtn}
-                  onClick={() => scanPath && void startScan(scanPath)}
-                >
-                  Retry
-                </button>
-              )}
-            </div>
+            <ErrorBanner
+              message={`Scan failed: ${currentJob.errorMessage}`}
+              onRetry={canManage ? () => scanPath && void startScan(scanPath) : undefined}
+            />
           )}
           {currentJob?.status === 'cancelled' && (
             <div className={styles.status}>
               <span>Scan cancelled.</span>
-              <button className={styles.secondaryBtn} onClick={resetDiskScan}>
+              <Button size="compact" onClick={resetDiskScan}>
                 <Icon name="folder" size={16} />
                 Scan another folder
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -911,15 +898,7 @@ export function StorageAnalyzerView({
             </div>
           )}
 
-          {dupError && (
-            <div className={styles.errorBanner} role="alert">
-              <Icon name="dialog-warning" size={16} />
-              <span>{dupError}</span>
-              <button className={styles.retryBtn} onClick={retryDup}>
-                Retry
-              </button>
-            </div>
-          )}
+          {dupError && <ErrorBanner message={dupError} onRetry={retryDup} />}
 
           {dupJob &&
             (dupJob.status === 'queued' ||
@@ -937,12 +916,9 @@ export function StorageAnalyzerView({
                 )}
                 <span className={styles.processedCount}>{dupJob.processedItems} files scanned</span>
                 {canManage && (
-                  <button
-                    className={styles.secondaryBtn}
-                    onClick={() => void cancelCurrentScan(dupJob.id, true)}
-                  >
+                  <Button size="compact" onClick={() => void cancelCurrentScan(dupJob.id, true)}>
                     Cancel
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -955,18 +931,18 @@ export function StorageAnalyzerView({
                   <span className={styles.scannedPath}>{dupPath}</span>
                 </div>
                 <div className={styles.scanActions}>
-                  <button
-                    className={styles.secondaryBtn}
+                  <Button
+                    size="compact"
                     onClick={() => dupPath && void startDupScan(dupPath)}
                     disabled={!canManage || dupLoading || awaitingDupFeed}
                   >
                     <Icon name="view-refresh" size={16} />
                     Rescan
-                  </button>
-                  <button className={styles.secondaryBtn} onClick={resetDuplicateScan}>
+                  </Button>
+                  <Button size="compact" onClick={resetDuplicateScan}>
                     <Icon name="folder" size={16} />
                     Scan another folder
-                  </button>
+                  </Button>
                 </div>
               </div>
               <div className={styles.summary}>
@@ -997,18 +973,17 @@ export function StorageAnalyzerView({
               {canManage && dupSelected.size > 0 && (
                 <div className={styles.bulkBar}>
                   <span>{dupSelected.size} file(s) selected</span>
-                  <button
+                  <Button
                     className={styles.trashBtn}
+                    size="compact"
+                    variant="danger"
                     onClick={requestTrashSelected}
-                    disabled={dupTrashing}
+                    busy={dupTrashing}
+                    busyLabel="Trash selected"
                   >
-                    {dupTrashing ? (
-                      <Icon name="view-refresh" size={16} />
-                    ) : (
-                      <Icon name="edit-delete" size={16} />
-                    )}
+                    <Icon name="edit-delete" size={16} />
                     <span>Trash selected</span>
-                  </button>
+                  </Button>
                 </div>
               )}
 
@@ -1076,35 +1051,27 @@ export function StorageAnalyzerView({
                 subtitle={`No matching file contents were found in ${dupPath}.`}
                 compact
               >
-                <button className={styles.secondaryBtn} onClick={resetDuplicateScan}>
+                <Button size="compact" onClick={resetDuplicateScan}>
                   <Icon name="folder" size={16} />
                   Scan another folder
-                </button>
+                </Button>
               </EmptyState>
             </div>
           )}
 
           {dupJob?.status === 'failed' && (
-            <div className={styles.status}>
-              <Icon name="dialog-warning" size={18} />
-              <span>Scan failed: {dupJob.errorMessage}</span>
-              {canManage && (
-                <button
-                  className={styles.retryBtn}
-                  onClick={() => dupPath && void startDupScan(dupPath)}
-                >
-                  Retry
-                </button>
-              )}
-            </div>
+            <ErrorBanner
+              message={`Scan failed: ${dupJob.errorMessage}`}
+              onRetry={canManage ? () => dupPath && void startDupScan(dupPath) : undefined}
+            />
           )}
           {dupJob?.status === 'cancelled' && (
             <div className={styles.status}>
               <span>Duplicate scan cancelled.</span>
-              <button className={styles.secondaryBtn} onClick={resetDuplicateScan}>
+              <Button size="compact" onClick={resetDuplicateScan}>
                 <Icon name="folder" size={16} />
                 Scan another folder
-              </button>
+              </Button>
             </div>
           )}
           {confirmTrash && (

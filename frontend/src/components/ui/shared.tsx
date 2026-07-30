@@ -57,13 +57,20 @@ export function PanelHeader({ title, subtitle, onClose, children }: PanelHeaderP
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'secondary' | 'primary' | 'danger' | 'link';
   size?: 'default' | 'compact';
+  busy?: boolean;
+  busyLabel?: ReactNode;
 };
 
 export function Button({
   variant = 'secondary',
   size = 'default',
+  busy = false,
+  busyLabel,
   className,
   type = 'button',
+  disabled,
+  'aria-busy': ariaBusy,
+  children,
   ...props
 }: ButtonProps) {
   return (
@@ -77,8 +84,15 @@ export function Button({
         className,
       )}
       type={type}
+      disabled={disabled || busy}
+      aria-busy={busy || ariaBusy}
       {...props}
-    />
+    >
+      {busy && (
+        <Icon name="view-refresh" size={size === 'compact' ? 14 : 15} className={styles.spin} />
+      )}
+      {busy ? (busyLabel ?? children) : children}
+    </button>
   );
 }
 

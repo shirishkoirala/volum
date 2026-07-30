@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Icon } from '../ui/Icon';
 import { Button, MutedText } from '../ui/shared';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { InlineFeedback } from '../ui/InlineFeedback';
+import { Select } from '../input/Select';
+import { SettingsSection } from './SettingsSection';
 import {
   listUsers,
   createUser,
@@ -146,36 +148,38 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
 
   return (
     <>
-      <section className={styles.settingsSection}>
-        <h4>Maintenance</h4>
+      <SettingsSection title="Maintenance">
         <div className={styles.maintenanceActions}>
-          <Button size="compact" onClick={handleVacuum} disabled={maintenanceBusy !== null}>
-            {maintenanceBusy === 'vacuum' && (
-              <Icon name="view-refresh" size={12} className={styles.spin} />
-            )}
+          <Button
+            size="compact"
+            onClick={handleVacuum}
+            disabled={maintenanceBusy !== null}
+            busy={maintenanceBusy === 'vacuum'}
+          >
             Vacuum DB
           </Button>
-          <Button size="compact" onClick={handlePruneJobs} disabled={maintenanceBusy !== null}>
-            {maintenanceBusy === 'pruneJobs' && (
-              <Icon name="view-refresh" size={12} className={styles.spin} />
-            )}
+          <Button
+            size="compact"
+            onClick={handlePruneJobs}
+            disabled={maintenanceBusy !== null}
+            busy={maintenanceBusy === 'pruneJobs'}
+          >
             Prune Old Jobs
           </Button>
         </div>
         {maintenanceMsg && (
-          <p className={styles.maintenanceMsg} role="status">
+          <InlineFeedback variant="success" className={styles.inlineFeedback}>
             {maintenanceMsg}
-          </p>
+          </InlineFeedback>
         )}
         {maintenanceError && (
-          <p className={styles.maintenanceError} role="alert">
+          <InlineFeedback variant="error" className={styles.inlineFeedback}>
             {maintenanceError}
-          </p>
+          </InlineFeedback>
         )}
-      </section>
+      </SettingsSection>
 
-      <section className={styles.settingsSection}>
-        <h4>Jobs</h4>
+      <SettingsSection title="Jobs">
         <dl className={styles.settingsDetails}>
           <dt>Active</dt>
           <dd>{status.jobCounts.active}</dd>
@@ -184,11 +188,10 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
           <dt>Failed</dt>
           <dd>{status.jobCounts.failed}</dd>
         </dl>
-      </section>
+      </SettingsSection>
 
       {session?.role === 'admin' && (
-        <section className={styles.settingsSection}>
-          <h4>Users</h4>
+        <SettingsSection title="Users">
           {users === null && !usersLoading && (
             <Button size="compact" onClick={loadUsers}>
               Load Users
@@ -303,45 +306,40 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
               </label>
               <label className={styles.formField}>
                 <span>Role</span>
-                <select
+                <Select
                   value={newRole}
-                  onChange={(e) => setNewRole(e.target.value as 'admin' | 'readonly')}
+                  onChange={(value) => setNewRole(value as 'admin' | 'readonly')}
                 >
                   <option value="readonly">Readonly</option>
                   <option value="admin">Admin</option>
-                </select>
+                </Select>
               </label>
               <Button
                 size="compact"
-                disabled={creatingUser || !newUsername || newPassword.length < 12}
+                disabled={!newUsername || newPassword.length < 12}
+                busy={creatingUser}
+                busyLabel="Creating..."
                 onClick={handleCreateUser}
               >
-                {creatingUser ? (
-                  <>
-                    <Icon name="view-refresh" size={12} className={styles.spin} /> Creating...
-                  </>
-                ) : (
-                  'Create'
-                )}
+                Create
               </Button>
             </div>
           </details>
           {userMsg && (
-            <p className={styles.maintenanceMsg} role="status">
+            <InlineFeedback variant="success" className={styles.inlineFeedback}>
               {userMsg}
-            </p>
+            </InlineFeedback>
           )}
           {userError && (
-            <p className={styles.maintenanceError} role="alert">
+            <InlineFeedback variant="error" className={styles.inlineFeedback}>
               {userError}
-            </p>
+            </InlineFeedback>
           )}
-        </section>
+        </SettingsSection>
       )}
 
       {onOpenShares && (
-        <section className={styles.settingsSection}>
-          <h4>Shares</h4>
+        <SettingsSection title="Shares">
           <p>
             <MutedText compact>Manage expiring share links for files and folders.</MutedText>
           </p>
@@ -350,7 +348,7 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
               Manage Shares
             </Button>
           </div>
-        </section>
+        </SettingsSection>
       )}
     </>
   );

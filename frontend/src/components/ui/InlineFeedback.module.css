@@ -1,0 +1,12 @@
+.feedback {
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.success {
+  color: var(--color-success-text);
+}
+
+.error {
+  color: var(--color-danger-text);
+}

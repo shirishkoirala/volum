@@ -53,6 +53,7 @@ import { ServiceWindow } from '../components/window/ServiceWindow';
 import { fileTypeIconUrl, storageAnalyzerIconUrl } from '../api/icons';
 import { defaultRootPath as getDefaultRootPath } from '../utils/roots';
 import { openFileExternally } from '../utils/preview';
+import { isAnalysisJob } from '../utils/jobs';
 import { STANDARD_WINDOW_H, STANDARD_WINDOW_W } from '../utils/window';
 import styles from './Home.module.css';
 
@@ -152,7 +153,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
 
   const openAnalysisJob = useCallback(
     (job: Job) => {
-      if (job.type !== 'disk_analyze' && job.type !== 'duplicate_find') return;
+      if (!isAnalysisJob(job)) return;
       if (isMobile) {
         setMobileAnalysisPath(null);
         setMobileAnalysisJobId(job.id);

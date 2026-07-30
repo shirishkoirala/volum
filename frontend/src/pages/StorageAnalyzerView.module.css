@@ -34,9 +34,6 @@
 
 .tab:focus-visible,
 .rootBtn:focus-visible,
-.scanBtn:focus-visible,
-.secondaryBtn:focus-visible,
-.trashBtn:focus-visible,
 .dirRow:focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
@@ -252,8 +249,7 @@
   color: var(--color-text);
 }
 
-.browseBtn:disabled,
-.secondaryBtn:disabled {
+.browseBtn:disabled {
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -261,28 +257,6 @@
 .browseBtn:focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: -2px;
-}
-
-.scanBtn {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--color-brand);
-  border-radius: var(--radius-sm);
-  background: var(--color-brand);
-  color: var(--color-on-accent);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-}
-
-.scanBtn:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.scanBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .status {
@@ -327,7 +301,7 @@
   display: block;
   overflow: hidden;
   color: var(--color-text);
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -339,27 +313,10 @@
   gap: var(--space-sm);
 }
 
-.secondaryBtn {
-  align-items: center;
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: var(--font-size-sm);
-  gap: var(--space-xs);
-}
-
-.secondaryBtn:hover {
-  background: var(--glass-hover-bg);
-}
-
 .currentItem {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  font-family: monospace;
+  font-family: var(--font-mono);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -381,28 +338,6 @@
     justify-content: center;
     min-height: 44px;
   }
-}
-
-.errorBanner {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-danger-bg);
-  color: var(--color-danger);
-  border-radius: var(--radius-sm);
-  margin-bottom: var(--space-md);
-}
-
-.retryBtn {
-  margin-left: auto;
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
 }
 
 .summary {
@@ -588,7 +523,7 @@
   flex: 1;
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  font-family: monospace;
+  font-family: var(--font-mono);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -622,26 +557,7 @@
 }
 
 .trashBtn {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
   margin-left: auto;
-  padding: var(--space-xs) var(--space-sm);
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-sm);
-  background: var(--color-danger);
-  color: var(--color-on-accent);
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-}
-
-.trashBtn:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.trashBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .emptyResult {
@@ -691,7 +607,7 @@
     width: 100%;
   }
 
-  .scanActions .secondaryBtn {
+  .scanActions > button {
     flex: 1;
   }
 

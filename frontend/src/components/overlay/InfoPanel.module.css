@@ -94,18 +94,6 @@
   color: var(--color-text);
 }
 
-.infoError {
-  color: var(--color-danger-text);
-  font-size: var(--font-size-base);
-  margin: 0;
-}
-
-.infoSaved {
-  color: var(--color-brand);
-  font-size: var(--font-size-base);
-  margin: 0;
-}
-
 .infoActions {
   display: flex;
   gap: var(--space-sm);

@@ -5,7 +5,6 @@ import { Dialog } from './Dialog';
 import { shareUrl as buildShareUrl } from '../../api/client-base';
 import { createShare, type Share } from '../../api/client-shares';
 import dStyles from './Dialogs.module.css';
-import uiStyles from '../ui/shared.module.css';
 
 type ShareDialogProps = {
   path: string;
@@ -82,14 +81,14 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
             <Button size="compact" onClick={onClose}>
               Cancel
             </Button>
-            <Button size="compact" variant="primary" disabled={submitting} onClick={handleSubmit}>
-              {submitting ? (
-                <>
-                  <Icon name="view-refresh" size={15} className={uiStyles.spin} /> Creating...
-                </>
-              ) : (
-                'Create Share Link'
-              )}
+            <Button
+              size="compact"
+              variant="primary"
+              busy={submitting}
+              busyLabel="Creating..."
+              onClick={handleSubmit}
+            >
+              Create Share Link
             </Button>
           </>
         )

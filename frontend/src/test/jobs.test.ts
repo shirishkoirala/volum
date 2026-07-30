@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { isActiveTransferJob, countActiveTransfers, refreshesFiles } from '../utils/jobs';
+import {
+  isActiveTransferJob,
+  countActiveTransfers,
+  isAnalysisJob,
+  refreshesFiles,
+} from '../utils/jobs';
 import { buildJob } from './fixtures';
 
 describe('isActiveTransferJob', () => {
@@ -44,6 +49,14 @@ describe('countActiveTransfers', () => {
 
   it('returns 0 for no active jobs', () => {
     expect(countActiveTransfers([buildJob({ status: 'completed' })])).toBe(0);
+  });
+});
+
+describe('isAnalysisJob', () => {
+  it('matches disk and duplicate analysis jobs only', () => {
+    expect(isAnalysisJob(buildJob({ type: 'disk_analyze' }))).toBe(true);
+    expect(isAnalysisJob(buildJob({ type: 'duplicate_find' }))).toBe(true);
+    expect(isAnalysisJob(buildJob({ type: 'copy' }))).toBe(false);
   });
 });
 

@@ -9,7 +9,6 @@ import { ServerInfo } from '../components/ui/ServerInfo';
 import { SettingsStorage } from '../components/settings/SettingsStorage';
 import { SettingsDesktop } from '../components/settings/SettingsDesktop';
 import { SettingsAdmin } from '../components/settings/SettingsAdmin';
-import { SettingsAbout } from '../components/settings/SettingsAbout';
 import { useAsyncData } from '../hooks/useAsyncData';
 import type { Session } from '../api/client-auth';
 import { getStatus } from '../api/client-files';
@@ -32,7 +31,7 @@ type SettingsPanelProps = {
   onReorderServices?: (ids: string[]) => Promise<void>;
 };
 
-type CategoryId = 'general' | 'server' | 'storage' | 'desktop' | 'admin' | 'about';
+type CategoryId = 'general' | 'server' | 'storage' | 'desktop' | 'admin';
 
 const CATEGORIES: { id: CategoryId; label: string; icon: string }[] = [
   { id: 'general', label: 'General', icon: 'preferences-system' },
@@ -40,7 +39,6 @@ const CATEGORIES: { id: CategoryId; label: string; icon: string }[] = [
   { id: 'storage', label: 'Storage', icon: 'drive-harddisk' },
   { id: 'desktop', label: 'Desktop', icon: 'monitor' },
   { id: 'admin', label: 'Administration', icon: 'preferences-system' },
-  { id: 'about', label: 'About', icon: 'help-about' },
 ];
 
 export function SettingsPanel({
@@ -144,12 +142,6 @@ export function SettingsPanel({
               : filteredCategories.some((c) => c.id === 'admin')) && (
               <SettingsAdmin status={status} session={session} onOpenShares={onOpenShares} />
             )}
-
-          {(!filterQuery.trim()
-            ? activeCategory === 'about'
-            : filteredCategories.some((c) => c.id === 'about')) && (
-            <SettingsAbout status={status} />
-          )}
 
           {filterQuery.trim() && filteredCategories.length === 0 && (
             <div className={styles.settingsSection}>

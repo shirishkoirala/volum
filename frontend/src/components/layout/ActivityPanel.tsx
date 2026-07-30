@@ -1,6 +1,7 @@
 import type { Job } from '../../api/client-jobs';
-import { makeJobLabel } from '../../utils/jobs';
+import { isAnalysisJob, makeJobLabel } from '../../utils/jobs';
 import { Icon } from '../ui/Icon';
+import uiStyles from '../ui/shared.module.css';
 import styles from './ActivityPanel.module.css';
 
 export type ActivityPanelProps = {
@@ -11,31 +12,8 @@ export type ActivityPanelProps = {
 
 const RECENT_COUNT = 5;
 
-function jobIcon(job: Job) {
-  switch (job.type) {
-    case 'copy':
-      return 'edit-copy';
-    case 'move':
-      return 'document-open-recent';
-    case 'upload':
-      return 'document-import';
-    case 'archive':
-      return 'application-x-archive';
-    case 'extract':
-      return 'archive-extract';
-    case 'checksum':
-      return 'dialog-password';
-    case 'disk_analyze':
-      return 'drive-harddisk';
-    case 'duplicate_find':
-      return 'edit-copy';
-    default:
-      return 'emblem-system';
-  }
-}
-
 function AnalysisAction({ job, onOpen }: { job: Job; onOpen?: (job: Job) => void }) {
-  if (!onOpen || (job.type !== 'disk_analyze' && job.type !== 'duplicate_find')) return null;
+  if (!onOpen || !isAnalysisJob(job)) return null;
   return (
     <button
       type="button"
@@ -102,7 +80,7 @@ export function ActivityPanel({ jobs, onOpenJobs, onOpenAnalysis }: ActivityPane
           <div className={styles.sectionHeader}>Active</div>
           {active.map((job) => (
             <div key={job.id} className={styles.item}>
-              <Icon name={jobIcon(job)} size={14} />
+              <Icon name={`job-${job.type}`} size={14} />
               <div className={styles.itemInfo}>
                 <span className={styles.itemName}>{jobTitle(job)}</span>
                 <span className={styles.itemStatus}>
@@ -125,7 +103,7 @@ export function ActivityPanel({ jobs, onOpenJobs, onOpenAnalysis }: ActivityPane
           <div className={styles.sectionHeader}>Failed</div>
           {recentFailed.map((job) => (
             <div key={job.id} className={styles.item}>
-              <Icon name={jobIcon(job)} size={14} />
+              <Icon name={`job-${job.type}`} size={14} />
               <div className={styles.itemInfo}>
                 <span className={styles.itemName}>{jobTitle(job)}</span>
                 {job.errorMessage && <span className={styles.itemError}>{job.errorMessage}</span>}
@@ -141,7 +119,7 @@ export function ActivityPanel({ jobs, onOpenJobs, onOpenAnalysis }: ActivityPane
           <div className={styles.sectionHeader}>Completed</div>
           {recentCompleted.map((job) => (
             <div key={job.id} className={styles.item}>
-              <Icon name={jobIcon(job)} size={14} />
+              <Icon name={`job-${job.type}`} size={14} />
               <div className={styles.itemInfo}>
                 <span className={styles.itemName}>{jobTitle(job)}</span>
               </div>
@@ -152,7 +130,11 @@ export function ActivityPanel({ jobs, onOpenJobs, onOpenAnalysis }: ActivityPane
       )}
 
       {hasActivity && (
-        <button type="button" className={styles.viewAll} onClick={onOpenJobs}>
+        <button
+          type="button"
+          className={`${uiStyles.dropdownFooterAction} ${styles.viewAll}`}
+          onClick={onOpenJobs}
+        >
           View all jobs &rarr;
         </button>
       )}

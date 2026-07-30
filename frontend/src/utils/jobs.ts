@@ -22,6 +22,10 @@ export function countActiveTransfers(jobs: Job[]): number {
   return jobs.filter(isActiveTransferJob).length;
 }
 
+export function isAnalysisJob(job: Job): boolean {
+  return job.type === 'disk_analyze' || job.type === 'duplicate_find';
+}
+
 /**
  * Returns true when completing this job type means the file list should refresh.
  */

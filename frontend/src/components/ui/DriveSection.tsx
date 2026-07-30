@@ -47,7 +47,7 @@ export function DriveSection({ title, drives, onSelectDrive }: DriveSectionProps
                       {formatBytes(aggUsed)} used of {formatBytes(aggTotal)} ·{' '}
                       {formatBytes(aggFree)} free
                     </small>
-                    <ProgressBar value={(aggUsed / aggTotal) * 100} className={styles.meter} />
+                    <ProgressBar value={(aggUsed / aggTotal) * 100} compact />
                   </>
                 )}
               </div>

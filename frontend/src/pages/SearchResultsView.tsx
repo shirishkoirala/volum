@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, FileIcon } from '../components/ui/Icon';
+import { AppPanel } from '../components/layout/AppPanel';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
@@ -451,7 +452,7 @@ export function SearchResultsView({
   const entryCount = results?.length ?? 0;
 
   return (
-    <div className={`${styles.searchView} glassPanel mobileAppPanel`}>
+    <AppPanel className={styles.searchView} padding="none" scroll={false}>
       <div className={styles.searchHeader}>
         <button type="button" className={styles.backBtn} onClick={onClose} aria-label="Back">
           <Icon name="go-previous" size={18} />
@@ -603,6 +604,6 @@ export function SearchResultsView({
           onClose={() => setShareDialogPath(null)}
         />
       )}
-    </div>
+    </AppPanel>
   );
 }

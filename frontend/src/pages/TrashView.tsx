@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FolderIcon, FileIcon } from '../components/ui/Icon';
+import { AppPanel } from '../components/layout/AppPanel';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { trashIconUrl } from '../api/icons';
@@ -9,7 +10,7 @@ import { useAsyncData } from '../hooks/useAsyncData';
 import { formatBytes, formatGridDate } from '../utils/format';
 import { GRID_ICON_SIZE, GridTile } from '../components/ui/GridTile';
 import { TrashContextMenu } from '../components/overlay/TrashContextMenu';
-import { TrashEmptyMenu } from '../components/overlay/TrashEmptyMenu';
+import { RefreshContextMenu } from '../components/overlay/RefreshContextMenu';
 import { ConfirmDialog, type ConfirmDialogState } from '../components/overlay/ConfirmDialog';
 import { useShellContext } from '../contexts/ShellContext';
 import { useWindowId, useCommandsContext, type WindowCommands } from '../contexts/WindowCommands';
@@ -269,31 +270,42 @@ export function TrashView({ canWrite = true, jobs = [] }: { canWrite?: boolean; 
   const sortedTrashEntries = useMemo(() => {
     return [...trashEntries].sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
   }, [trashEntries]);
+  const initialLoading = trashLoading && !trashData;
+  const showTrashGrid = !initialLoading && !trashError && trashEntries.length > 0;
 
   return (
     <>
-      {trashLoading && !trashData ? (
-        <section
-          className={`${styles.trashGrid} glassPanel mobileAppPanel`}
-          aria-label="Loading Trash"
-          role="status"
-        >
+      <AppPanel
+        bodyClassName={
+          initialLoading || showTrashGrid
+            ? styles.trashGrid
+            : trashEntries.length === 0 && !trashError
+              ? styles.emptyWrapper
+              : undefined
+        }
+        bodyProps={
+          initialLoading
+            ? { 'aria-label': 'Loading Trash', role: 'status' }
+            : showTrashGrid
+              ? {
+                  onContextMenu: handleTrashEmptyContextMenu,
+                  role: 'list',
+                  tabIndex: -1,
+                }
+              : undefined
+        }
+        className={styles.trashPanel}
+        padding="none"
+        scroll={false}
+      >
+        {initialLoading ? (
           <Skeleton variant="card" count={8} />
-        </section>
-      ) : trashError ? (
-        <ErrorBanner message={trashError} onRetry={loadTrash} />
-      ) : trashEntries.length === 0 ? (
-        <div className={`${styles.emptyWrapper} glassPanel mobileAppPanel`}>
+        ) : trashError ? (
+          <ErrorBanner message={trashError} onRetry={loadTrash} />
+        ) : trashEntries.length === 0 ? (
           <EmptyState icon={trashIconUrl(false)} title="Trash is empty" />
-        </div>
-      ) : (
-        <section
-          className={`${styles.trashGrid} glassPanel mobileAppPanel`}
-          onContextMenu={handleTrashEmptyContextMenu}
-          tabIndex={-1}
-          role="list"
-        >
-          {sortedTrashEntries.map((entry, idx) => {
+        ) : (
+          sortedTrashEntries.map((entry, idx) => {
             const isSelected = selectedTrashIds.has(entry.id);
 
             function handleTrashKeyDown(e: React.KeyboardEvent) {
@@ -354,9 +366,9 @@ export function TrashView({ canWrite = true, jobs = [] }: { canWrite?: boolean; 
                 onKeyDown={handleTrashKeyDown}
               />
             );
-          })}
-        </section>
-      )}
+          })
+        )}
+      </AppPanel>
       {trashContextMenu && (
         <TrashContextMenu
           x={trashContextMenu.x}
@@ -367,7 +379,7 @@ export function TrashView({ canWrite = true, jobs = [] }: { canWrite?: boolean; 
         />
       )}
       {trashEmptyMenu && (
-        <TrashEmptyMenu
+        <RefreshContextMenu
           x={trashEmptyMenu.x}
           y={trashEmptyMenu.y}
           onRefresh={handleRefresh}

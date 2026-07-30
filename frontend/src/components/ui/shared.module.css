@@ -122,6 +122,28 @@
   color: var(--color-brand-text);
 }
 
+.dropdownFooterAction {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-brand-text);
+  cursor: pointer;
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  gap: var(--space-sm);
+  justify-content: center;
+  padding: var(--space-sm) var(--space-md);
+  text-align: center;
+  transition: background var(--transition-fast);
+  width: 100%;
+}
+
+.dropdownFooterAction:hover {
+  background: var(--glass-hover-bg);
+}
+
 .statusBadge {
   border-radius: var(--radius-pill);
   display: inline-flex;

@@ -1,5 +1,5 @@
 import { Icon } from '../ui/Icon';
-import { ContextMenuShell } from './ContextMenuShell';
+import { ContextMenuItem, ContextMenuShell } from './ContextMenuShell';
 import styles from './ContextMenu.module.css';
 
 interface FilesEmptyMenuProps {
@@ -36,28 +36,12 @@ export function FilesEmptyMenu({
 
   return (
     <ContextMenuShell x={x} y={y} onClose={onClose}>
-      <button
-        type="button"
-        onClick={() => {
-          onCreateFolder();
-          onClose();
-        }}
-        disabled={!canWrite}
-        role="menuitem"
-      >
-        <Icon name="folder-new" size={16} /> New Folder
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          onCreateFile();
-          onClose();
-        }}
-        disabled={!canWrite}
-        role="menuitem"
-      >
-        <Icon name="document-new" size={16} /> New Text File
-      </button>
+      <ContextMenuItem icon="folder-new" onSelect={onCreateFolder} disabled={!canWrite}>
+        New Folder
+      </ContextMenuItem>
+      <ContextMenuItem icon="document-new" onSelect={onCreateFile} disabled={!canWrite}>
+        New Text File
+      </ContextMenuItem>
       <button
         type="button"
         onPointerDown={(event) => {
@@ -78,27 +62,13 @@ export function FilesEmptyMenu({
         <Icon name="document-import" size={16} /> Upload
       </button>
       <hr className={styles.separator} />
-      <button
-        type="button"
-        onClick={() => {
-          onRefresh();
-          onClose();
-        }}
-        role="menuitem"
-      >
-        <Icon name="view-refresh" size={16} /> Refresh
-      </button>
+      <ContextMenuItem icon="view-refresh" onSelect={onRefresh}>
+        Refresh
+      </ContextMenuItem>
       <hr className={styles.separator} />
-      <button
-        type="button"
-        onClick={() => {
-          onPaste();
-        }}
-        disabled={!canPaste}
-        role="menuitem"
-      >
-        <Icon name="edit-paste" size={16} /> Paste
-      </button>
+      <ContextMenuItem icon="edit-paste" onSelect={onPaste} disabled={!canPaste}>
+        Paste
+      </ContextMenuItem>
     </ContextMenuShell>
   );
 }

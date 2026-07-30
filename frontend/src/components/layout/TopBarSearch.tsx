@@ -1,5 +1,6 @@
 import { type RefObject, useRef } from 'react';
-import { Icon, FileIcon } from '../ui/Icon';
+import { Icon } from '../ui/Icon';
+import { SearchSuggestions } from '../ui/SearchSuggestions';
 import type { SearchResult } from '../../api/client-files';
 import styles from './TopBarSearch.module.css';
 
@@ -88,51 +89,15 @@ export function TopBarSearch({
         <Icon name="window-close" size={13} />
       </button>
       {searchOpen && query.trim().length >= 2 && (
-        <div className={styles.searchResultsDropdown} aria-live="polite">
-          {searchLoading ? (
-            <div className={styles.searchState} role="status">
-              Searching…
-            </div>
-          ) : searchError ? (
-            <div className={styles.searchState} role="alert">
-              Search unavailable · {searchError}
-            </div>
-          ) : searchResults?.length === 0 ? (
-            <div className={styles.searchState} role="status">
-              No files found
-            </div>
-          ) : (
-            searchResults?.map((result) => (
-              <button
-                key={result.path}
-                type="button"
-                className={styles.searchResultItem}
-                onClick={() => onSearchResultClick(result)}
-                aria-label={result.name}
-              >
-                <FileIcon
-                  entry={{ ...result, hidden: false, permissions: '', owner: '', group: '' }}
-                  size={16}
-                />
-                <span className={styles.searchResultName}>{result.name}</span>
-                <span className={styles.searchResultPath}>{result.root}</span>
-              </button>
-            ))
-          )}
-          {!searchLoading &&
-            !searchError &&
-            searchResults &&
-            searchResults.length > 0 &&
-            onShowAllResults && (
-              <button
-                type="button"
-                className={styles.showAllResults}
-                onClick={() => onShowAllResults(query)}
-              >
-                View all {searchResults.length} results &rarr;
-              </button>
-            )}
-        </div>
+        <SearchSuggestions
+          className={styles.searchResultsDropdown}
+          density="compact"
+          results={searchResults}
+          loading={searchLoading}
+          error={searchError}
+          onSelect={onSearchResultClick}
+          onShowAll={onShowAllResults ? () => onShowAllResults(query) : undefined}
+        />
       )}
     </div>
   );

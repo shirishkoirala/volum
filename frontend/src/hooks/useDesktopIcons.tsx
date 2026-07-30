@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { TrashIcon } from '../components/ui/Icon';
 import { IconImg } from '../components/ui/shared';
 import {
@@ -13,6 +13,7 @@ import type { TrashEntry } from '../api/client-files';
 import type { Job } from '../api/client-jobs';
 import { countActiveTransfers } from '../utils/jobs';
 import type { ServiceHealthResult, ServiceShortcut } from '../utils/services';
+import { useLocalStorage } from './useLocalStorage';
 import { useLongPress } from './useLongPress';
 import styles from '../pages/DesktopView.module.css';
 
@@ -54,24 +55,6 @@ type UseDesktopIconsProps = {
 
 const ORDER_KEY = 'volum_desktopOrder';
 
-function loadOrder(): string[] {
-  try {
-    const raw = localStorage.getItem(ORDER_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {
-    /* ignore */
-  }
-  return [];
-}
-
-function saveOrder(ids: string[]) {
-  try {
-    localStorage.setItem(ORDER_KEY, JSON.stringify(ids));
-  } catch (e) {
-    console.warn('Failed to save desktop order:', e);
-  }
-}
-
 export type { DesktopIconItem };
 
 export function useDesktopIcons(props: UseDesktopIconsProps) {
@@ -93,13 +76,9 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
   } = props;
 
   const activeTransferCount = countActiveTransfers(jobs);
-  const [iconOrder, setIconOrder] = useState<string[]>(loadOrder);
+  const [iconOrder, setIconOrder] = useLocalStorage<string[]>(ORDER_KEY, []);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
-
-  useEffect(() => {
-    saveOrder(iconOrder);
-  }, [iconOrder]);
 
   const iconItems = useMemo(() => {
     const items: DesktopIconItem[] = [];
@@ -323,7 +302,7 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
       setDragId(null);
       setDropTarget(null);
     },
-    [iconItems],
+    [iconItems, setIconOrder],
   );
 
   const handleDragEnd = useCallback(() => {
@@ -437,7 +416,7 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
 
       hookTouchEnd();
     },
-    [iconItems, hookTouchEnd],
+    [iconItems, hookTouchEnd, setIconOrder],
   );
 
   return {

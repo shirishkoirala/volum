@@ -4,6 +4,7 @@ import { Button, IconButton, StatusBadge } from '../ui/shared';
 import { Dialog } from './Dialog';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { InlineFeedback } from '../ui/InlineFeedback';
 import { shareUrl } from '../../api/client-base';
 import { getShares, deleteShare, type Share } from '../../api/client-shares';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -149,9 +150,9 @@ export function ShareManager({ onClose }: ShareManagerProps) {
           </div>
         )}
         {copyStatus && (
-          <p
-            className={copyStatus.result === 'copied' ? styles.copySuccess : styles.copyError}
-            role="status"
+          <InlineFeedback
+            variant={copyStatus.result === 'copied' ? 'success' : 'error'}
+            className={styles.copyFeedback}
           >
             {copyStatus.result === 'copied' ? (
               'Share link copied to clipboard.'
@@ -160,7 +161,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
                 The browser could not copy the link. Copy it manually: <code>{copyStatus.url}</code>
               </>
             )}
-          </p>
+          </InlineFeedback>
         )}
       </Dialog>
       {pendingDelete && (

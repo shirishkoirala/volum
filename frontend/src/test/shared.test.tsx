@@ -50,6 +50,17 @@ describe('Button', () => {
     const { container } = render(<Button className="my-btn">Custom</Button>);
     expect(container.querySelector('.my-btn')).toBeInTheDocument();
   });
+
+  it('owns the disabled busy state and label', () => {
+    render(
+      <Button busy busyLabel="Saving...">
+        Save
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Saving...' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+  });
 });
 
 describe('IconButton', () => {

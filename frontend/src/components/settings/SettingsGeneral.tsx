@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
 import { Button } from '../ui/shared';
+import { InlineFeedback } from '../ui/InlineFeedback';
+import { SettingsSection } from './SettingsSection';
 import {
   profileAvatarUrl,
   uploadProfileAvatar,
@@ -119,8 +121,7 @@ export function SettingsGeneral({
   };
 
   return (
-    <section className={styles.settingsSection}>
-      <h4>General</h4>
+    <SettingsSection title="General">
       <div className={styles.generalSections}>
         {session?.authEnabled && (
           <div className={styles.generalGroup}>
@@ -151,10 +152,11 @@ export function SettingsGeneral({
               <div className={styles.profileImageActions}>
                 <Button
                   size="compact"
-                  disabled={avatarBusy}
+                  busy={avatarBusy}
+                  busyLabel="Saving..."
                   onClick={() => avatarInputRef.current?.click()}
                 >
-                  {avatarBusy ? 'Saving...' : session.hasAvatar ? 'Replace' : 'Upload'}
+                  {session.hasAvatar ? 'Replace' : 'Upload'}
                 </Button>
                 {session.hasAvatar && (
                   <Button
@@ -168,9 +170,9 @@ export function SettingsGeneral({
               </div>
             </div>
             {avatarError && (
-              <p className={styles.avatarError} role="alert">
+              <InlineFeedback variant="error" className={styles.inlineFeedback}>
                 {avatarError}
-              </p>
+              </InlineFeedback>
             )}
           </div>
         )}
@@ -199,9 +201,9 @@ export function SettingsGeneral({
             <span>Browser notifications</span>
           </label>
           {notificationError && (
-            <p className={styles.notificationError} role="alert">
+            <InlineFeedback variant="error" className={styles.inlineFeedback}>
               {notificationError}
-            </p>
+            </InlineFeedback>
           )}
         </div>
 
@@ -209,18 +211,23 @@ export function SettingsGeneral({
           <div className={styles.generalGroup}>
             <h5>Session</h5>
             <div className={styles.settingsActions}>
-              <Button size="compact" disabled={logoutBusy} onClick={() => void handleLogout()}>
-                {logoutBusy ? 'Logging out…' : 'Log Out'}
+              <Button
+                size="compact"
+                busy={logoutBusy}
+                busyLabel="Logging out…"
+                onClick={() => void handleLogout()}
+              >
+                Log Out
               </Button>
             </div>
             {logoutError && (
-              <p className={styles.maintenanceError} role="alert">
+              <InlineFeedback variant="error" className={styles.inlineFeedback}>
                 {logoutError}
-              </p>
+              </InlineFeedback>
             )}
           </div>
         )}
       </div>
-    </section>
+    </SettingsSection>
   );
 }

@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ContextMenuShell } from '../components/overlay/ContextMenuShell';
+import { ContextMenuItem, ContextMenuShell } from '../components/overlay/ContextMenuShell';
 import { FileContextMenu } from '../components/overlay/FileContextMenu';
 
-function ContextMenuHarness() {
+function ContextMenuHarness({ onRename = () => undefined }: { onRename?: () => void }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -15,12 +15,12 @@ function ContextMenuHarness() {
       <button type="button">After menu</button>
       {open && (
         <ContextMenuShell x={20} y={20} onClose={() => setOpen(false)}>
-          <button type="button" role="menuitem">
+          <ContextMenuItem icon="edit-rename" onSelect={onRename}>
             Rename
-          </button>
-          <button type="button" role="menuitem">
+          </ContextMenuItem>
+          <ContextMenuItem icon="edit-delete" onSelect={() => undefined} danger>
             Delete
-          </button>
+          </ContextMenuItem>
         </ContextMenuShell>
       )}
     </>
@@ -86,6 +86,18 @@ describe('ContextMenuShell', () => {
     expect(screen.queryByRole('menuitem', { name: 'Quick Share' })).not.toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: 'Share' })).not.toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: 'Delete' })).not.toBeInTheDocument();
+  });
+
+  it('runs a shared menu action and closes the menu', async () => {
+    const user = userEvent.setup();
+    const onRename = vi.fn();
+    render(<ContextMenuHarness onRename={onRename} />);
+
+    await user.click(screen.getByRole('button', { name: 'Open menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Rename' }));
+
+    expect(onRename).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
   it('dismisses when focus tabs out', async () => {

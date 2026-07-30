@@ -12,6 +12,7 @@ import type { FileEntry } from '../../api/client-files';
 import type { RenameState } from '../../types';
 import { useIncrementalEntries } from '../../hooks/useIncrementalEntries';
 type ViewMode = 'list' | 'grid';
+import sharedStyles from './FileEntriesView.module.css';
 import gridStyles from './FileGridView.module.css';
 import listStyles from './FileListView.module.css';
 
@@ -148,7 +149,7 @@ export function FileEntriesView({
 
   return (
     <section
-      className={`${viewMode === 'grid' ? styles.fileGrid : styles.fileList}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
+      className={`${sharedStyles.entries} ${viewMode === 'grid' ? styles.fileGrid : styles.fileList}${draggingUpload ? ` ${sharedStyles.dragOver}` : ''}`}
       ref={fileGridRef as RefObject<HTMLDivElement>}
       onClick={fileClick}
       onContextMenu={onEmptyContextMenu}
@@ -201,13 +202,13 @@ export function FileEntriesView({
         <div
           key={incrementalEntries.renderedCount}
           ref={incrementalEntries.loadMoreSentinelRef}
-          className={styles.loadMoreStatus}
+          className={`${sharedStyles.loadMoreStatus} ${styles.loadMoreStatus}`}
           aria-live="polite"
         >
           {incrementalEntries.loadingMore ? 'Loading more...' : 'Scroll to load more'}
         </div>
       )}
-      {rubberBandStyle && <div className={styles.rubberBand} style={rubberBandStyle} />}
+      {rubberBandStyle && <div className={sharedStyles.rubberBand} style={rubberBandStyle} />}
     </section>
   );
 }
