@@ -81,7 +81,7 @@
 
   .searchBox {
     flex: 1;
-    min-height: 34px;
+    min-height: var(--size-touch-target);
     min-width: 0;
     padding: 0 var(--space-sm);
     width: auto;
@@ -91,9 +91,20 @@
     font-size: var(--font-size-sm);
   }
 
+  .searchClear {
+    justify-content: center;
+    min-height: var(--size-touch-target);
+    min-width: var(--size-touch-target);
+  }
+
   .searchResultsDropdown {
     min-width: 0;
     width: calc(100vw - 2rem);
+  }
+
+  .searchResultItem,
+  .showAllResults {
+    min-height: var(--size-touch-target);
   }
 }
 

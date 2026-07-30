@@ -4,7 +4,6 @@ import type { FileEntry, TrashEntry } from '../api/client-files';
 import type { Job } from '../api/client-jobs';
 import type { UploadProgress } from '../utils/upload';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
-import { joinPath } from '../utils/path';
 import type { RenameState, ContextMenuState } from '../types';
 import type { ConfirmDialogState } from '../components/overlay/ConfirmDialog';
 import type { TextInputDialogState } from '../components/overlay/TextInputDialog';
@@ -157,28 +156,31 @@ export function useFileCommands(deps: FileCommandDeps) {
     const oldName = entry.name;
     const oldPath = entry.path;
     setRenaming(null);
-    void runAction(() => renamePath(oldPath, nextName), 'Item renamed');
-    showToastObj(
-      {
-        title: 'Item renamed',
-        message: `${oldName} → ${nextName}`,
-        variant: 'success',
-        action: {
-          label: 'Undo',
-          onClick: () => {
-            void runAction(
-              () =>
-                renamePath(
-                  joinPath(oldPath.substring(0, oldPath.lastIndexOf('/')), nextName),
-                  oldName,
-                ),
-              'Rename undone',
-            );
+    void (async () => {
+      try {
+        const renamed = await renamePath(oldPath, nextName);
+        setError(null);
+        deps.refresh();
+        showToastObj(
+          {
+            title: 'Item renamed',
+            message: `${oldName} → ${nextName}`,
+            variant: 'success',
+            action: {
+              label: 'Undo',
+              onClick: () => {
+                void runAction(() => renamePath(renamed.path, oldName), 'Rename undone');
+              },
+            },
           },
-        },
-      },
-      8000,
-    );
+          8000,
+        );
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Rename failed';
+        setError(message);
+        showToastObj({ title: 'Rename failed', message, variant: 'error' });
+      }
+    })();
   };
 
   // ── Delete ────────────────────────────────────────────

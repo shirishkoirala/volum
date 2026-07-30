@@ -197,7 +197,24 @@ vi.mock('../pages/SearchResultsView', () => ({
   SearchResultsView: () => <div>Search results</div>,
 }));
 vi.mock('../pages/StorageAnalyzerView', () => ({
-  StorageAnalyzerView: () => <div>Storage analyzer</div>,
+  StorageAnalyzerView: ({
+    initialJobId,
+    preselectedPath,
+    preselectedSection,
+  }: {
+    initialJobId?: string;
+    preselectedPath?: string;
+    preselectedSection?: string;
+  }) => (
+    <div
+      data-testid="storage-analyzer"
+      data-job-id={initialJobId}
+      data-path={preselectedPath}
+      data-section={preselectedSection}
+    >
+      Storage analyzer
+    </div>
+  ),
 }));
 
 vi.mock('../pages/SettingsPanel', () => ({ SettingsPanel: () => null }));
@@ -224,6 +241,7 @@ const homeProps = {
 describe('Home responsive navigation', () => {
   beforeEach(() => {
     state.isMobile = false;
+    state.windowManager.windows[0]!.params = {};
   });
 
   it('restores the active view after transferring the focused analyzer through mobile', () => {
@@ -238,5 +256,34 @@ describe('Home responsive navigation', () => {
     state.isMobile = false;
     view.rerender(<Home {...homeProps} />);
     expect(screen.getByText('Search results')).toBeInTheDocument();
+  });
+
+  it('carries a focused analyzer job and section into the mobile view', () => {
+    state.windowManager.windows[0]!.params = {
+      jobId: 'analysis-42',
+      path: '/storage/archive',
+      section: 'duplicates',
+    };
+    const view = render(<Home {...homeProps} />);
+
+    state.isMobile = true;
+    view.rerender(<Home {...homeProps} />);
+
+    expect(screen.getByTestId('storage-analyzer')).toHaveAttribute('data-job-id', 'analysis-42');
+    expect(screen.getByTestId('storage-analyzer')).toHaveAttribute('data-section', 'duplicates');
+  });
+
+  it('carries a focused analyzer path into the mobile view', () => {
+    state.windowManager.windows[0]!.params = {
+      path: '/storage/photos',
+      section: 'disk-usage',
+    };
+    const view = render(<Home {...homeProps} />);
+
+    state.isMobile = true;
+    view.rerender(<Home {...homeProps} />);
+
+    expect(screen.getByTestId('storage-analyzer')).toHaveAttribute('data-path', '/storage/photos');
+    expect(screen.getByTestId('storage-analyzer')).toHaveAttribute('data-section', 'disk-usage');
   });
 });

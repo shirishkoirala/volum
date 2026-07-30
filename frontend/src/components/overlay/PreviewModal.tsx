@@ -257,7 +257,7 @@ export function PreviewModal({
   positionLabel,
 }: PreviewModalProps) {
   return (
-    <Dialog hideHeader width="xl" onClose={onClose}>
+    <Dialog title={`Preview ${entry.name}`} hideHeader width="xl" onClose={onClose}>
       <PreviewContent
         entry={entry}
         onClose={onClose}

@@ -148,4 +148,14 @@
   .folderPickerPath {
     max-width: 100%;
   }
+
+  .folderPickerNavButton {
+    height: var(--size-touch-target);
+    width: var(--size-touch-target);
+  }
+
+  button.folderPickerCrumb,
+  .folderPickerItem {
+    min-height: var(--size-touch-target);
+  }
 }

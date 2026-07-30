@@ -16,7 +16,7 @@ type ServiceFormModalProps = {
     healthUrl?: string;
     description?: string;
     openMode: 'embed' | 'tab';
-  }) => void;
+  }) => Promise<void> | void;
   onClose: () => void;
 };
 
@@ -32,6 +32,7 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
   const [touched, setTouched] = useState({ name: false, url: false, healthUrl: false });
   const [faviconStatus, setFaviconStatus] = useState<FaviconStatus>('idle');
   const [debouncedUrl, setDebouncedUrl] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     nameInputRef.current?.focus();
@@ -63,7 +64,8 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
     };
   }, [debouncedUrl]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (submitting) return;
     if (!name.trim()) {
       setError('Name is required.');
       return;
@@ -80,21 +82,33 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
       setError('Enter a valid health check http:// or https:// URL.');
       return;
     }
-    onClose();
-    onSave({
-      name: name.trim(),
-      url: url.trim(),
-      iconUrl: iconUrl.trim() || undefined,
-      healthUrl: healthUrl.trim() || undefined,
-      description: description.trim() || undefined,
-      openMode,
-    });
+    setSubmitting(true);
+    setError(null);
+    try {
+      await onSave({
+        name: name.trim(),
+        url: url.trim(),
+        iconUrl: iconUrl.trim() || undefined,
+        healthUrl: healthUrl.trim() || undefined,
+        description: description.trim() || undefined,
+        openMode,
+      });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save service.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const urlError =
-    touched.url && url.trim() && !validUrl(url.trim())
-      ? 'Must be a valid http:// or https:// URL'
-      : null;
+  const nameError = touched.name && !name.trim() ? 'Name is required' : null;
+  const urlError = touched.url
+    ? !url.trim()
+      ? 'URL is required'
+      : !validUrl(url.trim())
+        ? 'Must be a valid http:// or https:// URL'
+        : null
+    : null;
   const healthUrlError =
     touched.healthUrl && healthUrl.trim() && !validUrl(healthUrl.trim())
       ? 'Must be a valid http:// or https:// URL'
@@ -103,14 +117,14 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
   return (
     <Dialog
       title={initial ? 'Edit Service' : 'Add Service'}
-      onClose={onClose}
+      onClose={submitting ? undefined : onClose}
       footer={
         <>
-          <Button size="compact" onClick={onClose}>
+          <Button size="compact" disabled={submitting} onClick={onClose}>
             Cancel
           </Button>
-          <Button size="compact" variant="primary" onClick={handleSubmit}>
-            {initial ? 'Save' : 'Add'}
+          <Button size="compact" variant="primary" disabled={submitting} onClick={handleSubmit}>
+            {submitting ? 'Saving...' : initial ? 'Save' : 'Add'}
           </Button>
         </>
       }
@@ -127,11 +141,18 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
             setError(null);
           }}
           onBlur={() => setTouched((p) => ({ ...p, name: true }))}
+          aria-invalid={Boolean(nameError)}
+          aria-describedby={nameError ? 'service-name-error' : undefined}
           placeholder="e.g. Plex"
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSubmit();
+            if (e.key === 'Enter') void handleSubmit();
           }}
         />
+        {nameError && (
+          <p id="service-name-error" className={dStyles.dialogError} role="alert">
+            {nameError}
+          </p>
+        )}
       </label>
       <label className={dStyles.dialogField} htmlFor="service-url">
         <span>URL</span>
@@ -143,12 +164,18 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
             setError(null);
           }}
           onBlur={() => setTouched((p) => ({ ...p, url: true }))}
+          aria-invalid={Boolean(urlError)}
+          aria-describedby={urlError ? 'service-url-error' : undefined}
           placeholder="https://plex.example.com:32400"
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSubmit();
+            if (e.key === 'Enter') void handleSubmit();
           }}
         />
-        {urlError && <p className={dStyles.dialogError}>{urlError}</p>}
+        {urlError && (
+          <p id="service-url-error" className={dStyles.dialogError} role="alert">
+            {urlError}
+          </p>
+        )}
       </label>
       <label className={dStyles.dialogField} htmlFor="service-icon-url">
         <span>Icon URL (optional)</span>
@@ -163,7 +190,7 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
             }}
             placeholder="https://example.com/favicon.ico"
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSubmit();
+              if (e.key === 'Enter') void handleSubmit();
             }}
           />
           {faviconStatus === 'found' && iconUrl && (
@@ -202,13 +229,21 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
             setError(null);
           }}
           onBlur={() => setTouched((p) => ({ ...p, healthUrl: true }))}
+          aria-invalid={Boolean(healthUrlError)}
+          aria-describedby={healthUrlError ? 'service-health-url-error' : 'service-health-url-help'}
           placeholder="https://example.com/health"
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSubmit();
+            if (e.key === 'Enter') void handleSubmit();
           }}
         />
-        {healthUrlError && <p className={dStyles.dialogError}>{healthUrlError}</p>}
-        <span className={dStyles.dialogHelp}>Used only for the desktop health indicator.</span>
+        {healthUrlError && (
+          <p id="service-health-url-error" className={dStyles.dialogError} role="alert">
+            {healthUrlError}
+          </p>
+        )}
+        <span id="service-health-url-help" className={dStyles.dialogHelp}>
+          Used only for the desktop health indicator.
+        </span>
       </label>
       <label className={dStyles.dialogField} htmlFor="service-description">
         <span>Description (optional)</span>
@@ -231,7 +266,11 @@ export function ServiceFormModal({ initial, onSave, onClose }: ServiceFormModalP
           <option value="tab">New browser tab</option>
         </select>
       </label>
-      {error && <p className={dStyles.dialogError}>{error}</p>}
+      {error && (
+        <p className={dStyles.dialogError} role="alert">
+          {error}
+        </p>
+      )}
     </Dialog>
   );
 }

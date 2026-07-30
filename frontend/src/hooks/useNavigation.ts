@@ -22,7 +22,7 @@ export function useNavigation(jobs: Job[], trashCount: number, currentPath: stri
     if (activeView === 'storage-analyzer') return 'Storage Analyzer';
     if (activeView === 'trash') return 'Trash';
     if (activeView === 'settings') return 'Settings';
-    if (activeView === 'jobs') return 'Transfers';
+    if (activeView === 'jobs') return 'Jobs';
     if (activeView === 'files') return 'Files';
     return undefined;
   }, [activeView]);
@@ -53,7 +53,7 @@ export function useNavigation(jobs: Job[], trashCount: number, currentPath: stri
       },
       {
         id: 'jobs',
-        label: 'Transfers',
+        label: 'Jobs',
         icon: jobsIconUrl(),
         badge: activeJobCount > 0 ? activeJobCount : undefined,
         active: activeView === 'jobs',

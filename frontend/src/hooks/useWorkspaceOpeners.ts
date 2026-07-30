@@ -103,7 +103,7 @@ export function useWorkspaceOpeners({
     }
 
     wm.toggleWindow('jobs', {
-      title: 'Transfers',
+      title: 'Jobs',
       icon: jobsIconUrl(),
       winType: 'jobs',
       params: {},

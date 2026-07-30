@@ -19,6 +19,7 @@ type FileEntriesViewProps = {
   viewMode: ViewMode;
   filteredEntries: FileEntry[];
   selectedPaths: string[];
+  onSelectEntry: (path: string) => void;
   onContextMenu: (entry: FileEntry, event: React.MouseEvent<HTMLElement>) => void;
   onEmptyContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
   canWrite: boolean;
@@ -72,6 +73,7 @@ export function FileEntriesView({
   viewMode,
   filteredEntries,
   selectedPaths,
+  onSelectEntry,
   onContextMenu,
   onEmptyContextMenu,
   canWrite,
@@ -126,6 +128,24 @@ export function FileEntriesView({
     onVisibleCountChange?.(incrementalEntries.renderedCount, incrementalEntries.totalCount);
   }, [incrementalEntries.renderedCount, incrementalEntries.totalCount, onVisibleCountChange]);
 
+  const handleEntryKeyDown = (event: KeyboardEvent<HTMLElement>, currentIndex: number) => {
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = currentIndex + 1;
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = currentIndex - 1;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = incrementalEntries.visibleEntries.length - 1;
+    if (nextIndex === null) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const items =
+      event.currentTarget.parentElement?.querySelectorAll<HTMLElement>('[role="option"]');
+    if (!items || items.length === 0) return;
+    items[Math.max(0, Math.min(nextIndex, items.length - 1))]?.focus();
+  };
+
+  const focusPath = selectedPaths[0] ?? incrementalEntries.visibleEntries[0]?.path;
+
   return (
     <section
       className={`${viewMode === 'grid' ? styles.fileGrid : styles.fileList}${draggingUpload ? ` ${styles.dragOver}` : ''}`}
@@ -138,9 +158,12 @@ export function FileEntriesView({
       onMouseDown={onFileAreaMouseDown}
       onKeyDown={onFileAreaKeyDown}
       onScroll={incrementalEntries.handleScroll}
-      tabIndex={0}
+      role="listbox"
+      aria-label="Files"
+      aria-multiselectable="true"
+      tabIndex={incrementalEntries.visibleEntries.length === 0 ? 0 : -1}
     >
-      {incrementalEntries.visibleEntries.map((entry) => (
+      {incrementalEntries.visibleEntries.map((entry, index) => (
         <FileItem
           key={entry.path}
           entry={entry}
@@ -153,6 +176,8 @@ export function FileEntriesView({
           renameInputRef={renameInputRef}
           onContextMenu={(event) => onContextMenu(entry, event)}
           onClick={() => handleFileClick(entry, renameState, onNavigate, onPreview)}
+          onFocus={() => onSelectEntry(entry.path)}
+          onKeyDown={(event) => handleEntryKeyDown(event, index)}
           onDragStart={(event) => onFileDragStart(event, entry)}
           onDragOver={
             entry.type === 'directory' ? (event) => onFolderDragOver(event, entry.path) : undefined
@@ -168,6 +193,8 @@ export function FileEntriesView({
           onCancelRename={onCancelRename}
           onRenameChange={onRenameChange}
           className={viewMode === 'grid' ? styles.gridItem : undefined}
+          index={index}
+          tabIndex={entry.path === focusPath ? 0 : -1}
         />
       ))}
       {incrementalEntries.hasMore && (

@@ -1,7 +1,7 @@
 .panel {
   -webkit-backdrop-filter: var(--glass-backdrop);
   backdrop-filter: var(--glass-backdrop);
-  background: var(--glass-menu-bg);
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
@@ -75,6 +75,27 @@
   font-variant-numeric: tabular-nums;
 }
 
+.itemAction {
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-xs);
+  color: var(--color-brand-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: var(--space-xs);
+}
+
+.itemAction:hover {
+  background: var(--glass-hover-bg);
+}
+
+.itemAction:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
 .viewAll {
   align-items: center;
   background: transparent;
@@ -110,6 +131,10 @@
   }
 
   .item {
+    min-height: 44px;
+  }
+
+  .itemAction {
     min-height: 44px;
   }
 

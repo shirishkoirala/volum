@@ -59,3 +59,14 @@
   background: color-mix(in srgb, var(--color-danger) 24%, transparent);
   backdrop-filter: var(--glass-backdrop);
 }
+
+@media (max-width: 760px) {
+  .retryBtn,
+  .dismissBtn {
+    min-height: var(--size-touch-target);
+  }
+
+  .dismissBtn {
+    width: var(--size-touch-target);
+  }
+}

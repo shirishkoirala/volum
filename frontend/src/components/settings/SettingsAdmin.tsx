@@ -84,6 +84,11 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
     setCreatingUser(true);
     setUserError(null);
     setUserMsg(null);
+    if (newPassword.length < 12) {
+      setUserError('Password must be at least 12 characters.');
+      setCreatingUser(false);
+      return;
+    }
     try {
       await createUser(newUsername, newPassword, newRole);
       setNewUsername('');
@@ -113,6 +118,10 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
   const handleChangePassword = async (userId: string) => {
     setUserError(null);
     setUserMsg(null);
+    if (pwdChangeValue.length < 12) {
+      setUserError('Password must be at least 12 characters.');
+      return;
+    }
     try {
       await changePassword(userId, pwdChangeValue);
       setPwdChangeUserId(null);
@@ -150,15 +159,23 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
             {maintenanceBusy === 'pruneJobs' && (
               <Icon name="view-refresh" size={12} className={styles.spin} />
             )}
-            Prune Old Transfers
+            Prune Old Jobs
           </Button>
         </div>
-        {maintenanceMsg && <p className={styles.maintenanceMsg}>{maintenanceMsg}</p>}
-        {maintenanceError && <p className={styles.maintenanceError}>{maintenanceError}</p>}
+        {maintenanceMsg && (
+          <p className={styles.maintenanceMsg} role="status">
+            {maintenanceMsg}
+          </p>
+        )}
+        {maintenanceError && (
+          <p className={styles.maintenanceError} role="alert">
+            {maintenanceError}
+          </p>
+        )}
       </section>
 
       <section className={styles.settingsSection}>
-        <h4>Transfers</h4>
+        <h4>Jobs</h4>
         <dl className={styles.settingsDetails}>
           <dt>Active</dt>
           <dd>{status.jobCounts.active}</dd>
@@ -197,6 +214,8 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
                             <input
                               type="password"
                               placeholder="New password"
+                              aria-label={`New password for ${u.username}`}
+                              minLength={12}
                               value={pwdChangeValue}
                               onChange={(e) => setPwdChangeValue(e.target.value)}
                               onKeyDown={(e) => {
@@ -210,7 +229,7 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
                             />
                             <Button
                               size="compact"
-                              disabled={!pwdChangeValue}
+                              disabled={pwdChangeValue.length < 12}
                               onClick={() => handleChangePassword(u.id)}
                             >
                               Set
@@ -262,27 +281,39 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
           <details className={styles.createUserDetails}>
             <summary>Create new user</summary>
             <div className={styles.createUserForm}>
-              <input
-                placeholder="Username"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value as 'admin' | 'readonly')}
-              >
-                <option value="readonly">Readonly</option>
-                <option value="admin">Admin</option>
-              </select>
+              <label className={styles.formField}>
+                <span>Username</span>
+                <input
+                  autoComplete="username"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                />
+              </label>
+              <label className={styles.formField}>
+                <span>Password</span>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={12}
+                  aria-describedby="new-user-password-help"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <small id="new-user-password-help">At least 12 characters</small>
+              </label>
+              <label className={styles.formField}>
+                <span>Role</span>
+                <select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value as 'admin' | 'readonly')}
+                >
+                  <option value="readonly">Readonly</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </label>
               <Button
                 size="compact"
-                disabled={creatingUser || !newUsername || !newPassword}
+                disabled={creatingUser || !newUsername || newPassword.length < 12}
                 onClick={handleCreateUser}
               >
                 {creatingUser ? (
@@ -295,8 +326,16 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
               </Button>
             </div>
           </details>
-          {userMsg && <p className={styles.maintenanceMsg}>{userMsg}</p>}
-          {userError && <p className={styles.maintenanceError}>{userError}</p>}
+          {userMsg && (
+            <p className={styles.maintenanceMsg} role="status">
+              {userMsg}
+            </p>
+          )}
+          {userError && (
+            <p className={styles.maintenanceError} role="alert">
+              {userError}
+            </p>
+          )}
         </section>
       )}
 

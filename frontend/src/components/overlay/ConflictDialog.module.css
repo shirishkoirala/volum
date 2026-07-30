@@ -116,6 +116,7 @@
 
   .choiceBtn {
     flex: 1;
+    min-height: var(--size-touch-target);
     text-align: center;
     min-width: 60px;
   }

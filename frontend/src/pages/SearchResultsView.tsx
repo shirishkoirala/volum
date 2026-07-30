@@ -81,33 +81,45 @@ export function SearchResultsView({
     null,
   );
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchRequestRef = useRef(0);
 
   const canWrite = session.role === 'admin';
 
   useEffect(() => {
-    if (initialQuery && initialQuery.trim().length >= 2) {
-      setLoading(true);
-      searchFiles(initialQuery.trim(), 100)
-        .then((response) => setResults(response.results ?? []))
-        .catch((err: Error) => setError(err.message))
-        .finally(() => setLoading(false));
-    }
+    searchRequestRef.current++;
+    setQuery(initialQuery);
+    setSelectedPaths([]);
   }, [initialQuery]);
 
   useEffect(() => {
+    const requestId = ++searchRequestRef.current;
+    let cancelled = false;
     if (query.trim().length < 2) {
       setResults(null);
+      setLoading(false);
+      setError(null);
       return;
     }
     const timer = setTimeout(() => {
       setLoading(true);
       setError(null);
       searchFiles(query.trim(), 100)
-        .then((response) => setResults(response.results ?? []))
-        .catch((err: Error) => setError(err.message))
-        .finally(() => setLoading(false));
+        .then((response) => {
+          if (!cancelled && requestId === searchRequestRef.current) {
+            setResults(response.results ?? []);
+          }
+        })
+        .catch((err: Error) => {
+          if (!cancelled && requestId === searchRequestRef.current) setError(err.message);
+        })
+        .finally(() => {
+          if (!cancelled && requestId === searchRequestRef.current) setLoading(false);
+        });
     }, 200);
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [query]);
 
   useEffect(() => {
@@ -201,9 +213,10 @@ export function SearchResultsView({
   );
 
   const handleContextMenu = useCallback(
-    (result: SearchResult, event: React.MouseEvent) => {
+    (result: SearchResult, event: React.MouseEvent<HTMLElement>) => {
       event.preventDefault();
       event.stopPropagation();
+      event.currentTarget.focus();
       if (!selectedPaths.includes(result.path)) {
         setSelectedPaths([result.path]);
       }
@@ -307,15 +320,26 @@ export function SearchResultsView({
     const entry = contextMenu?.result;
     if (!entry) return;
     setContextMenu(null);
+    let url: string;
     try {
       const share = await createShare({ path: entry.path });
-      await navigator.clipboard.writeText(shareUrl(share.token));
-      shell.showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
+      url = shareUrl(share.token);
     } catch (err) {
       shell.showToastObj({
         title: 'Quick share failed',
         message: err instanceof Error ? err.message : undefined,
         variant: 'error',
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      shell.showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
+    } catch {
+      shell.showToastObj({
+        title: 'Share link created, but not copied',
+        message: 'Open Manage Shares to copy the link.',
+        variant: 'warning',
       });
     }
   }, [contextMenu, shell]);
@@ -416,6 +440,7 @@ export function SearchResultsView({
   );
 
   const handleClearSearch = useCallback(() => {
+    searchRequestRef.current++;
     setQuery('');
     setResults(null);
     setSelectedPaths([]);
@@ -436,6 +461,8 @@ export function SearchResultsView({
           <input
             ref={searchInputRef}
             className={styles.searchInput}
+            aria-label="Search files across all roots"
+            aria-controls="search-results"
             placeholder="Search files across all roots..."
             value={query}
             onChange={(e) => {
@@ -447,7 +474,12 @@ export function SearchResultsView({
             }}
           />
           {query.length > 0 && (
-            <button type="button" className={styles.clearBtn} onClick={handleClearSearch}>
+            <button
+              type="button"
+              className={styles.clearBtn}
+              onClick={handleClearSearch}
+              aria-label="Clear search"
+            >
               <Icon name="window-close" size={14} />
             </button>
           )}
@@ -455,16 +487,18 @@ export function SearchResultsView({
       </div>
 
       {query.trim().length >= 2 && !loading && results && (
-        <div className={styles.resultMeta}>
+        <div className={styles.resultMeta} role="status" aria-live="polite">
           {entryCount} result{entryCount === 1 ? '' : 's'} for <strong>"{query.trim()}"</strong>
         </div>
       )}
 
       {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
-      <div className={styles.resultsArea}>
+      <div id="search-results" className={styles.resultsArea} aria-busy={loading}>
         {loading ? (
-          <Skeleton variant="row" count={8} />
+          <div role="status" aria-label="Searching files">
+            <Skeleton variant="row" count={8} />
+          </div>
         ) : query.trim().length < 2 ? (
           <EmptyState
             title="Search files"
@@ -481,10 +515,12 @@ export function SearchResultsView({
               const isSelected = selectedPaths.includes(result.path);
               const entry = searchResultToFileEntry(result);
               return (
-                <div
+                <button
+                  type="button"
                   key={result.path}
                   className={`${styles.resultRow}${isSelected ? ` ${styles.selected}` : ''}`}
                   onClick={() => handleClick(result)}
+                  onFocus={() => setSelectedPaths([result.path])}
                   onContextMenu={(e) => handleContextMenu(result, e)}
                 >
                   <FileIcon entry={entry} size={20} />
@@ -492,7 +528,7 @@ export function SearchResultsView({
                   <span className={styles.resultPath}>{result.path}</span>
                   <span className={styles.resultSize}>{formatBytes(result.size)}</span>
                   <span className={styles.resultDate}>{formatGridDate(result.modifiedAt)}</span>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -529,7 +565,11 @@ export function SearchResultsView({
           entry={previewEntry}
           onClose={() => setPreviewEntry(null)}
           onDownload={() => openFileExternally(previewEntry.path)}
-          onShare={() => setShareDialogPath({ path: previewEntry.path, name: previewEntry.name })}
+          onShare={
+            canWrite
+              ? () => setShareDialogPath({ path: previewEntry.path, name: previewEntry.name })
+              : undefined
+          }
           onPrevious={
             previousPreviewEntry ? () => setPreviewEntry(previousPreviewEntry) : undefined
           }
@@ -556,7 +596,7 @@ export function SearchResultsView({
           onSubmit={handleTransferSubmit}
         />
       )}
-      {shareDialogPath && (
+      {canWrite && shareDialogPath && (
         <ShareDialog
           path={shareDialogPath.path}
           name={shareDialogPath.name}

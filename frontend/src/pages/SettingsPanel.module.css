@@ -266,6 +266,12 @@
   accent-color: var(--color-brand);
 }
 
+.notificationError {
+  color: var(--color-danger-text);
+  font-size: var(--font-size-sm);
+  margin: var(--space-xs) 0 0;
+}
+
 .maintenanceMsg {
   color: var(--color-success-text);
   font-size: var(--font-size-sm);
@@ -401,6 +407,19 @@
   padding: 0 var(--space-md);
 }
 
+.formField {
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-direction: column;
+  font-size: var(--font-size-xs);
+  gap: var(--space-xxs);
+}
+
+.formField small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
 .serviceList {
   display: flex;
   flex-direction: column;
@@ -467,6 +486,12 @@
   align-items: center;
 }
 
+.serviceActionError {
+  color: var(--color-danger-text);
+  font-size: var(--font-size-sm);
+  margin: var(--space-sm) 0 0;
+}
+
 @media (max-width: 760px) {
   .settingsNav {
     flex: 0 0 auto;
@@ -486,14 +511,15 @@
   }
 
   .settingsNavItem {
+    gap: var(--space-xs);
     justify-content: center;
     min-height: 44px;
-    padding: 0;
-    width: 44px;
+    padding: 0 var(--space-sm);
+    width: auto;
   }
 
   .settingsNavLabel {
-    display: none;
+    display: inline;
   }
 
   .settingsSection {
@@ -521,6 +547,39 @@
   .userActions button,
   .serviceActions button {
     min-height: 44px;
+  }
+
+  .userRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .userInfo {
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  .userInfo span:first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .userActions,
+  .pwdInline {
+    align-items: stretch;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .userActions button {
+    flex: 1 1 auto;
+  }
+
+  .pwdInline input {
+    flex: 1 1 100%;
+    min-height: 44px;
+    min-width: 0;
+    width: 100%;
   }
 
   .toggleLabel {

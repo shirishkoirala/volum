@@ -20,6 +20,10 @@ export function ShareManager({ onClose }: ShareManagerProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Share | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<{
+    result: 'copied' | 'failed';
+    url: string;
+  } | null>(null);
 
   const { data: sharesData, loading, error, refresh: loadShares } = useAsyncData(() => getShares());
 
@@ -44,8 +48,15 @@ export function ShareManager({ onClose }: ShareManagerProps) {
     }
   };
 
-  const handleCopyLink = (token: string) => {
-    navigator.clipboard.writeText(shareUrl(token)).catch(() => {});
+  const handleCopyLink = async (token: string) => {
+    setCopyStatus(null);
+    const url = shareUrl(token);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyStatus({ result: 'copied', url });
+    } catch {
+      setCopyStatus({ result: 'failed', url });
+    }
   };
 
   return (
@@ -119,7 +130,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
                 <span className={styles.shareColActions}>
                   <IconButton
                     className={styles.shareActionButton}
-                    onClick={() => handleCopyLink(share.token)}
+                    onClick={() => void handleCopyLink(share.token)}
                     title="Copy share link"
                   >
                     <Icon name="edit-copy" size={14} />
@@ -136,6 +147,20 @@ export function ShareManager({ onClose }: ShareManagerProps) {
               </div>
             ))}
           </div>
+        )}
+        {copyStatus && (
+          <p
+            className={copyStatus.result === 'copied' ? styles.copySuccess : styles.copyError}
+            role="status"
+          >
+            {copyStatus.result === 'copied' ? (
+              'Share link copied to clipboard.'
+            ) : (
+              <>
+                The browser could not copy the link. Copy it manually: <code>{copyStatus.url}</code>
+              </>
+            )}
+          </p>
         )}
       </Dialog>
       {pendingDelete && (

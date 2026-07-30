@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getSession, logout, profileAvatarUrl, type Session } from './api/client-auth';
 import { LoginScreen } from './screens/LoginScreen';
 import { SetupScreen } from './screens/SetupScreen';
@@ -27,12 +27,35 @@ export function App() {
   });
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+
+  const loadSession = useCallback(async () => {
+    setLoading(true);
+    setSessionError(null);
+    try {
+      setSession(await getSession());
+    } catch (error) {
+      setSessionError(error instanceof Error ? error.message : 'Volum is unavailable');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    getSession()
-      .then(setSession)
-      .catch((err: Error) => console.error(err.message))
-      .finally(() => setLoading(false));
+    void loadSession();
+  }, [loadSession]);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      getSession()
+        .then((nextSession) => {
+          setSession(nextSession);
+          setSessionError(null);
+        })
+        .catch((error: Error) => setSessionError(error.message));
+    };
+    window.addEventListener('volum:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('volum:unauthorized', handleUnauthorized);
   }, []);
 
   useEffect(() => {
@@ -60,15 +83,37 @@ export function App() {
       }
       localStorage.setItem('volum_last_user', JSON.stringify(savedUser));
     }
+    setSessionError(null);
     try {
       setSession(await logout());
-    } catch {
-      setSession(null);
+    } catch (error) {
+      const failure = error instanceof Error ? error : new Error('Could not log out');
+      setSessionError(failure.message);
+      throw failure;
     }
   };
 
   if (loading) {
-    return <div className={styles.authShell}>Loading...</div>;
+    return (
+      <div className={styles.authShell} role="status">
+        Connecting to Volum…
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className={styles.authShell}>
+        <section className={styles.connectionCard} aria-labelledby="connection-title">
+          <img src="/volum_logo.svg" alt="" />
+          <h1 id="connection-title">Volum is unavailable</h1>
+          <p>{sessionError || 'The server did not return a session.'}</p>
+          <button type="button" onClick={() => void loadSession()}>
+            Try again
+          </button>
+        </section>
+      </div>
+    );
   }
 
   if (session?.setupRequired) {
@@ -90,7 +135,7 @@ export function App() {
       <ErrorBoundary>
         <WindowManagerProvider>
           <Home
-            session={session!}
+            session={session}
             onSessionChange={setSession}
             onLogout={handleLogout}
             theme={theme}

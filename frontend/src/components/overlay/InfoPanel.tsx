@@ -107,6 +107,8 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
             type="button"
             className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
             onClick={() => toggleBit(i)}
+            aria-label={PERM_BITS[i]!.label}
+            aria-pressed={permBits[i]}
           >
             {permBits[i] ? PERM_BITS[i]!.bit : '-'}
           </button>
@@ -118,6 +120,8 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
             type="button"
             className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
             onClick={() => toggleBit(i)}
+            aria-label={PERM_BITS[i]!.label}
+            aria-pressed={permBits[i]}
           >
             {permBits[i] ? PERM_BITS[i]!.bit : '-'}
           </button>
@@ -129,6 +133,8 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
             type="button"
             className={`${styles.permToggle}${permBits[i] ? ` ${styles.on}` : ''}`}
             onClick={() => toggleBit(i)}
+            aria-label={PERM_BITS[i]!.label}
+            aria-pressed={permBits[i]}
           >
             {permBits[i] ? PERM_BITS[i]!.bit : '-'}
           </button>
@@ -136,8 +142,16 @@ export function InfoPanel({ entry, onClose, onRefresh }: InfoPanelProps) {
       </div>
       <div className={styles.permPreview}>{permString}</div>
 
-      {error && <p className={styles.infoError}>{error}</p>}
-      {saved && <p className={styles.infoSaved}>Permissions updated</p>}
+      {error && (
+        <p className={styles.infoError} role="alert">
+          {error}
+        </p>
+      )}
+      {saved && (
+        <p className={styles.infoSaved} role="status">
+          Permissions updated
+        </p>
+      )}
 
       <div className={styles.infoActions}>
         <Button onClick={onClose}>Close</Button>

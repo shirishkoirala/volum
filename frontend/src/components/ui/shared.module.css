@@ -91,13 +91,13 @@
   color: var(--color-on-accent);
 }
 
-.danger {
+.dangerButton {
   background: var(--color-danger);
   border-color: var(--color-danger);
   color: var(--color-on-accent);
 }
 
-.danger:hover:not(:disabled) {
+.dangerButton:hover:not(:disabled) {
   background: var(--color-danger);
   color: var(--color-on-accent);
 }
@@ -150,7 +150,7 @@
   color: var(--color-warning-text);
 }
 
-.danger {
+.dangerStatus {
   background: var(--color-danger-bg);
   color: var(--color-danger-text);
 }
@@ -204,6 +204,16 @@
 @media (max-width: 760px) {
   .overlay {
     padding: var(--space-md);
+  }
+
+  .button,
+  .compact {
+    min-height: var(--size-touch-target);
+  }
+
+  .iconButton {
+    height: var(--size-touch-target);
+    width: var(--size-touch-target);
   }
 
   .panelHeader {

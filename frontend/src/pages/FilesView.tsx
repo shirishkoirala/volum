@@ -367,6 +367,15 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     [fileCommands, selection],
   );
 
+  const handleSelectEntry = useCallback(
+    (path: string) => {
+      if (selection.selectedPaths.includes(path)) return;
+      selection.setSelectedPaths([path]);
+      selection.setLastSelectedPath(path);
+    },
+    [selection],
+  );
+
   const openUploadPicker = useCallback(() => {
     const input = uploadFileInputRef.current;
     if (!input) return;
@@ -428,6 +437,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const breadcrumbs = browser.breadcrumbs;
   const locationMode = fileActions.locationMode;
   const localFilterActive = browser.query.trim().length > 0;
+  const errorWithoutEntries = Boolean(browser.error && browser.filteredEntries.length === 0);
   const totalEntries = localFilterActive ? browser.filteredEntries.length : browser.filePage.total;
   const previewableEntries = useMemo(
     () =>
@@ -494,10 +504,12 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           bodyClassName={styles.fileBody}
           className={styles.fileContent}
           footer={
-            <div className={styles.fileStatusBar} role="status" aria-live="polite">
-              Showing {visibleCounts.rendered.toLocaleString()} of{' '}
-              {visibleCounts.total.toLocaleString()} files
-            </div>
+            !browser.loading && (!browser.error || browser.entries.length > 0) ? (
+              <div className={styles.fileStatusBar} role="status" aria-live="polite">
+                Showing {visibleCounts.rendered.toLocaleString()} of{' '}
+                {visibleCounts.total.toLocaleString()} files
+              </div>
+            ) : undefined
           }
           header={
             <BreadcrumbBar
@@ -548,12 +560,25 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           scroll={false}
         >
           {browser.error && (
-            <ErrorBanner message={browser.error} onDismiss={() => browser.setError(null)} />
+            <ErrorBanner
+              message={browser.error}
+              onRetry={refresh}
+              onDismiss={browser.entries.length > 0 ? () => browser.setError(null) : undefined}
+            />
           )}
           <div className={styles.fileFrame}>
             {browser.loading ? (
-              <Skeleton variant="card" count={12} />
-            ) : browser.filteredEntries.length === 0 ? (
+              <div
+                className={viewPref.viewMode === 'grid' ? styles.skeletonGrid : styles.skeletonList}
+                aria-hidden="true"
+              >
+                <Skeleton
+                  variant={viewPref.viewMode === 'grid' ? 'card' : 'row'}
+                  count={viewPref.viewMode === 'grid' ? 12 : 10}
+                  height={viewPref.viewMode === 'grid' ? '112px' : '52px'}
+                />
+              </div>
+            ) : errorWithoutEntries ? null : browser.filteredEntries.length === 0 ? (
               <div
                 className={`${styles.emptyDropZone}${dragDrop.draggingUpload ? ` ${styles.dragOver}` : ''}`}
                 onDragOver={dragDrop.handleFileAreaDragOver}
@@ -571,6 +596,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
                 viewMode={viewPref.viewMode}
                 filteredEntries={browser.filteredEntries}
                 selectedPaths={selection.selectedPaths}
+                onSelectEntry={handleSelectEntry}
                 onContextMenu={handleContextMenuEvent}
                 onEmptyContextMenu={handleFilesEmptyContextMenu}
                 canWrite={browser.canWrite}
@@ -727,11 +753,14 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           entry={fileActions.previewEntry}
           onClose={() => fileActions.setPreviewEntry(null)}
           onDownload={() => fileCommands.handleDownload(fileActions.previewEntry!)}
-          onShare={() =>
-            dialogs.setShareDialogPath({
-              path: fileActions.previewEntry!.path,
-              name: fileActions.previewEntry!.name,
-            })
+          onShare={
+            browser.canWrite
+              ? () =>
+                  dialogs.setShareDialogPath({
+                    path: fileActions.previewEntry!.path,
+                    name: fileActions.previewEntry!.name,
+                  })
+              : undefined
           }
           onPrevious={
             previousPreviewEntry ? () => setPreviewTarget(previousPreviewEntry) : undefined
@@ -753,8 +782,14 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         <BatchRenameModal
           entries={selection.selectedEntries}
           onClose={() => fileActions.setBatchRenameOpen(false)}
-          onDone={() => {
-            shell.showToastObj({ title: 'Items renamed', variant: 'success' });
+          onDone={(renamed, failed) => {
+            shell.showToastObj({
+              title:
+                failed > 0
+                  ? `Renamed ${renamed} item${renamed === 1 ? '' : 's'}; ${failed} failed`
+                  : `Renamed ${renamed} item${renamed === 1 ? '' : 's'}`,
+              variant: failed > 0 ? 'warning' : 'success',
+            });
             refresh();
           }}
         />

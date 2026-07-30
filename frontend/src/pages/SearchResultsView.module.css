@@ -100,18 +100,29 @@
 }
 
 .resultRow {
+  background: transparent;
+  border: 0;
   display: flex;
   align-items: center;
+  color: inherit;
+  font: inherit;
   gap: var(--space-sm);
   padding: var(--space-xs) var(--space-md);
   cursor: pointer;
   border-bottom: 1px solid var(--app-surface-divider);
   min-height: 36px;
+  text-align: left;
   user-select: none;
+  width: 100%;
 }
 
 .resultRow:hover {
   background: var(--glass-hover-bg);
+}
+
+.resultRow:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
 }
 
 .resultRow.selected {

@@ -3,6 +3,7 @@ import { useWindowManager, type WindowState } from '../../contexts/WindowManager
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { WindowTitleBar } from './WindowTitleBar';
 import {
+  clampWindowRect,
   getSnapTarget,
   getSnapRect,
   TOPBAR_H,
@@ -160,8 +161,9 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
     if (isMobile) return;
     if (isMaximized) {
       if (prevRectRef.current) {
-        updatePosition(win.id, prevRectRef.current.x, prevRectRef.current.y);
-        updateSize(win.id, prevRectRef.current.width, prevRectRef.current.height);
+        const rect = clampWindowRect(prevRectRef.current);
+        updatePosition(win.id, rect.x, rect.y);
+        updateSize(win.id, rect.width, rect.height);
       }
       toggleMaximize(win.id);
     } else {
@@ -186,8 +188,9 @@ export function WindowFrame({ win, children }: { win: WindowState; children?: Re
     if (!isMaximized) {
       prevRectRef.current = { x: win.x, y: win.y, width: win.width, height: win.height };
     } else if (prevRectRef.current) {
-      updatePosition(win.id, prevRectRef.current.x, prevRectRef.current.y);
-      updateSize(win.id, prevRectRef.current.width, prevRectRef.current.height);
+      const rect = clampWindowRect(prevRectRef.current);
+      updatePosition(win.id, rect.x, rect.y);
+      updateSize(win.id, rect.width, rect.height);
     }
     toggleMaximize(win.id);
   }, [

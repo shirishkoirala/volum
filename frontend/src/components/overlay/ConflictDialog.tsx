@@ -74,8 +74,16 @@ export function ConflictDialog({ jobId, onResolve, onClose }: Props) {
         </>
       }
     >
-      {loading && <p className={styles.loading}>Loading conflicts&hellip;</p>}
-      {errMsg && <p className={styles.error}>{errMsg}</p>}
+      {loading && (
+        <p className={styles.loading} role="status">
+          Loading conflicts&hellip;
+        </p>
+      )}
+      {errMsg && (
+        <p className={styles.error} role="alert">
+          {errMsg}
+        </p>
+      )}
 
       {!loading && !errMsg && conflicts.length === 0 && (
         <p className={styles.empty}>No conflicting files found.</p>
@@ -126,12 +134,18 @@ export function ConflictDialog({ jobId, onResolve, onClose }: Props) {
                     )}
                   </div>
                 </div>
-                <div className={styles.itemActions}>
+                <div
+                  className={styles.itemActions}
+                  role="group"
+                  aria-label={`Resolution for ${item.sourcePath}`}
+                >
                   {(['skip', 'overwrite', 'rename'] as const).map((r) => (
                     <button
                       key={r}
+                      type="button"
                       className={`${styles.choiceBtn} ${resolutions[item.id] === r ? styles.choiceBtnActive : ''}`}
                       onClick={() => setItemResolution(item.id, r)}
+                      aria-pressed={resolutions[item.id] === r}
                     >
                       {r}
                     </button>

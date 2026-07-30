@@ -213,7 +213,7 @@ export function FileContextMenu({
           <Icon name="mail-send" size={16} /> Quick Share
         </button>
       )}
-      {canInfo && (
+      {canWrite && canInfo && (
         <button
           type="button"
           onClick={() => {
@@ -225,7 +225,7 @@ export function FileContextMenu({
           <Icon name="mail-send" size={16} /> Share
         </button>
       )}
-      {onAnalyze && (
+      {canWrite && onAnalyze && (
         <button
           type="button"
           onClick={() => {

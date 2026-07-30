@@ -91,12 +91,26 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
       onConfirm: () => {
         void (async () => {
           try {
-            for (const entry of browser.trashEntries) await deleteTrash(entry.id);
+            const results = await Promise.allSettled(
+              browser.trashEntries.map((entry) => deleteTrash(entry.id)),
+            );
+            const failedCount = results.filter((result) => result.status === 'rejected').length;
+            const deletedCount = results.length - failedCount;
             const r = await getTrash();
             browser.setTrashEntries(r.entries ?? []);
-            browser.setError(null);
-            toast.showToastObj({ title: 'Trash emptied', variant: 'success' });
-            refresh();
+            if (failedCount === 0) {
+              browser.setError(null);
+              toast.showToastObj({ title: 'Trash emptied', variant: 'success' });
+            } else {
+              const message = `${failedCount} item${failedCount === 1 ? '' : 's'} could not be deleted.`;
+              browser.setError(message);
+              toast.showToastObj({
+                title: deletedCount > 0 ? 'Trash partially emptied' : 'Could not empty Trash',
+                message,
+                variant: 'error',
+              });
+            }
+            if (deletedCount > 0) refresh();
           } catch (err) {
             const message = err instanceof Error ? err.message : 'Action failed';
             browser.setError(message);
@@ -147,17 +161,47 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
         });
         toast.showToastObj({ title: 'Service added', variant: 'success' });
       }
-      if (data.healthUrl) await refreshServiceHealth();
+      if (data.healthUrl) {
+        try {
+          await refreshServiceHealth();
+        } catch (err) {
+          toast.showToastObj({
+            title: 'Service saved; health check unavailable',
+            message: err instanceof Error ? err.message : undefined,
+            variant: 'warning',
+          });
+        }
+      }
     },
     [serviceFormData, addService, updateService, refreshServiceHealth, toast],
   );
 
   const handleRemoveService = useCallback(
     (id: string) => {
-      removeService(id);
-      toast.showToastObj({ title: 'Service removed from desktop', variant: 'success' });
+      dialogs.setConfirmDialog({
+        title: 'Remove service shortcut?',
+        message: 'This removes the shortcut from the desktop. The service itself is not changed.',
+        confirmLabel: 'Remove shortcut',
+        danger: true,
+        onConfirm: () => {
+          void removeService(id)
+            .then(() =>
+              toast.showToastObj({
+                title: 'Service removed from desktop',
+                variant: 'success',
+              }),
+            )
+            .catch((err) =>
+              toast.showToastObj({
+                title: 'Could not remove service',
+                message: err instanceof Error ? err.message : undefined,
+                variant: 'error',
+              }),
+            );
+        },
+      });
     },
-    [removeService, toast],
+    [dialogs, removeService, toast],
   );
 
   const handleDesktopNavigateToTrash = useCallback(() => {

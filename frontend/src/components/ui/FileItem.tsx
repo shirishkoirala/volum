@@ -1,4 +1,4 @@
-import { DragEvent, RefObject, useEffect, useRef, useState } from 'react';
+import { DragEvent, KeyboardEvent, RefObject, useEffect, useRef, useState } from 'react';
 import { Icon, FileIcon, FolderIcon } from './Icon';
 import { rawUrl } from '../../api/client-files';
 import { canThumbnail } from '../../utils/preview';
@@ -19,6 +19,8 @@ type FileItemProps = {
   renameInputRef?: RefObject<HTMLInputElement | null>;
   onContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
   onClick: () => void;
+  onFocus: () => void;
+  onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
   onDragStart: (event: DragEvent<HTMLElement>) => void;
   onDragOver?: (event: DragEvent<HTMLElement>) => void;
   onDragLeave?: () => void;
@@ -30,6 +32,8 @@ type FileItemProps = {
   onCancelRename: () => void;
   onRenameChange: (value: string) => void;
   className?: string;
+  index: number;
+  tabIndex: number;
 };
 
 function FileThumbnail({
@@ -130,6 +134,8 @@ export function FileItem({
   renameInputRef,
   onContextMenu,
   onClick,
+  onFocus,
+  onKeyDown,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -141,9 +147,12 @@ export function FileItem({
   onCancelRename,
   onRenameChange,
   className,
+  index,
+  tabIndex,
 }: FileItemProps) {
   const fileIconSize = viewMode === 'grid' ? GRID_ICON_SIZE : LIST_ICON_SIZE;
   const rowClass = viewMode === 'grid' ? styles.fileRowGrid : styles.fileRowList;
+  const isRenaming = renameState?.path === entry.path;
 
   return (
     <div
@@ -157,11 +166,34 @@ export function FileItem({
         if (renameState) return;
         onClick();
       }}
-      onContextMenu={onContextMenu}
+      onContextMenu={(event) => {
+        event.currentTarget.focus();
+        onContextMenu(event);
+      }}
+      onFocus={onFocus}
+      onKeyDown={(event) => {
+        if (renameState) return;
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          event.stopPropagation();
+          onClick();
+          return;
+        }
+        if (event.key === ' ') {
+          event.preventDefault();
+          event.stopPropagation();
+          onFocus();
+          return;
+        }
+        onKeyDown(event);
+      }}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      role="button"
+      role={isRenaming ? undefined : 'option'}
+      aria-selected={isRenaming ? undefined : isSelected}
+      data-index={index}
+      tabIndex={isRenaming ? -1 : tabIndex}
     >
       {entry.type === 'directory' ? (
         <span className={styles.iconWrap} onContextMenu={(e) => e.preventDefault()}>
@@ -181,10 +213,11 @@ export function FileItem({
       ) : (
         <FileIcon entry={entry} size={fileIconSize} />
       )}
-      {renameState?.path === entry.path ? (
+      {isRenaming ? (
         <input
           ref={renameInputRef as RefObject<HTMLInputElement>}
           className={styles.renameInput}
+          aria-label={`Rename ${entry.name}`}
           value={renameState.value}
           onBlur={() => onCommitRename()}
           onChange={(event) => onRenameChange(event.target.value)}

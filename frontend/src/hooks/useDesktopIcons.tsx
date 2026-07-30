@@ -150,8 +150,8 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
     items.push({
       id: 'jobs',
       type: 'jobs',
-      label: 'Transfers',
-      ariaLabel: `Open Transfers${activeTransferCount > 0 ? `, ${activeTransferCount} active` : ', no active transfers'}`,
+      label: 'Jobs',
+      ariaLabel: `Open Jobs${activeTransferCount > 0 ? `, ${activeTransferCount} active` : ', no active jobs'}`,
       onClick: onOpenJobs,
       badge: activeTransferCount > 0 ? activeTransferCount : undefined,
       icon: (

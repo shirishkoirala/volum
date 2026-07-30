@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
@@ -21,7 +21,7 @@ type SettingsPanelProps = {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onOpenShortcuts: () => void;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
   session: Session | null;
   onSessionChange: (session: Session) => void;
   services?: ServiceShortcut[];
@@ -66,12 +66,26 @@ export function SettingsPanel({
   } = useAsyncData(() => getStatus());
   const [activeCategory, setActiveCategory] = useState<CategoryId>('general');
   const [filterQuery, setFilterQuery] = useState('');
+  const canManage = session?.role === 'admin';
+  const availableCategories = useMemo(
+    () =>
+      canManage
+        ? CATEGORIES
+        : CATEGORIES.filter((category) => category.id !== 'admin' && category.id !== 'desktop'),
+    [canManage],
+  );
+
+  useEffect(() => {
+    if (!availableCategories.some((category) => category.id === activeCategory)) {
+      setActiveCategory('general');
+    }
+  }, [activeCategory, availableCategories]);
 
   const filteredCategories = useMemo(() => {
-    if (!filterQuery.trim()) return CATEGORIES;
+    if (!filterQuery.trim()) return availableCategories;
     const q = filterQuery.toLowerCase();
-    return CATEGORIES.filter((c) => c.label.toLowerCase().includes(q));
-  }, [filterQuery]);
+    return availableCategories.filter((c) => c.label.toLowerCase().includes(q));
+  }, [availableCategories, filterQuery]);
 
   const content = (
     <>
@@ -110,24 +124,26 @@ export function SettingsPanel({
             <SettingsStorage roots={status.roots} />
           )}
 
-          {(!filterQuery.trim()
-            ? activeCategory === 'desktop'
-            : filteredCategories.some((c) => c.id === 'desktop')) && (
-            <SettingsDesktop
-              services={services}
-              serviceHealth={serviceHealth}
-              onAddService={onAddService}
-              onEditService={onEditService}
-              onRemoveService={onRemoveService}
-              onReorderServices={onReorderServices}
-            />
-          )}
+          {canManage &&
+            (!filterQuery.trim()
+              ? activeCategory === 'desktop'
+              : filteredCategories.some((c) => c.id === 'desktop')) && (
+              <SettingsDesktop
+                services={services}
+                serviceHealth={serviceHealth}
+                onAddService={onAddService}
+                onEditService={onEditService}
+                onRemoveService={onRemoveService}
+                onReorderServices={onReorderServices}
+              />
+            )}
 
-          {(!filterQuery.trim()
-            ? activeCategory === 'admin'
-            : filteredCategories.some((c) => c.id === 'admin')) && (
-            <SettingsAdmin status={status} session={session} onOpenShares={onOpenShares} />
-          )}
+          {canManage &&
+            (!filterQuery.trim()
+              ? activeCategory === 'admin'
+              : filteredCategories.some((c) => c.id === 'admin')) && (
+              <SettingsAdmin status={status} session={session} onOpenShares={onOpenShares} />
+            )}
 
           {(!filterQuery.trim()
             ? activeCategory === 'about'
@@ -163,7 +179,7 @@ export function SettingsPanel({
         />
       </div>
       <ul className={styles.settingsNavList}>
-        {(filterQuery.trim() ? filteredCategories : CATEGORIES).map((cat) => (
+        {(filterQuery.trim() ? filteredCategories : availableCategories).map((cat) => (
           <li key={cat.id}>
             <button
               className={`${styles.settingsNavItem}${activeCategory === cat.id ? ` ${styles.active}` : ''}`}

@@ -236,4 +236,63 @@ describe('window command registration', () => {
     );
     expect(screen.getByLabelText('window command registrations')).toHaveTextContent('3');
   });
+
+  it('shows a loading state before Trash data arrives', () => {
+    api.getTrash.mockReturnValue(new Promise(() => {}));
+
+    render(<TrashView />);
+
+    expect(screen.getByRole('status', { name: 'Loading Trash' })).toBeInTheDocument();
+    expect(screen.queryByText('Trash is empty')).not.toBeInTheDocument();
+  });
+
+  it('keeps failed bulk restores selected when other restores are queued', async () => {
+    const user = userEvent.setup();
+    api.getTrash.mockResolvedValue({
+      entries: [
+        {
+          id: 'trash-a',
+          name: 'a.txt',
+          originalPath: '/storage/a.txt',
+          trashPath: '/storage/.trash/a.txt',
+          type: 'file',
+          size: 10,
+          deletedAt: '2026-07-28T00:00:00Z',
+          rootPath: '/storage',
+        },
+        {
+          id: 'trash-b',
+          name: 'b.txt',
+          originalPath: '/storage/b.txt',
+          trashPath: '/storage/.trash/b.txt',
+          type: 'file',
+          size: 20,
+          deletedAt: '2026-07-27T00:00:00Z',
+          rootPath: '/storage',
+        },
+      ],
+    });
+    api.restoreTrash.mockImplementation((id: string) =>
+      id === 'trash-b' ? Promise.reject(new Error('restore failed')) : Promise.resolve(undefined),
+    );
+
+    render(
+      <CommandRegistrationHarness windowId="trash-1">
+        <TrashView />
+      </CommandRegistrationHarness>,
+    );
+
+    await user.click(await screen.findByText('a.txt'));
+    await user.keyboard('{Control>}');
+    await user.click(screen.getByText('b.txt'));
+    await user.keyboard('{/Control}');
+    expect(screen.getByLabelText('window selected count')).toHaveTextContent('2');
+
+    await user.click(screen.getByRole('button', { name: 'Run restore command' }));
+
+    await waitFor(() => expect(api.restoreTrash).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(screen.getByLabelText('window selected count')).toHaveTextContent('1'),
+    );
+  });
 });

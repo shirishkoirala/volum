@@ -7,6 +7,7 @@ import { ProgressBar } from '../components/ui/ProgressBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { DriveSection } from '../components/ui/DriveSection';
+import { Skeleton } from '../components/ui/Skeleton';
 import { driveIconUrl } from '../api/icons';
 import type { BlockDevice } from '../api/client-files';
 import { getDevices } from '../api/client-files';
@@ -22,13 +23,16 @@ export function DrivesView({ onBackToDesktop }: DrivesViewProps) {
   const [devices, setDevices] = useState<BlockDevice[]>([]);
   const [selectedDriveName, setSelectedDriveName] = useState<string | null>(null);
   const [deviceError, setDeviceError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const shell = useShellContext();
 
   const loadDevices = useCallback(() => {
+    setLoading(true);
     setDeviceError(null);
     getDevices()
       .then((res) => setDevices(res.devices ?? []))
-      .catch((err) => setDeviceError(err.message));
+      .catch((err: Error) => setDeviceError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -129,11 +133,27 @@ export function DrivesView({ onBackToDesktop }: DrivesViewProps) {
         />
       }
     >
-      {deviceError && <ErrorBanner message={deviceError} onRetry={loadDevices} />}
-      <DriveSection title="Internal" drives={internalDrives} onSelectDrive={setSelectedDriveName} />
-      <DriveSection title="External" drives={externalDrives} onSelectDrive={setSelectedDriveName} />
-      {internalDrives.length === 0 && externalDrives.length === 0 && (
+      {loading ? (
+        <div className={styles.skeletonGrid} aria-hidden="true">
+          <Skeleton variant="card" count={6} height="112px" />
+        </div>
+      ) : deviceError ? (
+        <ErrorBanner message={deviceError} onRetry={loadDevices} />
+      ) : internalDrives.length === 0 && externalDrives.length === 0 ? (
         <EmptyState icon={driveIconUrl()} title="No drives found" />
+      ) : (
+        <>
+          <DriveSection
+            title="Internal"
+            drives={internalDrives}
+            onSelectDrive={setSelectedDriveName}
+          />
+          <DriveSection
+            title="External"
+            drives={externalDrives}
+            onSelectDrive={setSelectedDriveName}
+          />
+        </>
       )}
     </AppPanel>
   );

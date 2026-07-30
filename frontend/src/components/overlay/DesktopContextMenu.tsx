@@ -8,6 +8,7 @@ interface DesktopContextMenuProps {
   y: number;
   item: DesktopIconItem;
   trashCount: number;
+  canManage: boolean;
   onRefresh: () => void;
   onEmptyTrash: () => void;
   onRemoveFavorite: (path: string) => void;
@@ -22,6 +23,7 @@ export function DesktopContextMenu({
   y,
   item,
   trashCount,
+  canManage,
   onRefresh,
   onEmptyTrash,
   onRemoveFavorite,
@@ -59,7 +61,7 @@ export function DesktopContextMenu({
           <Icon name="view-refresh" size={16} /> Refresh drives
         </button>
       )}
-      {item.type === 'trash' && trashCount > 0 && (
+      {canManage && item.type === 'trash' && trashCount > 0 && (
         <button
           type="button"
           className={styles.danger}
@@ -84,7 +86,7 @@ export function DesktopContextMenu({
           <Icon name="bookmark-new" size={16} /> Remove from desktop
         </button>
       )}
-      {item.type === 'serviceShortcut' && svcId && (
+      {canManage && item.type === 'serviceShortcut' && svcId && (
         <>
           <button
             type="button"
@@ -111,17 +113,21 @@ export function DesktopContextMenu({
       )}
       {item.type === 'emptySpace' && (
         <>
-          <button
-            type="button"
-            onClick={() => {
-              onAddService();
-              onClose();
-            }}
-            role="menuitem"
-          >
-            <Icon name="internet-web-browser" size={16} /> Add Service...
-          </button>
-          <div className={styles.separator} />
+          {canManage && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  onAddService();
+                  onClose();
+                }}
+                role="menuitem"
+              >
+                <Icon name="internet-web-browser" size={16} /> Add Service...
+              </button>
+              <div className={styles.separator} />
+            </>
+          )}
           <button
             type="button"
             onClick={() => {

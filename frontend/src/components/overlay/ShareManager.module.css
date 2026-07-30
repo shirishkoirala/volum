@@ -73,6 +73,25 @@
   width: 30px;
 }
 
+.copySuccess,
+.copyError {
+  font-size: var(--font-size-sm);
+  margin: var(--space-sm) 0 0;
+}
+
+.copySuccess {
+  color: var(--color-success-text);
+}
+
+.copyError {
+  color: var(--color-danger-text);
+}
+
+.copyError code {
+  user-select: text;
+  word-break: break-all;
+}
+
 @media (max-width: 760px) {
   .shareTable {
     border-radius: var(--radius-sm);

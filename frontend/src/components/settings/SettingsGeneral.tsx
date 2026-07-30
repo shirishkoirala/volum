@@ -15,7 +15,7 @@ type SettingsGeneralProps = {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onOpenShortcuts: () => void;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
   onSessionChange: (session: Session) => void;
 };
 
@@ -29,6 +29,10 @@ export function SettingsGeneral({
 }: SettingsGeneralProps) {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [notificationBusy, setNotificationBusy] = useState(false);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [logoutBusy, setLogoutBusy] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const notifPrefs = useNotificationPreferences();
 
@@ -66,6 +70,51 @@ export function SettingsGeneral({
       setAvatarError(err instanceof Error ? err.message : 'Could not remove profile image');
     } finally {
       setAvatarBusy(false);
+    }
+  };
+
+  const handleNotificationChange = async (enabled: boolean) => {
+    setNotificationError(null);
+    if (!enabled) {
+      notifPrefs.setEnabled(false);
+      return;
+    }
+    if (typeof Notification === 'undefined') {
+      notifPrefs.setEnabled(false);
+      setNotificationError('Browser notifications are not supported here.');
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      notifPrefs.setEnabled(false);
+      setNotificationError('Notifications are blocked in your browser settings.');
+      return;
+    }
+    setNotificationBusy(true);
+    try {
+      const permission =
+        Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+      notifPrefs.setEnabled(permission === 'granted');
+      if (permission !== 'granted') {
+        setNotificationError('Notification permission was not granted.');
+      }
+    } catch {
+      notifPrefs.setEnabled(false);
+      setNotificationError('The browser could not enable notifications.');
+    } finally {
+      setNotificationBusy(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (logoutBusy) return;
+    setLogoutBusy(true);
+    setLogoutError(null);
+    try {
+      await onLogout();
+    } catch (err) {
+      setLogoutError(err instanceof Error ? err.message : 'Could not log out');
+    } finally {
+      setLogoutBusy(false);
     }
   };
 
@@ -118,7 +167,11 @@ export function SettingsGeneral({
                 )}
               </div>
             </div>
-            {avatarError && <p className={styles.avatarError}>{avatarError}</p>}
+            {avatarError && (
+              <p className={styles.avatarError} role="alert">
+                {avatarError}
+              </p>
+            )}
           </div>
         )}
 
@@ -140,29 +193,31 @@ export function SettingsGeneral({
             <input
               type="checkbox"
               checked={notifPrefs.enabled}
-              onChange={(e) => {
-                notifPrefs.setEnabled(e.target.checked);
-                if (
-                  e.target.checked &&
-                  typeof Notification !== 'undefined' &&
-                  Notification.permission === 'default'
-                ) {
-                  void Notification.requestPermission();
-                }
-              }}
+              disabled={notificationBusy}
+              onChange={(e) => void handleNotificationChange(e.target.checked)}
             />
             <span>Browser notifications</span>
           </label>
+          {notificationError && (
+            <p className={styles.notificationError} role="alert">
+              {notificationError}
+            </p>
+          )}
         </div>
 
         {session?.authEnabled && (
           <div className={styles.generalGroup}>
             <h5>Session</h5>
             <div className={styles.settingsActions}>
-              <Button size="compact" onClick={onLogout}>
-                Log Out
+              <Button size="compact" disabled={logoutBusy} onClick={() => void handleLogout()}>
+                {logoutBusy ? 'Logging out…' : 'Log Out'}
               </Button>
             </div>
+            {logoutError && (
+              <p className={styles.maintenanceError} role="alert">
+                {logoutError}
+              </p>
+            )}
           </div>
         )}
       </div>

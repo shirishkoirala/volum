@@ -31,6 +31,8 @@ type TopBarProps = {
   searchQuery: string;
   searchOpen: boolean;
   searchResults: SearchResult[] | null;
+  searchLoading: boolean;
+  searchError: string | null;
   onSearch: (query: string) => void;
   onClearSearch: () => void;
   onSearchResultClick: (result: SearchResult) => void;
@@ -41,6 +43,7 @@ type TopBarProps = {
   // Activity
   jobs?: Job[];
   onOpenJobs?: () => void;
+  onOpenAnalysis?: (job: Job) => void;
 };
 
 type TopBarAction = {
@@ -72,6 +75,8 @@ export function TopBar({
   searchQuery,
   searchOpen,
   searchResults,
+  searchLoading,
+  searchError,
   onSearch,
   onClearSearch,
   onSearchResultClick,
@@ -80,6 +85,7 @@ export function TopBar({
   onToggleTheme,
   jobs,
   onOpenJobs,
+  onOpenAnalysis,
 }: TopBarProps) {
   const [dateTime, setDateTime] = useState(() => formatDateTime(new Date()));
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -94,6 +100,7 @@ export function TopBar({
   const iconClusterRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const activityRef = useRef<HTMLDivElement>(null);
+  const activityTriggerRef = useRef<HTMLButtonElement>(null);
   const overflowRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -128,8 +135,18 @@ export function TopBar({
         setCalendarOpen(false);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || !activityOpen) return;
+      e.preventDefault();
+      setActivityOpen(false);
+      requestAnimationFrame(() => activityTriggerRef.current?.focus());
+    };
     document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [userMenuOpen, activityOpen, overflowOpen, calendarOpen]);
 
   useEffect(() => {
@@ -238,6 +255,8 @@ export function TopBar({
           query={searchQuery}
           searchOpen={searchOpen}
           searchResults={searchResults}
+          searchLoading={searchLoading}
+          searchError={searchError}
           onSearch={onSearch}
           onClearSearch={onClearSearch}
           onSearchResultClick={onSearchResultClick}
@@ -266,7 +285,10 @@ export function TopBar({
                 <div key={action.id} className={styles.activityArea} ref={activityRef}>
                   <IconButton
                     className={styles.toolbarIconButton}
-                    onClick={action.onClick}
+                    onClick={(event) => {
+                      activityTriggerRef.current = event.currentTarget;
+                      action.onClick();
+                    }}
                     title={action.label}
                     aria-label={action.label}
                     aria-expanded={activityOpen}
@@ -279,6 +301,10 @@ export function TopBar({
                   {activityOpen && (
                     <ActivityPanel
                       jobs={jobs}
+                      onOpenAnalysis={(job) => {
+                        closeOverlays();
+                        onOpenAnalysis?.(job);
+                      }}
                       onOpenJobs={() => {
                         closeOverlays();
                         onOpenJobs();

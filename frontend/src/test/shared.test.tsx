@@ -24,8 +24,8 @@ describe('Button', () => {
   });
 
   it('applies danger variant class', () => {
-    const { container } = render(<Button variant="danger">Delete</Button>);
-    expect(container.querySelector('[class*="danger"]')).toBeInTheDocument();
+    render(<Button variant="danger">Delete</Button>);
+    expect(screen.getByRole('button', { name: 'Delete' }).className).toContain('dangerButton');
   });
 
   it('applies compact class', () => {
@@ -129,6 +129,11 @@ describe('StatusBadge', () => {
   it('applies the variant class', () => {
     const { container } = render(<StatusBadge variant="success">OK</StatusBadge>);
     expect(container.querySelector('[class*="statusBadge"]')).toBeInTheDocument();
+  });
+
+  it('keeps danger status styling separate from danger buttons', () => {
+    render(<StatusBadge variant="danger">Failed</StatusBadge>);
+    expect(screen.getByText('Failed').className).toContain('dangerStatus');
   });
 });
 

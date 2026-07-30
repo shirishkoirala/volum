@@ -14,13 +14,13 @@ export function buildFileItems(handlers: AppMenuHandlers, windowType?: string): 
       {
         label: 'Restore',
         icon: 'edit-undo',
-        disabled: handlers.selectedCount === 0,
+        disabled: !handlers.canWrite || handlers.selectedCount === 0,
         onClick: () => handlers.onRestore?.(),
       },
       {
         label: 'Delete Forever',
         icon: 'edit-delete',
-        disabled: handlers.selectedCount === 0,
+        disabled: !handlers.canWrite || handlers.selectedCount === 0,
         danger: true,
         onClick: () => handlers.onDeleteForever?.(),
       },
@@ -28,6 +28,7 @@ export function buildFileItems(handlers: AppMenuHandlers, windowType?: string): 
       {
         label: 'Empty Trash',
         icon: 'edit-clear',
+        disabled: !handlers.canWrite,
         danger: true,
         onClick: () => handlers.onEmptyTrash?.(),
       },
@@ -139,7 +140,7 @@ export function buildGoItems(handlers: AppMenuHandlers, windowType?: string): Me
     { label: 'Desktop', icon: 'go-home', onClick: handlers.onGoDesktop },
     { label: 'Files', icon: 'folder', onClick: handlers.onGoFiles },
     { label: 'Trash', icon: 'edit-delete', onClick: handlers.onGoTrash },
-    { label: 'Transfers', icon: 'document-properties', onClick: handlers.onGoJobs },
+    { label: 'Jobs', icon: 'document-properties', onClick: handlers.onGoJobs },
     { label: 'Settings', icon: 'preferences-system', onClick: handlers.onGoSettings },
   ];
 

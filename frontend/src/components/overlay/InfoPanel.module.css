@@ -129,4 +129,13 @@
   .infoActions {
     flex-wrap: wrap;
   }
+
+  .permToggle {
+    height: var(--size-touch-target);
+    width: var(--size-touch-target);
+  }
+
+  .permGrid {
+    grid-template-columns: 60px repeat(3, var(--size-touch-target));
+  }
 }

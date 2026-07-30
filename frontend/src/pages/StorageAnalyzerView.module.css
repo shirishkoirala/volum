@@ -59,6 +59,101 @@
   padding: var(--space-lg);
 }
 
+.readonlyNote {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  margin: var(--space-md) 0 0;
+}
+
+.recent {
+  margin: var(--space-lg) auto 0;
+  max-width: 760px;
+}
+
+.recentHeading {
+  align-items: end;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.recentHeading h3 {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  margin: 0;
+}
+
+.recentHeading p {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  margin: var(--space-xxs) 0 0;
+}
+
+.recentList {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.recentItem {
+  align-items: center;
+  background: var(--color-surface);
+  border: 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+  color: var(--color-text);
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-sm);
+  min-height: 52px;
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+  width: 100%;
+}
+
+.recentItem:last-child {
+  border-bottom: 0;
+}
+
+.recentItem:hover {
+  background: var(--glass-hover-bg);
+}
+
+.recentItem:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
+}
+
+.recentInfo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.recentInfo strong,
+.recentInfo span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recentInfo strong {
+  font-size: var(--font-size-sm);
+}
+
+.recentInfo span,
+.recentAction {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.recentAction {
+  align-items: center;
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: var(--space-xs);
+}
+
 .pickerTitle {
   color: var(--color-text);
   font-size: var(--font-size-lg);
@@ -155,6 +250,12 @@
 .browseBtn:hover {
   background: var(--glass-hover-bg);
   color: var(--color-text);
+}
+
+.browseBtn:disabled,
+.secondaryBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .browseBtn:focus-visible {
@@ -447,7 +548,7 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-xs) var(--space-md);
-  background: var(--color-surface-alt);
+  background: var(--color-hover);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
   border-bottom: 1px solid var(--color-border-subtle);
@@ -512,7 +613,7 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  background: var(--color-surface-alt);
+  background: var(--color-hover);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   margin-bottom: var(--space-md);
@@ -555,6 +656,10 @@
   .picker {
     padding: var(--space-lg);
     width: 100%;
+  }
+
+  .recentAction {
+    font-size: 0;
   }
 
   .pickerCustom,

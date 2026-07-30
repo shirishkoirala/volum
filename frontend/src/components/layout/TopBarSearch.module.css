@@ -110,6 +110,14 @@
   background: var(--glass-hover-bg);
 }
 
+.searchState {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  padding: var(--space-md);
+  text-align: center;
+}
+
 .searchResultName {
   flex: 1;
   font-size: var(--font-size-sm);
@@ -149,8 +157,8 @@
 
 @media (max-width: 760px) {
   .searchButton {
-    height: 36px;
-    width: 36px;
+    height: var(--size-touch-target);
+    width: var(--size-touch-target);
   }
 
   .searchBox {
@@ -160,8 +168,8 @@
   }
 
   .searchClear {
-    min-height: 32px;
-    min-width: 32px;
+    min-height: var(--size-touch-target);
+    min-width: var(--size-touch-target);
     justify-content: center;
   }
 

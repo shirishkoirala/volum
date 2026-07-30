@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
-import { Button, MutedText } from '../ui/shared';
+import { Button, IconButton, MutedText } from '../ui/shared';
 import type { ServiceShortcut, ServiceHealthResult } from '../../utils/services';
 import styles from '../../pages/SettingsPanel.module.css';
 
@@ -23,7 +23,43 @@ export function SettingsDesktop({
 }: SettingsDesktopProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [busyServiceId, setBusyServiceId] = useState<string | null>(null);
+  const [reordering, setReordering] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const dragOverIndex = useRef<number | null>(null);
+
+  const handleRemove = async (id: string) => {
+    setBusyServiceId(id);
+    setActionError(null);
+    try {
+      await onRemoveService?.(id);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not remove service.');
+    } finally {
+      setBusyServiceId(null);
+    }
+  };
+
+  const handleReorder = async (ids: string[]) => {
+    setReordering(true);
+    setActionError(null);
+    try {
+      await onReorderServices?.(ids);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not reorder services.');
+    } finally {
+      setReordering(false);
+    }
+  };
+
+  const moveService = (fromIndex: number, toIndex: number) => {
+    if (!services || toIndex < 0 || toIndex >= services.length) return;
+    const ids = services.map((service) => service.id);
+    const [moved] = ids.splice(fromIndex, 1);
+    if (!moved) return;
+    ids.splice(toIndex, 0, moved);
+    void handleReorder(ids);
+  };
 
   return (
     <>
@@ -36,7 +72,7 @@ export function SettingsDesktop({
                 <div
                   key={svc.id}
                   className={`${styles.serviceRow}${dragIndex === idx ? ` ${styles.dragging}` : ''}${dropIndex === idx ? ` ${styles.dragOver}` : ''}`}
-                  draggable
+                  draggable={!reordering && busyServiceId === null}
                   onDragStart={() => {
                     setDragIndex(idx);
                     dragOverIndex.current = null;
@@ -50,7 +86,7 @@ export function SettingsDesktop({
                       if (!moved) return;
                       ids.splice(fromIdx, 1);
                       ids.splice(toIdx, 0, moved);
-                      onReorderServices?.(ids);
+                      void handleReorder(ids);
                     }
                     setDragIndex(null);
                     setDropIndex(null);
@@ -83,11 +119,35 @@ export function SettingsDesktop({
                     </span>
                   </div>
                   <div className={styles.serviceActions}>
-                    <Button size="compact" onClick={() => onEditService?.(svc.id)}>
+                    <IconButton
+                      aria-label={`Move ${svc.name} up`}
+                      disabled={idx === 0 || busyServiceId !== null || reordering}
+                      onClick={() => moveService(idx, idx - 1)}
+                      title="Move up"
+                    >
+                      <Icon name="go-up" size={15} />
+                    </IconButton>
+                    <IconButton
+                      aria-label={`Move ${svc.name} down`}
+                      disabled={idx === services.length - 1 || busyServiceId !== null || reordering}
+                      onClick={() => moveService(idx, idx + 1)}
+                      title="Move down"
+                    >
+                      <Icon name="go-down" size={15} />
+                    </IconButton>
+                    <Button
+                      size="compact"
+                      disabled={busyServiceId !== null || reordering}
+                      onClick={() => onEditService?.(svc.id)}
+                    >
                       Edit
                     </Button>
-                    <Button size="compact" onClick={() => onRemoveService?.(svc.id)}>
-                      Remove
+                    <Button
+                      size="compact"
+                      disabled={busyServiceId !== null || reordering}
+                      onClick={() => void handleRemove(svc.id)}
+                    >
+                      {busyServiceId === svc.id ? 'Removing...' : 'Remove'}
                     </Button>
                   </div>
                 </div>
@@ -98,8 +158,17 @@ export function SettingsDesktop({
               No services configured. Add shortcuts to your favorite web apps.
             </MutedText>
           )}
+          {actionError && (
+            <p className={styles.serviceActionError} role="alert">
+              {actionError}
+            </p>
+          )}
           <div className={styles.settingsActions}>
-            <Button size="compact" onClick={onAddService}>
+            <Button
+              size="compact"
+              disabled={busyServiceId !== null || reordering}
+              onClick={onAddService}
+            >
               Add Service
             </Button>
           </div>

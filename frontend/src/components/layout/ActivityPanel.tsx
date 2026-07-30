@@ -6,6 +6,7 @@ import styles from './ActivityPanel.module.css';
 export type ActivityPanelProps = {
   jobs: Job[];
   onOpenJobs: () => void;
+  onOpenAnalysis?: (job: Job) => void;
 };
 
 const RECENT_COUNT = 5;
@@ -24,9 +25,27 @@ function jobIcon(job: Job) {
       return 'archive-extract';
     case 'checksum':
       return 'dialog-password';
+    case 'disk_analyze':
+      return 'drive-harddisk';
+    case 'duplicate_find':
+      return 'edit-copy';
     default:
       return 'emblem-system';
   }
+}
+
+function AnalysisAction({ job, onOpen }: { job: Job; onOpen?: (job: Job) => void }) {
+  if (!onOpen || (job.type !== 'disk_analyze' && job.type !== 'duplicate_find')) return null;
+  return (
+    <button
+      type="button"
+      className={styles.itemAction}
+      onClick={() => onOpen(job)}
+      aria-label={`${job.status === 'completed' ? 'View results for' : 'Open'} ${jobTitle(job)}`}
+    >
+      {job.status === 'completed' ? 'View results' : 'Open'}
+    </button>
+  );
 }
 
 function jobTitle(job: Job) {
@@ -69,7 +88,7 @@ function groupJobs(jobs: Job[]): GroupedJobs {
   };
 }
 
-export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
+export function ActivityPanel({ jobs, onOpenJobs, onOpenAnalysis }: ActivityPanelProps) {
   const { active, recentCompleted, recentFailed } = groupJobs(jobs);
 
   const hasActivity = active.length > 0 || recentCompleted.length > 0 || recentFailed.length > 0;
@@ -95,6 +114,7 @@ export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
                   {Math.round((job.processedBytes / job.totalBytes) * 100)}%
                 </span>
               )}
+              <AnalysisAction job={job} onOpen={onOpenAnalysis} />
             </div>
           ))}
         </div>
@@ -110,6 +130,7 @@ export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
                 <span className={styles.itemName}>{jobTitle(job)}</span>
                 {job.errorMessage && <span className={styles.itemError}>{job.errorMessage}</span>}
               </div>
+              <AnalysisAction job={job} onOpen={onOpenAnalysis} />
             </div>
           ))}
         </div>
@@ -124,6 +145,7 @@ export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
               <div className={styles.itemInfo}>
                 <span className={styles.itemName}>{jobTitle(job)}</span>
               </div>
+              <AnalysisAction job={job} onOpen={onOpenAnalysis} />
             </div>
           ))}
         </div>

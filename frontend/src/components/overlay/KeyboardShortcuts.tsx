@@ -25,7 +25,7 @@ const shortcuts: [string, string][] = [
 
 export function KeyboardShortcuts({ onClose }: KeyboardShortcutsProps) {
   return (
-    <Dialog hideHeader onClose={onClose} width="sm">
+    <Dialog title="Keyboard Shortcuts" hideHeader onClose={onClose} width="sm">
       <div className={styles.shortcutsPanel}>
         <h3>Keyboard Shortcuts</h3>
         {shortcuts.map(([label, key], index) =>

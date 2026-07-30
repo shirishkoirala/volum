@@ -71,7 +71,7 @@ export function Button({
       className={cx(
         styles.button,
         variant === 'primary' && styles.primary,
-        variant === 'danger' && styles.danger,
+        variant === 'danger' && styles.dangerButton,
         variant === 'link' && styles.linkButton,
         size === 'compact' && styles.compact,
         className,
@@ -95,7 +95,16 @@ export function StatusBadge({
   variant: 'active' | 'disabled' | 'success' | 'warning' | 'danger';
   children: ReactNode;
 }) {
-  return <span className={cx(styles.statusBadge, styles[variant])}>{children}</span>;
+  return (
+    <span
+      className={cx(
+        styles.statusBadge,
+        variant === 'danger' ? styles.dangerStatus : styles[variant],
+      )}
+    >
+      {children}
+    </span>
+  );
 }
 
 export function RotatedIcon({

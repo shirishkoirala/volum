@@ -1,6 +1,11 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { WindowManagerContext, type WindowState } from './WindowManager';
-import { STANDARD_WINDOW_W, STANDARD_WINDOW_H, getCenteredWindowPos } from '../utils/window';
+import {
+  STANDARD_WINDOW_W,
+  STANDARD_WINDOW_H,
+  clampWindowRect,
+  getCenteredWindowPos,
+} from '../utils/window';
 
 let nextZIndex = 100;
 const MAX_Z_INDEX = 9990;
@@ -26,6 +31,27 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
   }
   prevLenRef.current = windows.length;
 
+  useEffect(() => {
+    const clampWindows = () => {
+      if (window.innerWidth <= 760) return;
+      setWindows((current) =>
+        current.map((win) => {
+          if (win.maximized) return win;
+          const rect = clampWindowRect(win);
+          return rect.x === win.x &&
+            rect.y === win.y &&
+            rect.width === win.width &&
+            rect.height === win.height
+            ? win
+            : { ...win, ...rect };
+        }),
+      );
+    };
+
+    window.addEventListener('resize', clampWindows);
+    return () => window.removeEventListener('resize', clampWindows);
+  }, []);
+
   const openWindow = useCallback(
     (opts: {
       id: string;
@@ -44,6 +70,12 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
           return prev.map((w) => (w.id === opts.id ? { ...w, minimized: false, zIndex: z } : w));
         }
         const z = nextZ();
+        const rect = clampWindowRect({
+          x: opts.x ?? 100,
+          y: opts.y ?? 80,
+          width: opts.width ?? STANDARD_WINDOW_W,
+          height: opts.height ?? STANDARD_WINDOW_H,
+        });
         return [
           ...prev,
           {
@@ -52,10 +84,7 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
             icon: opts.icon,
             winType: opts.winType,
             params: opts.params,
-            x: opts.x ?? 100,
-            y: opts.y ?? 80,
-            width: opts.width ?? STANDARD_WINDOW_W,
-            height: opts.height ?? STANDARD_WINDOW_H,
+            ...rect,
             minimized: false,
             maximized: false,
             zIndex: z,
@@ -133,9 +162,17 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
       const id = `${windowType}-${count}`;
       const ci = cascadeIndex.current;
       cascadeIndex.current = ci + 1;
-      const center = getCenteredWindowPos(STANDARD_WINDOW_W, STANDARD_WINDOW_H);
+      const width = opts.width ?? STANDARD_WINDOW_W;
+      const height = opts.height ?? STANDARD_WINDOW_H;
+      const center = getCenteredWindowPos(width, height);
       const x = center.x + (ci % 6) * WINDOW_OFFSET;
       const y = center.y + (ci % 6) * WINDOW_OFFSET;
+      const rect = clampWindowRect({
+        x: opts.x ?? x,
+        y: opts.y ?? y,
+        width,
+        height,
+      });
       const z = nextZ();
       setWindows((prev) => [
         ...prev,
@@ -145,10 +182,7 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
           icon: opts.icon,
           winType: opts.winType,
           params: opts.params,
-          x: opts.x ?? x,
-          y: opts.y ?? y,
-          width: opts.width ?? STANDARD_WINDOW_W,
-          height: opts.height ?? STANDARD_WINDOW_H,
+          ...rect,
           minimized: false,
           maximized: false,
           zIndex: z,

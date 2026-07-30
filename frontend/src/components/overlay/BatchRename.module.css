@@ -13,6 +13,21 @@
   flex-wrap: wrap;
 }
 
+.fieldLabel,
+.renameField > span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.renameField {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xxs);
+  min-width: 120px;
+}
+
 .renameFields input,
 .renameFields select {
   backdrop-filter: var(--glass-backdrop);
@@ -64,7 +79,33 @@
   margin: 0;
 }
 
+.renameSummary {
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-danger-text);
+  font-size: var(--font-size-sm);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.renameSummary ul {
+  margin: var(--space-xs) 0 0;
+  max-height: 120px;
+  overflow: auto;
+  padding-left: var(--space-lg);
+}
+
+.renameSummary span {
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+
 @media (max-width: 760px) {
+  .renameFields input,
+  .renameFields select {
+    height: var(--size-touch-target);
+  }
+
   .renamePattern {
     padding-left: 0;
     padding-right: 0;

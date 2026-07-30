@@ -13,7 +13,7 @@ type PatternType = 'replace' | 'prefix' | 'suffix' | 'case';
 type BatchRenameModalProps = {
   entries: FileEntry[];
   onClose: () => void;
-  onDone: () => void;
+  onDone: (renamed: number, failed: number) => void;
 };
 
 export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalProps) {
@@ -24,6 +24,11 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
   const [suffix, setSuffix] = useState('');
   const [caseType, setCaseType] = useState<'lower' | 'upper' | 'title'>('lower');
   const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<{
+    renamed: number;
+    attempted: number;
+    errors: { path: string; error: string }[];
+  } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const previews = useMemo(() => {
@@ -65,9 +70,15 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
         setSubmitting(false);
         return;
       }
-      await batchRename(items);
-      onDone();
-      onClose();
+      const result = await batchRename(items);
+      const failures = result?.errors ?? [];
+      const renamed = result?.complete ?? items.length - failures.length;
+      onDone(renamed, failures.length);
+      if (failures.length > 0) {
+        setSummary({ renamed, attempted: items.length, errors: failures });
+      } else {
+        onClose();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Batch rename failed');
     } finally {
@@ -81,28 +92,35 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
       onClose={onClose}
       width="lg"
       footer={
-        <>
-          <Button size="compact" onClick={onClose}>
-            Cancel
+        summary ? (
+          <Button size="compact" variant="primary" onClick={onClose}>
+            Close
           </Button>
-          <Button
-            size="compact"
-            variant="primary"
-            disabled={submitting || previews.every((p) => !p.changed)}
-            onClick={handleSubmit}
-          >
-            {submitting ? (
-              <>
-                <Icon name="view-refresh" size={15} className={uiStyles.spin} /> Renaming...
-              </>
-            ) : (
-              `Rename ${previews.filter((p) => p.changed).length} items`
-            )}
-          </Button>
-        </>
+        ) : (
+          <>
+            <Button size="compact" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              size="compact"
+              variant="primary"
+              disabled={submitting || previews.every((p) => !p.changed)}
+              onClick={handleSubmit}
+            >
+              {submitting ? (
+                <>
+                  <Icon name="view-refresh" size={15} className={uiStyles.spin} /> Renaming...
+                </>
+              ) : (
+                `Rename ${previews.filter((p) => p.changed).length} items`
+              )}
+            </Button>
+          </>
+        )
       }
     >
       <div className={styles.renamePattern}>
+        <span className={styles.fieldLabel}>Rename rule</span>
         <Select value={patternType} onChange={(value) => setPatternType(value as PatternType)}>
           <option value="replace">Find & Replace</option>
           <option value="prefix">Add Prefix</option>
@@ -112,35 +130,36 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
 
         {patternType === 'replace' && (
           <div className={styles.renameFields}>
-            <input placeholder="Find" value={find} onChange={(e) => setFind(e.target.value)} />
+            <label className={styles.renameField}>
+              <span>Find</span>
+              <input value={find} onChange={(e) => setFind(e.target.value)} />
+            </label>
             <Icon name="go-next" size={16} />
-            <input
-              placeholder="Replace with"
-              value={replace}
-              onChange={(e) => setReplace(e.target.value)}
-            />
+            <label className={styles.renameField}>
+              <span>Replace with</span>
+              <input value={replace} onChange={(e) => setReplace(e.target.value)} />
+            </label>
           </div>
         )}
         {patternType === 'prefix' && (
           <div className={styles.renameFields}>
-            <input
-              placeholder="Prefix text"
-              value={prefix}
-              onChange={(e) => setPrefix(e.target.value)}
-            />
+            <label className={styles.renameField}>
+              <span>Prefix text</span>
+              <input value={prefix} onChange={(e) => setPrefix(e.target.value)} />
+            </label>
           </div>
         )}
         {patternType === 'suffix' && (
           <div className={styles.renameFields}>
-            <input
-              placeholder="Suffix text"
-              value={suffix}
-              onChange={(e) => setSuffix(e.target.value)}
-            />
+            <label className={styles.renameField}>
+              <span>Suffix text</span>
+              <input value={suffix} onChange={(e) => setSuffix(e.target.value)} />
+            </label>
           </div>
         )}
         {patternType === 'case' && (
           <div className={styles.renameFields}>
+            <span className={styles.fieldLabel}>Letter case</span>
             <Select
               value={caseType}
               onChange={(value) => setCaseType(value as 'lower' | 'upper' | 'title')}
@@ -172,7 +191,25 @@ export function BatchRenameModal({ entries, onClose, onDone }: BatchRenameModalP
         )}
       </div>
 
-      {error && <p className={styles.renameError}>{error}</p>}
+      {error && (
+        <p className={styles.renameError} role="alert">
+          {error}
+        </p>
+      )}
+      {summary && (
+        <div className={styles.renameSummary} role="alert">
+          <strong>
+            Renamed {summary.renamed} of {summary.attempted} items. {summary.errors.length} failed.
+          </strong>
+          <ul>
+            {summary.errors.map((failure) => (
+              <li key={failure.path}>
+                <span>{failure.path}</span>: {failure.error}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </Dialog>
   );
 }

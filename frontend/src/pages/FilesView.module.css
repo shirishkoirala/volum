@@ -19,6 +19,26 @@
   overflow: hidden;
 }
 
+.skeletonGrid,
+.skeletonList {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--space-lg);
+}
+
+.skeletonGrid {
+  align-content: start;
+  display: grid;
+  gap: 22px 28px;
+  grid-template-columns: repeat(auto-fill, 124px);
+}
+
+.skeletonList {
+  display: grid;
+  gap: var(--space-sm);
+}
+
 .fileStatusBar {
   align-items: center;
   color: var(--color-text-secondary);
@@ -106,5 +126,15 @@
 
   .emptyDropZone {
     padding: var(--space-md);
+  }
+
+  .skeletonGrid,
+  .skeletonList {
+    padding: var(--space-md);
+  }
+
+  .skeletonGrid {
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, 108px);
   }
 }

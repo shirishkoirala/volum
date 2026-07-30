@@ -90,6 +90,11 @@ export type SearchResponse = {
   results: SearchResult[] | null;
 };
 
+export type BatchRenameResult = {
+  errors?: { path: string; error: string }[];
+  complete?: number;
+};
+
 export type DiskUsageResult = {
   jobId: string;
   path: string;
@@ -256,13 +261,10 @@ export function searchFiles(query: string, limit = 50) {
 }
 
 export async function batchRename(items: { path: string; newName: string }[]) {
-  return request<{ errors?: { path: string; error: string }[]; complete?: number }>(
-    '/api/files/batch-rename',
-    {
-      method: 'POST',
-      body: JSON.stringify({ items }),
-    },
-  );
+  return request<BatchRenameResult | undefined>('/api/files/batch-rename', {
+    method: 'POST',
+    body: JSON.stringify({ items }),
+  });
 }
 
 export function getStatus() {

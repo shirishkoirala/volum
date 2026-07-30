@@ -49,7 +49,12 @@ export function FileSearchBar({
           }}
         />
         {query.length > 0 && (
-          <button type="button" className={styles.searchClear} onClick={onClearSearch}>
+          <button
+            type="button"
+            className={styles.searchClear}
+            onClick={onClearSearch}
+            aria-label="Clear search"
+          >
             <Icon name="window-close" size={14} />
           </button>
         )}
