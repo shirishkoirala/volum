@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { FileEntry } from '../api/client';
+import type { FileEntry } from '../api/client-files';
 import {
   MAX_IMAGE_PREVIEW_BYTES,
   MAX_TEXT_PREVIEW_BYTES,

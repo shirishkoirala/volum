@@ -3,7 +3,7 @@
  * All formatting functions live here so callers don't duplicate them.
  */
 
-import type { BlockDevice } from '../api/client';
+import type { BlockDevice } from '../api/client-files';
 
 /**
  * Format a byte count as a human-readable string (e.g. "1.5 GB").

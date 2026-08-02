@@ -1,5 +1,5 @@
-import { deleteTrash, getTrash, restoreTrash } from '../api/client';
-import type { TrashEntry } from '../api/client';
+import { deleteTrash, getTrash, restoreTrash } from '../api/client-files';
+import type { TrashEntry } from '../api/client-files';
 
 type TrashCommandDeps = {
   runAction: (action: () => Promise<unknown>, successTitle?: string) => void;

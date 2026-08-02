@@ -41,13 +41,6 @@ export function removeFavorite(path: string) {
   });
 }
 
-export function reorderFavorites(paths: string[]) {
-  return request('/api/favorites/reorder', {
-    method: 'PUT',
-    body: JSON.stringify({ paths }),
-  });
-}
-
 export function listServices() {
   return request<ServiceInfo[]>('/api/services');
 }
@@ -113,10 +106,7 @@ export function dbVacuum() {
   return request<{ status: string }>('/api/db/vacuum', { method: 'POST' });
 }
 
-export function pruneTable(
-  table: 'jobs' | 'audit-logs',
-  olderThan?: string,
-): Promise<{ removed: number }> {
+export function pruneJobs(olderThan?: string): Promise<{ removed: number }> {
   const params = olderThan ? `?olderThan=${encodeURIComponent(olderThan)}` : '';
-  return request<{ removed: number }>(`/api/db/prune-${table}${params}`, { method: 'POST' });
+  return request<{ removed: number }>(`/api/db/prune-jobs${params}`, { method: 'POST' });
 }

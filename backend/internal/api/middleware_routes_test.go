@@ -95,7 +95,6 @@ func TestRouteMiddlewareGroups(t *testing.T) {
 				{method: http.MethodDelete, path: "/api/shares/test-id"},
 				{method: http.MethodPost, path: "/api/db/vacuum"},
 				{method: http.MethodPost, path: "/api/db/prune-jobs"},
-				{method: http.MethodPost, path: "/api/db/prune-audit-logs"},
 				{method: http.MethodGet, path: "/api/users"},
 				{method: http.MethodPost, path: "/api/users", body: `{"username":"newuser","password":"pass","role":"readonly"}`},
 				{method: http.MethodDelete, path: "/api/users/test-id"},

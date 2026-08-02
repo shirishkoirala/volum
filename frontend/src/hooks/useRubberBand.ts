@@ -1,5 +1,5 @@
 import { MouseEvent, RefObject, useCallback, useRef, useState } from 'react';
-import type { FileEntry } from '../api/client';
+import type { FileEntry } from '../api/client-files';
 
 export function useRubberBand(
   filteredEntries: FileEntry[],

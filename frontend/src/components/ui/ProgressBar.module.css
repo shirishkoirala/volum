@@ -14,3 +14,9 @@
   transition: width var(--transition-progress);
   width: var(--progress, 0%);
 }
+
+.compact {
+  background: var(--color-border-subtle);
+  height: 4px;
+  margin-top: 4px;
+}

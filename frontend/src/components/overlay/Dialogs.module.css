@@ -249,6 +249,12 @@
 }
 
 @media (max-width: 760px) {
+  .dialogField input,
+  .dialogField select,
+  .dialogSuggestions button {
+    min-height: var(--size-touch-target);
+  }
+
   .dialogFieldRow {
     flex-wrap: wrap;
   }

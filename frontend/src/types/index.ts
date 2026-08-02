@@ -1,4 +1,4 @@
-import type { FileEntry } from '../api/client';
+import type { FileEntry } from '../api/client-files';
 
 export type SortField = 'name' | 'size' | 'type' | 'modifiedAt';
 export type SortDirection = 'asc' | 'desc';

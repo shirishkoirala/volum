@@ -1,4 +1,4 @@
-import type { StatusResponse } from '../../api/client';
+import type { StatusResponse } from '../../api/client-files';
 import { formatBytes, formatUptime } from '../../utils/format';
 import { StatusBadge } from './shared';
 import styles from './ServerInfo.module.css';

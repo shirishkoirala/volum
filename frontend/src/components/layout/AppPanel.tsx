@@ -2,8 +2,13 @@ import type { HTMLAttributes, ReactNode } from 'react';
 import styles from './AppPanel.module.css';
 
 type AppPanelElement = 'div' | 'main' | 'section';
-type AppPanelLayout = 'stack' | 'split';
 type AppPanelPadding = 'none' | 'compact' | 'normal';
+
+const paddingClasses: Record<AppPanelPadding, string | undefined> = {
+  none: styles.paddingNone,
+  compact: styles.paddingCompact,
+  normal: styles.paddingNormal,
+};
 
 type AppPanelProps = {
   as?: AppPanelElement;
@@ -13,7 +18,6 @@ type AppPanelProps = {
   bodyProps?: HTMLAttributes<HTMLDivElement>;
   footer?: ReactNode;
   header?: ReactNode;
-  layout?: AppPanelLayout;
   onContextMenu?: HTMLAttributes<HTMLElement>['onContextMenu'];
   padding?: AppPanelPadding;
   scroll?: boolean;
@@ -32,7 +36,6 @@ export function AppPanel({
   className,
   footer,
   header,
-  layout = 'stack',
   onContextMenu,
   padding = 'normal',
   scroll = true,
@@ -41,7 +44,7 @@ export function AppPanel({
   const Element = as;
   const bodyClasses = joinClasses(
     styles.body,
-    styles[`padding-${padding}`],
+    paddingClasses[padding],
     scroll ? styles.scroll : styles.static,
     bodyClassName,
     bodyProps?.className,
@@ -49,13 +52,7 @@ export function AppPanel({
 
   return (
     <Element
-      className={joinClasses(
-        styles.panel,
-        styles[layout],
-        'glassPanel',
-        'mobileAppPanel',
-        className,
-      )}
+      className={joinClasses(styles.panel, 'glassPanel', className)}
       onContextMenu={onContextMenu}
     >
       {header ? <div className={styles.header}>{header}</div> : null}

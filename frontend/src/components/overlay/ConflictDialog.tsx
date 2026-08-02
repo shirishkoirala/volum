@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { getJobConflicts } from '../../api/client';
-import type { ConflictItem } from '../../api/client';
+import { getJobConflicts } from '../../api/client-jobs';
+import type { ConflictItem } from '../../api/client-jobs';
 import { Icon } from '../ui/Icon';
 import { Button } from '../ui/shared';
-import { Overlay } from '../ui/shared';
+import { Dialog } from './Dialog';
 import { Select } from '../input/Select';
 import { formatBytes } from '../../utils/format';
 import styles from './ConflictDialog.module.css';
@@ -52,83 +52,14 @@ export function ConflictDialog({ jobId, onResolve, onClose }: Props) {
   const allResolved = conflicts.every((c) => resolutions[c.id]);
 
   return (
-    <Overlay onClose={onClose} zIndex={600}>
-      <div className={styles.dialog}>
-        <div className={styles.header}>
-          <h3>Resolve Conflicts</h3>
-          <p className={styles.subtitle}>Choose how to handle each conflicting file</p>
-        </div>
-
-        {loading && <p className={styles.loading}>Loading conflicts&hellip;</p>}
-        {errMsg && <p className={styles.error}>{errMsg}</p>}
-
-        {!loading && !errMsg && conflicts.length === 0 && (
-          <p className={styles.empty}>No conflicting files found.</p>
-        )}
-
-        {!loading && !errMsg && conflicts.length > 0 && (
-          <>
-            <div className={styles.defaultRow}>
-              <label className={styles.defaultLabel}>Apply to all:</label>
-              <Select
-                value={defaultResolution ?? ''}
-                onChange={(value) => {
-                  const val = value as ConflictResolution | '';
-                  setDefaultResolution(val || null);
-                }}
-              >
-                <option value="">&mdash; choose &mdash;</option>
-                <option value="skip">Skip all</option>
-                <option value="overwrite">Overwrite all</option>
-                <option value="rename">Rename all</option>
-              </Select>
-              {defaultResolution && (
-                <Button
-                  size="compact"
-                  onClick={() => {
-                    const all: Record<string, ConflictResolution> = {};
-                    for (const c of conflicts) all[c.id] = defaultResolution;
-                    setResolutions(all);
-                  }}
-                >
-                  Apply
-                </Button>
-              )}
-            </div>
-
-            <div className={styles.list}>
-              {conflicts.map((item) => (
-                <div key={item.id} className={styles.item}>
-                  <div className={styles.itemInfo}>
-                    <Icon name="dialog-warning" size={16} />
-                    <div className={styles.itemPaths}>
-                      <span className={styles.itemSource}>{item.sourcePath}</span>
-                      <span className={styles.itemDest} title={item.destinationPath}>
-                        &rarr; {item.destinationPath}
-                      </span>
-                      {item.sizeBytes > 0 && (
-                        <span className={styles.itemSize}>{formatBytes(item.sizeBytes)}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className={styles.itemActions}>
-                    {(['skip', 'overwrite', 'rename'] as const).map((r) => (
-                      <button
-                        key={r}
-                        className={`${styles.choiceBtn} ${resolutions[item.id] === r ? styles.choiceBtnActive : ''}`}
-                        onClick={() => setItemResolution(item.id, r)}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        <div className={styles.footer}>
+    <Dialog
+      title="Resolve Conflicts"
+      subtitle="Choose how to handle each conflicting file"
+      width="lg"
+      zIndex={600}
+      onClose={onClose}
+      footer={
+        <>
           <Button size="compact" onClick={onClose}>
             Cancel
           </Button>
@@ -140,8 +71,91 @@ export function ConflictDialog({ jobId, onResolve, onClose }: Props) {
           >
             {allResolved ? 'Resolve & Resume' : 'Resolve each file above'}
           </Button>
-        </div>
-      </div>
-    </Overlay>
+        </>
+      }
+    >
+      {loading && (
+        <p className={styles.loading} role="status">
+          Loading conflicts&hellip;
+        </p>
+      )}
+      {errMsg && (
+        <p className={styles.error} role="alert">
+          {errMsg}
+        </p>
+      )}
+
+      {!loading && !errMsg && conflicts.length === 0 && (
+        <p className={styles.empty}>No conflicting files found.</p>
+      )}
+
+      {!loading && !errMsg && conflicts.length > 0 && (
+        <>
+          <div className={styles.defaultRow}>
+            <label className={styles.defaultLabel}>Apply to all:</label>
+            <Select
+              value={defaultResolution ?? ''}
+              onChange={(value) => {
+                const val = value as ConflictResolution | '';
+                setDefaultResolution(val || null);
+              }}
+            >
+              <option value="">&mdash; choose &mdash;</option>
+              <option value="skip">Skip all</option>
+              <option value="overwrite">Overwrite all</option>
+              <option value="rename">Rename all</option>
+            </Select>
+            {defaultResolution && (
+              <Button
+                size="compact"
+                onClick={() => {
+                  const all: Record<string, ConflictResolution> = {};
+                  for (const c of conflicts) all[c.id] = defaultResolution;
+                  setResolutions(all);
+                }}
+              >
+                Apply
+              </Button>
+            )}
+          </div>
+
+          <div className={styles.list}>
+            {conflicts.map((item) => (
+              <div key={item.id} className={styles.item}>
+                <div className={styles.itemInfo}>
+                  <Icon name="dialog-warning" size={16} />
+                  <div className={styles.itemPaths}>
+                    <span className={styles.itemSource}>{item.sourcePath}</span>
+                    <span className={styles.itemDest} title={item.destinationPath}>
+                      &rarr; {item.destinationPath}
+                    </span>
+                    {item.sizeBytes > 0 && (
+                      <span className={styles.itemSize}>{formatBytes(item.sizeBytes)}</span>
+                    )}
+                  </div>
+                </div>
+                <div
+                  className={styles.itemActions}
+                  role="group"
+                  aria-label={`Resolution for ${item.sourcePath}`}
+                >
+                  {(['skip', 'overwrite', 'rename'] as const).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      className={`${styles.choiceBtn} ${resolutions[item.id] === r ? styles.choiceBtnActive : ''}`}
+                      onClick={() => setItemResolution(item.id, r)}
+                      aria-pressed={resolutions[item.id] === r}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </Dialog>
   );
 }

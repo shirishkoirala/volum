@@ -72,7 +72,7 @@ func (s *Store) Create(req CreateRequest, createdBy string) (*Share, error) {
 		return nil, err
 	}
 
-	id := generateID()
+	id := rand.Text()
 	now := now().Format(time.RFC3339)
 	var passwordHash string
 	if req.Password != "" {
@@ -242,12 +242,6 @@ func generateToken() (string, error) {
 		return "", fmt.Errorf("generate token: %w", err)
 	}
 	return hex.EncodeToString(b), nil
-}
-
-func generateID() string {
-	b := make([]byte, 16)
-	rand.Read(b)
-	return hex.EncodeToString(b)
 }
 
 func nullOrString(s string) *string {

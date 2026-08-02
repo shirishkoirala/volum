@@ -193,12 +193,6 @@ func (s *Server) handleCreateJob(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	if req.Type == jobs.TypeMove {
-		if err := s.jobs.CreateAuditLog(r.Context(), "move_queued", req.SourcePath, "queued move to "+req.DestinationPath); err != nil {
-			writeError(w, err)
-			return
-		}
-	}
 	writeJSON(w, http.StatusCreated, job)
 }
 
@@ -362,18 +356,12 @@ func (s *Server) handleResolveConflicts(w http.ResponseWriter, r *http.Request) 
 				writeError(w, err)
 				return
 			}
-			details := fmt.Sprintf("conflict resolved: skipped %s", item.SourcePath)
-			_ = s.jobs.CreateAuditLog(r.Context(), "conflict_skip", item.SourcePath, details)
-
 		case "overwrite":
 			if err := s.guard.RemoveAll(item.DestinationPath); err != nil {
 				writeError(w, err)
 				return
 			}
 			_ = s.jobs.UpdateItemStatus(r.Context(), item.ID, jobs.StatusQueued, 0, nil)
-			details := fmt.Sprintf("conflict resolved: overwrite %s -> %s", item.SourcePath, item.DestinationPath)
-			_ = s.jobs.CreateAuditLog(r.Context(), "conflict_overwrite", item.DestinationPath, details)
-
 		case "rename":
 			newDest, err := s.guard.NextAvailablePath(item.DestinationPath)
 			if err != nil {
@@ -382,8 +370,6 @@ func (s *Server) handleResolveConflicts(w http.ResponseWriter, r *http.Request) 
 			}
 			_ = s.jobs.UpdateItemDestination(r.Context(), item.ID, newDest)
 			_ = s.jobs.UpdateItemStatus(r.Context(), item.ID, jobs.StatusQueued, 0, nil)
-			details := fmt.Sprintf("conflict resolved: rename %s -> %s", item.DestinationPath, newDest)
-			_ = s.jobs.CreateAuditLog(r.Context(), "conflict_rename", item.SourcePath, details)
 		}
 	}
 

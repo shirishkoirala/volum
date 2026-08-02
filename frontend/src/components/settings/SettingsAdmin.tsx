@@ -1,19 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Icon } from '../ui/Icon';
 import { Button, MutedText } from '../ui/shared';
 import { ErrorBanner } from '../ui/ErrorBanner';
+import { InlineFeedback } from '../ui/InlineFeedback';
+import { Select } from '../input/Select';
+import { SettingsSection } from './SettingsSection';
 import {
-  dbVacuum,
-  pruneTable,
   listUsers,
   createUser,
   deleteUser,
   changePassword,
   changeRole,
   type Session,
-  type StatusResponse,
   type UserInfo,
-} from '../../api/client';
+} from '../../api/client-auth';
+import type { StatusResponse } from '../../api/client-files';
+import { dbVacuum, pruneJobs } from '../../api/client-services';
 import styles from '../../pages/SettingsPanel.module.css';
 
 type SettingsAdminProps = {
@@ -57,22 +58,8 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
     setMaintenanceMsg(null);
     setMaintenanceError(null);
     try {
-      const result = await pruneTable('jobs');
+      const result = await pruneJobs();
       setMaintenanceMsg(`Pruned ${result.removed} old transfer records.`);
-    } catch (err) {
-      setMaintenanceError(err instanceof Error ? err.message : 'Prune failed');
-    } finally {
-      setMaintenanceBusy(null);
-    }
-  };
-
-  const handlePruneAuditLogs = async () => {
-    setMaintenanceBusy('pruneAudit');
-    setMaintenanceMsg(null);
-    setMaintenanceError(null);
-    try {
-      const result = await pruneTable('audit-logs');
-      setMaintenanceMsg(`Pruned ${result.removed} old audit log entries.`);
     } catch (err) {
       setMaintenanceError(err instanceof Error ? err.message : 'Prune failed');
     } finally {
@@ -99,6 +86,11 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
     setCreatingUser(true);
     setUserError(null);
     setUserMsg(null);
+    if (newPassword.length < 12) {
+      setUserError('Password must be at least 12 characters.');
+      setCreatingUser(false);
+      return;
+    }
     try {
       await createUser(newUsername, newPassword, newRole);
       setNewUsername('');
@@ -128,6 +120,10 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
   const handleChangePassword = async (userId: string) => {
     setUserError(null);
     setUserMsg(null);
+    if (pwdChangeValue.length < 12) {
+      setUserError('Password must be at least 12 characters.');
+      return;
+    }
     try {
       await changePassword(userId, pwdChangeValue);
       setPwdChangeUserId(null);
@@ -152,34 +148,38 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
 
   return (
     <>
-      <section className={styles.settingsSection}>
-        <h4>Maintenance</h4>
+      <SettingsSection title="Maintenance">
         <div className={styles.maintenanceActions}>
-          <Button size="compact" onClick={handleVacuum} disabled={maintenanceBusy !== null}>
-            {maintenanceBusy === 'vacuum' && (
-              <Icon name="view-refresh" size={12} className={styles.spin} />
-            )}
+          <Button
+            size="compact"
+            onClick={handleVacuum}
+            disabled={maintenanceBusy !== null}
+            busy={maintenanceBusy === 'vacuum'}
+          >
             Vacuum DB
           </Button>
-          <Button size="compact" onClick={handlePruneJobs} disabled={maintenanceBusy !== null}>
-            {maintenanceBusy === 'pruneJobs' && (
-              <Icon name="view-refresh" size={12} className={styles.spin} />
-            )}
-            Prune Old Transfers
-          </Button>
-          <Button size="compact" onClick={handlePruneAuditLogs} disabled={maintenanceBusy !== null}>
-            {maintenanceBusy === 'pruneAudit' && (
-              <Icon name="view-refresh" size={12} className={styles.spin} />
-            )}
-            Prune Audit Logs
+          <Button
+            size="compact"
+            onClick={handlePruneJobs}
+            disabled={maintenanceBusy !== null}
+            busy={maintenanceBusy === 'pruneJobs'}
+          >
+            Prune Old Jobs
           </Button>
         </div>
-        {maintenanceMsg && <p className={styles.maintenanceMsg}>{maintenanceMsg}</p>}
-        {maintenanceError && <p className={styles.maintenanceError}>{maintenanceError}</p>}
-      </section>
+        {maintenanceMsg && (
+          <InlineFeedback variant="success" className={styles.inlineFeedback}>
+            {maintenanceMsg}
+          </InlineFeedback>
+        )}
+        {maintenanceError && (
+          <InlineFeedback variant="error" className={styles.inlineFeedback}>
+            {maintenanceError}
+          </InlineFeedback>
+        )}
+      </SettingsSection>
 
-      <section className={styles.settingsSection}>
-        <h4>Transfers</h4>
+      <SettingsSection title="Jobs">
         <dl className={styles.settingsDetails}>
           <dt>Active</dt>
           <dd>{status.jobCounts.active}</dd>
@@ -188,11 +188,10 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
           <dt>Failed</dt>
           <dd>{status.jobCounts.failed}</dd>
         </dl>
-      </section>
+      </SettingsSection>
 
       {session?.role === 'admin' && (
-        <section className={styles.settingsSection}>
-          <h4>Users</h4>
+        <SettingsSection title="Users">
           {users === null && !usersLoading && (
             <Button size="compact" onClick={loadUsers}>
               Load Users
@@ -218,6 +217,8 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
                             <input
                               type="password"
                               placeholder="New password"
+                              aria-label={`New password for ${u.username}`}
+                              minLength={12}
                               value={pwdChangeValue}
                               onChange={(e) => setPwdChangeValue(e.target.value)}
                               onKeyDown={(e) => {
@@ -231,7 +232,7 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
                             />
                             <Button
                               size="compact"
-                              disabled={!pwdChangeValue}
+                              disabled={pwdChangeValue.length < 12}
                               onClick={() => handleChangePassword(u.id)}
                             >
                               Set
@@ -283,47 +284,62 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
           <details className={styles.createUserDetails}>
             <summary>Create new user</summary>
             <div className={styles.createUserForm}>
-              <input
-                placeholder="Username"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value as 'admin' | 'readonly')}
-              >
-                <option value="readonly">Readonly</option>
-                <option value="admin">Admin</option>
-              </select>
+              <label className={styles.formField}>
+                <span>Username</span>
+                <input
+                  autoComplete="username"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                />
+              </label>
+              <label className={styles.formField}>
+                <span>Password</span>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  minLength={12}
+                  aria-describedby="new-user-password-help"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <small id="new-user-password-help">At least 12 characters</small>
+              </label>
+              <label className={styles.formField}>
+                <span>Role</span>
+                <Select
+                  value={newRole}
+                  onChange={(value) => setNewRole(value as 'admin' | 'readonly')}
+                >
+                  <option value="readonly">Readonly</option>
+                  <option value="admin">Admin</option>
+                </Select>
+              </label>
               <Button
                 size="compact"
-                disabled={creatingUser || !newUsername || !newPassword}
+                disabled={!newUsername || newPassword.length < 12}
+                busy={creatingUser}
+                busyLabel="Creating..."
                 onClick={handleCreateUser}
               >
-                {creatingUser ? (
-                  <>
-                    <Icon name="view-refresh" size={12} className={styles.spin} /> Creating...
-                  </>
-                ) : (
-                  'Create'
-                )}
+                Create
               </Button>
             </div>
           </details>
-          {userMsg && <p className={styles.maintenanceMsg}>{userMsg}</p>}
-          {userError && <p className={styles.maintenanceError}>{userError}</p>}
-        </section>
+          {userMsg && (
+            <InlineFeedback variant="success" className={styles.inlineFeedback}>
+              {userMsg}
+            </InlineFeedback>
+          )}
+          {userError && (
+            <InlineFeedback variant="error" className={styles.inlineFeedback}>
+              {userError}
+            </InlineFeedback>
+          )}
+        </SettingsSection>
       )}
 
       {onOpenShares && (
-        <section className={styles.settingsSection}>
-          <h4>Shares</h4>
+        <SettingsSection title="Shares">
           <p>
             <MutedText compact>Manage expiring share links for files and folders.</MutedText>
           </p>
@@ -332,7 +348,7 @@ export function SettingsAdmin({ status, session, onOpenShares }: SettingsAdminPr
               Manage Shares
             </Button>
           </div>
-        </section>
+        </SettingsSection>
       )}
     </>
   );

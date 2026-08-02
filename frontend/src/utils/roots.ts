@@ -1,4 +1,4 @@
-import type { RootEntry } from '../api/client';
+import type { RootEntry } from '../api/client-files';
 
 export function defaultRootPath(roots: RootEntry[]): string {
   return (

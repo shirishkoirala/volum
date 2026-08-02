@@ -36,7 +36,7 @@ func setupTestServer(t *testing.T) (*testServer, func()) {
 		t.Fatal(err)
 	}
 
-	filesService := files.NewService(guard, files.NewDirSizeCache(0))
+	filesService := files.NewService(guard)
 
 	db, err := storage.Open(filepath.Join(root, "volum.db"))
 	if err != nil {

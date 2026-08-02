@@ -1,17 +1,10 @@
 .panel {
   display: flex;
   flex: 1;
+  flex-direction: column;
   margin: var(--space-md);
   min-height: 0;
   overflow: hidden;
-}
-
-.stack {
-  flex-direction: column;
-}
-
-.split {
-  flex-direction: column;
 }
 
 .header,
@@ -69,15 +62,15 @@
   overflow: hidden;
 }
 
-.padding-normal {
+.paddingNormal {
   padding: var(--space-lg);
 }
 
-.padding-compact {
+.paddingCompact {
   padding: var(--space-md);
 }
 
-.padding-none {
+.paddingNone {
   padding: 0;
 }
 
@@ -102,8 +95,8 @@
     width: 100%;
   }
 
-  .padding-normal,
-  .padding-compact {
+  .paddingNormal,
+  .paddingCompact {
     padding: var(--space-md) var(--space-md) var(--space-xl);
   }
 }

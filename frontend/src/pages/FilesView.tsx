@@ -13,7 +13,7 @@ import {
 import { BreadcrumbBar } from '../components/layout/BreadcrumbBar';
 import { AppPanel } from '../components/layout/AppPanel';
 import { EmptyState } from '../components/ui/EmptyState';
-import { Notice } from '../components/ui/shared';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { FileSearchBar } from '../components/ui/FileSearchBar';
 import { FileEntriesView } from '../components/ui/FileEntriesView';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -32,8 +32,9 @@ import { ShareManager } from '../components/overlay/ShareManager';
 import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { formatBytes } from '../utils/format';
-import { useWindowId, useCommandsContext } from '../contexts/WindowCommands';
-import type { FileEntry, Session } from '../api/client';
+import { useWindowId, useCommandsContext, type WindowCommands } from '../contexts/WindowCommands';
+import type { Session } from '../api/client-auth';
+import type { FileEntry } from '../api/client-files';
 import { isPreviewableFile } from '../utils/preview';
 import { useFileBrowser } from '../hooks/useFileBrowser';
 import { useFileActions } from '../hooks/useFileActions';
@@ -115,7 +116,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const { register: registerCommands, unregister: unregisterCommands } = useCommandsContext();
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const [visibleCounts, setVisibleCounts] = useState({ rendered: 0, total: 0 });
-  const setPendingUploadCount = useCallback(() => {}, []);
   const fileGridRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const uploadFileInputRef = useRef<HTMLInputElement>(null);
@@ -212,7 +212,6 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     setTrashContextMenu: menus.setTrashContextMenu,
     setFilesEmptyMenu: menus.setFilesEmptyMenu,
     setUploadProgress,
-    setPendingUploadCount,
     showToastObj: shell.showToastObj,
     contextMenu: fileActions.contextMenu,
     navigateTo: handleNavigate,
@@ -276,21 +275,14 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [browser, fileActions]);
 
-  const [menuStates, setMenuStates] = useState<Record<string, boolean>>({});
-
   const closeAllFilesMenus = useCallback(() => {
     fileActions.setContextMenu(null);
     menus.setTrashContextMenu(null);
     menus.setDesktopContextMenu(null);
     menus.setFilesEmptyMenu(null);
-    menus.setTrashEmptyMenu(null);
-    menus.setJobsEmptyMenu(null);
   }, [fileActions, menus]);
 
-  useClickOutsideMenus(menuStates, (updater) => {
-    setMenuStates(updater);
-    closeAllFilesMenus();
-  });
+  useClickOutsideMenus(closeAllFilesMenus);
 
   const handleContextMenuEvent = useCallback(
     (entry: FileEntry, event: MouseEvent<HTMLElement>) => {
@@ -375,6 +367,15 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
     [fileCommands, selection],
   );
 
+  const handleSelectEntry = useCallback(
+    (path: string) => {
+      if (selection.selectedPaths.includes(path)) return;
+      selection.setSelectedPaths([path]);
+      selection.setLastSelectedPath(path);
+    },
+    [selection],
+  );
+
   const openUploadPicker = useCallback(() => {
     const input = uploadFileInputRef.current;
     if (!input) return;
@@ -383,6 +384,26 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   }, []);
 
   const canUpload = browser.canWrite && Boolean(effectivePath);
+  const selectedCount = selection.selectedPaths.length;
+  const commandSourcesRef = useRef({ fileCommands, selection });
+  commandSourcesRef.current = { fileCommands, selection };
+  const windowCommands = useMemo<WindowCommands>(
+    () => ({
+      onCreateFolder: () => commandSourcesRef.current.fileCommands.handleCreateFolder(),
+      onUpload: openUploadPicker,
+      onCut: () => commandSourcesRef.current.fileCommands.setClipboardFromSelection('move'),
+      onCopy: () => commandSourcesRef.current.fileCommands.setClipboardFromSelection('copy'),
+      onPaste: () => commandSourcesRef.current.fileCommands.handlePaste(),
+      onSelectAll: () => commandSourcesRef.current.selection.handleSelectAll(),
+      onInvertSelection: () => commandSourcesRef.current.selection.handleInvertSelection(),
+      onRename: () => commandSourcesRef.current.fileCommands.handleRename(),
+      onDelete: () => commandSourcesRef.current.fileCommands.handleDelete(),
+      canWrite: browser.canWrite,
+      canUpload,
+      selectedCount,
+    }),
+    [browser.canWrite, canUpload, openUploadPicker, selectedCount],
+  );
 
   useImperativeHandle(ref, () => ({
     handleSelectAll: selection.handleSelectAll,
@@ -404,31 +425,9 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   // Register window commands when inside a window
   useEffect(() => {
     if (!windowId) return;
-    registerCommands(windowId, {
-      onCreateFolder: fileCommands.handleCreateFolder,
-      onUpload: openUploadPicker,
-      onCut: () => fileCommands.setClipboardFromSelection('move'),
-      onCopy: () => fileCommands.setClipboardFromSelection('copy'),
-      onPaste: fileCommands.handlePaste,
-      onSelectAll: selection.handleSelectAll,
-      onInvertSelection: selection.handleInvertSelection,
-      onRename: fileCommands.handleRename,
-      onDelete: fileCommands.handleDelete,
-      canWrite: browser.canWrite,
-      canUpload,
-      selectedCount: selection.selectedPaths.length,
-    });
+    registerCommands(windowId, windowCommands);
     return () => unregisterCommands(windowId);
-  }, [
-    windowId,
-    fileCommands,
-    openUploadPicker,
-    selection,
-    browser.canWrite,
-    canUpload,
-    registerCommands,
-    unregisterCommands,
-  ]);
+  }, [windowId, windowCommands, registerCommands, unregisterCommands]);
 
   const selectedEntryIsFavorited = fileActions.contextMenu?.entry
     ? favorites.includes(fileActions.contextMenu.entry.path)
@@ -438,6 +437,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
   const breadcrumbs = browser.breadcrumbs;
   const locationMode = fileActions.locationMode;
   const localFilterActive = browser.query.trim().length > 0;
+  const errorWithoutEntries = Boolean(browser.error && browser.filteredEntries.length === 0);
   const totalEntries = localFilterActive ? browser.filteredEntries.length : browser.filePage.total;
   const previewableEntries = useMemo(
     () =>
@@ -504,10 +504,12 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           bodyClassName={styles.fileBody}
           className={styles.fileContent}
           footer={
-            <div className={styles.fileStatusBar} role="status" aria-live="polite">
-              Showing {visibleCounts.rendered.toLocaleString()} of{' '}
-              {visibleCounts.total.toLocaleString()} files
-            </div>
+            !browser.loading && (!browser.error || browser.entries.length > 0) ? (
+              <div className={styles.fileStatusBar} role="status" aria-live="polite">
+                Showing {visibleCounts.rendered.toLocaleString()} of{' '}
+                {visibleCounts.total.toLocaleString()} files
+              </div>
+            ) : undefined
           }
           header={
             <BreadcrumbBar
@@ -558,18 +560,25 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           scroll={false}
         >
           {browser.error && (
-            <Notice
-              variant="error"
-              className={styles.errorBanner}
-              onDismiss={() => browser.setError(null)}
-            >
-              {browser.error}
-            </Notice>
+            <ErrorBanner
+              message={browser.error}
+              onRetry={refresh}
+              onDismiss={browser.entries.length > 0 ? () => browser.setError(null) : undefined}
+            />
           )}
           <div className={styles.fileFrame}>
             {browser.loading ? (
-              <Skeleton variant="card" count={12} />
-            ) : browser.filteredEntries.length === 0 ? (
+              <div
+                className={viewPref.viewMode === 'grid' ? styles.skeletonGrid : styles.skeletonList}
+                aria-hidden="true"
+              >
+                <Skeleton
+                  variant={viewPref.viewMode === 'grid' ? 'card' : 'row'}
+                  count={viewPref.viewMode === 'grid' ? 12 : 10}
+                  height={viewPref.viewMode === 'grid' ? '112px' : '52px'}
+                />
+              </div>
+            ) : errorWithoutEntries ? null : browser.filteredEntries.length === 0 ? (
               <div
                 className={`${styles.emptyDropZone}${dragDrop.draggingUpload ? ` ${styles.dragOver}` : ''}`}
                 onDragOver={dragDrop.handleFileAreaDragOver}
@@ -587,6 +596,7 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
                 viewMode={viewPref.viewMode}
                 filteredEntries={browser.filteredEntries}
                 selectedPaths={selection.selectedPaths}
+                onSelectEntry={handleSelectEntry}
                 onContextMenu={handleContextMenuEvent}
                 onEmptyContextMenu={handleFilesEmptyContextMenu}
                 canWrite={browser.canWrite}
@@ -743,11 +753,14 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
           entry={fileActions.previewEntry}
           onClose={() => fileActions.setPreviewEntry(null)}
           onDownload={() => fileCommands.handleDownload(fileActions.previewEntry!)}
-          onShare={() =>
-            dialogs.setShareDialogPath({
-              path: fileActions.previewEntry!.path,
-              name: fileActions.previewEntry!.name,
-            })
+          onShare={
+            browser.canWrite
+              ? () =>
+                  dialogs.setShareDialogPath({
+                    path: fileActions.previewEntry!.path,
+                    name: fileActions.previewEntry!.name,
+                  })
+              : undefined
           }
           onPrevious={
             previousPreviewEntry ? () => setPreviewTarget(previousPreviewEntry) : undefined
@@ -769,8 +782,14 @@ export const FilesView = forwardRef<FilesViewHandle, FilesViewProps>(function Fi
         <BatchRenameModal
           entries={selection.selectedEntries}
           onClose={() => fileActions.setBatchRenameOpen(false)}
-          onDone={() => {
-            shell.showToastObj({ title: 'Items renamed', variant: 'success' });
+          onDone={(renamed, failed) => {
+            shell.showToastObj({
+              title:
+                failed > 0
+                  ? `Renamed ${renamed} item${renamed === 1 ? '' : 's'}; ${failed} failed`
+                  : `Renamed ${renamed} item${renamed === 1 ? '' : 's'}`,
+              variant: failed > 0 ? 'warning' : 'success',
+            });
             refresh();
           }}
         />

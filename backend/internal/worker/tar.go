@@ -168,12 +168,6 @@ func extractTarFromReader(store *jobs.Store, ctx context.Context, reader io.Read
 	return nil
 }
 
-func isTarArchive(name string) bool {
-	return strings.HasSuffix(name, ".tar") ||
-		strings.HasSuffix(name, ".tar.gz") ||
-		strings.HasSuffix(name, ".tgz")
-}
-
 func ArchiveFormat(name string) string {
 	lower := strings.ToLower(name)
 	if strings.HasSuffix(lower, ".tar.gz") || strings.HasSuffix(lower, ".tgz") {
@@ -186,21 +180,4 @@ func ArchiveFormat(name string) string {
 		return "zip"
 	}
 	return ""
-}
-
-func archiveBaseFromName(name string) string {
-	lower := strings.ToLower(name)
-	if strings.HasSuffix(lower, ".tar.gz") {
-		return name[:len(name)-len(".tar.gz")]
-	}
-	if strings.HasSuffix(lower, ".tgz") {
-		return name[:len(name)-len(".tgz")]
-	}
-	if strings.HasSuffix(lower, ".tar") {
-		return name[:len(name)-len(".tar")]
-	}
-	if strings.HasSuffix(lower, ".zip") {
-		return name[:len(name)-len(".zip")]
-	}
-	return name
 }

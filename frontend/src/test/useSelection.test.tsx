@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSelection } from '../hooks/useSelection';
-import type { FileEntry, TrashEntry } from '../api/client';
+import type { FileEntry, TrashEntry } from '../api/client-files';
 
 function makeFile(name: string, type: 'file' | 'directory' = 'file'): FileEntry {
   return {

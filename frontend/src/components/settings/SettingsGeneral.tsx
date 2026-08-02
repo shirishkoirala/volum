@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
 import { Button } from '../ui/shared';
+import { InlineFeedback } from '../ui/InlineFeedback';
+import { SettingsSection } from './SettingsSection';
 import {
   profileAvatarUrl,
   uploadProfileAvatar,
   deleteProfileAvatar,
   type Session,
-} from '../../api/client';
+} from '../../api/client-auth';
 import { useNotificationPreferences } from '../../hooks/useNotificationPreferences';
 import styles from '../../pages/SettingsPanel.module.css';
 
@@ -15,7 +17,7 @@ type SettingsGeneralProps = {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onOpenShortcuts: () => void;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
   onSessionChange: (session: Session) => void;
 };
 
@@ -29,6 +31,10 @@ export function SettingsGeneral({
 }: SettingsGeneralProps) {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [notificationBusy, setNotificationBusy] = useState(false);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [logoutBusy, setLogoutBusy] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const notifPrefs = useNotificationPreferences();
 
@@ -69,9 +75,53 @@ export function SettingsGeneral({
     }
   };
 
+  const handleNotificationChange = async (enabled: boolean) => {
+    setNotificationError(null);
+    if (!enabled) {
+      notifPrefs.setEnabled(false);
+      return;
+    }
+    if (typeof Notification === 'undefined') {
+      notifPrefs.setEnabled(false);
+      setNotificationError('Browser notifications are not supported here.');
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      notifPrefs.setEnabled(false);
+      setNotificationError('Notifications are blocked in your browser settings.');
+      return;
+    }
+    setNotificationBusy(true);
+    try {
+      const permission =
+        Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+      notifPrefs.setEnabled(permission === 'granted');
+      if (permission !== 'granted') {
+        setNotificationError('Notification permission was not granted.');
+      }
+    } catch {
+      notifPrefs.setEnabled(false);
+      setNotificationError('The browser could not enable notifications.');
+    } finally {
+      setNotificationBusy(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    if (logoutBusy) return;
+    setLogoutBusy(true);
+    setLogoutError(null);
+    try {
+      await onLogout();
+    } catch (err) {
+      setLogoutError(err instanceof Error ? err.message : 'Could not log out');
+    } finally {
+      setLogoutBusy(false);
+    }
+  };
+
   return (
-    <section className={styles.settingsSection}>
-      <h4>General</h4>
+    <SettingsSection title="General">
       <div className={styles.generalSections}>
         {session?.authEnabled && (
           <div className={styles.generalGroup}>
@@ -102,10 +152,11 @@ export function SettingsGeneral({
               <div className={styles.profileImageActions}>
                 <Button
                   size="compact"
-                  disabled={avatarBusy}
+                  busy={avatarBusy}
+                  busyLabel="Saving..."
                   onClick={() => avatarInputRef.current?.click()}
                 >
-                  {avatarBusy ? 'Saving...' : session.hasAvatar ? 'Replace' : 'Upload'}
+                  {session.hasAvatar ? 'Replace' : 'Upload'}
                 </Button>
                 {session.hasAvatar && (
                   <Button
@@ -118,7 +169,11 @@ export function SettingsGeneral({
                 )}
               </div>
             </div>
-            {avatarError && <p className={styles.avatarError}>{avatarError}</p>}
+            {avatarError && (
+              <InlineFeedback variant="error" className={styles.inlineFeedback}>
+                {avatarError}
+              </InlineFeedback>
+            )}
           </div>
         )}
 
@@ -140,32 +195,39 @@ export function SettingsGeneral({
             <input
               type="checkbox"
               checked={notifPrefs.enabled}
-              onChange={(e) => {
-                notifPrefs.setEnabled(e.target.checked);
-                if (
-                  e.target.checked &&
-                  typeof Notification !== 'undefined' &&
-                  Notification.permission === 'default'
-                ) {
-                  void Notification.requestPermission();
-                }
-              }}
+              disabled={notificationBusy}
+              onChange={(e) => void handleNotificationChange(e.target.checked)}
             />
             <span>Browser notifications</span>
           </label>
+          {notificationError && (
+            <InlineFeedback variant="error" className={styles.inlineFeedback}>
+              {notificationError}
+            </InlineFeedback>
+          )}
         </div>
 
         {session?.authEnabled && (
           <div className={styles.generalGroup}>
             <h5>Session</h5>
             <div className={styles.settingsActions}>
-              <Button size="compact" onClick={onLogout}>
+              <Button
+                size="compact"
+                busy={logoutBusy}
+                busyLabel="Logging out…"
+                onClick={() => void handleLogout()}
+              >
                 Log Out
               </Button>
             </div>
+            {logoutError && (
+              <InlineFeedback variant="error" className={styles.inlineFeedback}>
+                {logoutError}
+              </InlineFeedback>
+            )}
           </div>
         )}
       </div>
-    </section>
+    </SettingsSection>
   );
 }

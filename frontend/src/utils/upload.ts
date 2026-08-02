@@ -3,7 +3,7 @@ import {
   uploadChunk,
   UploadCancelledError,
   UploadPausedError,
-} from '../api/client';
+} from '../api/client-files';
 
 export const CHUNK_SIZE = 1024 * 1024;
 

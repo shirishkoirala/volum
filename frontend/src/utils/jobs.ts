@@ -2,7 +2,7 @@
  * Shared job-related predicates and helpers.
  */
 
-import type { Job } from '../api/client';
+import type { Job } from '../api/client-jobs';
 
 export function makeJobLabel(type: string, action: string): string {
   const name =
@@ -18,8 +18,12 @@ export function isActiveTransferJob(job: Job): boolean {
   return job.status === 'running' || job.status === 'queued' || job.status === 'paused';
 }
 
-export function countActiveTransfers(jobs: Job[], pendingTransferCount = 0): number {
-  return jobs.filter(isActiveTransferJob).length + pendingTransferCount;
+export function countActiveTransfers(jobs: Job[]): number {
+  return jobs.filter(isActiveTransferJob).length;
+}
+
+export function isAnalysisJob(job: Job): boolean {
+  return job.type === 'disk_analyze' || job.type === 'duplicate_find';
 }
 
 /**

@@ -183,26 +183,3 @@ export function FolderPicker({
     </div>
   );
 }
-
-export function FolderSuggestions({
-  label,
-  paths,
-  onSelect,
-}: {
-  label: string;
-  paths: string[];
-  onSelect: (path: string) => void;
-}) {
-  return (
-    <div className={styles.dialogSuggestions}>
-      <span>{label}</span>
-      <div>
-        {paths.map((path) => (
-          <button key={path} type="button" onClick={() => onSelect(path)} title={path}>
-            {path === '/' ? '/' : path.split('/').filter(Boolean).pop() || path}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}

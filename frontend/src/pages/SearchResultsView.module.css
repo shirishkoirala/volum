@@ -1,12 +1,3 @@
-.searchView {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  margin: var(--space-md);
-  min-height: 0;
-  overflow: hidden;
-}
-
 .searchHeader {
   background: var(--app-surface-header-bg);
   display: flex;
@@ -88,11 +79,6 @@
   border-bottom: 1px solid var(--app-surface-divider);
 }
 
-.errorBanner {
-  margin: var(--space-sm) var(--space-md) 0;
-  flex-shrink: 0;
-}
-
 .resultsArea {
   flex: 1;
   overflow-y: auto;
@@ -105,18 +91,29 @@
 }
 
 .resultRow {
+  background: transparent;
+  border: 0;
   display: flex;
   align-items: center;
+  color: inherit;
+  font: inherit;
   gap: var(--space-sm);
   padding: var(--space-xs) var(--space-md);
   cursor: pointer;
   border-bottom: 1px solid var(--app-surface-divider);
   min-height: 36px;
+  text-align: left;
   user-select: none;
+  width: 100%;
 }
 
 .resultRow:hover {
   background: var(--glass-hover-bg);
+}
+
+.resultRow:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: -2px;
 }
 
 .resultRow.selected {
@@ -160,7 +157,6 @@
 
 @media (max-width: 760px) {
   .searchView {
-    margin: var(--space-sm);
     margin-bottom: 0;
   }
 

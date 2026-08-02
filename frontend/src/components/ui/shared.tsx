@@ -57,13 +57,20 @@ export function PanelHeader({ title, subtitle, onClose, children }: PanelHeaderP
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: 'secondary' | 'primary' | 'danger' | 'link';
   size?: 'default' | 'compact';
+  busy?: boolean;
+  busyLabel?: ReactNode;
 };
 
 export function Button({
   variant = 'secondary',
   size = 'default',
+  busy = false,
+  busyLabel,
   className,
   type = 'button',
+  disabled,
+  'aria-busy': ariaBusy,
+  children,
   ...props
 }: ButtonProps) {
   return (
@@ -71,75 +78,28 @@ export function Button({
       className={cx(
         styles.button,
         variant === 'primary' && styles.primary,
-        variant === 'danger' && styles.danger,
+        variant === 'danger' && styles.dangerButton,
         variant === 'link' && styles.linkButton,
         size === 'compact' && styles.compact,
         className,
       )}
       type={type}
+      disabled={disabled || busy}
+      aria-busy={busy || ariaBusy}
       {...props}
-    />
-  );
-}
-
-type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  active?: boolean;
-  danger?: boolean;
-};
-
-export function IconButton({
-  active = false,
-  danger = false,
-  className,
-  type = 'button',
-  ...props
-}: IconButtonProps) {
-  return (
-    <button
-      className={cx(
-        styles.iconButton,
-        active && styles.iconButtonActive,
-        danger && styles.iconButtonDanger,
-        className,
-      )}
-      type={type}
-      {...props}
-    />
-  );
-}
-
-type NoticeProps = {
-  variant: 'error' | 'warning';
-  className?: string;
-  children: ReactNode;
-  onDismiss?: () => void;
-  dismissLabel?: string;
-};
-
-export function Notice({
-  variant,
-  className,
-  children,
-  onDismiss,
-  dismissLabel = 'Dismiss',
-}: NoticeProps) {
-  return (
-    <div
-      className={cx(styles.notice, variant === 'error' ? styles.error : styles.warning, className)}
     >
-      <div className={styles.noticeContent}>{children}</div>
-      {onDismiss && (
-        <button
-          type="button"
-          className={styles.noticeDismiss}
-          onClick={onDismiss}
-          aria-label={dismissLabel}
-        >
-          <Icon name="window-close" size={14} />
-        </button>
+      {busy && (
+        <Icon name="view-refresh" size={size === 'compact' ? 14 : 15} className={styles.spin} />
       )}
-    </div>
+      {busy ? (busyLabel ?? children) : children}
+    </button>
   );
+}
+
+type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
+
+export function IconButton({ className, type = 'button', ...props }: IconButtonProps) {
+  return <button className={cx(styles.iconButton, className)} type={type} {...props} />;
 }
 
 export function StatusBadge({
@@ -149,7 +109,16 @@ export function StatusBadge({
   variant: 'active' | 'disabled' | 'success' | 'warning' | 'danger';
   children: ReactNode;
 }) {
-  return <span className={cx(styles.statusBadge, styles[variant])}>{children}</span>;
+  return (
+    <span
+      className={cx(
+        styles.statusBadge,
+        variant === 'danger' ? styles.dangerStatus : styles[variant],
+      )}
+    >
+      {children}
+    </span>
+  );
 }
 
 export function RotatedIcon({

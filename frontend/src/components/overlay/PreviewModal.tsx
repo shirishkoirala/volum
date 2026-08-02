@@ -5,8 +5,8 @@ import {
   isTextExtension,
   isVideoExtension,
 } from '../../utils/fileTypes';
-import { downloadUrl, rawUrl } from '../../api/client';
-import type { FileEntry } from '../../api/client';
+import { downloadUrl, rawUrl } from '../../api/client-files';
+import type { FileEntry } from '../../api/client-files';
 import { previewBlockedReason } from '../../utils/preview';
 import { Icon } from '../ui/Icon';
 import { IconButton } from '../ui/shared';
@@ -257,7 +257,7 @@ export function PreviewModal({
   positionLabel,
 }: PreviewModalProps) {
   return (
-    <Dialog hideHeader width="xl" onClose={onClose}>
+    <Dialog title={`Preview ${entry.name}`} hideHeader width="xl" onClose={onClose}>
       <PreviewContent
         entry={entry}
         onClose={onClose}

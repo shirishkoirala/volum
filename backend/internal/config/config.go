@@ -15,8 +15,6 @@ type Config struct {
 	Port           string
 	SessionSecret  string
 	AuthRequired   bool
-	InsecureNoAuth bool
-	HostRoot       string
 	PublicURL      string
 	BootstrapToken string
 	AllowedHosts   string
@@ -55,8 +53,6 @@ func Load() (Config, error) {
 		Port:           port,
 		SessionSecret:  os.Getenv("VOLUM_SESSION_SECRET"),
 		AuthRequired:   authRequired,
-		InsecureNoAuth: insecureNoAuth,
-		HostRoot:       hostRoot,
 		PublicURL:      os.Getenv("VOLUM_PUBLIC_URL"),
 		BootstrapToken: os.Getenv("VOLUM_BOOTSTRAP_TOKEN"),
 		AllowedHosts:   os.Getenv("VOLUM_ALLOWED_HOSTS"),
@@ -64,7 +60,7 @@ func Load() (Config, error) {
 
 	secret := strings.TrimSpace(cfg.SessionSecret)
 
-	if !cfg.AuthRequired && !cfg.InsecureNoAuth {
+	if !cfg.AuthRequired && !insecureNoAuth {
 		return Config{}, errors.New("VOLUM_AUTH_REQUIRED=false requires VOLUM_ALLOW_INSECURE_AUTH_DISABLED=true")
 	}
 

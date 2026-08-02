@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useJobs } from '../hooks/useJobs';
-import * as api from '../api/client';
+import * as api from '../api/client-jobs';
 import { buildJob, buildSession } from './fixtures';
 
-vi.mock('../api/client', () => ({
+vi.mock('../api/client-jobs', () => ({
   getJobs: vi.fn(),
   cancelJob: vi.fn(),
   retryJob: vi.fn(),
@@ -46,6 +46,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('useJobs', () => {
@@ -129,7 +130,7 @@ describe('useJobs', () => {
 
     await waitFor(() => {
       expect(api.cancelJob).toHaveBeenCalledWith('1');
-      expect(showToast).toHaveBeenCalledWith('Transfer cancelled', 'success');
+      expect(showToast).toHaveBeenCalledWith('Job cancelled', 'success');
     });
   });
 
@@ -156,7 +157,7 @@ describe('useJobs', () => {
 
     await waitFor(() => {
       expect(api.retryJob).toHaveBeenCalledWith('1');
-      expect(showToast).toHaveBeenCalledWith('Transfer retried', 'success');
+      expect(showToast).toHaveBeenCalledWith('Job retried', 'success');
     });
   });
 
@@ -183,7 +184,7 @@ describe('useJobs', () => {
 
     await waitFor(() => {
       expect(api.pauseJob).toHaveBeenCalledWith('1');
-      expect(showToast).toHaveBeenCalledWith('Transfer paused', 'success');
+      expect(showToast).toHaveBeenCalledWith('Job paused', 'success');
     });
   });
 
@@ -210,7 +211,7 @@ describe('useJobs', () => {
 
     await waitFor(() => {
       expect(api.resumeJob).toHaveBeenCalledWith('1');
-      expect(showToast).toHaveBeenCalledWith('Transfer resumed', 'success');
+      expect(showToast).toHaveBeenCalledWith('Job resumed', 'success');
     });
   });
 
@@ -237,7 +238,7 @@ describe('useJobs', () => {
 
     await waitFor(() => {
       expect(api.clearCompletedJobs).toHaveBeenCalled();
-      expect(showToast).toHaveBeenCalledWith('Completed transfers cleared', 'success');
+      expect(showToast).toHaveBeenCalledWith('Completed jobs cleared', 'success');
     });
   });
 
@@ -264,7 +265,7 @@ describe('useJobs', () => {
 
     await waitFor(() => {
       expect(api.clearFailedJobs).toHaveBeenCalled();
-      expect(showToast).toHaveBeenCalledWith('Failed transfers cleared', 'success');
+      expect(showToast).toHaveBeenCalledWith('Failed jobs cleared', 'success');
     });
   });
 
@@ -311,10 +312,12 @@ describe('useJobs', () => {
 
     await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
 
-    es.dispatchEvent(
-      'jobs',
-      JSON.stringify({ jobs: [buildJob({ id: '2', status: 'completed', type: 'copy' })] }),
-    );
+    act(() => {
+      es.dispatchEvent(
+        'jobs',
+        JSON.stringify({ jobs: [buildJob({ id: '2', status: 'completed', type: 'copy' })] }),
+      );
+    });
 
     await waitFor(() => {
       expect(onRefresh).toHaveBeenCalled();
@@ -338,11 +341,57 @@ describe('useJobs', () => {
 
     await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
 
-    es.dispatchEvent(
-      'jobs',
-      JSON.stringify({ jobs: [buildJob({ id: '2', status: 'completed', type: 'checksum' })] }),
-    );
+    act(() => {
+      es.dispatchEvent(
+        'jobs',
+        JSON.stringify({ jobs: [buildJob({ id: '2', status: 'completed', type: 'checksum' })] }),
+      );
+    });
 
     expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('sends browser notifications only when an existing job reaches a terminal status', async () => {
+    const setJobs = vi.fn();
+    const onRefresh = vi.fn();
+    const showToast = vi.fn();
+    const es = mockEventSource();
+    const notify = vi.fn();
+    Object.assign(notify, { permission: 'granted' });
+    vi.stubGlobal('Notification', notify);
+    (api.getJobs as ReturnType<typeof vi.fn>).mockResolvedValue({
+      jobs: [buildJob({ id: '1', status: 'running', type: 'copy' })],
+    });
+
+    renderHook(() =>
+      useJobs(setJobs, {
+        session: fakeSession,
+        sessionLoading: false,
+        onRefresh,
+        showToast,
+        browserNotifications: true,
+      }),
+    );
+
+    await waitFor(() => expect(api.getJobs).toHaveBeenCalled());
+    await waitFor(() => expect(setJobs).toHaveBeenCalled());
+
+    act(() => {
+      es.dispatchEvent(
+        'jobs',
+        JSON.stringify({ jobs: [buildJob({ id: '1', status: 'completed', type: 'copy' })] }),
+      );
+    });
+
+    expect(notify).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      es.dispatchEvent(
+        'jobs',
+        JSON.stringify({ jobs: [buildJob({ id: '1', status: 'completed', type: 'copy' })] }),
+      );
+    });
+
+    expect(notify).toHaveBeenCalledTimes(1);
   });
 });

@@ -104,9 +104,3 @@ export function changeRole(userId: string, role: 'admin' | 'readonly') {
     body: JSON.stringify({ role }),
   });
 }
-
-export function revokeUserSessions(userId: string) {
-  return request(`/api/users/${userId}/revoke-sessions`, {
-    method: 'POST',
-  });
-}

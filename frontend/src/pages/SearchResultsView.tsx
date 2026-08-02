@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon, FileIcon } from '../components/ui/Icon';
+import { AppPanel } from '../components/layout/AppPanel';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
-import { SearchResultsOverlays } from '../components/overlay/SearchResultsOverlays';
+import { FileContextMenu } from '../components/overlay/FileContextMenu';
+import { ConfirmDialog } from '../components/overlay/ConfirmDialog';
+import { TextInputDialog } from '../components/overlay/TextInputDialog';
+import { TransferDialog } from '../components/overlay/TransferDialog';
+import { ShareDialog } from '../components/overlay/ShareDialog';
+import { InfoPanel } from '../components/overlay/InfoPanel';
+import { PreviewModal } from '../components/overlay/PreviewModal';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useShellContext } from '../contexts/ShellContext';
 import { usePreviewNavigation } from '../hooks/usePreviewNavigation';
@@ -10,18 +17,17 @@ import { isPreviewableFile, openFileExternally } from '../utils/preview';
 import { joinPath } from '../utils/path';
 import { formatBytes, formatGridDate } from '../utils/format';
 import { isArchiveFile } from '../utils/archive';
+import { shareUrl } from '../api/client-base';
+import type { Session } from '../api/client-auth';
 import {
   searchFiles,
-  createShare,
-  createJob,
   deletePath,
   renamePath,
-  shareUrl,
   type SearchResult,
   type FileEntry,
-  type Session,
-  type ConflictPolicy,
-} from '../api/client';
+} from '../api/client-files';
+import { createJob, type ConflictPolicy } from '../api/client-jobs';
+import { createShare } from '../api/client-shares';
 import type { ConfirmDialogState } from '../components/overlay/ConfirmDialog';
 import type { TextInputDialogState } from '../components/overlay/TextInputDialog';
 import type { TransferDialogState } from '../components/overlay/TransferDialog';
@@ -76,33 +82,45 @@ export function SearchResultsView({
     null,
   );
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchRequestRef = useRef(0);
 
   const canWrite = session.role === 'admin';
 
   useEffect(() => {
-    if (initialQuery && initialQuery.trim().length >= 2) {
-      setLoading(true);
-      searchFiles(initialQuery.trim(), 100)
-        .then((response) => setResults(response.results ?? []))
-        .catch((err: Error) => setError(err.message))
-        .finally(() => setLoading(false));
-    }
+    searchRequestRef.current++;
+    setQuery(initialQuery);
+    setSelectedPaths([]);
   }, [initialQuery]);
 
   useEffect(() => {
+    const requestId = ++searchRequestRef.current;
+    let cancelled = false;
     if (query.trim().length < 2) {
       setResults(null);
+      setLoading(false);
+      setError(null);
       return;
     }
     const timer = setTimeout(() => {
       setLoading(true);
       setError(null);
       searchFiles(query.trim(), 100)
-        .then((response) => setResults(response.results ?? []))
-        .catch((err: Error) => setError(err.message))
-        .finally(() => setLoading(false));
+        .then((response) => {
+          if (!cancelled && requestId === searchRequestRef.current) {
+            setResults(response.results ?? []);
+          }
+        })
+        .catch((err: Error) => {
+          if (!cancelled && requestId === searchRequestRef.current) setError(err.message);
+        })
+        .finally(() => {
+          if (!cancelled && requestId === searchRequestRef.current) setLoading(false);
+        });
     }, 200);
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [query]);
 
   useEffect(() => {
@@ -196,9 +214,10 @@ export function SearchResultsView({
   );
 
   const handleContextMenu = useCallback(
-    (result: SearchResult, event: React.MouseEvent) => {
+    (result: SearchResult, event: React.MouseEvent<HTMLElement>) => {
       event.preventDefault();
       event.stopPropagation();
+      event.currentTarget.focus();
       if (!selectedPaths.includes(result.path)) {
         setSelectedPaths([result.path]);
       }
@@ -302,15 +321,26 @@ export function SearchResultsView({
     const entry = contextMenu?.result;
     if (!entry) return;
     setContextMenu(null);
+    let url: string;
     try {
       const share = await createShare({ path: entry.path });
-      await navigator.clipboard.writeText(shareUrl(share.token));
-      shell.showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
+      url = shareUrl(share.token);
     } catch (err) {
       shell.showToastObj({
         title: 'Quick share failed',
         message: err instanceof Error ? err.message : undefined,
         variant: 'error',
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      shell.showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
+    } catch {
+      shell.showToastObj({
+        title: 'Share link created, but not copied',
+        message: 'Open Manage Shares to copy the link.',
+        variant: 'warning',
       });
     }
   }, [contextMenu, shell]);
@@ -411,6 +441,7 @@ export function SearchResultsView({
   );
 
   const handleClearSearch = useCallback(() => {
+    searchRequestRef.current++;
     setQuery('');
     setResults(null);
     setSelectedPaths([]);
@@ -421,7 +452,7 @@ export function SearchResultsView({
   const entryCount = results?.length ?? 0;
 
   return (
-    <div className={`${styles.searchView} glassPanel mobileAppPanel`}>
+    <AppPanel className={styles.searchView} padding="none" scroll={false}>
       <div className={styles.searchHeader}>
         <button type="button" className={styles.backBtn} onClick={onClose} aria-label="Back">
           <Icon name="go-previous" size={18} />
@@ -431,6 +462,8 @@ export function SearchResultsView({
           <input
             ref={searchInputRef}
             className={styles.searchInput}
+            aria-label="Search files across all roots"
+            aria-controls="search-results"
             placeholder="Search files across all roots..."
             value={query}
             onChange={(e) => {
@@ -442,7 +475,12 @@ export function SearchResultsView({
             }}
           />
           {query.length > 0 && (
-            <button type="button" className={styles.clearBtn} onClick={handleClearSearch}>
+            <button
+              type="button"
+              className={styles.clearBtn}
+              onClick={handleClearSearch}
+              aria-label="Clear search"
+            >
               <Icon name="window-close" size={14} />
             </button>
           )}
@@ -450,16 +488,18 @@ export function SearchResultsView({
       </div>
 
       {query.trim().length >= 2 && !loading && results && (
-        <div className={styles.resultMeta}>
+        <div className={styles.resultMeta} role="status" aria-live="polite">
           {entryCount} result{entryCount === 1 ? '' : 's'} for <strong>"{query.trim()}"</strong>
         </div>
       )}
 
       {error && <ErrorBanner message={error} onDismiss={() => setError(null)} />}
 
-      <div className={styles.resultsArea}>
+      <div id="search-results" className={styles.resultsArea} aria-busy={loading}>
         {loading ? (
-          <Skeleton variant="row" count={8} />
+          <div role="status" aria-label="Searching files">
+            <Skeleton variant="row" count={8} />
+          </div>
         ) : query.trim().length < 2 ? (
           <EmptyState
             title="Search files"
@@ -476,10 +516,12 @@ export function SearchResultsView({
               const isSelected = selectedPaths.includes(result.path);
               const entry = searchResultToFileEntry(result);
               return (
-                <div
+                <button
+                  type="button"
                   key={result.path}
                   className={`${styles.resultRow}${isSelected ? ` ${styles.selected}` : ''}`}
                   onClick={() => handleClick(result)}
+                  onFocus={() => setSelectedPaths([result.path])}
                   onContextMenu={(e) => handleContextMenu(result, e)}
                 >
                   <FileIcon entry={entry} size={20} />
@@ -487,52 +529,81 @@ export function SearchResultsView({
                   <span className={styles.resultPath}>{result.path}</span>
                   <span className={styles.resultSize}>{formatBytes(result.size)}</span>
                   <span className={styles.resultDate}>{formatGridDate(result.modifiedAt)}</span>
-                </div>
+                </button>
               );
             })}
           </div>
         ) : null}
       </div>
 
-      <SearchResultsOverlays
-        contextMenu={contextMenu}
-        onContextMenuClose={() => setContextMenu(null)}
-        caps={caps}
-        isFavorited={isFavorited}
-        selectedCount={selectedResults.length}
-        previewEntry={previewEntry}
-        onPreviewClose={() => setPreviewEntry(null)}
-        onPreviewShare={(entry) => setShareDialogPath({ path: entry.path, name: entry.name })}
-        onPreviewPrevious={(entry) => setPreviewEntry(entry)}
-        onPreviewNext={(entry) => setPreviewEntry(entry)}
-        infoEntry={infoEntry}
-        onInfoClose={() => setInfoEntry(null)}
-        confirmDialog={confirmDialog}
-        onConfirmClose={() => setConfirmDialog(null)}
-        textInputDialog={textInputDialog}
-        onTextInputClose={() => setTextInputDialog(null)}
-        transferDialog={transferDialog}
-        folderSuggestions={['/']}
-        onTransferClose={() => setTransferDialog(null)}
-        onTransferSubmit={handleTransferSubmit}
-        shareDialogPath={shareDialogPath}
-        onShareDialogClose={() => setShareDialogPath(null)}
-        previousPreviewEntry={previousPreviewEntry}
-        nextPreviewEntry={nextPreviewEntry}
-        previewPositionLabel={previewPositionLabel}
-        onPreview={handlePreview}
-        onShowInfo={handleShowInfo}
-        onDownload={handleDownload}
-        onRename={handleRename}
-        onCopy={handleCopy}
-        onMove={handleMove}
-        onArchive={handleArchive}
-        onExtract={handleExtract}
-        onChecksum={handleChecksum}
-        onQuickShare={handleQuickShare}
-        onShare={handleShare}
-        onDelete={handleDelete}
-      />
-    </div>
+      {contextMenu && (
+        <FileContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          caps={caps}
+          isFavorited={isFavorited}
+          selectedCount={selectedResults.length}
+          onPreview={handlePreview}
+          onShowInfo={handleShowInfo}
+          onDownload={handleDownload}
+          onRename={handleRename}
+          onBatchRename={() => {}}
+          onCopy={handleCopy}
+          onMove={handleMove}
+          onArchive={handleArchive}
+          onExtract={handleExtract}
+          onChecksum={handleChecksum}
+          onPaste={() => {}}
+          onQuickShare={handleQuickShare}
+          onShare={handleShare}
+          onToggleFavorite={() => {}}
+          onDelete={handleDelete}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+      {previewEntry && (
+        <PreviewModal
+          entry={previewEntry}
+          onClose={() => setPreviewEntry(null)}
+          onDownload={() => openFileExternally(previewEntry.path)}
+          onShare={
+            canWrite
+              ? () => setShareDialogPath({ path: previewEntry.path, name: previewEntry.name })
+              : undefined
+          }
+          onPrevious={
+            previousPreviewEntry ? () => setPreviewEntry(previousPreviewEntry) : undefined
+          }
+          onNext={nextPreviewEntry ? () => setPreviewEntry(nextPreviewEntry) : undefined}
+          previousDisabled={!previousPreviewEntry}
+          nextDisabled={!nextPreviewEntry}
+          positionLabel={previewPositionLabel}
+        />
+      )}
+      {infoEntry && (
+        <InfoPanel entry={infoEntry} onClose={() => setInfoEntry(null)} onRefresh={() => {}} />
+      )}
+      {confirmDialog && (
+        <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} />
+      )}
+      {textInputDialog && (
+        <TextInputDialog dialog={textInputDialog} onClose={() => setTextInputDialog(null)} />
+      )}
+      {transferDialog && (
+        <TransferDialog
+          dialog={transferDialog}
+          folderSuggestions={['/']}
+          onClose={() => setTransferDialog(null)}
+          onSubmit={handleTransferSubmit}
+        />
+      )}
+      {canWrite && shareDialogPath && (
+        <ShareDialog
+          path={shareDialogPath.path}
+          name={shareDialogPath.name}
+          onClose={() => setShareDialogPath(null)}
+        />
+      )}
+    </AppPanel>
   );
 }

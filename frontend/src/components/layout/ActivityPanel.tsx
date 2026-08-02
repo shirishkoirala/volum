@@ -1,32 +1,29 @@
-import { type Job } from '../../api/client';
-import { makeJobLabel } from '../../utils/jobs';
+import type { Job } from '../../api/client-jobs';
+import { isAnalysisJob, makeJobLabel } from '../../utils/jobs';
 import { Icon } from '../ui/Icon';
+import uiStyles from '../ui/shared.module.css';
 import styles from './ActivityPanel.module.css';
 
 export type ActivityPanelProps = {
   jobs: Job[];
   onOpenJobs: () => void;
+  onOpenAnalysis?: (job: Job) => void;
 };
 
 const RECENT_COUNT = 5;
 
-function jobIcon(job: Job) {
-  switch (job.type) {
-    case 'copy':
-      return 'edit-copy';
-    case 'move':
-      return 'document-open-recent';
-    case 'upload':
-      return 'document-import';
-    case 'archive':
-      return 'application-x-archive';
-    case 'extract':
-      return 'archive-extract';
-    case 'checksum':
-      return 'dialog-password';
-    default:
-      return 'emblem-system';
-  }
+function AnalysisAction({ job, onOpen }: { job: Job; onOpen?: (job: Job) => void }) {
+  if (!onOpen || !isAnalysisJob(job)) return null;
+  return (
+    <button
+      type="button"
+      className={styles.itemAction}
+      onClick={() => onOpen(job)}
+      aria-label={`${job.status === 'completed' ? 'View results for' : 'Open'} ${jobTitle(job)}`}
+    >
+      {job.status === 'completed' ? 'View results' : 'Open'}
+    </button>
+  );
 }
 
 function jobTitle(job: Job) {
@@ -69,7 +66,7 @@ function groupJobs(jobs: Job[]): GroupedJobs {
   };
 }
 
-export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
+export function ActivityPanel({ jobs, onOpenJobs, onOpenAnalysis }: ActivityPanelProps) {
   const { active, recentCompleted, recentFailed } = groupJobs(jobs);
 
   const hasActivity = active.length > 0 || recentCompleted.length > 0 || recentFailed.length > 0;
@@ -83,7 +80,7 @@ export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
           <div className={styles.sectionHeader}>Active</div>
           {active.map((job) => (
             <div key={job.id} className={styles.item}>
-              <Icon name={jobIcon(job)} size={14} />
+              <Icon name={`job-${job.type}`} size={14} />
               <div className={styles.itemInfo}>
                 <span className={styles.itemName}>{jobTitle(job)}</span>
                 <span className={styles.itemStatus}>
@@ -95,6 +92,7 @@ export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
                   {Math.round((job.processedBytes / job.totalBytes) * 100)}%
                 </span>
               )}
+              <AnalysisAction job={job} onOpen={onOpenAnalysis} />
             </div>
           ))}
         </div>
@@ -105,11 +103,12 @@ export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
           <div className={styles.sectionHeader}>Failed</div>
           {recentFailed.map((job) => (
             <div key={job.id} className={styles.item}>
-              <Icon name={jobIcon(job)} size={14} />
+              <Icon name={`job-${job.type}`} size={14} />
               <div className={styles.itemInfo}>
                 <span className={styles.itemName}>{jobTitle(job)}</span>
                 {job.errorMessage && <span className={styles.itemError}>{job.errorMessage}</span>}
               </div>
+              <AnalysisAction job={job} onOpen={onOpenAnalysis} />
             </div>
           ))}
         </div>
@@ -120,17 +119,22 @@ export function ActivityPanel({ jobs, onOpenJobs }: ActivityPanelProps) {
           <div className={styles.sectionHeader}>Completed</div>
           {recentCompleted.map((job) => (
             <div key={job.id} className={styles.item}>
-              <Icon name={jobIcon(job)} size={14} />
+              <Icon name={`job-${job.type}`} size={14} />
               <div className={styles.itemInfo}>
                 <span className={styles.itemName}>{jobTitle(job)}</span>
               </div>
+              <AnalysisAction job={job} onOpen={onOpenAnalysis} />
             </div>
           ))}
         </div>
       )}
 
       {hasActivity && (
-        <button type="button" className={styles.viewAll} onClick={onOpenJobs}>
+        <button
+          type="button"
+          className={`${uiStyles.dropdownFooterAction} ${styles.viewAll}`}
+          onClick={onOpenJobs}
+        >
           View all jobs &rarr;
         </button>
       )}

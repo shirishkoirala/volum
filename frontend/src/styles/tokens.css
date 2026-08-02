@@ -3,11 +3,10 @@
   --color-bg: #f0f2f5;
   --color-window: #f3f5f8;
   --color-surface: #ffffff;
-  --color-surface-raised: #f8fafc;
   --color-text: #1a1a2e;
   --color-text-secondary: #4a5568;
   --color-text-muted: #5f6b7a;
-  --color-text-tertiary: #a0aec0;
+  --color-text-tertiary: #64748b;
   --color-border: #cbd5e1;
   --color-border-light: #dbe2ea;
   --color-border-subtle: #e2e8f0;
@@ -15,7 +14,6 @@
   --color-brand: #3b82f6;
   --color-brand-bg: #eff6ff;
   --color-brand-text: #1e40af;
-  --color-brand-border: #bfdbfe;
   --color-danger: #ef4444;
   --color-danger-bg: #fef2f2;
   --color-danger-border: #fecaca;
@@ -26,11 +24,9 @@
   --color-warning-text: #92400e;
   --color-success: #16a34a;
   --color-success-bg: #f0fdf4;
-  --color-success-border: #bbf7d0;
   --color-success-text: #166534;
   --color-on-accent: #ffffff;
   --color-hover: #f8fafc;
-  --color-selected: #eff6ff;
   --color-code-bg: #1a1e24;
   --color-code-text: #dce3e8;
   --color-overlay: rgb(0 0 0 / 50%);
@@ -44,14 +40,11 @@
   --font-size-md: 14px;
   --font-size-lg: 15px;
   --font-size-title: 17px;
-  --font-size-hero: 26px;
   --font-ui:
     'Geist Variable', Geist, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
   --font-brand: 'Geist Variable', Geist, ui-sans-serif, system-ui, sans-serif;
-  --font-mono:
-    'JetBrains Mono Variable', 'JetBrains Mono', 'SF Mono', 'Cascadia Code', Consolas, ui-monospace,
-    monospace;
+  --font-mono: 'SF Mono', 'Cascadia Code', Consolas, ui-monospace, monospace;
   /* Opacity */
   --opacity-disabled: 0.58;
   --opacity-ghost: 0.3;
@@ -75,13 +68,10 @@
   --radius-sm: 6px;
   --radius-compact: 8px;
   --radius-md: 10px;
-  --radius-panel: 12px;
   --radius-lg: 14px;
-  --radius-xl: 18px;
   --radius-pill: 999px;
   /* Shadow */
   --shadow-card: 0 1px 3px var(--color-shadow);
-  --shadow-card-hover: 0 4px 6px -1px var(--color-shadow), 0 2px 4px -2px var(--color-shadow);
   --shadow-menu: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -2px rgb(0 0 0 / 6%);
   /* Glass */
   --glass-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
@@ -94,14 +84,12 @@
   --app-surface-bg: var(--glass-bg);
   --app-surface-header-bg: var(--glass-bg);
   --app-surface-body-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
-  --app-surface-control-bg: var(--glass-control-bg);
   --app-surface-control-hover-bg: var(--glass-hover-bg);
   --app-surface-control-selected-bg: var(--glass-selected-bg);
   --app-surface-border: color-mix(in srgb, var(--color-border) 70%, transparent);
   --app-surface-divider: color-mix(in srgb, var(--color-border-subtle) 75%, transparent);
   --app-surface-shadow: 0 8px 28px color-mix(in srgb, var(--color-shadow) 74%, transparent);
   --app-surface-shadow-active: 0 18px 48px color-mix(in srgb, var(--color-shadow) 130%, transparent);
-  --app-surface-shadow-inactive: 0 4px 18px color-mix(in srgb, var(--color-shadow) 54%, transparent);
   /* Animation */
   --transition-fast: 120ms ease;
   --transition-progress: 300ms ease;
@@ -126,6 +114,7 @@
 
 @media (max-width: 760px) {
   :root {
+    --font-size-2xs: 11px;
     --glass-bg: color-mix(in srgb, var(--color-surface) 58%, transparent);
     --glass-menu-bg: color-mix(in srgb, var(--color-surface) 88%, transparent);
     --glass-control-bg: color-mix(in srgb, var(--color-bg) 82%, transparent);
@@ -141,11 +130,10 @@
   --color-bg: #12141a;
   --color-window: #20242e;
   --color-surface: #1a1d26;
-  --color-surface-raised: #252a35;
   --color-text: #e2e6ed;
   --color-text-secondary: #b4bac4;
   --color-text-muted: #7f899f;
-  --color-text-tertiary: #697386;
+  --color-text-tertiary: #8993a7;
   --color-border: #282c36;
   --color-border-light: #2d313c;
   --color-border-subtle: #2d313c;
@@ -153,7 +141,6 @@
   --color-brand: #60a5fa;
   --color-brand-bg: #1e2a3a;
   --color-brand-text: #93c5fd;
-  --color-brand-border: #334155;
   --color-danger: #f87171;
   --color-danger-bg: #2d1b1b;
   --color-danger-border: #4a2020;
@@ -164,74 +151,27 @@
   --color-warning-text: #fde68a;
   --color-success: #4ade80;
   --color-success-bg: #14261a;
-  --color-success-border: #285b36;
   --color-success-text: #bbf7d0;
-  --color-on-accent: #ffffff;
   --color-hover: #22262f;
-  --color-selected: #1e293b;
   --color-code-bg: #0d1117;
   --color-code-text: #c9d1d9;
   --color-overlay: rgb(0 0 0 / 70%);
   --color-badge: #22262f;
   --color-shadow: rgb(0 0 0 / 20%);
-  /* Typography */
-  --font-size-2xs: 10px;
-  --font-size-xs: 11px;
-  --font-size-sm: 12px;
-  --font-size-base: 13px;
-  --font-size-md: 14px;
-  --font-size-lg: 15px;
-  --font-size-title: 17px;
-  --font-size-hero: 26px;
   /* Opacity */
   --opacity-disabled: 0.45;
-  --opacity-ghost: 0.3;
-  /* Spacing */
-  --space-xxs: 2px;
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-  --space-xl: 20px;
-  --space-2xl: 24px;
-  --space-3xl: 32px;
-  --size-touch-target: 44px;
-  --size-badge-sm: 16px;
-  --size-status-dot: 14px;
-  --selection-ring-width: 2px;
-  --selection-indicator-width: 3px;
-  /* Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-  --radius-pill: 999px;
   /* Shadow */
-  --shadow-card: 0 1px 3px var(--color-shadow);
-  --shadow-card-hover: 0 4px 12px rgb(0 0 0 / 40%);
   --shadow-menu: 0 12px 28px rgb(0 0 0 / 50%);
   /* Glass */
-  --glass-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
   --glass-menu-bg: color-mix(in srgb, var(--color-surface) 74%, transparent);
   --glass-control-bg: color-mix(in srgb, var(--color-surface) 58%, transparent);
   --glass-hover-bg: color-mix(in srgb, var(--color-hover) 76%, transparent);
   --glass-selected-bg: color-mix(in srgb, var(--color-brand-bg) 68%, transparent);
   --glass-border: color-mix(in srgb, var(--color-border) 66%, transparent);
-  --glass-backdrop: blur(6px) saturate(110%);
-  --app-surface-bg: var(--glass-bg);
-  --app-surface-header-bg: var(--glass-bg);
-  --app-surface-body-bg: color-mix(in srgb, var(--color-surface) 46%, transparent);
-  --app-surface-control-bg: var(--glass-control-bg);
-  --app-surface-control-hover-bg: var(--glass-hover-bg);
-  --app-surface-control-selected-bg: var(--glass-selected-bg);
   --app-surface-border: color-mix(in srgb, var(--color-border) 55%, transparent);
   --app-surface-divider: color-mix(in srgb, var(--color-border-subtle) 55%, transparent);
   --app-surface-shadow: 0 8px 32px color-mix(in srgb, var(--color-shadow) 80%, transparent);
   --app-surface-shadow-active: 0 18px 48px color-mix(in srgb, var(--color-shadow) 120%, transparent);
-  --app-surface-shadow-inactive: 0 4px 18px color-mix(in srgb, var(--color-shadow) 58%, transparent);
-  /* Animation */
-  --anim-skeleton: skeletonPulse 1.5s ease-in-out infinite;
-  --anim-spin: spin 1s linear infinite;
 }
 
 @media (max-width: 760px) {

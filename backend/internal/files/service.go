@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -78,11 +79,10 @@ var (
 
 type Service struct {
 	guard *security.RootGuard
-	cache *DirSizeCache
 }
 
-func NewService(guard *security.RootGuard, cache *DirSizeCache) *Service {
-	return &Service{guard: guard, cache: cache}
+func NewService(guard *security.RootGuard) *Service {
+	return &Service{guard: guard}
 }
 
 func (s *Service) RootUsage() []Root {
@@ -99,14 +99,6 @@ func (s *Service) RootUsage() []Root {
 		usage = append(usage, item)
 	}
 	return usage
-}
-
-func (s *Service) List(path string, showHidden bool) ([]Entry, error) {
-	listing, err := s.ListPage(path, showHidden, ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return listing.Entries, nil
 }
 
 func (s *Service) ListPage(path string, showHidden bool, opts ListOptions) (Listing, error) {
@@ -172,22 +164,11 @@ func (s *Service) ListPage(path string, showHidden bool, opts ListOptions) (List
 			continue
 		}
 
-		var size int64
-		if info.IsDir() {
-			if cached, ok := s.cache.Get(publicPath); ok {
-				size = cached
-			} else {
-				size = immediateDirSize(itemPath, info)
-			}
-		} else {
-			size = info.Size()
-		}
-
 		entries = append(entries, Entry{
 			Name:        name,
 			Path:        publicPath,
 			Type:        entryType,
-			Size:        size,
+			Size:        immediateDirSize(itemPath, info),
 			ModifiedAt:  info.ModTime(),
 			Permissions: info.Mode().Perm().String(),
 			Owner:       ownerName(info),
@@ -309,11 +290,6 @@ func (s *Service) Rename(path, newName string) (Entry, error) {
 	return s.entryFromPath(target)
 }
 
-func (s *Service) Delete(path string) error {
-	_, err := s.Trash(path)
-	return err
-}
-
 func (s *Service) Chmod(path, mode string) (Entry, error) {
 	resolved, err := s.guard.Resolve(path)
 	if err != nil {
@@ -345,14 +321,11 @@ func parseMode(mode string) (os.FileMode, error) {
 		return modeBits, nil
 	}
 	if len(mode) == 3 || len(mode) == 4 {
-		var modeBits os.FileMode
-		for _, ch := range mode {
-			if ch < '0' || ch > '7' {
-				return 0, fmt.Errorf("invalid octal mode: %s", mode)
-			}
-			modeBits = modeBits<<3 | os.FileMode(ch-'0')
+		modeBits, err := strconv.ParseUint(mode, 8, 32)
+		if err != nil {
+			return 0, fmt.Errorf("invalid octal mode: %s", mode)
 		}
-		return modeBits, nil
+		return os.FileMode(modeBits), nil
 	}
 	return 0, fmt.Errorf("mode must be a 9-character permission string (e.g. rwxr-xr-x) or 3-4 digit octal")
 }

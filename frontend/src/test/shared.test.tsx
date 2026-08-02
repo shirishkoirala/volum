@@ -6,7 +6,6 @@ import {
   PanelHeader,
   Button,
   IconButton,
-  Notice,
   StatusBadge,
   RotatedIcon,
   MutedText,
@@ -25,8 +24,8 @@ describe('Button', () => {
   });
 
   it('applies danger variant class', () => {
-    const { container } = render(<Button variant="danger">Delete</Button>);
-    expect(container.querySelector('[class*="danger"]')).toBeInTheDocument();
+    render(<Button variant="danger">Delete</Button>);
+    expect(screen.getByRole('button', { name: 'Delete' }).className).toContain('dangerButton');
   });
 
   it('applies compact class', () => {
@@ -51,22 +50,23 @@ describe('Button', () => {
     const { container } = render(<Button className="my-btn">Custom</Button>);
     expect(container.querySelector('.my-btn')).toBeInTheDocument();
   });
+
+  it('owns the disabled busy state and label', () => {
+    render(
+      <Button busy busyLabel="Saving...">
+        Save
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Saving...' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+  });
 });
 
 describe('IconButton', () => {
   it('renders children', () => {
     render(<IconButton aria-label="icon button">X</IconButton>);
     expect(screen.getByText('X')).toBeInTheDocument();
-  });
-
-  it('applies active class when active', () => {
-    const { container } = render(<IconButton active aria-label="active" />);
-    expect(container.querySelector('[class*="iconButtonActive"]')).toBeInTheDocument();
-  });
-
-  it('applies danger class when danger', () => {
-    const { container } = render(<IconButton danger aria-label="danger" />);
-    expect(container.querySelector('[class*="iconButtonDanger"]')).toBeInTheDocument();
   });
 });
 
@@ -131,23 +131,6 @@ describe('PanelHeader', () => {
   });
 });
 
-describe('Notice', () => {
-  it('renders children', () => {
-    render(<Notice variant="error">Error message</Notice>);
-    expect(screen.getByText('Error message')).toBeInTheDocument();
-  });
-
-  it('applies error class for error variant', () => {
-    const { container } = render(<Notice variant="error">Error</Notice>);
-    expect(container.querySelector('[class*="error"]')).toBeInTheDocument();
-  });
-
-  it('applies warning class for warning variant', () => {
-    const { container } = render(<Notice variant="warning">Warning</Notice>);
-    expect(container.querySelector('[class*="warning"]')).toBeInTheDocument();
-  });
-});
-
 describe('StatusBadge', () => {
   it('renders children', () => {
     render(<StatusBadge variant="success">Completed</StatusBadge>);
@@ -157,6 +140,11 @@ describe('StatusBadge', () => {
   it('applies the variant class', () => {
     const { container } = render(<StatusBadge variant="success">OK</StatusBadge>);
     expect(container.querySelector('[class*="statusBadge"]')).toBeInTheDocument();
+  });
+
+  it('keeps danger status styling separate from danger buttons', () => {
+    render(<StatusBadge variant="danger">Failed</StatusBadge>);
+    expect(screen.getByText('Failed').className).toContain('dangerStatus');
   });
 });
 

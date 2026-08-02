@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -40,7 +41,7 @@ func TestOpenAppliesMigrations(t *testing.T) {
 	}
 	defer db.Close()
 
-	tables := []string{"jobs", "job_items", "audit_logs", "shares", "desktop_services"}
+	tables := []string{"jobs", "job_items", "shares", "desktop_services"}
 	for _, table := range tables {
 		var name string
 		err := db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name=?", table).Scan(&name)
@@ -119,28 +120,35 @@ func TestMigrateIdempotent(t *testing.T) {
 	}
 }
 
-func TestMigrateAddsScheduledAtBeforeClaimIndex(t *testing.T) {
+func TestMigrateReplacesLegacyScheduledClaimIndex(t *testing.T) {
 	db, err := sql.Open("sqlite3", filepath.Join(t.TempDir(), "legacy.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer db.Close()
 
-	if _, err := db.Exec(`CREATE TABLE jobs (
-		id TEXT PRIMARY KEY,
-		type TEXT NOT NULL,
-		status TEXT NOT NULL,
-		created_at DATETIME NOT NULL
-	)`); err != nil {
+	if _, err := db.Exec(`
+		CREATE TABLE jobs (
+			id TEXT PRIMARY KEY,
+			type TEXT NOT NULL,
+			status TEXT NOT NULL,
+			scheduled_at DATETIME,
+			created_at DATETIME NOT NULL
+		);
+		CREATE INDEX idx_jobs_claim ON jobs(status, type, scheduled_at, created_at);
+	`); err != nil {
 		t.Fatal(err)
 	}
 	if err := migrate(db); err != nil {
 		t.Fatal(err)
 	}
 
-	var indexName string
-	if err := db.QueryRow(`SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_jobs_claim'`).Scan(&indexName); err != nil {
+	var definition string
+	if err := db.QueryRow(`SELECT sql FROM sqlite_master WHERE type = 'index' AND name = 'idx_jobs_claim'`).Scan(&definition); err != nil {
 		t.Fatal(err)
+	}
+	if strings.Contains(definition, "scheduled_at") {
+		t.Fatalf("legacy scheduled claim index was retained: %s", definition)
 	}
 }
 

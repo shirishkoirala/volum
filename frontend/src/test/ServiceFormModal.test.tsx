@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ServiceFormModal } from '../components/overlay/ServiceFormModal';
 
@@ -25,7 +25,7 @@ describe('ServiceFormModal', () => {
     expect(urlInput).toHaveFocus();
   }, 10000);
 
-  it('submits a new service when Add is clicked', () => {
+  it('submits a new service when Add is clicked', async () => {
     const onSave = vi.fn();
     const onClose = vi.fn();
 
@@ -43,7 +43,7 @@ describe('ServiceFormModal', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
 
-    expect(onClose).toHaveBeenCalledOnce();
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(onSave).toHaveBeenCalledWith({
       name: 'Codex Test Service',
       url: 'https://example.com/codex-service-test',
@@ -54,7 +54,7 @@ describe('ServiceFormModal', () => {
     });
   });
 
-  it('submits when Enter is pressed in a filled field', () => {
+  it('submits when Enter is pressed in a filled field', async () => {
     const onSave = vi.fn();
     const onClose = vi.fn();
 
@@ -65,7 +65,7 @@ describe('ServiceFormModal', () => {
     fireEvent.change(urlInput, { target: { value: 'https://docs.example.com' } });
     fireEvent.keyDown(urlInput, { key: 'Enter' });
 
-    expect(onClose).toHaveBeenCalledOnce();
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(onSave).toHaveBeenCalledWith({
       name: 'Docs',
       url: 'https://docs.example.com',
@@ -114,7 +114,52 @@ describe('ServiceFormModal', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('renders edit mode with initial values and saves edits', () => {
+  it('keeps entered values visible when saving fails', async () => {
+    const onSave = vi.fn().mockRejectedValue(new Error('Server unavailable'));
+    const onClose = vi.fn();
+
+    render(<ServiceFormModal onSave={onSave} onClose={onClose} />);
+
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'My Service' } });
+    fireEvent.change(screen.getByLabelText('URL'), {
+      target: { value: 'https://example.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+    expect(await screen.findByText('Server unavailable')).toBeInTheDocument();
+    expect(screen.getByLabelText('Name')).toHaveValue('My Service');
+    expect(screen.getByLabelText('URL')).toHaveValue('https://example.com');
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('cannot be dismissed while a save is pending', async () => {
+    let finishSave: (() => void) | undefined;
+    const onSave = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finishSave = resolve;
+        }),
+    );
+    const onClose = vi.fn();
+
+    render(<ServiceFormModal onSave={onSave} onClose={onClose} />);
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Pending Service' } });
+    fireEvent.change(screen.getByLabelText('URL'), {
+      target: { value: 'https://example.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+    expect(await screen.findByRole('button', { name: 'Saving...' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+
+    await act(async () => finishSave?.());
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+  });
+
+  it('renders edit mode with initial values and saves edits', async () => {
     const onSave = vi.fn();
     const onClose = vi.fn();
 
@@ -139,7 +184,7 @@ describe('ServiceFormModal', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(onClose).toHaveBeenCalledOnce();
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(onSave).toHaveBeenCalledWith({
       name: 'Existing',
       url: 'https://new.example.com',

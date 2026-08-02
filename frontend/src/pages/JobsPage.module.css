@@ -1,15 +1,52 @@
+.jobHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.jobHeader h2 {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  margin: 0;
+}
+
+.jobHeader p {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  margin: var(--space-xxs) 0 0;
+}
+
 .jobToolbar {
   align-items: center;
   display: flex;
   gap: var(--space-sm);
   justify-content: flex-end;
-  width: 100%;
 }
 
 .jobList {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+}
+
+.loading {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: center;
+  min-height: 180px;
+}
+
+.loading svg {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .jobItem {
@@ -41,12 +78,6 @@
 
 .jobTitleRow strong {
   font-size: var(--font-size-md);
-  text-transform: capitalize;
-}
-
-.jobStatus {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
   text-transform: capitalize;
 }
 
@@ -112,6 +143,14 @@
 }
 
 @media (max-width: 760px) {
+  .clearLabel {
+    display: none;
+  }
+
+  .jobHeader p {
+    display: none;
+  }
+
   .jobItem {
     padding: var(--space-sm);
   }

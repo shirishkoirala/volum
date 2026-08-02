@@ -76,9 +76,6 @@ func (s *Server) finalizeUpload(ctx context.Context, req uploadFinalizeRequest) 
 	if err := s.jobs.CompleteJob(ctx, req.jobID); err != nil {
 		return jobs.Job{}, err
 	}
-	if err := s.jobs.CreateAuditLog(ctx, "upload", destinationPublic, "uploaded "+name); err != nil {
-		return jobs.Job{}, err
-	}
 	return s.jobs.Get(ctx, req.jobID)
 }
 

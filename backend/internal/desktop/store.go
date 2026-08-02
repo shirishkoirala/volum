@@ -2,10 +2,10 @@ package desktop
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/volum-app/volum/backend/internal/sqlutil"
 )
 
@@ -113,7 +113,7 @@ func (s *Store) ListServices(ctx context.Context) ([]ServiceRecord, error) {
 }
 
 func (s *Store) CreateService(ctx context.Context, name, url, iconURL, healthURL, description, openMode string) (*ServiceRecord, error) {
-	id := uuid.New().String()
+	id := rand.Text()
 	now := now()
 	om := validOpenMode(openMode)
 	if _, err := s.db.ExecContext(ctx,

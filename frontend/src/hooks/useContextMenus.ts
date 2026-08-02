@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { TrashEntry } from '../api/client';
+import type { TrashEntry } from '../api/client-files';
 import type { DesktopIconItem } from './useDesktopIcons';
 import type { ServiceShortcut } from '../utils/services';
 
@@ -14,10 +14,6 @@ export interface ContextMenus {
   >;
   filesEmptyMenu: { x: number; y: number } | null;
   setFilesEmptyMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
-  trashEmptyMenu: { x: number; y: number } | null;
-  setTrashEmptyMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
-  jobsEmptyMenu: { x: number; y: number } | null;
-  setJobsEmptyMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
   serviceFormData: { initial?: ServiceShortcut } | null;
   setServiceFormData: React.Dispatch<React.SetStateAction<{ initial?: ServiceShortcut } | null>>;
   emptyMenuBlockedRef: React.MutableRefObject<boolean>;
@@ -35,8 +31,6 @@ export function useContextMenus(): ContextMenus {
     item: DesktopIconItem;
   } | null>(null);
   const [filesEmptyMenu, setFilesEmptyMenu] = useState<{ x: number; y: number } | null>(null);
-  const [trashEmptyMenu, setTrashEmptyMenu] = useState<{ x: number; y: number } | null>(null);
-  const [jobsEmptyMenu, setJobsEmptyMenu] = useState<{ x: number; y: number } | null>(null);
   const [serviceFormData, setServiceFormData] = useState<{ initial?: ServiceShortcut } | null>(
     null,
   );
@@ -49,10 +43,6 @@ export function useContextMenus(): ContextMenus {
     setDesktopContextMenu,
     filesEmptyMenu,
     setFilesEmptyMenu,
-    trashEmptyMenu,
-    setTrashEmptyMenu,
-    jobsEmptyMenu,
-    setJobsEmptyMenu,
     serviceFormData,
     setServiceFormData,
     emptyMenuBlockedRef,

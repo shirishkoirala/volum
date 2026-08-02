@@ -2,11 +2,11 @@ package auth
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"errors"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/volum-app/volum/backend/internal/sqlutil"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -43,7 +43,7 @@ func (s *Store) CreateUser(ctx context.Context, username, password string, role 
 		return nil, err
 	}
 	now := now()
-	id := uuid.New().String()
+	id := rand.Text()
 	_, err = s.db.ExecContext(ctx,
 		`INSERT INTO users (id, username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
 		id, username, string(hash), string(role), now, now,
@@ -82,7 +82,7 @@ func (s *Store) CreateInitialAdmin(ctx context.Context, username, password strin
 
 	now := now()
 	record := &UserRecord{
-		ID:           uuid.New().String(),
+		ID:           rand.Text(),
 		Username:     username,
 		PasswordHash: string(hash),
 		Role:         RoleAdmin,
@@ -130,7 +130,7 @@ func (s *Store) ListUsers(ctx context.Context) ([]UserRecord, error) {
 	defer rows.Close()
 	var users []UserRecord
 	for rows.Next() {
-		u, err := scanUserFromRows(rows)
+		u, err := scanUser(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -263,21 +263,12 @@ func (s *Store) VerifyPassword(record *UserRecord, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(record.PasswordHash), []byte(password)) == nil
 }
 
-func scanUser(row *sql.Row) (*UserRecord, error) {
+func scanUser(row sqlutil.Scanner) (*UserRecord, error) {
 	var u UserRecord
 	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.SessionVersion, &u.HasAvatar)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
-	if err != nil {
-		return nil, err
-	}
-	return &u, nil
-}
-
-func scanUserFromRows(row sqlutil.Scanner) (*UserRecord, error) {
-	var u UserRecord
-	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.SessionVersion, &u.HasAvatar)
 	if err != nil {
 		return nil, err
 	}

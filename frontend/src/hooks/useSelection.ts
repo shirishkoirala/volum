@@ -1,5 +1,5 @@
 import { MouseEvent, useCallback, useMemo, useState } from 'react';
-import type { FileEntry, TrashEntry } from '../api/client';
+import type { FileEntry, TrashEntry } from '../api/client-files';
 import { isArchiveFile } from '../utils/archive';
 
 interface UseSelectionParams {

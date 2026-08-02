@@ -103,6 +103,21 @@ describe('AppMenuBar', () => {
     expect(newFolderBtn.closest('button')).toBeDisabled();
   });
 
+  it('disables trash mutations for read-only users', async () => {
+    const user = userEvent.setup();
+    render(
+      <AppMenuBar
+        handlers={{ ...baseHandlers, canWrite: false, selectedCount: 1 }}
+        windowType="trash"
+      />,
+    );
+
+    await user.click(screen.getByText('File'));
+    expect(screen.getByRole('menuitem', { name: 'Restore' })).toBeDisabled();
+    expect(screen.getByRole('menuitem', { name: 'Delete Forever' })).toBeDisabled();
+    expect(screen.getByRole('menuitem', { name: 'Empty Trash' })).toBeDisabled();
+  });
+
   it('calls onSetViewMode from View menu', async () => {
     const user = userEvent.setup();
     const onSetViewMode = vi.fn();
@@ -128,5 +143,26 @@ describe('AppMenuBar', () => {
     await user.click(screen.getByText('New Folder'));
     expect(onCreateFolder).toHaveBeenCalledOnce();
     expect(screen.queryByText('Upload')).not.toBeInTheDocument();
+  });
+
+  it('is reachable and moves focus through an open menu', async () => {
+    const user = userEvent.setup();
+    render(<AppMenuBar handlers={baseHandlers} />);
+
+    await user.tab();
+    const fileMenu = screen.getByRole('menuitem', { name: 'File' });
+    expect(fileMenu).toHaveFocus();
+
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'New Folder' })).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'Upload' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(fileMenu).toHaveFocus();
+
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'New Folder' })).toHaveFocus();
+    await user.tab();
+    expect(screen.queryByRole('menu', { name: 'File menu' })).not.toBeInTheDocument();
   });
 });

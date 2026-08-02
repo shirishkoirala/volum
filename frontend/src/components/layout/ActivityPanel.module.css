@@ -1,7 +1,7 @@
 .panel {
   -webkit-backdrop-filter: var(--glass-backdrop);
   backdrop-filter: var(--glass-backdrop);
-  background: var(--glass-menu-bg);
+  background: color-mix(in srgb, var(--color-surface) 96%, transparent);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
@@ -75,26 +75,29 @@
   font-variant-numeric: tabular-nums;
 }
 
-.viewAll {
-  align-items: center;
+.itemAction {
   background: transparent;
   border: 0;
-  border-top: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
   color: var(--color-brand-text);
   cursor: pointer;
-  display: flex;
-  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
   font-weight: 600;
-  gap: var(--space-sm);
-  justify-content: center;
-  padding: var(--space-sm) var(--space-md);
-  text-align: center;
-  transition: background var(--transition-fast);
-  width: 100%;
+  padding: var(--space-xs);
 }
 
-.viewAll:hover {
+.itemAction:hover {
   background: var(--glass-hover-bg);
+}
+
+.itemAction:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+.viewAll {
+  flex-shrink: 0;
 }
 
 @media (max-width: 760px) {
@@ -110,6 +113,10 @@
   }
 
   .item {
+    min-height: 44px;
+  }
+
+  .itemAction {
     min-height: 44px;
   }
 

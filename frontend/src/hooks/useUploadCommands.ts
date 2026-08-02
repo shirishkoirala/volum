@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
-import type { Job } from '../api/client';
-import { getJobs } from '../api/client';
+import type { Job } from '../api/client-jobs';
+import { getJobs } from '../api/client-jobs';
 import {
   unsupportedUploadReason,
   uploadFilesWithResume,
@@ -15,7 +15,6 @@ interface UploadCommandDeps {
   setError: (err: string | null) => void;
   setJobs: Dispatch<SetStateAction<Job[]>>;
   setUploadProgress: Dispatch<SetStateAction<UploadProgress | null>>;
-  setPendingUploadCount: Dispatch<SetStateAction<number>>;
   showToastObj: (toast: Omit<Toast, 'id'>, timeout?: number) => void;
   runAction: RunAction;
 }
@@ -26,7 +25,6 @@ export function useUploadCommands({
   setError,
   setJobs,
   setUploadProgress,
-  setPendingUploadCount,
   showToastObj,
   runAction,
 }: UploadCommandDeps) {
@@ -65,7 +63,6 @@ export function useUploadCommands({
       return;
     }
 
-    setPendingUploadCount((count) => count + selectedFiles.length);
     setUploadProgress({
       filename: selectedFiles[0]?.name ?? 'Upload',
       received: 0,
@@ -82,18 +79,12 @@ export function useUploadCommands({
     );
 
     void runAction(async () => {
-      let backendJobsSeen = 0;
       try {
         const result = await uploadFilesWithResume(
           currentPath,
           selectedFiles,
           undefined,
           setUploadProgress,
-          undefined,
-          () => {
-            backendJobsSeen += 1;
-            setPendingUploadCount((count) => Math.max(0, count - 1));
-          },
         );
         if (result.interrupted) {
           showToastObj({
@@ -113,10 +104,6 @@ export function useUploadCommands({
           });
         }
       } finally {
-        const remainingUploads = selectedFiles.length - backendJobsSeen;
-        if (remainingUploads > 0) {
-          setPendingUploadCount((count) => Math.max(0, count - remainingUploads));
-        }
         setUploadProgress(null);
       }
       const response = await getJobs();

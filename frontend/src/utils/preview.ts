@@ -1,5 +1,5 @@
-import { downloadUrl } from '../api/client';
-import type { FileEntry } from '../api/client';
+import { downloadUrl } from '../api/client-files';
+import type { FileEntry } from '../api/client-files';
 import { isImageExtension, isVideoExtension, isAudioExtension, isTextExtension } from './fileTypes';
 
 export const MAX_THUMBNAIL_BYTES = 8 * 1024 * 1024;

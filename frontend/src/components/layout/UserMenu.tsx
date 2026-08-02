@@ -1,5 +1,5 @@
 import { Icon } from '../ui/Icon';
-import { profileAvatarUrl, type Session } from '../../api/client';
+import { profileAvatarUrl, type Session } from '../../api/client-auth';
 import styles from './UserMenu.module.css';
 
 type UserMenuProps = {
