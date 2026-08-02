@@ -21,6 +21,20 @@ describe('Icon', () => {
     const svg = container.querySelector('svg');
     expect(svg).toBeInTheDocument();
   });
+
+  it.each([
+    'pan-left',
+    'pan-right',
+    'drag-handle',
+    'edit-undo',
+    'document-open-recent',
+    'application-x-archive',
+    'dialog-password',
+    'emblem-system',
+  ])('uses a dedicated glyph for %s', (name) => {
+    const { container } = render(<Icon name={name} size={18} />);
+    expect(container.querySelector('svg')).not.toHaveClass('lucide-square');
+  });
 });
 
 describe('FileIcon', () => {

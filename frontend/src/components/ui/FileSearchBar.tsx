@@ -1,8 +1,9 @@
 import { RefObject } from 'react';
-import { Icon, FileIcon } from './Icon';
+import { Icon } from './Icon';
+import { SearchSuggestions } from './SearchSuggestions';
 import { IconButton } from './shared';
 
-import type { SearchResult } from '../../api/client';
+import type { SearchResult } from '../../api/client-files';
 import styles from './FileSearchBar.module.css';
 
 type FileSearchBarProps = {
@@ -49,39 +50,23 @@ export function FileSearchBar({
           }}
         />
         {query.length > 0 && (
-          <button type="button" className={styles.searchClear} onClick={onClearSearch}>
+          <button
+            type="button"
+            className={styles.searchClear}
+            onClick={onClearSearch}
+            aria-label="Clear search"
+          >
             <Icon name="window-close" size={14} />
           </button>
         )}
       </label>
       {searchOpen && searchResults && searchResults.length > 0 && (
-        <div className={styles.searchResultsDropdown}>
-          {searchResults.map((result) => (
-            <button
-              key={result.path}
-              type="button"
-              className={styles.searchResultItem}
-              onClick={() => onSearchResultClick(result)}
-              aria-label={result.name}
-            >
-              <FileIcon
-                entry={{ ...result, hidden: false, permissions: '', owner: '', group: '' }}
-                size={20}
-              />
-              <span className={styles.searchResultName}>{result.name}</span>
-              <span className={styles.searchResultPath}>{result.root}</span>
-            </button>
-          ))}
-          {onShowAllResults && (
-            <button
-              type="button"
-              className={styles.showAllResults}
-              onClick={() => onShowAllResults(query)}
-            >
-              View all {searchResults.length} results &rarr;
-            </button>
-          )}
-        </div>
+        <SearchSuggestions
+          className={styles.searchResultsDropdown}
+          results={searchResults}
+          onSelect={onSearchResultClick}
+          onShowAll={onShowAllResults ? () => onShowAllResults(query) : undefined}
+        />
       )}
       <IconButton
         disabled={!canUpload}

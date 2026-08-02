@@ -2,11 +2,11 @@ package jobs
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"errors"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/volum-app/volum/backend/internal/sqlutil"
 )
 
@@ -41,7 +41,7 @@ func (s *Store) Create(ctx context.Context, req CreateRequest) (Job, error) {
 
 	now := now()
 	job := Job{
-		ID:              uuid.NewString(),
+		ID:              rand.Text(),
 		Type:            req.Type,
 		Status:          StatusQueued,
 		SourcePath:      optional(req.SourcePath),

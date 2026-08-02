@@ -90,14 +90,6 @@ func NewRootGuardWithRoots(roots []Root) (*RootGuard, error) {
 	return &RootGuard{roots: cleaned}, nil
 }
 
-func (g *RootGuard) Roots() []string {
-	roots := make([]string, len(g.roots))
-	for i, root := range g.roots {
-		roots[i] = root.Path
-	}
-	return roots
-}
-
 func (g *RootGuard) RootEntries() []Root {
 	roots := make([]Root, len(g.roots))
 	copy(roots, g.roots)

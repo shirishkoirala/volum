@@ -74,29 +74,29 @@ export function Taskbar({ launcherItems, onActivateLauncher }: TaskbarProps) {
       {visibleWindowItems.map((win) => {
         const isFocused = focusedId === win.id && !win.minimized;
         return (
-          <button
+          <div
             key={win.id}
-            className={`${styles.item}${isFocused ? ` ${styles.focused}` : ''}${win.minimized ? ` ${styles.minimized}` : ''}`}
-            onClick={() => handleWindowClick(win.id)}
-            type="button"
-            title={win.title}
-            aria-label={`${win.title}${win.minimized ? ' (minimized)' : ''}`}
+            className={`${styles.windowItem}${isFocused ? ` ${styles.focused}` : ''}${win.minimized ? ` ${styles.minimized}` : ''}`}
           >
-            <IconImg src={win.icon} alt="" width={18} height={18} />
-            <span className={styles.label}>{win.title}</span>
-            <span
+            <button
+              className={styles.item}
+              onClick={() => handleWindowClick(win.id)}
+              type="button"
+              title={win.title}
+              aria-label={`${win.title}${win.minimized ? ' (minimized)' : ''}`}
+            >
+              <IconImg src={win.icon} alt="" width={18} height={18} />
+              <span className={styles.label}>{win.title}</span>
+            </button>
+            <button
+              type="button"
               className={styles.closeBtn}
-              onClick={(e) => {
-                e.stopPropagation();
-                closeWindow(win.id);
-              }}
-              role="button"
+              onClick={() => closeWindow(win.id)}
               aria-label={`Close ${win.title}`}
-              tabIndex={-1}
             >
               <Icon name="window-close" size={12} />
-            </span>
-          </button>
+            </button>
+          </div>
         );
       })}
     </div>

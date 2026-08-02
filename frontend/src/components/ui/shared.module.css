@@ -69,15 +69,6 @@
   opacity: 0.35;
 }
 
-.iconButtonActive {
-  background: var(--glass-selected-bg);
-  border-color: var(--color-brand);
-}
-
-.iconButtonDanger:not(:disabled) {
-  color: var(--color-danger);
-}
-
 .button:hover:not(:disabled) {
   background: var(--glass-hover-bg);
   border-color: var(--color-text-muted);
@@ -100,13 +91,13 @@
   color: var(--color-on-accent);
 }
 
-.danger {
+.dangerButton {
   background: var(--color-danger);
   border-color: var(--color-danger);
   color: var(--color-on-accent);
 }
 
-.danger:hover:not(:disabled) {
+.dangerButton:hover:not(:disabled) {
   background: var(--color-danger);
   color: var(--color-on-accent);
 }
@@ -131,48 +122,26 @@
   color: var(--color-brand-text);
 }
 
-.notice {
-  align-items: center;
-  border: 1px solid;
-  border-radius: var(--radius-md);
-  display: flex;
-  font-size: var(--font-size-base);
-  gap: var(--space-sm);
-  justify-content: space-between;
-  padding: var(--space-md) var(--space-lg);
-}
-
-.noticeContent {
-  align-items: center;
-  display: flex;
-  flex: 1;
-  gap: var(--space-sm);
-  min-width: 0;
-}
-
-.noticeDismiss {
+.dropdownFooterAction {
   align-items: center;
   background: transparent;
   border: 0;
-  color: inherit;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-brand-text);
   cursor: pointer;
-  display: inline-flex;
-  flex-shrink: 0;
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  gap: var(--space-sm);
   justify-content: center;
-  margin: -2px -4px -2px 0;
-  padding: 4px;
+  padding: var(--space-sm) var(--space-md);
+  text-align: center;
+  transition: background var(--transition-fast);
+  width: 100%;
 }
 
-.error {
-  background: var(--color-danger-bg);
-  border-color: var(--color-danger-border);
-  color: var(--color-danger-text);
-}
-
-.warning {
-  background: var(--color-warning-bg);
-  border-color: var(--color-warning-border);
-  color: var(--color-warning-text);
+.dropdownFooterAction:hover {
+  background: var(--glass-hover-bg);
 }
 
 .statusBadge {
@@ -203,7 +172,7 @@
   color: var(--color-warning-text);
 }
 
-.danger {
+.dangerStatus {
   background: var(--color-danger-bg);
   color: var(--color-danger-text);
 }
@@ -257,6 +226,16 @@
 @media (max-width: 760px) {
   .overlay {
     padding: var(--space-md);
+  }
+
+  .button,
+  .compact {
+    min-height: var(--size-touch-target);
+  }
+
+  .iconButton {
+    height: var(--size-touch-target);
+    width: var(--size-touch-target);
   }
 
   .panelHeader {

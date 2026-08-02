@@ -4,7 +4,9 @@ import { Button, IconButton, StatusBadge } from '../ui/shared';
 import { Dialog } from './Dialog';
 import { EmptyState } from '../ui/EmptyState';
 import { ErrorBanner } from '../ui/ErrorBanner';
-import { getShares, deleteShare, shareUrl, type Share } from '../../api/client';
+import { InlineFeedback } from '../ui/InlineFeedback';
+import { shareUrl } from '../../api/client-base';
+import { getShares, deleteShare, type Share } from '../../api/client-shares';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Skeleton } from '../ui/Skeleton';
 import { useAsyncData } from '../../hooks/useAsyncData';
@@ -19,6 +21,10 @@ export function ShareManager({ onClose }: ShareManagerProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Share | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<{
+    result: 'copied' | 'failed';
+    url: string;
+  } | null>(null);
 
   const { data: sharesData, loading, error, refresh: loadShares } = useAsyncData(() => getShares());
 
@@ -43,8 +49,15 @@ export function ShareManager({ onClose }: ShareManagerProps) {
     }
   };
 
-  const handleCopyLink = (token: string) => {
-    navigator.clipboard.writeText(shareUrl(token)).catch(() => {});
+  const handleCopyLink = async (token: string) => {
+    setCopyStatus(null);
+    const url = shareUrl(token);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyStatus({ result: 'copied', url });
+    } catch {
+      setCopyStatus({ result: 'failed', url });
+    }
   };
 
   return (
@@ -118,7 +131,7 @@ export function ShareManager({ onClose }: ShareManagerProps) {
                 <span className={styles.shareColActions}>
                   <IconButton
                     className={styles.shareActionButton}
-                    onClick={() => handleCopyLink(share.token)}
+                    onClick={() => void handleCopyLink(share.token)}
                     title="Copy share link"
                   >
                     <Icon name="edit-copy" size={14} />
@@ -135,6 +148,20 @@ export function ShareManager({ onClose }: ShareManagerProps) {
               </div>
             ))}
           </div>
+        )}
+        {copyStatus && (
+          <InlineFeedback
+            variant={copyStatus.result === 'copied' ? 'success' : 'error'}
+            className={styles.copyFeedback}
+          >
+            {copyStatus.result === 'copied' ? (
+              'Share link copied to clipboard.'
+            ) : (
+              <>
+                The browser could not copy the link. Copy it manually: <code>{copyStatus.url}</code>
+              </>
+            )}
+          </InlineFeedback>
         )}
       </Dialog>
       {pendingDelete && (

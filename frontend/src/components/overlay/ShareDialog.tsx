@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
 import { Button, IconButton } from '../ui/shared';
 import { Dialog } from './Dialog';
-import { createShare, shareUrl as buildShareUrl, type Share } from '../../api/client';
+import { shareUrl as buildShareUrl } from '../../api/client-base';
+import { createShare, type Share } from '../../api/client-shares';
 import dStyles from './Dialogs.module.css';
-import uiStyles from '../ui/shared.module.css';
 
 type ShareDialogProps = {
   path: string;
@@ -19,6 +19,7 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [share, setShare] = useState<Share | null>(null);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
   const inputRef = useRef<HTMLInputElement>(null);
   const copyRef = useRef<HTMLInputElement>(null);
 
@@ -55,10 +56,14 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
 
   const shareUrl = share ? buildShareUrl(share.token) : '';
 
-  const handleCopy = () => {
-    if (copyRef.current) {
-      copyRef.current.select();
-      navigator.clipboard.writeText(shareUrl).catch(() => {});
+  const handleCopy = async () => {
+    copyRef.current?.select();
+    setCopyStatus('idle');
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopyStatus('copied');
+    } catch {
+      setCopyStatus('failed');
     }
   };
 
@@ -76,14 +81,14 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
             <Button size="compact" onClick={onClose}>
               Cancel
             </Button>
-            <Button size="compact" variant="primary" disabled={submitting} onClick={handleSubmit}>
-              {submitting ? (
-                <>
-                  <Icon name="view-refresh" size={15} className={uiStyles.spin} /> Creating...
-                </>
-              ) : (
-                'Create Share Link'
-              )}
+            <Button
+              size="compact"
+              variant="primary"
+              busy={submitting}
+              busyLabel="Creating..."
+              onClick={handleSubmit}
+            >
+              Create Share Link
             </Button>
           </>
         )
@@ -103,11 +108,24 @@ export function ShareDialog({ path, name, onClose }: ShareDialogProps) {
                 readOnly
                 onClick={(e) => (e.target as HTMLInputElement).select()}
               />
-              <IconButton onClick={handleCopy} title="Copy to clipboard">
+              <IconButton
+                onClick={handleCopy}
+                title={copyStatus === 'copied' ? 'Copied' : 'Copy to clipboard'}
+              >
                 <Icon name="edit-copy" size={16} />
               </IconButton>
             </div>
           </label>
+          {copyStatus !== 'idle' && (
+            <p
+              className={copyStatus === 'copied' ? dStyles.dialogHelp : dStyles.dialogError}
+              role="status"
+            >
+              {copyStatus === 'copied'
+                ? 'Share link copied to clipboard.'
+                : 'Share created, but the browser could not copy it. Select the URL and copy it manually.'}
+            </p>
+          )}
           {share.expiresAt && (
             <p className={dStyles.dialogHelp}>
               Expires: {new Date(share.expiresAt).toLocaleString()}

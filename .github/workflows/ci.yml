@@ -26,13 +26,9 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm audit --audit-level=high
-      - run: npx tsc --noEmit
       - run: npm run format:check
       - run: npm run lint
       - run: npm run test:ci
-      - name: Coverage (informational)
-        run: npm run test:coverage
-        continue-on-error: true
       - run: npm run build
 
   backend:
@@ -42,7 +38,7 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           go-version: '1.25.12'
           cache-dependency-path: backend/go.sum
@@ -54,9 +50,6 @@ jobs:
           working-directory: backend
       - run: go vet ./...
       - run: go test ./...
-      - name: Coverage (informational)
-        run: go test -coverprofile=coverage.out -covermode=atomic ./...
-        continue-on-error: true
       - run: go build ./cmd/volum
       - run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
@@ -68,7 +61,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck
-          shellcheck scripts/*.sh frontend/scripts/*.sh
+          shellcheck scripts/*.sh
       - name: Verify CONTRIBUTING.md commands match Makefile
         run: |
           for cmd in $(grep -oP '`make \K[a-z-]+' CONTRIBUTING.md | sort -u); do

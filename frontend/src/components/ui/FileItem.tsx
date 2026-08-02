@@ -1,11 +1,19 @@
-import { DragEvent, RefObject, useEffect, useRef, useState } from 'react';
+import {
+  DragEvent,
+  HTMLAttributes,
+  KeyboardEvent,
+  RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Icon, FileIcon, FolderIcon } from './Icon';
-import { rawUrl } from '../../api/client';
+import { rawUrl } from '../../api/client-files';
 import { canThumbnail } from '../../utils/preview';
-import type { FileEntry } from '../../api/client';
+import type { FileEntry } from '../../api/client-files';
 import { formatBytes, formatGridDate } from '../../utils/format';
 import type { RenameState } from '../../types';
-import { GRID_ICON_SIZE, LIST_ICON_SIZE } from './GridTile';
+import { GRID_ICON_SIZE, GridTile, LIST_ICON_SIZE } from './GridTile';
 import styles from './FileItem.module.css';
 
 type FileItemProps = {
@@ -19,6 +27,8 @@ type FileItemProps = {
   renameInputRef?: RefObject<HTMLInputElement | null>;
   onContextMenu: (event: React.MouseEvent<HTMLElement>) => void;
   onClick: () => void;
+  onFocus: () => void;
+  onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
   onDragStart: (event: DragEvent<HTMLElement>) => void;
   onDragOver?: (event: DragEvent<HTMLElement>) => void;
   onDragLeave?: () => void;
@@ -30,6 +40,8 @@ type FileItemProps = {
   onCancelRename: () => void;
   onRenameChange: (value: string) => void;
   className?: string;
+  index: number;
+  tabIndex: number;
 };
 
 function FileThumbnail({
@@ -130,6 +142,8 @@ export function FileItem({
   renameInputRef,
   onContextMenu,
   onClick,
+  onFocus,
+  onKeyDown,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -141,89 +155,129 @@ export function FileItem({
   onCancelRename,
   onRenameChange,
   className,
+  index,
+  tabIndex,
 }: FileItemProps) {
   const fileIconSize = viewMode === 'grid' ? GRID_ICON_SIZE : LIST_ICON_SIZE;
-  const rowClass = viewMode === 'grid' ? styles.fileRowGrid : styles.fileRowList;
+  const isRenaming = renameState?.path === entry.path;
+  const itemClassName = [isDragOver && styles.dragOver, className].filter(Boolean).join(' ');
+  const interactionProps: HTMLAttributes<HTMLDivElement> = {
+    draggable: canWrite,
+    onDragStart: (event) => onDragStart(event),
+    onDragOver,
+    onDragLeave,
+    onDrop,
+    onClick: () => {
+      if (renameState) return;
+      onClick();
+    },
+    onContextMenu: (event) => {
+      event.currentTarget.focus();
+      onContextMenu(event);
+    },
+    onFocus,
+    onKeyDown: (event) => {
+      if (renameState) return;
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
+        return;
+      }
+      if (event.key === ' ') {
+        event.preventDefault();
+        event.stopPropagation();
+        onFocus();
+        return;
+      }
+      onKeyDown(event);
+    },
+    onTouchStart,
+    onTouchMove,
+    onTouchEnd,
+    role: isRenaming ? undefined : 'option',
+    'aria-selected': isRenaming ? undefined : isSelected,
+    tabIndex: isRenaming ? -1 : tabIndex,
+  };
+  const icon =
+    entry.type === 'directory' ? (
+      <span className={styles.iconWrap} onContextMenu={(e) => e.preventDefault()}>
+        <FolderIcon size={fileIconSize} />
+        {isFavorited && (
+          <span className={styles.pinBadge}>
+            <Icon name="bookmark-new" size={10} />
+          </span>
+        )}
+      </span>
+    ) : canThumbnail(entry) ? (
+      <FileThumbnail entry={entry} size={fileIconSize} />
+    ) : (
+      <FileIcon entry={entry} size={fileIconSize} />
+    );
+  const renameInput = (
+    <input
+      ref={renameInputRef as RefObject<HTMLInputElement>}
+      className={styles.renameInput}
+      aria-label={`Rename ${entry.name}`}
+      value={renameState?.value ?? ''}
+      onBlur={() => onCommitRename()}
+      onChange={(event) => onRenameChange(event.target.value)}
+      onClick={(event) => event.stopPropagation()}
+      onContextMenu={(event) => event.stopPropagation()}
+      onDoubleClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => {
+        event.stopPropagation();
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          onCommitRename();
+        }
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          onCancelRename();
+        }
+      }}
+    />
+  );
+
+  if (viewMode === 'grid') {
+    return (
+      <GridTile
+        {...interactionProps}
+        className={itemClassName}
+        data-index={index}
+        icon={icon}
+        isSelected={isSelected}
+        name={isRenaming ? renameInput : entry.name}
+        metadata={
+          <>
+            {formatBytes(entry.size)}
+            <span className={styles.fileDate}>{formatGridDate(entry.modifiedAt)}</span>
+          </>
+        }
+      />
+    );
+  }
 
   return (
     <div
-      className={`${rowClass}${isSelected ? ` ${styles.selected}` : ''}${isDragOver ? ` ${styles.dragOver}` : ''}${className ? ` ${className}` : ''}`}
-      draggable={canWrite}
-      onDragStart={(event) => onDragStart(event)}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onClick={() => {
-        if (renameState) return;
-        onClick();
-      }}
-      onContextMenu={onContextMenu}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      role="button"
+      {...interactionProps}
+      className={`${styles.fileRowList}${isSelected ? ` ${styles.selected}` : ''}${itemClassName ? ` ${itemClassName}` : ''}`}
+      data-index={index}
     >
-      {entry.type === 'directory' ? (
-        <span className={styles.iconWrap} onContextMenu={(e) => e.preventDefault()}>
-          <FolderIcon size={fileIconSize} />
-          {isFavorited && (
-            <span className={styles.pinBadge}>
-              <Icon name="bookmark-new" size={10} />
-            </span>
-          )}
-        </span>
-      ) : canThumbnail(entry) ? (
-        <FileThumbnail
-          entry={entry}
-          className={viewMode === 'grid' ? styles.fileThumbFrame : undefined}
-          size={fileIconSize}
-        />
-      ) : (
-        <FileIcon entry={entry} size={fileIconSize} />
-      )}
-      {renameState?.path === entry.path ? (
-        <input
-          ref={renameInputRef as RefObject<HTMLInputElement>}
-          className={styles.renameInput}
-          value={renameState.value}
-          onBlur={() => onCommitRename()}
-          onChange={(event) => onRenameChange(event.target.value)}
-          onClick={(event) => event.stopPropagation()}
-          onContextMenu={(event) => event.stopPropagation()}
-          onDoubleClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => {
-            event.stopPropagation();
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              onCommitRename();
-            }
-            if (event.key === 'Escape') {
-              event.preventDefault();
-              onCancelRename();
-            }
-          }}
-        />
+      {icon}
+      {isRenaming ? (
+        renameInput
       ) : (
         <span className={styles.fileName} title={entry.name}>
           {entry.name}
         </span>
       )}
-      {viewMode === 'grid' && (
-        <span className={styles.fileMeta}>
-          {formatBytes(entry.size)}
-          <span className={styles.fileDate}>{formatGridDate(entry.modifiedAt)}</span>
-        </span>
-      )}
-      {viewMode === 'list' && (
-        <>
-          <span className={styles.listType}>{entry.type}</span>
-          <span className={styles.listSize}>{formatBytes(entry.size)}</span>
-          <span className={styles.listModified}>{new Date(entry.modifiedAt).toLocaleString()}</span>
-          <span className={styles.listPermissions}>{entry.permissions}</span>
-          <span className={styles.listOwner}>{entry.owner}</span>
-          <span className={styles.listGroup}>{entry.group}</span>
-        </>
-      )}
+      <span className={styles.listType}>{entry.type}</span>
+      <span className={styles.listSize}>{formatBytes(entry.size)}</span>
+      <span className={styles.listModified}>{new Date(entry.modifiedAt).toLocaleString()}</span>
+      <span className={styles.listPermissions}>{entry.permissions}</span>
+      <span className={styles.listOwner}>{entry.owner}</span>
+      <span className={styles.listGroup}>{entry.group}</span>
     </div>
   );
 }

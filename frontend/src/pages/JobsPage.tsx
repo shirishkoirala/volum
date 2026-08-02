@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
-import type { Job, JobStatus, Session } from '../api/client';
-import { getJobs } from '../api/client';
+import type { Session } from '../api/client-auth';
+import type { Job, JobStatus } from '../api/client-jobs';
+import { getJobs } from '../api/client-jobs';
 import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
+import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { jobsIconUrl } from '../api/icons';
 import { ProgressBar } from '../components/ui/ProgressBar';
-import { Button, IconButton, StatusBadge } from '../components/ui/shared';
+import { Button, StatusBadge } from '../components/ui/shared';
 import { formatBytes, formatDuration, formatGridDate } from '../utils/format';
-import { makeJobLabel } from '../utils/jobs';
+import { isAnalysisJob, makeJobLabel } from '../utils/jobs';
 import { useJobs } from '../hooks/useJobs';
-import { useToasts } from '../hooks/useToasts';
-import { JobsEmptyMenu } from '../components/overlay/JobsEmptyMenu';
+import { useShellContext } from '../contexts/ShellContext';
+import { RefreshContextMenu } from '../components/overlay/RefreshContextMenu';
 import { ConflictDialog } from '../components/overlay/ConflictDialog';
+import { ConfirmDialog, type ConfirmDialogState } from '../components/overlay/ConfirmDialog';
 import { AppPanel } from '../components/layout/AppPanel';
 import styles from './JobsPage.module.css';
 
@@ -32,7 +35,8 @@ function JobItem({
   onResume,
   onRetry,
   onResolve,
-  onOpenAnalyzer,
+  onOpenAnalysis,
+  canManage,
 }: {
   job: Job;
   onCancel: (id: string, type: string) => void;
@@ -40,9 +44,18 @@ function JobItem({
   onResume: (id: string, type: string) => void;
   onRetry: (id: string, type: string) => void;
   onResolve: (id: string) => void;
-  onOpenAnalyzer?: (job: Job) => void;
+  onOpenAnalysis?: (job: Job) => void;
+  canManage: boolean;
 }) {
-  const progress = job.totalBytes > 0 ? Math.round((job.processedBytes / job.totalBytes) * 100) : 0;
+  const isAnalysis = isAnalysisJob(job);
+  const progress =
+    job.status === 'completed'
+      ? 100
+      : job.totalBytes > 0
+        ? Math.round((job.processedBytes / job.totalBytes) * 100)
+        : job.totalItems > 0
+          ? Math.round((job.processedItems / job.totalItems) * 100)
+          : 0;
   const canCancel =
     job.status === 'queued' ||
     job.status === 'running' ||
@@ -52,7 +65,6 @@ function JobItem({
   const canResume = job.status === 'paused';
   const canRetry = job.status === 'failed' || job.status === 'cancelled';
   const needsResolve = job.status === 'needs_attention';
-  const isAnalyzer = job.type === 'disk_analyze' || job.type === 'duplicate_find';
   const showLiveStats = job.status === 'running';
   const hasKnownTotal = job.totalBytes > 0;
   const byteProgress = hasKnownTotal
@@ -63,10 +75,18 @@ function JobItem({
     <article
       className={styles.jobItem}
       role="listitem"
-      tabIndex={0}
+      tabIndex={
+        isAnalysis ||
+        (canManage && (canPause || canResume || canCancel || canRetry || needsResolve))
+          ? 0
+          : -1
+      }
       data-job-id={job.id}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') e.stopPropagation();
+        if (e.target === e.currentTarget && e.key === 'Enter' && isAnalysis && onOpenAnalysis) {
+          e.preventDefault();
+          onOpenAnalysis(job);
+        }
       }}
     >
       <div className={styles.jobTitleRow}>
@@ -80,10 +100,10 @@ function JobItem({
       <div className={styles.jobMeta}>
         {job.totalItems > 1 && (
           <span>
-            {job.processedItems} / {job.totalItems} files
+            {job.processedItems} / {job.totalItems} items
           </span>
         )}
-        <span>{byteProgress}</span>
+        {!isAnalysis && <span>{byteProgress}</span>}
         {showLiveStats && job.speedBytesPerSecond ? (
           <span>{formatBytes(job.speedBytesPerSecond)}/s</span>
         ) : null}
@@ -105,44 +125,40 @@ function JobItem({
           <Icon name="dialog-warning" size={14} /> {job.errorMessage}
         </p>
       )}
-      {(canPause ||
-        canResume ||
-        canCancel ||
-        canRetry ||
-        needsResolve ||
-        (isAnalyzer && onOpenAnalyzer)) && (
+      {(isAnalysis ||
+        (canManage && (canPause || canResume || canCancel || canRetry || needsResolve))) && (
         <div className={styles.jobActions}>
-          {isAnalyzer && onOpenAnalyzer && (
-            <Button size="compact" variant="primary" onClick={() => onOpenAnalyzer(job)}>
+          {isAnalysis && onOpenAnalysis && (
+            <Button size="compact" variant="primary" onClick={() => onOpenAnalysis(job)}>
               <Icon name="document-open" size={15} />
               {job.status === 'completed' ? 'View results' : 'Open scan'}
             </Button>
           )}
-          {needsResolve && (
+          {canManage && needsResolve && (
             <Button size="compact" variant="primary" onClick={() => onResolve(job.id)}>
               <Icon name="dialog-warning" size={15} />
               Resolve Conflicts
             </Button>
           )}
-          {canPause && (
+          {canManage && canPause && (
             <Button size="compact" onClick={() => onPause(job.id, job.type)}>
               <Icon name="media-playback-pause" size={15} />
               Pause
             </Button>
           )}
-          {canResume && (
+          {canManage && canResume && (
             <Button size="compact" onClick={() => onResume(job.id, job.type)}>
               <Icon name="media-playback-start" size={15} />
               Resume
             </Button>
           )}
-          {canCancel && (
+          {canManage && canCancel && (
             <Button size="compact" onClick={() => onCancel(job.id, job.type)}>
               <Icon name="process-stop" size={15} />
               Cancel
             </Button>
           )}
-          {canRetry && (
+          {canManage && canRetry && (
             <Button size="compact" onClick={() => onRetry(job.id, job.type)}>
               <Icon name="view-refresh" size={15} />
               Retry
@@ -157,11 +173,12 @@ function JobItem({
 type JobsPageProps = {
   session: Session | null;
   sessionLoading: boolean;
-  onOpenAnalyzer?: (job: Job) => void;
+  onOpenAnalysis?: (job: Job) => void;
 };
 
 function handleJobListKeyDown(e: React.KeyboardEvent) {
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    if (!(e.target instanceof HTMLElement) || !e.target.hasAttribute('data-job-id')) return;
     e.preventDefault();
     const items = document.querySelectorAll<HTMLElement>('[data-job-id]');
     const current = document.activeElement;
@@ -171,13 +188,20 @@ function handleJobListKeyDown(e: React.KeyboardEvent) {
   }
 }
 
-export function JobsPage({ session, sessionLoading, onOpenAnalyzer }: JobsPageProps) {
+export function JobsPage({ session, sessionLoading, onOpenAnalysis }: JobsPageProps) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobsEmptyMenu, setJobsEmptyMenu] = useState<{ x: number; y: number } | null>(null);
   const [conflictDialogJobId, setConflictDialogJobId] = useState<string | null>(null);
-  const toast = useToasts();
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState>(null);
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState<string | null>(null);
+  const shell = useShellContext();
+  const canManage = session?.role === 'admin';
 
   const {
+    loading: jobsLoading,
+    error: jobsError,
+    clearError: clearJobsError,
     handleCancelJob,
     handleRetryJob,
     handlePauseJob,
@@ -190,8 +214,27 @@ export function JobsPage({ session, sessionLoading, onOpenAnalyzer }: JobsPagePr
     sessionLoading,
     onRefresh: () => {},
     showToast: (title, variant, message) =>
-      toast.showToastObj({ title, variant: variant ?? 'success', message }),
+      shell.showToastObj({ title, variant: variant ?? 'success', message }),
   });
+
+  const refreshJobs = async (announce = false) => {
+    setRetrying(true);
+    setRetryError(null);
+    clearJobsError();
+    try {
+      const response = await getJobs();
+      setJobs(response.jobs ?? []);
+      if (announce) shell.showToastObj({ title: 'Refreshed', variant: 'success' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load jobs';
+      setRetryError(message);
+      if (announce) {
+        shell.showToastObj({ title: 'Refresh failed', message, variant: 'error' });
+      }
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const pageSize = 25;
   const totalPages = Math.max(1, Math.ceil(jobs.length / pageSize));
@@ -213,25 +256,57 @@ export function JobsPage({ session, sessionLoading, onOpenAnalyzer }: JobsPagePr
     setJobsEmptyMenu({ x: event.clientX, y: event.clientY });
   };
 
-  const toolbar =
-    jobs.length > 0 ? (
-      <div className={styles.jobToolbar}>
-        {hasFailed && (
-          <IconButton onClick={handleClearFailed} aria-label="Clear failed" title="Clear failed">
-            <Icon name="dialog-warning" size={18} />
-          </IconButton>
-        )}
-        {hasCompleted && (
-          <IconButton
-            onClick={handleClearCompleted}
-            aria-label="Clear completed"
-            title="Clear completed"
-          >
-            <Icon name="edit-clear" size={18} />
-          </IconButton>
-        )}
+  const toolbar = (
+    <div className={styles.jobHeader}>
+      <div>
+        <h2>Jobs</h2>
+        <p>Background file work and storage analyses.</p>
       </div>
-    ) : null;
+      {jobs.length > 0 && canManage && (
+        <div className={styles.jobToolbar}>
+          {hasFailed && (
+            <Button
+              size="compact"
+              onClick={() =>
+                setConfirmDialog({
+                  title: 'Clear failed jobs?',
+                  message: 'Failed job history will be removed. This cannot be undone.',
+                  confirmLabel: 'Clear failed',
+                  danger: true,
+                  onConfirm: handleClearFailed,
+                })
+              }
+              aria-label="Clear failed"
+              title="Clear failed"
+            >
+              <Icon name="dialog-warning" size={18} />
+              <span className={styles.clearLabel}>Clear failed</span>
+            </Button>
+          )}
+          {hasCompleted && (
+            <Button
+              size="compact"
+              onClick={() =>
+                setConfirmDialog({
+                  title: 'Clear completed jobs?',
+                  message:
+                    'Completed and cancelled job history, including saved analyzer results, will be removed. This cannot be undone.',
+                  confirmLabel: 'Clear completed',
+                  danger: true,
+                  onConfirm: handleClearCompleted,
+                })
+              }
+              aria-label="Clear completed"
+              title="Clear completed"
+            >
+              <Icon name="edit-clear" size={18} />
+              <span className={styles.clearLabel}>Clear completed</span>
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 
   const pagination =
     totalPages > 1 ? (
@@ -244,6 +319,8 @@ export function JobsPage({ session, sessionLoading, onOpenAnalyzer }: JobsPagePr
             size="compact"
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage <= 1}
+            aria-label="Previous page"
+            title="Previous page"
           >
             <Icon name="pan-left" size={15} />
           </Button>
@@ -251,6 +328,8 @@ export function JobsPage({ session, sessionLoading, onOpenAnalyzer }: JobsPagePr
             size="compact"
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage >= totalPages}
+            aria-label="Next page"
+            title="Next page"
           >
             <Icon name="pan-right" size={15} />
           </Button>
@@ -268,11 +347,21 @@ export function JobsPage({ session, sessionLoading, onOpenAnalyzer }: JobsPagePr
         header={toolbar}
         onContextMenu={handleJobsEmptyContextMenu}
       >
-        {jobs.length === 0 ? (
+        {(jobsLoading || retrying) && jobs.length === 0 ? (
+          <div className={styles.loading} role="status">
+            <Icon name="view-refresh" size={18} />
+            Loading jobs…
+          </div>
+        ) : (jobsError || retryError) && jobs.length === 0 ? (
+          <ErrorBanner
+            message={jobsError || retryError || 'Failed to load jobs'}
+            onRetry={() => void refreshJobs()}
+          />
+        ) : jobs.length === 0 ? (
           <EmptyState
             icon={jobsIconUrl()}
-            title="No transfers yet"
-            subtitle="File operations like copy, move, and archive will appear here."
+            title="No jobs yet"
+            subtitle="File operations and storage analyses will appear here."
           />
         ) : (
           <>
@@ -285,24 +374,24 @@ export function JobsPage({ session, sessionLoading, onOpenAnalyzer }: JobsPagePr
                 onResume={handleResumeJob}
                 onRetry={handleRetryJob}
                 onResolve={setConflictDialogJobId}
-                onOpenAnalyzer={onOpenAnalyzer}
+                onOpenAnalysis={onOpenAnalysis}
+                canManage={canManage}
               />
             ))}
           </>
         )}
       </AppPanel>
       {jobsEmptyMenu && (
-        <JobsEmptyMenu
+        <RefreshContextMenu
           x={jobsEmptyMenu.x}
           y={jobsEmptyMenu.y}
           onRefresh={() => {
-            getJobs().then((r) => setJobs(r.jobs ?? []));
-            toast.showToastObj({ title: 'Refreshed', variant: 'success' });
+            void refreshJobs(true);
           }}
           onClose={() => setJobsEmptyMenu(null)}
         />
       )}
-      {conflictDialogJobId && (
+      {canManage && conflictDialogJobId && (
         <ConflictDialog
           jobId={conflictDialogJobId}
           onResolve={(items, defaultResolution) => {
@@ -311,6 +400,9 @@ export function JobsPage({ session, sessionLoading, onOpenAnalyzer }: JobsPagePr
           }}
           onClose={() => setConflictDialogJobId(null)}
         />
+      )}
+      {confirmDialog && (
+        <ConfirmDialog dialog={confirmDialog} onClose={() => setConfirmDialog(null)} />
       )}
     </>
   );

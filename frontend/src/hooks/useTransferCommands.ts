@@ -1,5 +1,8 @@
-import { createJob, createShare, shareUrl } from '../api/client';
-import type { FileEntry, ConflictPolicy } from '../api/client';
+import { shareUrl } from '../api/client-base';
+import { createJob } from '../api/client-jobs';
+import { createShare } from '../api/client-shares';
+import type { FileEntry } from '../api/client-files';
+import type { ConflictPolicy } from '../api/client-jobs';
 import { joinPath } from '../utils/path';
 import type { ClipboardState } from './types';
 
@@ -90,15 +93,26 @@ export function useTransferCommands(deps: TransferCommandDeps) {
     const entry = contextMenu?.entry;
     if (!entry) return;
     setContextMenu(null);
+    let url: string;
     try {
       const share = await createShare({ path: entry.path });
-      await navigator.clipboard.writeText(shareUrl(share.token));
-      showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
+      url = shareUrl(share.token);
     } catch (err) {
       showToastObj({
         title: 'Quick share failed',
         message: err instanceof Error ? err.message : undefined,
         variant: 'error',
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      showToastObj({ title: 'Share link copied to clipboard', variant: 'success' });
+    } catch {
+      showToastObj({
+        title: 'Share link created, but not copied',
+        message: 'Open Manage Shares to copy the link.',
+        variant: 'warning',
       });
     }
   };

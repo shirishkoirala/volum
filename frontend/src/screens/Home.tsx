@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SortField, SortDirection } from '../types';
-import type { FileEntry, Session } from '../api/client';
-import { HomeOverlays } from '../components/overlay/HomeOverlays';
+import type { Session } from '../api/client-auth';
+import type { FileEntry } from '../api/client-files';
+import type { Job } from '../api/client-jobs';
+import { KeyboardShortcuts } from '../components/overlay/KeyboardShortcuts';
+import { PreviewModal } from '../components/overlay/PreviewModal';
+import { ShareDialog } from '../components/overlay/ShareDialog';
+import { ShareManager } from '../components/overlay/ShareManager';
+import { ServiceFormModal } from '../components/overlay/ServiceFormModal';
+import { ConfirmDialog } from '../components/overlay/ConfirmDialog';
 import { SettingsPanel } from '../pages/SettingsPanel';
 import { TopBar } from '../components/layout/TopBar';
 import { Dock } from '../components/layout/Dock';
@@ -21,14 +28,13 @@ import type { ServiceHealthResult } from '../utils/services';
 import { useServiceShortcuts } from '../hooks/useServiceShortcuts';
 import { useJobs } from '../hooks/useJobs';
 import { useViewPreferences } from '../hooks/useViewPreferences';
-import { useNavigation } from '../hooks/useNavigation';
+import { useNavigation, type ActiveView } from '../hooks/useNavigation';
 import { useFavorites } from '../hooks/useFavorites';
 import { useFileActions } from '../hooks/useFileActions';
 import { useDialogStack } from '../hooks/useDialogStack';
 import { useToasts } from '../hooks/useToasts';
 import { useFileBrowser } from '../hooks/useFileBrowser';
 import { useSelection } from '../hooks/useSelection';
-import { useFileCommands } from '../hooks/useFileCommands';
 import { useContextMenus } from '../hooks/useContextMenus';
 import { useNavStack } from '../hooks/useNavStack';
 import { useDesktopActions } from '../hooks/useDesktopActions';
@@ -44,17 +50,22 @@ import { ShellContext } from '../contexts/ShellContext';
 import { Taskbar } from '../components/layout/Taskbar';
 import { PreviewWindow } from '../components/window/PreviewWindow';
 import { ServiceWindow } from '../components/window/ServiceWindow';
-import { fileTypeIconUrl } from '../api/icons';
+import { fileTypeIconUrl, storageAnalyzerIconUrl } from '../api/icons';
 import { defaultRootPath as getDefaultRootPath } from '../utils/roots';
+import { openFileExternally } from '../utils/preview';
+import { isAnalysisJob } from '../utils/jobs';
+import { STANDARD_WINDOW_H, STANDARD_WINDOW_W } from '../utils/window';
 import styles from './Home.module.css';
 
 interface HomeProps {
   session: Session;
   onSessionChange: (session: Session) => void;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
 }
+
+type AnalysisSection = 'disk-usage' | 'duplicates';
 
 export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme }: HomeProps) {
   // ── Core hooks ──
@@ -88,19 +99,16 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     services,
     browserNotifications: notifPrefs.enabled,
   });
-  const [pendingUploadCount, setPendingUploadCount] = useState(0);
 
-  const nav = useNavigation(
-    browser.devices,
-    browser.jobs,
-    browser.trashEntries.length,
-    viewPref.currentPath,
-    pendingUploadCount,
-  );
-  const { favorites, addFavorite, removeFavorite } = useFavorites(viewPref.currentPath);
+  const nav = useNavigation(browser.jobs, browser.trashEntries.length, viewPref.currentPath);
+  const { favorites, addFavorite, removeFavorite } = useFavorites();
   const fileActions = useFileActions();
   const dialogs = useDialogStack();
   const [previewEntries, setPreviewEntries] = useState<FileEntry[]>([]);
+  const [mobileAnalysisJobId, setMobileAnalysisJobId] = useState<string | null>(null);
+  const [mobileAnalysisPath, setMobileAnalysisPath] = useState<string | null>(null);
+  const [mobileAnalysisSection, setMobileAnalysisSection] = useState<AnalysisSection | null>(null);
+  const canManage = session.role === 'admin';
 
   // ── Refs ──
   const filesViewRef = useRef<import('../pages/FilesView').FilesViewHandle>(null);
@@ -131,7 +139,43 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     trashCount: browser.trashEntries.length,
     wm,
   });
-  const { openStorageAnalyzer } = workspaceOpeners;
+  const openStorageAnalyzerWindow = workspaceOpeners.openStorageAnalyzer;
+
+  const openStorageAnalyzer = useCallback(
+    (path?: string) => {
+      setMobileAnalysisJobId(null);
+      setMobileAnalysisPath(path ?? null);
+      setMobileAnalysisSection(null);
+      openStorageAnalyzerWindow(path);
+    },
+    [openStorageAnalyzerWindow],
+  );
+
+  const openAnalysisJob = useCallback(
+    (job: Job) => {
+      if (!isAnalysisJob(job)) return;
+      if (isMobile) {
+        setMobileAnalysisPath(null);
+        setMobileAnalysisJobId(job.id);
+        setMobileAnalysisSection(job.type === 'duplicate_find' ? 'duplicates' : 'disk-usage');
+        nav.setActiveView('storage-analyzer');
+        return;
+      }
+      wm.toggleWindow('storage-analyzer', {
+        title: 'Storage Analyzer',
+        icon: storageAnalyzerIconUrl(),
+        winType: 'storage-analyzer',
+        params: {
+          jobId: job.id,
+          path: job.sourcePath,
+          section: job.type === 'duplicate_find' ? 'duplicates' : 'disk-usage',
+        },
+        width: STANDARD_WINDOW_W,
+        height: STANDARD_WINDOW_H,
+      });
+    },
+    [isMobile, nav, wm],
+  );
 
   // Health polling for UI state updates. Notifications are handled by SSE in useJobs.
   useEffect(() => {
@@ -205,16 +249,12 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
             />
           );
         case 'trash':
-          return <TrashView />;
+          return <TrashView canWrite={canManage} jobs={browser.jobs} />;
         case 'drives':
           return <DrivesView onBackToDesktop={() => wm.closeWindow(win.id)} />;
         case 'jobs':
           return (
-            <JobsPage
-              session={session}
-              sessionLoading={false}
-              onOpenAnalyzer={(job) => openStorageAnalyzer(undefined, job)}
-            />
+            <JobsPage session={session} sessionLoading={false} onOpenAnalysis={openAnalysisJob} />
           );
         case 'storage-analyzer':
           return (
@@ -222,9 +262,12 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
               key={`${String(win.params.path ?? '')}:${String(win.params.jobId ?? '')}`}
               roots={browser.roots}
               jobs={browser.jobs}
-              preselectedPath={win.params.path as string | undefined}
-              preselectedJobId={win.params.jobId as string | undefined}
+              preselectedPath={
+                win.params.jobId ? undefined : (win.params.path as string | undefined)
+              }
               preselectedSection={win.params.section as 'disk-usage' | 'duplicates' | undefined}
+              initialJobId={win.params.jobId as string | undefined}
+              canManage={canManage}
             />
           );
         case 'settings':
@@ -260,8 +303,11 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
             <PreviewWindow
               entry={entry}
               entries={entries}
-              onShare={(shareEntry) =>
-                dialogs.setShareDialogPath({ path: shareEntry.path, name: shareEntry.name })
+              onShare={
+                canManage
+                  ? (shareEntry) =>
+                      dialogs.setShareDialogPath({ path: shareEntry.path, name: shareEntry.name })
+                  : undefined
               }
               onSelectEntry={(nextEntry) => {
                 wm.toggleWindow('preview', {
@@ -307,6 +353,8 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       wm,
       workspaceOpeners.openPreview,
       openStorageAnalyzer,
+      openAnalysisJob,
+      canManage,
       services,
       serviceHealth,
       desktopActions,
@@ -319,47 +367,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     previewEntries,
   );
 
-  const fileCommands = useFileCommands({
-    currentPath: viewPref.currentPath,
-    canWrite: browser.canWrite,
-    folderSuggestions: browser.folderSuggestions,
-    refresh: navActions.refresh,
-    setError: browser.setError,
-    setTrashEntries: browser.setTrashEntries,
-    setJobs: browser.setJobs,
-    selectedEntries: selection.selectedEntries,
-    setSelectedPaths: selection.setSelectedPaths,
-    setLastSelectedPath: selection.setLastSelectedPath,
-    renaming: fileActions.renaming,
-    setRenaming: fileActions.setRenaming,
-    setContextMenu: fileActions.setContextMenu,
-    setPreviewEntry: fileActions.setPreviewEntry,
-    setInfoEntry: fileActions.setInfoEntry,
-    setBatchRenameOpen: fileActions.setBatchRenameOpen,
-    fileClipboard: fileActions.fileClipboard,
-    setFileClipboard: fileActions.setFileClipboard,
-    setConfirmDialog: dialogs.setConfirmDialog,
-    setTextInputDialog: dialogs.setTextInputDialog,
-    setTransferDialog: dialogs.setTransferDialog,
-    setTrashContextMenu: menus.setTrashContextMenu,
-    setFilesEmptyMenu: menus.setFilesEmptyMenu,
-    setPendingUploadCount,
-    setUploadProgress: () => {},
-    showToastObj: toast.showToastObj,
-    contextMenu: fileActions.contextMenu,
-    navigateTo: navActions.navigateTo,
-    selectedTrashIds: selection.selectedTrashIds,
-    setSelectedTrashIds: selection.setSelectedTrashIds,
-    setLastSelectedTrashId: selection.setLastSelectedTrashId,
-    emptyMenuBlockedRef: menus.emptyMenuBlockedRef,
-  });
-
   // ── Effects ──────────────────────────────────────────────
-
-  useEffect(() => {
-    fileCommands.renameInputRef.current?.focus();
-    fileCommands.renameInputRef.current?.select();
-  }, [fileActions.renaming, fileCommands.renameInputRef]);
 
   useKeyboardShortcuts({
     '?': () => fileActions.setShortcutsOpen((p) => !p),
@@ -368,24 +376,12 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
     },
   });
 
-  const [homeMenuStates, setHomeMenuStates] = useState<Record<string, boolean>>({});
-
   const closeAllHomeMenus = useCallback(() => {
     menus.setTrashContextMenu(null);
     menus.setDesktopContextMenu(null);
-    menus.setTrashEmptyMenu(null);
-    menus.setJobsEmptyMenu(null);
   }, [menus]);
 
-  useClickOutsideMenus(homeMenuStates, (updater) => {
-    setHomeMenuStates(updater);
-    closeAllHomeMenus();
-  });
-
-  useEffect(() => {
-    if (typeof Notification !== 'undefined' && Notification.permission === 'default')
-      void Notification.requestPermission();
-  }, []);
+  useClickOutsideMenus(closeAllHomeMenus);
 
   // ── Desktop handlers ─────────────────────────────────────
   const handleDesktopItemContextMenu = useCallback(
@@ -408,11 +404,11 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       else if (id === 'jobs') workspaceOpeners.openJobs();
       else if (id === 'settings') workspaceOpeners.openSettings();
       else if (id === 'drives') workspaceOpeners.openDrives();
-      else if (id === 'storage-analyzer') workspaceOpeners.openStorageAnalyzer();
+      else if (id === 'storage-analyzer') openStorageAnalyzer();
       else if (id === 'desktop') workspaceOpeners.openDesktop();
       else desktopActions.handleDockActivate(id);
     },
-    [workspaceOpeners, desktopActions],
+    [workspaceOpeners, desktopActions, openStorageAnalyzer],
   );
 
   // ── Focused window & reactive commands ──────────────────
@@ -458,14 +454,43 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   }, [wm.windows]);
 
   const previousMobileRef = useRef(isMobile);
-  const analyzerTransferredToMobileRef = useRef(false);
+  const analyzerTransferredToMobileRef = useRef<ActiveView | null>(null);
   useEffect(() => {
     if (isMobile && !previousMobileRef.current && focusedWindow?.winType === 'storage-analyzer') {
-      nav.setShowingStorageAnalyzer(true);
-      analyzerTransferredToMobileRef.current = true;
+      const jobId =
+        typeof focusedWindow.params.jobId === 'string' ? focusedWindow.params.jobId : null;
+      const path = typeof focusedWindow.params.path === 'string' ? focusedWindow.params.path : null;
+      const section =
+        focusedWindow.params.section === 'duplicates' ||
+        focusedWindow.params.section === 'disk-usage'
+          ? focusedWindow.params.section
+          : null;
+      const inferredJob =
+        !jobId && path
+          ? browser.jobs
+              .filter(
+                (job) =>
+                  job.sourcePath === path &&
+                  job.type === (section === 'duplicates' ? 'duplicate_find' : 'disk_analyze'),
+              )
+              .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0]
+          : undefined;
+      const transferredJobId = jobId ?? inferredJob?.id ?? null;
+      analyzerTransferredToMobileRef.current = nav.activeView;
+      setMobileAnalysisJobId(transferredJobId);
+      setMobileAnalysisPath(transferredJobId ? null : path);
+      setMobileAnalysisSection(
+        section ??
+          (inferredJob?.type === 'duplicate_find'
+            ? 'duplicates'
+            : inferredJob
+              ? 'disk-usage'
+              : null),
+      );
+      nav.setActiveView('storage-analyzer');
     } else if (!isMobile && previousMobileRef.current && analyzerTransferredToMobileRef.current) {
-      nav.setShowingStorageAnalyzer(false);
-      analyzerTransferredToMobileRef.current = false;
+      nav.setActiveView(analyzerTransferredToMobileRef.current);
+      analyzerTransferredToMobileRef.current = null;
     } else if (
       !isMobile &&
       previousMobileRef.current &&
@@ -475,7 +500,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
       navActions.resetToDesktopView();
     }
     previousMobileRef.current = isMobile;
-  }, [focusedWindow?.winType, isMobile, nav, navActions]);
+  }, [browser.jobs, focusedWindow, isMobile, nav, navActions]);
 
   const focusedCommands = focusedWindow
     ? (commandsMap[focusedWindow.id] ?? {})
@@ -487,13 +512,22 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   // ── Shell context value ────────────────────────────────
   const shellContext = useMemo(
     () => ({
-      showToast: toast.showToast,
       showToastObj: toast.showToastObj,
       navigateTo: navActions.navigateTo,
-      refresh: browser.refresh,
     }),
-    [toast.showToast, toast.showToastObj, navActions.navigateTo, browser.refresh],
+    [toast.showToastObj, navActions.navigateTo],
   );
+
+  const showLogoutToast = toast.showToastObj;
+  const handleTopBarLogout = useCallback(() => {
+    void onLogout().catch((error) => {
+      showLogoutToast({
+        title: 'Could not log out',
+        message: error instanceof Error ? error.message : 'Try again.',
+        variant: 'error',
+      });
+    });
+  }, [onLogout, showLogoutToast]);
 
   // ── Shell JSX ────────────────────────────────────────────
 
@@ -514,12 +548,14 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
               onGoDesktop={navActions.resetToDesktopView}
               onOpenSettings={workspaceOpeners.openSettings}
               session={session}
-              onLogout={onLogout}
+              onLogout={handleTopBarLogout}
               focusedWindowType={focusedWindow?.winType ?? null}
               focusedWindowExists={!isMobile && focusedWindow !== null}
               searchQuery={browser.query}
               searchOpen={browser.searchOpen}
               searchResults={browser.searchResults}
+              searchLoading={browser.searchLoading}
+              searchError={browser.searchError}
               onSearch={(q) => {
                 browser.setQuery(q);
                 if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
@@ -527,9 +563,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                 browser.setSearchOpen(true);
               }}
               onClearSearch={() => {
-                browser.setQuery('');
-                browser.setSearchResults(null);
-                browser.setSearchOpen(false);
+                browser.resetGlobalSearch();
               }}
               onSearchResultClick={(result) => {
                 if (result.type === 'directory') navActions.navigateTo(result.path);
@@ -540,13 +574,14 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
               }}
               onShowAllSearchResults={(query) => {
                 nav.setSearchQuery(query);
-                nav.setShowingSearch(true);
+                nav.setActiveView('search');
                 browser.setSearchOpen(false);
               }}
               theme={theme}
               onToggleTheme={onToggleTheme}
               jobs={browser.jobs}
               onOpenJobs={workspaceOpeners.openJobs}
+              onOpenAnalysis={openAnalysisJob}
               menuHandlers={{
                 onCreateFolder:
                   focusedCommands.onCreateFolder ??
@@ -589,7 +624,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                 canUpload: focusedCommands.canUpload ?? browser.canWrite,
                 selectedCount:
                   focusedCommands.selectedCount ??
-                  (nav.showingTrash
+                  (nav.activeView === 'trash'
                     ? selection.selectedTrashIds.length
                     : selection.selectedPaths.length),
               }}
@@ -608,7 +643,6 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                 <DesktopView
                   trashEntries={browser.trashEntries}
                   jobs={browser.jobs}
-                  pendingTransferCount={pendingUploadCount}
                   favorites={favorites}
                   services={services}
                   serviceHealth={serviceHealth}
@@ -617,21 +651,20 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                   onOpenSettings={workspaceOpeners.openSettings}
                   onOpenJobs={workspaceOpeners.openJobs}
                   onOpenFiles={() => workspaceOpeners.openFiles()}
-                  onOpenStorageAnalyzer={workspaceOpeners.openStorageAnalyzer}
+                  onOpenStorageAnalyzer={openStorageAnalyzer}
                   onOpenService={workspaceOpeners.openService}
                   onShowMyPC={workspaceOpeners.openDrives}
                   onItemContextMenu={handleDesktopItemContextMenu}
                 />
               )}
               {nav.activeView === 'drives' && <DrivesView />}
-              {nav.activeView === 'trash' && <TrashView />}
+              {nav.activeView === 'trash' && <TrashView canWrite={canManage} jobs={browser.jobs} />}
               {nav.activeView === 'search' && (
                 <SearchResultsView
                   initialQuery={nav.searchQuery}
                   session={session}
                   onNavigate={navActions.navigateTo}
                   onClose={() => {
-                    nav.setShowingSearch(false);
                     navActions.resetToDesktopView();
                   }}
                   onPreview={workspaceOpeners.openPreview}
@@ -648,10 +681,10 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                   onAddFavorite={addFavorite}
                   onRemoveFavorite={removeFavorite}
                   onPreview={workspaceOpeners.openPreview}
-                  onOpenStorageAnalyzer={workspaceOpeners.openStorageAnalyzer}
+                  onOpenStorageAnalyzer={openStorageAnalyzer}
                   onShowAllSearchResults={(query) => {
                     nav.setSearchQuery(query);
-                    nav.setShowingSearch(true);
+                    nav.setActiveView('search');
                   }}
                 />
               )}
@@ -659,23 +692,25 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                 <JobsPage
                   session={session}
                   sessionLoading={false}
-                  onOpenAnalyzer={(job) => openStorageAnalyzer(undefined, job)}
+                  onOpenAnalysis={openAnalysisJob}
                 />
               )}
               {nav.activeView === 'storage-analyzer' && (
                 <StorageAnalyzerView
-                  key={`${nav.storageAnalyzerPath ?? ''}:${nav.storageAnalyzerJobId ?? ''}`}
                   roots={browser.roots}
                   jobs={browser.jobs}
-                  preselectedPath={nav.storageAnalyzerPath ?? undefined}
-                  preselectedJobId={nav.storageAnalyzerJobId ?? undefined}
-                  preselectedSection={nav.storageAnalyzerSection}
+                  preselectedPath={
+                    mobileAnalysisJobId ? undefined : (mobileAnalysisPath ?? undefined)
+                  }
+                  preselectedSection={mobileAnalysisSection ?? undefined}
+                  initialJobId={mobileAnalysisJobId ?? undefined}
+                  canManage={canManage}
                 />
               )}
               {nav.activeView === 'settings' && (
                 <SettingsPanel
                   onOpenShares={() => {
-                    nav.setShowingSettings(false);
+                    nav.setActiveView(viewPref.currentPath ? 'files' : 'desktop');
                     dialogs.setSharesOpen(true);
                   }}
                   theme={theme}
@@ -702,6 +737,7 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
                   y={menus.desktopContextMenu.y}
                   item={menus.desktopContextMenu.item}
                   trashCount={browser.trashEntries.length}
+                  canManage={canManage}
                   onRefresh={desktopActions.handleRefreshDesktop}
                   onEmptyTrash={desktopActions.handleEmptyTrash}
                   onRemoveFavorite={desktopActions.handleRemoveDesktopFavorite}
@@ -748,26 +784,57 @@ export function Home({ session, onSessionChange, onLogout, theme, onToggleTheme 
   return (
     <>
       {shell}
-      <HomeOverlays
-        shareDialogPath={dialogs.shareDialogPath}
-        onShareDialogClose={() => dialogs.setShareDialogPath(null)}
-        previewEntry={fileActions.previewEntry}
-        onPreviewClose={() => fileActions.setPreviewEntry(null)}
-        onPreviewShare={(entry) =>
-          dialogs.setShareDialogPath({ path: entry.path, name: entry.name })
-        }
-        setPreviewEntry={fileActions.setPreviewEntry}
-        previousPreviewEntry={previousPreviewEntry}
-        nextPreviewEntry={nextPreviewEntry}
-        previewPositionLabel={previewPositionLabel}
-        shortcutsOpen={fileActions.shortcutsOpen}
-        onShortcutsClose={() => fileActions.setShortcutsOpen(false)}
-        sharesOpen={dialogs.sharesOpen}
-        onSharesClose={() => dialogs.setSharesOpen(false)}
-        serviceFormData={menus.serviceFormData}
-        onServiceFormClose={() => menus.setServiceFormData(null)}
-        onSaveService={desktopActions.handleSaveService}
-      />
+      {dialogs.shareDialogPath && (
+        <ShareDialog
+          path={dialogs.shareDialogPath.path}
+          name={dialogs.shareDialogPath.name}
+          onClose={() => dialogs.setShareDialogPath(null)}
+        />
+      )}
+      {fileActions.previewEntry && (
+        <PreviewModal
+          entry={fileActions.previewEntry}
+          onClose={() => fileActions.setPreviewEntry(null)}
+          onDownload={() => openFileExternally(fileActions.previewEntry!.path)}
+          onShare={
+            canManage
+              ? () =>
+                  dialogs.setShareDialogPath({
+                    path: fileActions.previewEntry!.path,
+                    name: fileActions.previewEntry!.name,
+                  })
+              : undefined
+          }
+          onPrevious={
+            previousPreviewEntry
+              ? () => fileActions.setPreviewEntry(previousPreviewEntry)
+              : undefined
+          }
+          onNext={
+            nextPreviewEntry ? () => fileActions.setPreviewEntry(nextPreviewEntry) : undefined
+          }
+          previousDisabled={!previousPreviewEntry}
+          nextDisabled={!nextPreviewEntry}
+          positionLabel={previewPositionLabel}
+        />
+      )}
+      {fileActions.shortcutsOpen && (
+        <KeyboardShortcuts onClose={() => fileActions.setShortcutsOpen(false)} />
+      )}
+      {dialogs.sharesOpen && <ShareManager onClose={() => dialogs.setSharesOpen(false)} />}
+      {menus.serviceFormData && (
+        <ServiceFormModal
+          initial={menus.serviceFormData.initial}
+          onSave={desktopActions.handleSaveService}
+          onClose={() => menus.setServiceFormData(null)}
+        />
+      )}
+      {dialogs.confirmDialog && (
+        <ConfirmDialog
+          dialog={dialogs.confirmDialog}
+          onClose={() => dialogs.setConfirmDialog(null)}
+        />
+      )}
     </>
   );
 }

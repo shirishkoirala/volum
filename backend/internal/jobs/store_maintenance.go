@@ -37,12 +37,3 @@ func (s *Store) PruneJobs(ctx context.Context, olderThan time.Duration) (int64, 
 	}
 	return jobsRemoved + itemsRemoved, nil
 }
-
-func (s *Store) PruneAuditLogs(ctx context.Context, olderThan time.Duration) (int64, error) {
-	cutoff := now().Add(-olderThan)
-	result, err := s.db.ExecContext(ctx, `DELETE FROM audit_logs WHERE created_at < ?`, cutoff)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected()
-}

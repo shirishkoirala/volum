@@ -4,12 +4,15 @@ type ProgressBarProps = {
   value: number;
   className?: string;
   ariaLabel?: string;
+  compact?: boolean;
 };
 
-export function ProgressBar({ value, className, ariaLabel }: ProgressBarProps) {
+export function ProgressBar({ value, className, ariaLabel, compact = false }: ProgressBarProps) {
   return (
     <span
-      className={`${styles.track}${className ? ` ${className}` : ''}`}
+      className={`${styles.track}${compact ? ` ${styles.compact}` : ''}${
+        className ? ` ${className}` : ''
+      }`}
       role="progressbar"
       aria-valuenow={Math.round(value)}
       aria-valuemin={0}

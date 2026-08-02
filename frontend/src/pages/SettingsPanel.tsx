@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '../components/ui/Icon';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorBanner } from '../components/ui/ErrorBanner';
 import { Skeleton } from '../components/ui/Skeleton';
 import { AppPanel } from '../components/layout/AppPanel';
 import { SettingsGeneral } from '../components/settings/SettingsGeneral';
-import { SettingsServer } from '../components/settings/SettingsServer';
+import { ServerInfo } from '../components/ui/ServerInfo';
 import { SettingsStorage } from '../components/settings/SettingsStorage';
 import { SettingsDesktop } from '../components/settings/SettingsDesktop';
 import { SettingsAdmin } from '../components/settings/SettingsAdmin';
-import { SettingsAbout } from '../components/settings/SettingsAbout';
 import { useAsyncData } from '../hooks/useAsyncData';
-import { getStatus, type Session } from '../api/client';
+import type { Session } from '../api/client-auth';
+import { getStatus } from '../api/client-files';
 import type { ServiceShortcut, ServiceHealthResult } from '../utils/services';
 import styles from './SettingsPanel.module.css';
 
@@ -20,7 +20,7 @@ type SettingsPanelProps = {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
   onOpenShortcuts: () => void;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
   session: Session | null;
   onSessionChange: (session: Session) => void;
   services?: ServiceShortcut[];
@@ -31,7 +31,7 @@ type SettingsPanelProps = {
   onReorderServices?: (ids: string[]) => Promise<void>;
 };
 
-type CategoryId = 'general' | 'server' | 'storage' | 'desktop' | 'admin' | 'about';
+type CategoryId = 'general' | 'server' | 'storage' | 'desktop' | 'admin';
 
 const CATEGORIES: { id: CategoryId; label: string; icon: string }[] = [
   { id: 'general', label: 'General', icon: 'preferences-system' },
@@ -39,7 +39,6 @@ const CATEGORIES: { id: CategoryId; label: string; icon: string }[] = [
   { id: 'storage', label: 'Storage', icon: 'drive-harddisk' },
   { id: 'desktop', label: 'Desktop', icon: 'monitor' },
   { id: 'admin', label: 'Administration', icon: 'preferences-system' },
-  { id: 'about', label: 'About', icon: 'help-about' },
 ];
 
 export function SettingsPanel({
@@ -65,12 +64,26 @@ export function SettingsPanel({
   } = useAsyncData(() => getStatus());
   const [activeCategory, setActiveCategory] = useState<CategoryId>('general');
   const [filterQuery, setFilterQuery] = useState('');
+  const canManage = session?.role === 'admin';
+  const availableCategories = useMemo(
+    () =>
+      canManage
+        ? CATEGORIES
+        : CATEGORIES.filter((category) => category.id !== 'admin' && category.id !== 'desktop'),
+    [canManage],
+  );
+
+  useEffect(() => {
+    if (!availableCategories.some((category) => category.id === activeCategory)) {
+      setActiveCategory('general');
+    }
+  }, [activeCategory, availableCategories]);
 
   const filteredCategories = useMemo(() => {
-    if (!filterQuery.trim()) return CATEGORIES;
+    if (!filterQuery.trim()) return availableCategories;
     const q = filterQuery.toLowerCase();
-    return CATEGORIES.filter((c) => c.label.toLowerCase().includes(q));
-  }, [filterQuery]);
+    return availableCategories.filter((c) => c.label.toLowerCase().includes(q));
+  }, [availableCategories, filterQuery]);
 
   const content = (
     <>
@@ -98,7 +111,9 @@ export function SettingsPanel({
           {(!filterQuery.trim()
             ? activeCategory === 'server'
             : filteredCategories.some((c) => c.id === 'server')) && (
-            <SettingsServer status={status} />
+            <div className={styles.settingsSection}>
+              <ServerInfo status={status} />
+            </div>
           )}
 
           {(!filterQuery.trim()
@@ -107,30 +122,26 @@ export function SettingsPanel({
             <SettingsStorage roots={status.roots} />
           )}
 
-          {(!filterQuery.trim()
-            ? activeCategory === 'desktop'
-            : filteredCategories.some((c) => c.id === 'desktop')) && (
-            <SettingsDesktop
-              services={services}
-              serviceHealth={serviceHealth}
-              onAddService={onAddService}
-              onEditService={onEditService}
-              onRemoveService={onRemoveService}
-              onReorderServices={onReorderServices}
-            />
-          )}
+          {canManage &&
+            (!filterQuery.trim()
+              ? activeCategory === 'desktop'
+              : filteredCategories.some((c) => c.id === 'desktop')) && (
+              <SettingsDesktop
+                services={services}
+                serviceHealth={serviceHealth}
+                onAddService={onAddService}
+                onEditService={onEditService}
+                onRemoveService={onRemoveService}
+                onReorderServices={onReorderServices}
+              />
+            )}
 
-          {(!filterQuery.trim()
-            ? activeCategory === 'admin'
-            : filteredCategories.some((c) => c.id === 'admin')) && (
-            <SettingsAdmin status={status} session={session} onOpenShares={onOpenShares} />
-          )}
-
-          {(!filterQuery.trim()
-            ? activeCategory === 'about'
-            : filteredCategories.some((c) => c.id === 'about')) && (
-            <SettingsAbout status={status} />
-          )}
+          {canManage &&
+            (!filterQuery.trim()
+              ? activeCategory === 'admin'
+              : filteredCategories.some((c) => c.id === 'admin')) && (
+              <SettingsAdmin status={status} session={session} onOpenShares={onOpenShares} />
+            )}
 
           {filterQuery.trim() && filteredCategories.length === 0 && (
             <div className={styles.settingsSection}>
@@ -160,7 +171,7 @@ export function SettingsPanel({
         />
       </div>
       <ul className={styles.settingsNavList}>
-        {(filterQuery.trim() ? filteredCategories : CATEGORIES).map((cat) => (
+        {(filterQuery.trim() ? filteredCategories : availableCategories).map((cat) => (
           <li key={cat.id}>
             <button
               className={`${styles.settingsNavItem}${activeCategory === cat.id ? ` ${styles.active}` : ''}`}
@@ -181,9 +192,5 @@ export function SettingsPanel({
     </nav>
   );
 
-  return (
-    <AppPanel layout="split" sidebar={sidebarNav}>
-      {content}
-    </AppPanel>
-  );
+  return <AppPanel sidebar={sidebarNav}>{content}</AppPanel>;
 }

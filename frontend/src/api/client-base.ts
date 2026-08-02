@@ -25,7 +25,13 @@ export async function request<T>(url: string, options?: RequestInit): Promise<T>
     headers: requestHeaders(options),
   });
 
-  if (!response.ok) throw await parseError(response);
+  if (!response.ok) {
+    if (response.status === 401 && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('volum:unauthorized'));
+    }
+    throw await parseError(response);
+  }
 
-  return response.json() as Promise<T>;
+  const body = await response.text();
+  return (body.trim() ? JSON.parse(body) : undefined) as T;
 }

@@ -1,5 +1,4 @@
-import { Icon } from '../ui/Icon';
-import { ContextMenuShell } from './ContextMenuShell';
+import { ContextMenuItem, ContextMenuShell } from './ContextMenuShell';
 import type { DesktopIconItem } from '../../hooks/useDesktopIcons';
 import styles from './ContextMenu.module.css';
 
@@ -8,6 +7,7 @@ interface DesktopContextMenuProps {
   y: number;
   item: DesktopIconItem;
   trashCount: number;
+  canManage: boolean;
   onRefresh: () => void;
   onEmptyTrash: () => void;
   onRemoveFavorite: (path: string) => void;
@@ -22,6 +22,7 @@ export function DesktopContextMenu({
   y,
   item,
   trashCount,
+  canManage,
   onRefresh,
   onEmptyTrash,
   onRemoveFavorite,
@@ -36,102 +37,48 @@ export function DesktopContextMenu({
   return (
     <ContextMenuShell x={x} y={y} onClose={onClose}>
       {item.type !== 'emptySpace' && (
-        <button
-          type="button"
-          onClick={() => {
-            item.onClick();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="document-open" size={16} /> Open {item.label}
-        </button>
+        <ContextMenuItem icon="document-open" onSelect={item.onClick}>
+          Open {item.label}
+        </ContextMenuItem>
       )}
       {item.type === 'drives' && (
-        <button
-          type="button"
-          onClick={() => {
-            onRefresh();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="view-refresh" size={16} /> Refresh drives
-        </button>
+        <ContextMenuItem icon="view-refresh" onSelect={onRefresh}>
+          Refresh drives
+        </ContextMenuItem>
       )}
-      {item.type === 'trash' && trashCount > 0 && (
-        <button
-          type="button"
-          className={styles.danger}
-          onClick={() => {
-            onEmptyTrash();
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="edit-delete" size={16} /> Empty Trash
-        </button>
+      {canManage && item.type === 'trash' && trashCount > 0 && (
+        <ContextMenuItem icon="edit-delete" onSelect={onEmptyTrash} danger>
+          Empty Trash
+        </ContextMenuItem>
       )}
       {item.type === 'folderShortcut' && favPath && (
-        <button
-          type="button"
-          onClick={() => {
-            onRemoveFavorite(favPath);
-            onClose();
-          }}
-          role="menuitem"
-        >
-          <Icon name="bookmark-new" size={16} /> Remove from desktop
-        </button>
+        <ContextMenuItem icon="bookmark-new" onSelect={() => onRemoveFavorite(favPath)}>
+          Remove from desktop
+        </ContextMenuItem>
       )}
-      {item.type === 'serviceShortcut' && svcId && (
+      {canManage && item.type === 'serviceShortcut' && svcId && (
         <>
-          <button
-            type="button"
-            onClick={() => {
-              onEditService(svcId);
-              onClose();
-            }}
-            role="menuitem"
-          >
-            <Icon name="document-properties" size={16} /> Edit...
-          </button>
-          <button
-            type="button"
-            className={styles.danger}
-            onClick={() => {
-              onRemoveService(svcId);
-              onClose();
-            }}
-            role="menuitem"
-          >
-            <Icon name="edit-delete" size={16} /> Remove from desktop
-          </button>
+          <ContextMenuItem icon="document-properties" onSelect={() => onEditService(svcId)}>
+            Edit...
+          </ContextMenuItem>
+          <ContextMenuItem icon="edit-delete" onSelect={() => onRemoveService(svcId)} danger>
+            Remove from desktop
+          </ContextMenuItem>
         </>
       )}
       {item.type === 'emptySpace' && (
         <>
-          <button
-            type="button"
-            onClick={() => {
-              onAddService();
-              onClose();
-            }}
-            role="menuitem"
-          >
-            <Icon name="internet-web-browser" size={16} /> Add Service...
-          </button>
-          <div className={styles.separator} />
-          <button
-            type="button"
-            onClick={() => {
-              onRefresh();
-              onClose();
-            }}
-            role="menuitem"
-          >
-            <Icon name="view-refresh" size={16} /> Refresh
-          </button>
+          {canManage && (
+            <>
+              <ContextMenuItem icon="internet-web-browser" onSelect={onAddService}>
+                Add Service...
+              </ContextMenuItem>
+              <div className={styles.separator} />
+            </>
+          )}
+          <ContextMenuItem icon="view-refresh" onSelect={onRefresh}>
+            Refresh
+          </ContextMenuItem>
         </>
       )}
     </ContextMenuShell>

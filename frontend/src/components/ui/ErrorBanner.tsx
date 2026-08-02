@@ -9,7 +9,7 @@ type ErrorBannerProps = {
 
 export function ErrorBanner({ message, onRetry, onDismiss }: ErrorBannerProps) {
   return (
-    <div className={styles.errorBanner}>
+    <div className={styles.errorBanner} role="alert">
       <Icon name="dialog-warning" size={16} />
       <span className={styles.errorText}>{message}</span>
       <div className={styles.errorActions}>

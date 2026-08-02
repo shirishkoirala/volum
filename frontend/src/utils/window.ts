@@ -33,7 +33,19 @@ export function getWorkArea() {
     x: 0,
     y: TOPBAR_H,
     width: window.innerWidth,
-    height: Math.max(MIN_WINDOW_H, window.innerHeight - TOPBAR_H - TASKBAR_H),
+    height: Math.max(0, window.innerHeight - TOPBAR_H - TASKBAR_H),
+  };
+}
+
+export function clampWindowRect(rect: WindowRect, area = getWorkArea()): WindowRect {
+  const width = Math.min(Math.max(MIN_WINDOW_W, rect.width), area.width);
+  const height = Math.min(Math.max(MIN_WINDOW_H, rect.height), area.height);
+
+  return {
+    x: Math.min(Math.max(rect.x, area.x), area.x + area.width - width),
+    y: Math.min(Math.max(rect.y, area.y), area.y + area.height - height),
+    width,
+    height,
   };
 }
 

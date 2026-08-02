@@ -65,7 +65,7 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 		return err
 	}
 	if len(items) == 0 {
-		if err := w.finishMove(ctx, job, source); err != nil {
+		if err := w.finishMove(job, source); err != nil {
 			return err
 		}
 		return w.store.CompleteJob(ctx, job.ID)
@@ -112,7 +112,7 @@ func (w *Worker) processTransfer(ctx context.Context, job jobs.Job) error {
 		}
 	}
 
-	if err := w.finishMove(ctx, job, source); err != nil {
+	if err := w.finishMove(job, source); err != nil {
 		return err
 	}
 	return w.store.CompleteJob(ctx, job.ID)
@@ -130,7 +130,7 @@ func (w *Worker) transferItems(ctx context.Context, job jobs.Job, source, destin
 	if policy := job.ConflictPolicy; policy == "cancel" {
 		return nil, 0, 0, errors.New("transfer cancelled by conflict policy")
 	} else if policy != "ask" {
-		if resolvedDestination, err := w.resolveConflictDestination(ctx, source, destination, policy); err != nil {
+		if resolvedDestination, err := w.resolveConflictDestination(source, destination, policy); err != nil {
 			if errors.Is(err, errSkipDestination) {
 				if err := w.store.CompleteJob(ctx, job.ID); err != nil {
 					return nil, 0, 0, err
@@ -297,7 +297,7 @@ func (w *Worker) copyOne(ctx context.Context, job jobs.Job, item copyItem, baseB
 	if policy := job.ConflictPolicy; policy == "cancel" {
 		return 0, errors.New("transfer cancelled by conflict policy")
 	} else if !item.Persisted {
-		destination, err := w.resolveConflictDestination(ctx, item.Source, item.Destination, policy)
+		destination, err := w.resolveConflictDestination(item.Source, item.Destination, policy)
 		if err != nil {
 			if errors.Is(err, errSkipDestination) {
 				return 0, nil
@@ -456,7 +456,7 @@ func partialFileSize(path string, expectedSize int64) (int64, error) {
 	return info.Size(), nil
 }
 
-func (w *Worker) resolveConflictDestination(ctx context.Context, source, destination, policy string) (string, error) {
+func (w *Worker) resolveConflictDestination(source, destination, policy string) (string, error) {
 	if policy == "" {
 		policy = "ask"
 	}
@@ -467,11 +467,8 @@ func (w *Worker) resolveConflictDestination(ctx context.Context, source, destina
 		case "skip":
 			return "", errSkipDestination
 		case "skip_identical":
-			return w.resolveSkipIdentical(ctx, source, destination)
+			return w.resolveSkipIdentical(source, destination)
 		case "overwrite":
-			if err := w.store.CreateAuditLog(ctx, "overwrite", destination, "removed existing destination for transfer job"); err != nil {
-				return "", err
-			}
 			return destination, w.guard.RemoveAll(destination)
 		case "rename":
 			return w.guard.NextAvailablePath(destination)
@@ -483,7 +480,7 @@ func (w *Worker) resolveConflictDestination(ctx context.Context, source, destina
 	return destination, nil
 }
 
-func (w *Worker) resolveSkipIdentical(ctx context.Context, source, destination string) (string, error) {
+func (w *Worker) resolveSkipIdentical(source, destination string) (string, error) {
 	srcInfo, err := os.Stat(source)
 	if err != nil {
 		return "", fmt.Errorf("cannot stat source for skip_identical: %w", err)
@@ -506,28 +503,14 @@ func (w *Worker) resolveSkipIdentical(ctx context.Context, source, destination s
 	if srcHash != dstHash {
 		return "", fmt.Errorf("destination already exists and checksums differ: %s", destination)
 	}
-	if err := w.store.CreateAuditLog(ctx, "skip_identical", destination,
-		fmt.Sprintf("skipped identical file (sha256: %s)", srcHash)); err != nil {
-		return "", err
-	}
 	return "", errSkipDestination
 }
 
-func (w *Worker) finishMove(ctx context.Context, job jobs.Job, source string) error {
+func (w *Worker) finishMove(job jobs.Job, source string) error {
 	if job.Type != jobs.TypeMove {
 		return nil
 	}
-	if err := w.guard.RemoveAll(source); err != nil {
-		return err
-	}
-	return w.store.CreateAuditLog(ctx, "move", w.publicPath(source), fmt.Sprintf("moved to %s", deref(job.DestinationPath)))
-}
-
-func deref(value *string) string {
-	if value == nil {
-		return ""
-	}
-	return *value
+	return w.guard.RemoveAll(source)
 }
 
 func (w *Worker) publicPath(path string) string {

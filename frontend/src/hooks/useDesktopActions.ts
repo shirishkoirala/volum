@@ -1,16 +1,18 @@
 import { useCallback } from 'react';
-import { getTrash, deleteTrash } from '../api/client';
+import { getTrash, deleteTrash } from '../api/client-files';
+import type { RootEntry, TrashEntry } from '../api/client-files';
 import type { ServiceShortcut } from '../utils/services';
 import type { DesktopIconItem } from './useDesktopIcons';
 import { defaultRootPath } from '../utils/roots';
+import type { ActiveView } from './useNavigation';
 
 interface DesktopActionsOptions {
   browser: {
-    trashEntries: import('../api/client').TrashEntry[];
-    setTrashEntries: React.Dispatch<React.SetStateAction<import('../api/client').TrashEntry[]>>;
+    trashEntries: TrashEntry[];
+    setTrashEntries: React.Dispatch<React.SetStateAction<TrashEntry[]>>;
     setError: (err: string | null) => void;
     loadDevices: () => void;
-    roots: import('../api/client').RootEntry[];
+    roots: RootEntry[];
   };
   dialogs: {
     setConfirmDialog: React.Dispatch<
@@ -24,11 +26,7 @@ interface DesktopActionsOptions {
     ) => void;
   };
   nav: {
-    setShowingTrash: (v: boolean) => void;
-    setShowingSettings: (v: boolean) => void;
-    setShowingJobs: (v: boolean) => void;
-    setShowingMyPC: (v: boolean) => void;
-    setSelectedDriveName: (v: string | null) => void;
+    setActiveView: (view: ActiveView) => void;
   };
   viewPref: {
     currentPath: string;
@@ -93,12 +91,26 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
       onConfirm: () => {
         void (async () => {
           try {
-            for (const entry of browser.trashEntries) await deleteTrash(entry.id);
+            const results = await Promise.allSettled(
+              browser.trashEntries.map((entry) => deleteTrash(entry.id)),
+            );
+            const failedCount = results.filter((result) => result.status === 'rejected').length;
+            const deletedCount = results.length - failedCount;
             const r = await getTrash();
             browser.setTrashEntries(r.entries ?? []);
-            browser.setError(null);
-            toast.showToastObj({ title: 'Trash emptied', variant: 'success' });
-            refresh();
+            if (failedCount === 0) {
+              browser.setError(null);
+              toast.showToastObj({ title: 'Trash emptied', variant: 'success' });
+            } else {
+              const message = `${failedCount} item${failedCount === 1 ? '' : 's'} could not be deleted.`;
+              browser.setError(message);
+              toast.showToastObj({
+                title: deletedCount > 0 ? 'Trash partially emptied' : 'Could not empty Trash',
+                message,
+                variant: 'error',
+              });
+            }
+            if (deletedCount > 0) refresh();
           } catch (err) {
             const message = err instanceof Error ? err.message : 'Action failed';
             browser.setError(message);
@@ -149,32 +161,53 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
         });
         toast.showToastObj({ title: 'Service added', variant: 'success' });
       }
-      if (data.healthUrl) await refreshServiceHealth();
+      if (data.healthUrl) {
+        try {
+          await refreshServiceHealth();
+        } catch (err) {
+          toast.showToastObj({
+            title: 'Service saved; health check unavailable',
+            message: err instanceof Error ? err.message : undefined,
+            variant: 'warning',
+          });
+        }
+      }
     },
     [serviceFormData, addService, updateService, refreshServiceHealth, toast],
   );
 
   const handleRemoveService = useCallback(
     (id: string) => {
-      removeService(id);
-      toast.showToastObj({ title: 'Service removed from desktop', variant: 'success' });
+      dialogs.setConfirmDialog({
+        title: 'Remove service shortcut?',
+        message: 'This removes the shortcut from the desktop. The service itself is not changed.',
+        confirmLabel: 'Remove shortcut',
+        danger: true,
+        onConfirm: () => {
+          void removeService(id)
+            .then(() =>
+              toast.showToastObj({
+                title: 'Service removed from desktop',
+                variant: 'success',
+              }),
+            )
+            .catch((err) =>
+              toast.showToastObj({
+                title: 'Could not remove service',
+                message: err instanceof Error ? err.message : undefined,
+                variant: 'error',
+              }),
+            );
+        },
+      });
     },
-    [removeService, toast],
+    [dialogs, removeService, toast],
   );
-
-  const handleBackToDesktop = useCallback(() => {
-    nav.setShowingMyPC(false);
-    nav.setSelectedDriveName(null);
-  }, [nav]);
 
   const handleDesktopNavigateToTrash = useCallback(() => {
     viewPref.setCurrentPath('');
-    nav.setShowingTrash(true);
-    nav.setShowingSettings(false);
-    nav.setShowingJobs(false);
-    nav.setShowingMyPC(false);
+    nav.setActiveView('trash');
     selection.setSelectedPaths([]);
-    nav.setSelectedDriveName(null);
   }, [viewPref, nav, selection]);
 
   const handleDockActivate = useCallback(
@@ -184,34 +217,21 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
           resetToDesktopView();
           break;
         case 'files':
-          nav.setShowingTrash(false);
-          nav.setShowingSettings(false);
-          nav.setShowingJobs(false);
-          nav.setShowingMyPC(false);
-          nav.setSelectedDriveName(null);
           if (viewPref.currentPath === '') {
             navigateTo(defaultRootPath(browser.roots));
+          } else {
+            nav.setActiveView('files');
           }
           break;
         case 'trash':
           viewPref.setCurrentPath('');
-          nav.setShowingTrash(true);
-          nav.setShowingSettings(false);
-          nav.setShowingJobs(false);
+          nav.setActiveView('trash');
           break;
         case 'jobs':
-          nav.setShowingJobs(true);
-          nav.setShowingSettings(false);
-          nav.setShowingTrash(false);
-          nav.setShowingMyPC(false);
-          nav.setSelectedDriveName(null);
+          nav.setActiveView('jobs');
           break;
         case 'settings':
-          nav.setShowingSettings(true);
-          nav.setShowingTrash(false);
-          nav.setShowingJobs(false);
-          nav.setShowingMyPC(false);
-          nav.setSelectedDriveName(null);
+          nav.setActiveView('settings');
           break;
       }
     },
@@ -230,7 +250,6 @@ export function useDesktopActions(opts: DesktopActionsOptions) {
     handleOpenServiceForm,
     handleSaveService,
     handleRemoveService,
-    handleBackToDesktop,
     handleDesktopNavigateToTrash,
     handleDockActivate,
     handleRefreshDesktop,

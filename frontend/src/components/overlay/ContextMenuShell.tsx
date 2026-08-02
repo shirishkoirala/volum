@@ -1,12 +1,16 @@
 import {
+  createContext,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
+  useContext,
+  type ButtonHTMLAttributes,
   type ReactNode,
   type KeyboardEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { Icon } from '../ui/Icon';
 import styles from './ContextMenu.module.css';
 
 interface ContextMenuShellProps {
@@ -19,6 +23,43 @@ interface ContextMenuShellProps {
 const VIEWPORT_GAP = 8;
 const FALLBACK_WIDTH = 200;
 const FALLBACK_HEIGHT = 300;
+const ContextMenuCloseContext = createContext<(() => void) | null>(null);
+
+interface ContextMenuItemProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'children' | 'onClick' | 'type'
+> {
+  icon: string;
+  onSelect: () => void;
+  danger?: boolean;
+  children: ReactNode;
+}
+
+export function ContextMenuItem({
+  icon,
+  onSelect,
+  danger = false,
+  className,
+  children,
+  ...buttonProps
+}: ContextMenuItemProps) {
+  const onClose = useContext(ContextMenuCloseContext);
+
+  return (
+    <button
+      {...buttonProps}
+      type="button"
+      className={[danger ? styles.danger : '', className].filter(Boolean).join(' ')}
+      onClick={() => {
+        onSelect();
+        onClose?.();
+      }}
+      role="menuitem"
+    >
+      <Icon name={icon} size={16} /> {children}
+    </button>
+  );
+}
 
 function clampCoordinate(value: number, size: number, viewportSize: number) {
   return Math.max(VIEWPORT_GAP, Math.min(value, viewportSize - size - VIEWPORT_GAP));
@@ -26,6 +67,9 @@ function clampCoordinate(value: number, size: number, viewportSize: number) {
 
 export function ContextMenuShell({ x, y, onClose, children }: ContextMenuShellProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(
+    document.activeElement instanceof HTMLElement ? document.activeElement : null,
+  );
   const [position, setPosition] = useState(() => ({
     left: clampCoordinate(x, FALLBACK_WIDTH, window.innerWidth),
     top: clampCoordinate(y, FALLBACK_HEIGHT, window.innerHeight),
@@ -33,7 +77,12 @@ export function ContextMenuShell({ x, y, onClose, children }: ContextMenuShellPr
   const [measured, setMeasured] = useState(false);
 
   useEffect(() => {
-    menuRef.current?.focus();
+    const menu = menuRef.current;
+    const returnFocus = returnFocusRef.current;
+    (menu?.querySelector<HTMLButtonElement>('button:not([disabled])') ?? menu)?.focus();
+    return () => {
+      if (returnFocus?.isConnected) returnFocus.focus();
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -56,7 +105,12 @@ export function ContextMenuShell({ x, y, onClose, children }: ContextMenuShellPr
   }, [x, y]);
 
   function handleKeyDown(e: KeyboardEvent) {
+    if (e.key === 'Tab') {
+      onClose();
+      return;
+    }
     if (e.key === 'Escape') {
+      e.preventDefault();
       onClose();
       return;
     }
@@ -72,6 +126,14 @@ export function ContextMenuShell({ x, y, onClose, children }: ContextMenuShellPr
           ? (idx + 1) % buttons.length
           : (idx - 1 + buttons.length) % buttons.length;
       buttons[next]?.focus();
+      return;
+    }
+    if (e.key === 'Home' || e.key === 'End') {
+      e.preventDefault();
+      const buttons =
+        menuRef.current?.querySelectorAll<HTMLButtonElement>('button:not([disabled])');
+      if (!buttons || buttons.length === 0) return;
+      buttons[e.key === 'Home' ? 0 : buttons.length - 1]?.focus();
     }
   }
 
@@ -91,7 +153,7 @@ export function ContextMenuShell({ x, y, onClose, children }: ContextMenuShellPr
       role="menu"
       tabIndex={-1}
     >
-      {children}
+      <ContextMenuCloseContext value={onClose}>{children}</ContextMenuCloseContext>
     </div>,
     document.body,
   );

@@ -1,4 +1,4 @@
-import type { FileEntry } from '../api/client';
+import type { FileEntry } from '../api/client-files';
 
 export type ClipboardState = { mode: 'copy' | 'move'; entries: FileEntry[] } | null;
 

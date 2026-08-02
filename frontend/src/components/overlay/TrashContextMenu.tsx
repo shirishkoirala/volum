@@ -1,6 +1,4 @@
-import { Icon } from '../ui/Icon';
-import { ContextMenuShell } from './ContextMenuShell';
-import styles from './ContextMenu.module.css';
+import { ContextMenuItem, ContextMenuShell } from './ContextMenuShell';
 
 interface TrashContextMenuProps {
   x: number;
@@ -19,27 +17,12 @@ export function TrashContextMenu({
 }: TrashContextMenuProps) {
   return (
     <ContextMenuShell x={x} y={y} onClose={onClose}>
-      <button
-        type="button"
-        onClick={() => {
-          onRestore();
-          onClose();
-        }}
-        role="menuitem"
-      >
-        <Icon name="edit-restore" size={16} /> Restore
-      </button>
-      <button
-        type="button"
-        className={styles.danger}
-        onClick={() => {
-          onDeletePermanently();
-          onClose();
-        }}
-        role="menuitem"
-      >
-        <Icon name="edit-delete" size={16} /> Delete permanently
-      </button>
+      <ContextMenuItem icon="edit-restore" onSelect={onRestore}>
+        Restore
+      </ContextMenuItem>
+      <ContextMenuItem icon="edit-delete" onSelect={onDeletePermanently} danger>
+        Delete permanently
+      </ContextMenuItem>
     </ContextMenuShell>
   );
 }

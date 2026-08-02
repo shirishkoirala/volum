@@ -1,5 +1,7 @@
 import { useCallback, useRef } from 'react';
-import { getTrash } from '../api/client';
+import { getTrash } from '../api/client-files';
+import type { SearchResult, TrashEntry } from '../api/client-files';
+import type { ActiveView } from './useNavigation';
 
 interface NavStackOptions {
   viewPref: {
@@ -8,22 +10,14 @@ interface NavStackOptions {
     navigateToPath: (path: string) => void;
   };
   nav?: {
-    setShowingTrash: (v: boolean) => void;
-    setShowingSettings: (v: boolean) => void;
-    setShowingJobs: (v: boolean) => void;
-    setShowingMyPC: (v: boolean) => void;
-    setSelectedDriveName: (v: string | null) => void;
-    setShowingSearch?: (v: boolean) => void;
-    setShowingStorageAnalyzer?: (v: boolean) => void;
+    setActiveView: (view: ActiveView) => void;
   };
   browser: {
     refresh: () => void;
     setSearchOpen: (v: boolean) => void;
-    setSearchResults: React.Dispatch<
-      React.SetStateAction<import('../api/client').SearchResult[] | null>
-    >;
+    setSearchResults: React.Dispatch<React.SetStateAction<SearchResult[] | null>>;
     setQuery: (v: string) => void;
-    setTrashEntries: React.Dispatch<React.SetStateAction<import('../api/client').TrashEntry[]>>;
+    setTrashEntries: React.Dispatch<React.SetStateAction<TrashEntry[]>>;
   };
 }
 
@@ -41,29 +35,17 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
         backStackRef.current.push(viewPref.currentPath);
       }
       viewPref.navigateToPath(path);
-      nav?.setShowingTrash(false);
-      nav?.setShowingSettings(false);
-      nav?.setShowingJobs(false);
-      nav?.setShowingSearch?.(false);
-      nav?.setShowingStorageAnalyzer?.(false);
+      nav?.setActiveView('files');
       browser.setSearchOpen(false);
       browser.setSearchResults(null);
       browser.setQuery('');
-      nav?.setSelectedDriveName(null);
-      nav?.setShowingMyPC(false);
     },
     [viewPref, nav, browser],
   );
 
   const resetToDesktopView = useCallback(() => {
     viewPref.setCurrentPath('');
-    nav?.setShowingTrash(false);
-    nav?.setShowingSettings(false);
-    nav?.setShowingJobs(false);
-    nav?.setShowingSearch?.(false);
-    nav?.setShowingStorageAnalyzer?.(false);
-    nav?.setShowingMyPC(false);
-    nav?.setSelectedDriveName(null);
+    nav?.setActiveView('desktop');
   }, [viewPref, nav]);
 
   const goBack = useCallback(() => {
@@ -72,8 +54,9 @@ export function useNavStack({ viewPref, nav, browser }: NavStackOptions) {
       resetToDesktopView();
     } else {
       viewPref.navigateToPath(prev);
+      nav?.setActiveView('files');
     }
-  }, [viewPref, resetToDesktopView]);
+  }, [viewPref, nav, resetToDesktopView]);
 
   return { refresh, navigateTo, goBack, resetToDesktopView };
 }

@@ -26,24 +26,3 @@
   font-size: var(--font-size-base);
   margin: 0;
 }
-
-.workerStatus {
-  align-items: center;
-  display: inline-flex;
-  gap: 6px;
-}
-
-.statusDot {
-  border-radius: 50%;
-  display: inline-block;
-  height: 8px;
-  width: 8px;
-}
-
-.dotIdle {
-  background: var(--color-success);
-}
-
-.dotBusy {
-  background: var(--color-warning);
-}

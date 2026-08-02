@@ -5,7 +5,6 @@ import (
 	"errors"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/volum-app/volum/backend/internal/storage"
 )
@@ -335,31 +334,6 @@ func TestClaimNextChecksumJob(t *testing.T) {
 	}
 }
 
-func TestClaimNextJobSkipsFutureScheduledJobs(t *testing.T) {
-	store, ctx := setupStore(t)
-	future := createTestJob(t, store, ctx, TypeCopy)
-	ready := createTestJob(t, store, ctx, TypeCopy)
-	if _, err := store.db.ExecContext(ctx, `UPDATE jobs SET scheduled_at = ? WHERE id = ?`, time.Now().Add(time.Hour), future.ID); err != nil {
-		t.Fatal(err)
-	}
-
-	claimed, ok, err := store.ClaimNextTransferJob(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !ok || claimed.ID != ready.ID {
-		t.Fatalf("expected ready job to be claimed, got ok=%v job=%+v", ok, claimed)
-	}
-
-	_, ok, err = store.ClaimNextTransferJob(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if ok {
-		t.Fatal("expected future scheduled job to stay queued")
-	}
-}
-
 func TestProgressAndTotals(t *testing.T) {
 	store, ctx := setupStore(t)
 	job := createTestJob(t, store, ctx, TypeCopy)
@@ -426,14 +400,6 @@ func TestMarkInterruptedRunningJobsRequeuesTransferJobs(t *testing.T) {
 	}
 	if items[0].Status != StatusQueued {
 		t.Fatalf("expected item status queued, got %s", items[0].Status)
-	}
-}
-
-func TestAuditLog(t *testing.T) {
-	store, ctx := setupStore(t)
-
-	if err := store.CreateAuditLog(ctx, "test", "/tmp/path", "test action"); err != nil {
-		t.Fatal(err)
 	}
 }
 

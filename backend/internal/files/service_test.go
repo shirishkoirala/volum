@@ -9,10 +9,6 @@ import (
 	"github.com/volum-app/volum/backend/internal/security"
 )
 
-func testCache() *DirSizeCache {
-	return NewDirSizeCache(0)
-}
-
 func TestListReturnsDirectoryEntry(t *testing.T) {
 	root := t.TempDir()
 	folder := filepath.Join(root, "folder")
@@ -28,10 +24,11 @@ func TestListReturnsDirectoryEntry(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	entries, err := NewService(guard, testCache()).List(root, false)
+	listing, err := NewService(guard).ListPage(root, false, ListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
+	entries := listing.Entries
 	if len(entries) != 1 {
 		t.Fatalf("expected 1 entry, got %d", len(entries))
 	}
@@ -66,10 +63,11 @@ func TestListReturnsImmediateDirectorySize(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	entries, err := NewService(guard, testCache()).List("/", false)
+	listing, err := NewService(guard).ListPage("/", false, ListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
+	entries := listing.Entries
 	if len(entries) != 1 {
 		t.Fatalf("expected 1 entry, got %d", len(entries))
 	}
@@ -91,20 +89,22 @@ func TestListShowsHiddenFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard, testCache())
+	s := NewService(guard)
 
-	entries, err := s.List(root, false)
+	listing, err := s.ListPage(root, false, ListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
+	entries := listing.Entries
 	if len(entries) != 1 || entries[0].Name != "visible.txt" {
 		t.Fatalf("expected 1 visible entry, got %#v", entries)
 	}
 
-	entries, err = s.List(root, true)
+	listing, err = s.ListPage(root, true, ListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
+	entries = listing.Entries
 	if len(entries) != 2 {
 		t.Fatalf("expected 2 entries with hidden, got %d", len(entries))
 	}
@@ -128,7 +128,7 @@ func TestListPageReturnsSortedWindow(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	listing, err := NewService(guard, testCache()).ListPage(root, false, ListOptions{Limit: 2, Offset: 1})
+	listing, err := NewService(guard).ListPage(root, false, ListOptions{Limit: 2, Offset: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,7 +150,7 @@ func TestCreateFolder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard, testCache())
+	s := NewService(guard)
 
 	entry, err := s.CreateFolder(root, "newdir")
 	if err != nil {
@@ -186,7 +186,7 @@ func TestRename(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard, testCache())
+	s := NewService(guard)
 
 	entry, err := s.Rename(filepath.Join(root, "old.txt"), "new.txt")
 	if err != nil {
@@ -222,7 +222,7 @@ func TestChmod(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard, testCache())
+	s := NewService(guard)
 
 	entry, err := s.Chmod(path, "rwx------")
 	if err != nil {
@@ -252,9 +252,9 @@ func TestTrashAndRestore(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := NewService(guard, testCache())
+	service := NewService(guard)
 
-	trashEntry, err := service.Trash(path)
+	trashEntry, err := service.TrashWithID(path, "trash-and-restore")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -273,7 +273,7 @@ func TestTrashAndRestore(t *testing.T) {
 		t.Fatalf("expected trashed entry %q, got %#v", trashEntry.ID, entries)
 	}
 
-	restored, err := service.RestoreTrash(trashEntry.ID)
+	restored, err := service.RestoreTrashRetry(trashEntry.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -296,8 +296,8 @@ func TestRestoreTrashRetryPreservesExistingDestination(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := NewService(guard, testCache())
-	trashEntry, err := service.Trash(path)
+	service := NewService(guard)
+	trashEntry, err := service.TrashWithID(path, "restore-conflict")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -328,9 +328,9 @@ func TestDeleteTrashPermanentlyRemovesEntry(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := NewService(guard, testCache())
+	service := NewService(guard)
 
-	trashEntry, err := service.Trash(path)
+	trashEntry, err := service.TrashWithID(path, "delete-trash")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -360,7 +360,7 @@ func TestDownloadPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard, testCache())
+	s := NewService(guard)
 
 	resolved, info, err := s.DownloadPath(path)
 	if err != nil {
@@ -395,7 +395,7 @@ func TestSearch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewService(guard, testCache())
+	s := NewService(guard)
 
 	results, err := s.Search("hello", 10)
 	if err != nil {
@@ -433,7 +433,7 @@ func TestEntryFromPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := NewService(guard, testCache())
+	service := NewService(guard)
 
 	entry, err := service.entryFromPath(path)
 	if err != nil {
@@ -477,12 +477,13 @@ func TestServiceUsesPublicPathsWithHostMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	service := NewService(guard, testCache())
+	service := NewService(guard)
 
-	entries, err := service.List("/mnt/disk", false)
+	listing, err := service.ListPage("/mnt/disk", false, ListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
+	entries := listing.Entries
 	if len(entries) != 1 || entries[0].Path != "/mnt/disk/file.txt" {
 		t.Fatalf("expected public path in entries, got %#v", entries)
 	}

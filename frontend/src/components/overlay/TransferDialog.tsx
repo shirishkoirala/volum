@@ -4,9 +4,9 @@ import { Button, IconButton } from '../ui/shared';
 import { Dialog } from './Dialog';
 import { Select } from '../input/Select';
 import { FolderPicker } from '../input/FolderPicker';
-import type { FileEntry } from '../../api/client';
-import type { ConflictPolicy } from '../../api/client';
-import { getFiles } from '../../api/client';
+import type { FileEntry } from '../../api/client-files';
+import type { ConflictPolicy } from '../../api/client-jobs';
+import { getFiles } from '../../api/client-files';
 import styles from './Dialogs.module.css';
 
 export type TransferDialogState = {

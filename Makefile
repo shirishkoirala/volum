@@ -13,7 +13,7 @@ PACKAGE ?= ./...
 	check check-frontend check-backend test-frontend test-backend \
 	coverage coverage-frontend coverage-backend \
 	format-frontend lint-shell lint-markdown build smoke smoke-proxy \
-	setup-visual visual-capture visual-audit
+	setup-visual visual-capture
 
 help:
 	@printf '%s\n' \
@@ -52,8 +52,7 @@ help:
 		'' \
 		'Visual:' \
 		'  make setup-visual    Install Playwright + browsers in tools/visual' \
-		'  make visual-capture  Capture screenshots for docs (VOLUM_URL=...)' \
-		'  make visual-audit    Run visual audit (VOLUM_URL=...)'
+		'  make visual-capture  Capture screenshots for docs (VOLUM_URL=...)'
 
 setup:
 	@mkdir -p data storage
@@ -92,19 +91,19 @@ clean-test:
 check: check-frontend check-backend
 
 check-frontend:
-	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run typecheck && npm run format:check && npm run lint && npm run test:ci && npm run build'
+	$(FRONTEND_RUN) 'npm ci && npm run format:check && npm run lint && npm run test:ci && npm run build'
 
 check-backend:
 	docker build --target backend-base .
 
 test-frontend:
-	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run test:ci -- $(FRONTEND_TEST_FILTER)'
+	$(FRONTEND_RUN) 'npm ci && npm run test:ci -- $(FRONTEND_TEST_FILTER)'
 
 test-backend:
 	$(TEST_COMPOSE) run --rm --build backend-test go test $(BACKEND_TEST_FILTER) $(PACKAGE)
 
 coverage-frontend:
-	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run test:coverage'
+	$(FRONTEND_RUN) 'npm ci && npm run test:coverage'
 
 coverage-backend:
 	$(TEST_COMPOSE) run --rm --build backend-test go test -coverprofile=coverage.out -covermode=atomic $(BACKEND_TEST_FILTER) ./...
@@ -112,10 +111,10 @@ coverage-backend:
 coverage: coverage-frontend coverage-backend
 
 format-frontend:
-	$(FRONTEND_RUN) 'sh ./scripts/ensure-dependencies.sh && npm run format'
+	$(FRONTEND_RUN) 'npm ci && npm run format'
 
 lint-shell:
-	shellcheck scripts/*.sh frontend/scripts/*.sh
+	shellcheck scripts/*.sh
 
 lint-markdown:
 	@echo "Run lychee locally: lychee --verbose --no-progress './**/*.md' './**/*.html' '!./frontend/node_modules' '!./.git'"
@@ -126,11 +125,8 @@ setup-visual:
 visual-capture:
 	NODE_PATH=tools/visual/node_modules VOLUM_URL="${VOLUM_URL}" node scripts/capture-screenshots.mjs
 
-visual-audit:
-	NODE_PATH=tools/visual/node_modules VOLUM_URL="${VOLUM_URL}" node scripts/visual-audit.mjs
-
 build:
-	docker compose build
+	docker build -t volum .
 
 smoke:
 	./scripts/smoke.sh

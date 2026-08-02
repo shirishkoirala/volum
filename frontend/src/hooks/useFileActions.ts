@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FileEntry } from '../api/client';
+import type { FileEntry } from '../api/client-files';
 import type { ContextMenuState, RenameState } from '../types';
 import type { ClipboardState } from './types';
 

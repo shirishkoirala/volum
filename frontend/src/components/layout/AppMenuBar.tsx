@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui/Icon';
 type ViewMode = 'list' | 'grid';
 import type { SortField, SortDirection } from '../../types';
@@ -54,9 +54,20 @@ const MENUS: { id: MenuId; label: string }[] = [
 
 export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
   const [openMenu, setOpenMenu] = useState<MenuId | null>(null);
-  const [focusIdx, setFocusIdx] = useState<number>(-1);
+  const [focusIdx, setFocusIdx] = useState(0);
   const menuBarRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menus = windowType === 'trash' ? MENUS.filter((menu) => menu.id !== 'view') : MENUS;
+  const menuItems: Record<MenuId, MenuItem[]> = {
+    file: buildFileItems(handlers, windowType),
+    edit: buildEditItems(handlers, windowType),
+    view: buildViewItems(handlers),
+    go: buildGoItems(handlers, windowType),
+  };
+
+  const focusTrigger = useCallback((idx: number) => {
+    menuBarRef.current?.querySelector<HTMLElement>(`[data-menu-trigger="${idx}"]`)?.focus();
+  }, []);
 
   useEffect(() => {
     if (!openMenu) return;
@@ -67,8 +78,9 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
     };
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
         setOpenMenu(null);
-        setFocusIdx(-1);
+        focusTrigger(focusIdx);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -77,62 +89,70 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('keydown', handleEscape);
     };
+  }, [focusIdx, focusTrigger, openMenu]);
+
+  useEffect(() => {
+    if (!openMenu) return;
+    menuRef.current?.querySelector<HTMLButtonElement>('button:not([disabled])')?.focus();
   }, [openMenu]);
+
+  const moveToMenu = (idx: number, direction: -1 | 1, keepOpen: boolean) => {
+    const next = (idx + direction + menus.length) % menus.length;
+    setFocusIdx(next);
+    if (keepOpen) setOpenMenu(menus[next]!.id);
+    focusTrigger(next);
+  };
 
   const handleMenuKeyDown = (e: React.KeyboardEvent, idx: number) => {
     if (e.key === 'ArrowRight') {
       e.preventDefault();
-      const next = (idx + 1) % menus.length;
-      setFocusIdx(next);
-      setOpenMenu(menus[next]!.id);
+      moveToMenu(idx, 1, openMenu !== null);
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      const prev = (idx - 1 + menus.length) % menus.length;
-      setFocusIdx(prev);
-      setOpenMenu(menus[prev]!.id);
+      moveToMenu(idx, -1, openMenu !== null);
     } else if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       setOpenMenu(menus[idx]!.id);
     }
   };
 
-  const handleItemKeyDown = (e: React.KeyboardEvent, items: MenuItem[], currentIdx: number) => {
-    if (e.key === 'ArrowDown') {
+  const handleItemKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Tab') {
+      setOpenMenu(null);
+      return;
+    }
+
+    const buttons = Array.from(
+      menuRef.current?.querySelectorAll<HTMLButtonElement>('button:not([disabled])') ?? [],
+    );
+    const currentIndex = buttons.indexOf(e.currentTarget as HTMLButtonElement);
+    if (buttons.length === 0 || currentIndex < 0) return;
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
-      const nextIdx = items.findIndex((item, i) => i > currentIdx && !item.disabled);
-      if (nextIdx >= 0) focusMenuItem(items, nextIdx);
-    } else if (e.key === 'ArrowUp') {
+      const direction = e.key === 'ArrowDown' ? 1 : -1;
+      buttons[(currentIndex + direction + buttons.length) % buttons.length]?.focus();
+    } else if (e.key === 'Home' || e.key === 'End') {
       e.preventDefault();
-      const prevIdx = items.findIndex((item, i) => i < currentIdx && !item.disabled);
-      if (prevIdx >= 0) focusMenuItem(items, prevIdx);
+      buttons[e.key === 'Home' ? 0 : buttons.length - 1]?.focus();
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const menuIndex = menus.findIndex((menu) => menu.id === openMenu);
+      moveToMenu(menuIndex, e.key === 'ArrowRight' ? 1 : -1, true);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setOpenMenu(null);
+      focusTrigger(focusIdx);
     }
   };
 
-  const focusMenuItem = useCallback((_items: MenuItem[], idx: number) => {
-    const el = menuRef.current?.querySelector(`[data-menu-index="${idx}"]`) as HTMLElement | null;
-    el?.focus();
-  }, []);
-
-  const menus = windowType === 'trash' ? MENUS.filter((menu) => menu.id !== 'view') : MENUS;
-
-  const handleItemClick = useCallback((onClick: () => void) => {
-    onClick();
-    setOpenMenu(null);
-  }, []);
-
-  const fileItems = useMemo(() => buildFileItems(handlers, windowType), [handlers, windowType]);
-  const editItems = useMemo(() => buildEditItems(handlers, windowType), [handlers, windowType]);
-  const viewItems = useMemo(() => buildViewItems(handlers), [handlers]);
-  const goItems = useMemo(() => buildGoItems(handlers, windowType), [handlers, windowType]);
-
-  const menuItems: Record<MenuId, MenuItem[]> = useMemo(
-    () => ({
-      file: fileItems,
-      edit: editItems,
-      view: viewItems,
-      go: goItems,
-    }),
-    [fileItems, editItems, viewItems, goItems],
+  const handleItemClick = useCallback(
+    (onClick: () => void) => {
+      onClick();
+      setOpenMenu(null);
+      focusTrigger(focusIdx);
+    },
+    [focusIdx, focusTrigger],
   );
 
   return (
@@ -150,11 +170,19 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
             role="menuitem"
             tabIndex={focusIdx === idx ? 0 : -1}
             type="button"
+            aria-haspopup="menu"
+            aria-expanded={openMenu === menu.id}
+            data-menu-trigger={idx}
           >
             {menu.label}
           </button>
           {openMenu === menu.id && (
-            <div className={styles.menuDropdown} ref={menuRef} role="menu">
+            <div
+              className={styles.menuDropdown}
+              ref={menuRef}
+              role="menu"
+              aria-label={`${menu.label} menu`}
+            >
               {menuItems[menu.id].map((item, itemIdx) =>
                 item.label === '---' ? (
                   <div key={itemIdx} className={styles.menuSeparator} role="separator" />
@@ -165,7 +193,7 @@ export function AppMenuBar({ handlers, windowType }: AppMenuBarProps) {
                     onClick={() => {
                       if (!item.disabled) handleItemClick(item.onClick);
                     }}
-                    onKeyDown={(e) => handleItemKeyDown(e, menuItems[menu.id], itemIdx)}
+                    onKeyDown={handleItemKeyDown}
                     data-menu-index={itemIdx}
                     disabled={item.disabled}
                     role="menuitem"

@@ -74,15 +74,6 @@
   margin-top: 4px;
 }
 
-.meter {
-  background: var(--color-border-subtle);
-  border-radius: var(--radius-pill);
-  height: 4px;
-  margin-top: 4px;
-  overflow: hidden;
-  width: 100%;
-}
-
 @media (max-width: 760px) {
   .section {
     gap: var(--space-sm);

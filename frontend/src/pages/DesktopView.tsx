@@ -1,12 +1,12 @@
 import { useDesktopIcons, type DesktopIconItem } from '../hooks/useDesktopIcons';
-import type { TrashEntry, Job } from '../api/client';
+import type { TrashEntry } from '../api/client-files';
+import type { Job } from '../api/client-jobs';
 import type { ServiceHealthResult, ServiceShortcut } from '../utils/services';
 import styles from './DesktopView.module.css';
 
 type DesktopViewProps = {
   trashEntries: TrashEntry[];
   jobs: Job[];
-  pendingTransferCount?: number;
   favorites: string[];
   services: ServiceShortcut[];
   serviceHealth: Record<string, ServiceHealthResult>;
@@ -24,7 +24,6 @@ type DesktopViewProps = {
 export function DesktopView({
   trashEntries,
   jobs,
-  pendingTransferCount = 0,
   favorites,
   services,
   serviceHealth,
@@ -53,7 +52,6 @@ export function DesktopView({
   } = useDesktopIcons({
     trashEntries,
     jobs,
-    pendingTransferCount,
     favorites,
     services,
     serviceHealth,

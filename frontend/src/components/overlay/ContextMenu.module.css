@@ -64,8 +64,8 @@
   }
 
   .contextMenu button {
-    font-size: var(--font-size-sm);
-    min-height: 36px;
+    font-size: var(--font-size-base);
+    min-height: var(--size-touch-target);
     padding: 0 var(--space-sm);
   }
 }

@@ -1,9 +1,9 @@
 import { KeyboardEvent, useRef } from 'react';
-import { createFile, createFolder, renamePath, deletePath, getTrash } from '../api/client';
-import type { FileEntry, TrashEntry } from '../api/client';
+import { createFile, createFolder, renamePath, deletePath, getTrash } from '../api/client-files';
+import type { FileEntry, TrashEntry } from '../api/client-files';
+import type { Job } from '../api/client-jobs';
 import type { UploadProgress } from '../utils/upload';
 import { isPreviewableFile, openFileExternally } from '../utils/preview';
-import { joinPath } from '../utils/path';
 import type { RenameState, ContextMenuState } from '../types';
 import type { ConfirmDialogState } from '../components/overlay/ConfirmDialog';
 import type { TextInputDialogState } from '../components/overlay/TextInputDialog';
@@ -22,7 +22,7 @@ interface FileCommandDeps {
   refresh: () => void;
   setError: (err: string | null) => void;
   setTrashEntries: React.Dispatch<React.SetStateAction<TrashEntry[]>>;
-  setJobs: React.Dispatch<React.SetStateAction<import('../api/client').Job[]>>;
+  setJobs: React.Dispatch<React.SetStateAction<Job[]>>;
   selectedEntries: FileEntry[];
   setSelectedPaths: React.Dispatch<React.SetStateAction<string[]>>;
   setLastSelectedPath: React.Dispatch<React.SetStateAction<string | null>>;
@@ -42,7 +42,6 @@ interface FileCommandDeps {
   >;
   setFilesEmptyMenu: React.Dispatch<React.SetStateAction<{ x: number; y: number } | null>>;
   setUploadProgress: React.Dispatch<React.SetStateAction<UploadProgress | null>>;
-  setPendingUploadCount: React.Dispatch<React.SetStateAction<number>>;
   showToastObj: (toast: Omit<Toast, 'id'>, timeout?: number) => void;
   contextMenu: ContextMenuState;
   navigateTo: (path: string) => void;
@@ -97,7 +96,6 @@ export function useFileCommands(deps: FileCommandDeps) {
     setTrashContextMenu,
     setFilesEmptyMenu,
     setUploadProgress,
-    setPendingUploadCount,
     showToastObj,
     contextMenu,
     navigateTo,
@@ -158,28 +156,31 @@ export function useFileCommands(deps: FileCommandDeps) {
     const oldName = entry.name;
     const oldPath = entry.path;
     setRenaming(null);
-    void runAction(() => renamePath(oldPath, nextName), 'Item renamed');
-    showToastObj(
-      {
-        title: 'Item renamed',
-        message: `${oldName} → ${nextName}`,
-        variant: 'success',
-        action: {
-          label: 'Undo',
-          onClick: () => {
-            void runAction(
-              () =>
-                renamePath(
-                  joinPath(oldPath.substring(0, oldPath.lastIndexOf('/')), nextName),
-                  oldName,
-                ),
-              'Rename undone',
-            );
+    void (async () => {
+      try {
+        const renamed = await renamePath(oldPath, nextName);
+        setError(null);
+        deps.refresh();
+        showToastObj(
+          {
+            title: 'Item renamed',
+            message: `${oldName} → ${nextName}`,
+            variant: 'success',
+            action: {
+              label: 'Undo',
+              onClick: () => {
+                void runAction(() => renamePath(renamed.path, oldName), 'Rename undone');
+              },
+            },
           },
-        },
-      },
-      8000,
-    );
+          8000,
+        );
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Rename failed';
+        setError(message);
+        showToastObj({ title: 'Rename failed', message, variant: 'error' });
+      }
+    })();
   };
 
   // ── Delete ────────────────────────────────────────────
@@ -253,7 +254,6 @@ export function useFileCommands(deps: FileCommandDeps) {
     setError,
     setJobs,
     setUploadProgress,
-    setPendingUploadCount,
     showToastObj,
     runAction,
   });

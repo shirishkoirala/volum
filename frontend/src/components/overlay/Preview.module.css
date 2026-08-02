@@ -58,10 +58,6 @@
   gap: var(--space-sm);
 }
 
-.previousIcon {
-  transform: rotate(180deg);
-}
-
 .previewContent {
   flex: 1;
   min-height: 0;

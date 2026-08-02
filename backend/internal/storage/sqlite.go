@@ -114,10 +114,10 @@ func migrate(db *sql.DB) error {
 	if err := addColumnIfMissing(db, "job_items", "conflict_resolution", "TEXT"); err != nil {
 		return err
 	}
-	if err := addColumnIfMissing(db, "jobs", "scheduled_at", "DATETIME"); err != nil {
-		return err
+	if _, err := db.Exec(`DROP INDEX IF EXISTS idx_jobs_claim`); err != nil {
+		return fmt.Errorf("drop legacy job claim index: %w", err)
 	}
-	if _, err := db.Exec(`CREATE INDEX IF NOT EXISTS idx_jobs_claim ON jobs(status, type, scheduled_at, created_at)`); err != nil {
+	if _, err := db.Exec(`CREATE INDEX idx_jobs_claim ON jobs(status, type, created_at)`); err != nil {
 		return fmt.Errorf("create job claim index: %w", err)
 	}
 
@@ -176,8 +176,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     started_at DATETIME,
-    completed_at DATETIME,
-    scheduled_at DATETIME
+    completed_at DATETIME
 );
 
 CREATE TABLE IF NOT EXISTS job_items (
@@ -194,15 +193,6 @@ CREATE TABLE IF NOT EXISTS job_items (
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
     FOREIGN KEY(job_id) REFERENCES jobs(id)
-);
-
-CREATE TABLE IF NOT EXISTS audit_logs (
-    id TEXT PRIMARY KEY,
-    user_id TEXT,
-    action TEXT NOT NULL,
-    path TEXT,
-    details TEXT,
-    created_at DATETIME NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);

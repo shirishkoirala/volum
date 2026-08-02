@@ -5,9 +5,33 @@ import { ConfirmDialog, type ConfirmDialogState } from '../components/overlay/Co
 import { TextInputDialog, type TextInputDialogState } from '../components/overlay/TextInputDialog';
 import { TransferDialog, type TransferDialogState } from '../components/overlay/TransferDialog';
 import { ToastViewport } from '../components/overlay/Toast';
-import { FolderSuggestions } from '../components/input/FolderPicker';
+import { Dialog } from '../components/overlay/Dialog';
 import type { Toast } from '../components/overlay/Toast';
 import { buildDirectoryEntry, buildFileEntry } from './fixtures';
+
+describe('Dialog', () => {
+  it('keeps media controls in the focus loop', async () => {
+    const user = userEvent.setup();
+    render(
+      <Dialog title="Video preview" onClose={vi.fn()}>
+        <video controls aria-label="Preview player" />
+      </Dialog>,
+    );
+
+    const closeButton = screen.getByRole('button', { name: 'Close' });
+    const player = screen.getByLabelText('Preview player');
+    const focusPlayer = vi.spyOn(player, 'focus');
+    expect(closeButton).toHaveFocus();
+
+    await user.tab({ shift: true });
+    expect(focusPlayer).toHaveBeenCalledOnce();
+
+    player.tabIndex = 0;
+    player.focus();
+    await user.tab();
+    expect(closeButton).toHaveFocus();
+  });
+});
 
 describe('ConfirmDialog', () => {
   const baseDialog: NonNullable<ConfirmDialogState> = {
@@ -46,6 +70,26 @@ describe('ConfirmDialog', () => {
     render(<ConfirmDialog dialog={baseDialog} onClose={onClose} />);
     await user.click(screen.getByText('Cancel'));
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it('names the dialog, traps focus, and restores the opener', async () => {
+    const user = userEvent.setup();
+    const opener = document.createElement('button');
+    document.body.appendChild(opener);
+    opener.focus();
+
+    const { unmount } = render(<ConfirmDialog dialog={baseDialog} onClose={vi.fn()} />);
+    expect(screen.getByRole('dialog', { name: 'Delete file?' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+
+    await user.tab({ shift: true });
+    expect(screen.getByRole('button', { name: 'Delete' })).toHaveFocus();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+
+    unmount();
+    expect(opener).toHaveFocus();
+    opener.remove();
   });
 });
 
@@ -120,35 +164,6 @@ describe('TransferDialog', () => {
   it('hides skip-identical for folder copy transfers', () => {
     renderTransferDialog({ mode: 'copy', entries: [folderEntry], initialDestination: '/target' });
     expect(screen.queryByText('Skip identical files (by size + checksum)')).not.toBeInTheDocument();
-  });
-});
-
-describe('FolderSuggestions', () => {
-  it('renders label and path buttons', () => {
-    const onSelect = vi.fn();
-    render(
-      <FolderSuggestions
-        label="Jump to"
-        paths={['/storage', '/storage/docs']}
-        onSelect={onSelect}
-      />,
-    );
-    expect(screen.getByText('Jump to')).toBeInTheDocument();
-    expect(screen.getByTitle('/storage')).toBeInTheDocument();
-    expect(screen.getByTitle('/storage/docs')).toBeInTheDocument();
-  });
-
-  it('calls onSelect when a path is clicked', async () => {
-    const onSelect = vi.fn();
-    const user = userEvent.setup();
-    render(<FolderSuggestions label="Jump to" paths={['/storage']} onSelect={onSelect} />);
-    await user.click(screen.getByTitle('/storage'));
-    expect(onSelect).toHaveBeenCalledWith('/storage');
-  });
-
-  it('displays / for root path', () => {
-    render(<FolderSuggestions label="Folders" paths={['/']} onSelect={vi.fn()} />);
-    expect(screen.getByText('/')).toBeInTheDocument();
   });
 });
 

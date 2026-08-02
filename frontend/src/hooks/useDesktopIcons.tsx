@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { TrashIcon } from '../components/ui/Icon';
 import { IconImg } from '../components/ui/shared';
 import {
@@ -9,9 +9,11 @@ import {
   filesIconUrl,
   storageAnalyzerIconUrl,
 } from '../api/icons';
-import type { TrashEntry, Job } from '../api/client';
+import type { TrashEntry } from '../api/client-files';
+import type { Job } from '../api/client-jobs';
 import { countActiveTransfers } from '../utils/jobs';
 import type { ServiceHealthResult, ServiceShortcut } from '../utils/services';
+import { useLocalStorage } from './useLocalStorage';
 import { useLongPress } from './useLongPress';
 import styles from '../pages/DesktopView.module.css';
 
@@ -37,7 +39,6 @@ type DesktopIconItem = {
 type UseDesktopIconsProps = {
   trashEntries: TrashEntry[];
   jobs: Job[];
-  pendingTransferCount: number;
   favorites: string[];
   services: ServiceShortcut[];
   serviceHealth: Record<string, ServiceHealthResult>;
@@ -54,31 +55,12 @@ type UseDesktopIconsProps = {
 
 const ORDER_KEY = 'volum_desktopOrder';
 
-function loadOrder(): string[] {
-  try {
-    const raw = localStorage.getItem(ORDER_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {
-    /* ignore */
-  }
-  return [];
-}
-
-function saveOrder(ids: string[]) {
-  try {
-    localStorage.setItem(ORDER_KEY, JSON.stringify(ids));
-  } catch (e) {
-    console.warn('Failed to save desktop order:', e);
-  }
-}
-
 export type { DesktopIconItem };
 
 export function useDesktopIcons(props: UseDesktopIconsProps) {
   const {
     trashEntries,
     jobs,
-    pendingTransferCount,
     favorites,
     services,
     serviceHealth,
@@ -93,14 +75,10 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
     onItemContextMenu,
   } = props;
 
-  const activeTransferCount = countActiveTransfers(jobs, pendingTransferCount);
-  const [iconOrder, setIconOrder] = useState<string[]>(loadOrder);
+  const activeTransferCount = countActiveTransfers(jobs);
+  const [iconOrder, setIconOrder] = useLocalStorage<string[]>(ORDER_KEY, []);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
-
-  useEffect(() => {
-    saveOrder(iconOrder);
-  }, [iconOrder]);
 
   const iconItems = useMemo(() => {
     const items: DesktopIconItem[] = [];
@@ -151,8 +129,8 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
     items.push({
       id: 'jobs',
       type: 'jobs',
-      label: 'Transfers',
-      ariaLabel: `Open Transfers${activeTransferCount > 0 ? `, ${activeTransferCount} active` : ', no active transfers'}`,
+      label: 'Jobs',
+      ariaLabel: `Open Jobs${activeTransferCount > 0 ? `, ${activeTransferCount} active` : ', no active jobs'}`,
       onClick: onOpenJobs,
       badge: activeTransferCount > 0 ? activeTransferCount : undefined,
       icon: (
@@ -324,7 +302,7 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
       setDragId(null);
       setDropTarget(null);
     },
-    [iconItems],
+    [iconItems, setIconOrder],
   );
 
   const handleDragEnd = useCallback(() => {
@@ -438,7 +416,7 @@ export function useDesktopIcons(props: UseDesktopIconsProps) {
 
       hookTouchEnd();
     },
-    [iconItems, hookTouchEnd],
+    [iconItems, hookTouchEnd, setIconOrder],
   );
 
   return {

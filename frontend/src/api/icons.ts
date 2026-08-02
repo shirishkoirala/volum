@@ -1,4 +1,4 @@
-import type { FileEntry } from '../api/client';
+import type { FileEntry } from '../api/client-files';
 
 import folderIcon from '../assets/places/folder.svg?url';
 import driveHarddisk from '../assets/drive-harddisk.svg?url';
@@ -157,10 +157,12 @@ const MIMETYPE_ALIASES: Record<string, string> = {
     'x-office-presentation',
   'application-vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'x-office-spreadsheet',
   'application-vnd.openxmlformats-officedocument.wordprocessingml.document': 'x-office-document',
+  'application-x-7z-compressed': 'package-x-generic',
   'application-x-cd-image': 'application-x-iso',
   'application-x-cbr': 'application-vnd.comicbook+zip',
   'application-x-compressed-tar': 'application-x-tar',
   'application-x-executable': 'application-x-ms-dos-executable',
+  'application-x-font-ttf': 'font-x-generic',
   'application-x-lzip': 'application-zip',
   'application-x-rar': 'application-zip',
   'application-x-rpm': 'rpm',
@@ -174,7 +176,7 @@ const MIMETYPE_ALIASES: Record<string, string> = {
   'audio-x-ogg': 'application-ogg',
   'audio-x-wav': 'audio-x-generic',
   'font-otf': 'font-x-generic',
-  'font-ttf': 'application-x-font-ttf',
+  'font-ttf': 'font-x-generic',
   'image-x-adobe-dng': 'image-x-psd',
   'image-x-adobe-illustrator': 'image-x-generic',
   'image-bmp': 'image-x-bmp',

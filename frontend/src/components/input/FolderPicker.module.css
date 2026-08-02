@@ -128,46 +128,6 @@
   flex-shrink: 0;
 }
 
-.dialogSuggestions {
-  display: grid;
-  gap: var(--space-xs);
-}
-
-.dialogSuggestions > span {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-}
-
-.dialogSuggestions > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
-  max-height: 92px;
-  overflow-y: auto;
-}
-
-.dialogSuggestions button {
-  backdrop-filter: var(--glass-backdrop);
-  background: var(--glass-control-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-pill);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  min-height: 30px;
-  max-width: 100%;
-  overflow: hidden;
-  padding: 0 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dialogSuggestions button:hover {
-  background: var(--glass-hover-bg);
-  border-color: var(--color-brand);
-  color: var(--color-brand-text);
-}
-
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -187,5 +147,15 @@
 
   .folderPickerPath {
     max-width: 100%;
+  }
+
+  .folderPickerNavButton {
+    height: var(--size-touch-target);
+    width: var(--size-touch-target);
+  }
+
+  button.folderPickerCrumb,
+  .folderPickerItem {
+    min-height: var(--size-touch-target);
   }
 }

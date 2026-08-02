@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Session } from '../api/client-auth';
 import {
-  FileEntry,
-  Job,
-  BlockDevice,
-  RootEntry,
-  Session,
-  TrashEntry,
-  SearchResult,
   getDevices,
   getFiles,
   getRoots,
   getTrash,
   searchFiles,
-} from '../api/client';
+  type BlockDevice,
+  type FileEntry,
+  type RootEntry,
+  type SearchResult,
+  type TrashEntry,
+} from '../api/client-files';
+import type { Job } from '../api/client-jobs';
 import { uniquePaths } from '../utils/path';
 
 const FILE_PAGE_SIZE = 600;
@@ -42,10 +42,14 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
   });
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const entriesRef = useRef(entries);
   entriesRef.current = entries;
+  const fileRequestRef = useRef(0);
+  const searchRequestRef = useRef(0);
 
   const canWrite = session.role === 'admin';
 
@@ -69,6 +73,7 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
   }, [session, loadDevices]);
 
   useEffect(() => {
+    const requestId = ++fileRequestRef.current;
     if (!currentPath) {
       setLoading(false);
       return;
@@ -76,8 +81,11 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
     setLoading(true);
     setError(null);
     setLoadingMore(false);
+    setEntries([]);
+    setFilePage({ total: 0, limit: FILE_PAGE_SIZE, offset: 0, hasMore: false });
     getFiles(currentPath, showHidden, { limit: FILE_PAGE_SIZE, offset: 0 })
       .then((response) => {
+        if (requestId !== fileRequestRef.current) return;
         const nextEntries = response.entries ?? [];
         setEntries(nextEntries);
         setFilePage({
@@ -88,17 +96,23 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
         });
         setError(null);
       })
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setLoading(false));
+      .catch((err: Error) => {
+        if (requestId === fileRequestRef.current) setError(err.message);
+      })
+      .finally(() => {
+        if (requestId === fileRequestRef.current) setLoading(false);
+      });
   }, [currentPath, refreshKey, showHidden]);
 
   const loadMoreEntries = useCallback(() => {
     if (!currentPath || loadingMore || !filePage.hasMore) return;
+    const requestId = fileRequestRef.current;
     setLoadingMore(true);
     setError(null);
     const offset = entriesRef.current.length;
     getFiles(currentPath, showHidden, { limit: FILE_PAGE_SIZE, offset })
       .then((response) => {
+        if (requestId !== fileRequestRef.current) return;
         const nextEntries = response.entries ?? [];
         setEntries((current) => [...current, ...nextEntries]);
         setFilePage({
@@ -108,8 +122,12 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
           hasMore: response.hasMore ?? false,
         });
       })
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setLoadingMore(false));
+      .catch((err: Error) => {
+        if (requestId === fileRequestRef.current) setError(err.message);
+      })
+      .finally(() => {
+        if (requestId === fileRequestRef.current) setLoadingMore(false);
+      });
   }, [currentPath, filePage.hasMore, loadingMore, showHidden]);
 
   useEffect(() => {
@@ -119,13 +137,36 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
   }, [session, refreshKey]);
 
   const handleGlobalSearch = useCallback((searchQuery: string) => {
+    const requestId = ++searchRequestRef.current;
     if (searchQuery.trim().length < 2) {
       setSearchResults(null);
+      setSearchLoading(false);
+      setSearchError(null);
       return;
     }
+    setSearchLoading(true);
+    setSearchError(null);
     searchFiles(searchQuery.trim(), 20)
-      .then((response) => setSearchResults(response.results ?? []))
-      .catch(() => setSearchResults([]));
+      .then((response) => {
+        if (requestId === searchRequestRef.current) setSearchResults(response.results ?? []);
+      })
+      .catch((error) => {
+        if (requestId !== searchRequestRef.current) return;
+        setSearchResults([]);
+        setSearchError(error instanceof Error ? error.message : 'Search is unavailable');
+      })
+      .finally(() => {
+        if (requestId === searchRequestRef.current) setSearchLoading(false);
+      });
+  }, []);
+
+  const resetGlobalSearch = useCallback(() => {
+    searchRequestRef.current++;
+    setQuery('');
+    setSearchResults(null);
+    setSearchLoading(false);
+    setSearchError(null);
+    setSearchOpen(false);
   }, []);
 
   const filteredEntries = useMemo(() => {
@@ -197,6 +238,9 @@ export function useFileBrowser({ currentPath, showHidden, session }: UseFileBrow
     setSearchOpen,
     searchResults,
     setSearchResults,
+    searchLoading,
+    searchError,
+    resetGlobalSearch,
     filteredEntries,
     sortedTrashEntries,
     breadcrumbs,

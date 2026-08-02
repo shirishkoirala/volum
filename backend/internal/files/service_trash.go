@@ -11,13 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/volum-app/volum/backend/internal/security"
 )
-
-func (s *Service) Trash(path string) (TrashEntry, error) {
-	return s.TrashWithID(path, uuid.NewString())
-}
 
 // TrashWithID makes a trash move retryable by using the persistent job ID.
 func (s *Service) TrashWithID(path, id string) (TrashEntry, error) {
@@ -115,10 +110,6 @@ func (s *Service) ListTrash() ([]TrashEntry, error) {
 		return entries[i].DeletedAt.After(entries[j].DeletedAt)
 	})
 	return entries, nil
-}
-
-func (s *Service) RestoreTrash(id string) (Entry, error) {
-	return s.restoreTrash(id)
 }
 
 // RestoreTrashRetry resumes a worker-owned restore after an interrupted copy.
