@@ -1,4 +1,4 @@
-FROM golang:1.26-alpine AS backend-toolchain
+FROM golang:1.27-alpine AS backend-toolchain
 WORKDIR /app/backend
 RUN apk add --no-cache binutils gcc musl-dev
 COPY backend/go.mod backend/go.sum ./
